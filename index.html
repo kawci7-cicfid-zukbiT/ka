@@ -544,16 +544,128 @@ function getUnit() { return Engine.getUnits().value; }
 function getLabel() { return Engine.getUnits().label; }
 
 function renderHome() {
-  return `<div class="hero"><div class="hero-content"><h2>WVTR/OTR Calculator Pro</h2><p>Resistance-based multilayer analysis from experimental data</p></div></div>
-<div class="card"><div class="home-btns">
-<button class="btn btn-primary" onclick="showMatModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Add Material</button>
-<button class="btn btn-warning" onclick="nav('materials')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/></svg>Materials (${DB.materials.length})</button>
-<button class="btn btn-purple" onclick="nav('laminates')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/></svg>Laminates (${DB.laminates.length})</button>
-<button class="btn btn-success" onclick="nav('calc')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/></svg>Calculator</button>
-<button class="btn btn-outline" onclick="nav('arrhenius')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Arrhenius</button>
-<button class="btn btn-outline" onclick="nav('sensitivity')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h4l3-9 4 18 3-9h4"/></svg>Sensitivity</button>
-<button class="btn btn-outline" onclick="nav('compare')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="9" height="9"/><rect x="13" y="2" width="9" height="9"/></svg>Compare</button>
-</div></div>`;
+  const unit = getUnit();
+  const totalMats = DB.materials.length;
+  const totalLams = DB.laminates.length;
+  const multiTempMats = DB.materials.filter(m => Engine.validateArrhenius(m).valid).length;
+  
+  return `
+<!-- Hero Section -->
+<div class="hero">
+  <div class="hero-content">
+    <h2>🔬 WVTR/OTR Calculator Pro</h2>
+    <p>Resistance-based multilayer permeability analysis • ${totalMats} materials • ${totalLams} saved laminates</p>
+  </div>
+</div>
+
+<!-- Quick Stats Row -->
+<div class="grid grid-3" style="margin-bottom:1rem">
+  <div class="card" style="text-align:center;padding:1rem">
+    <div style="font-size:1.5rem;font-weight:700;color:var(--primary)">${totalMats}</div>
+    <div style="font-size:.75rem;color:var(--text-light)">Materials</div>
+  </div>
+  <div class="card" style="text-align:center;padding:1rem">
+    <div style="font-size:1.5rem;font-weight:700;color:var(--success)">${multiTempMats}</div>
+    <div style="font-size:.75rem;color:var(--text-light)">Arrhenius-Ready</div>
+  </div>
+  <div class="card" style="text-align:center;padding:1rem">
+    <div style="font-size:1.5rem;font-weight:700;color:var(--purple)">${totalLams}</div>
+    <div style="font-size:.75rem;color:var(--text-light)">Saved Laminates</div>
+  </div>
+</div>
+
+<!-- Main Action Cards -->
+<div class="card" style="margin-bottom:1rem">
+  <h2 style="margin-bottom:1rem">🚀 Get Started</h2>
+  <div class="grid grid-2">
+    <div style="border:1.5px solid var(--border);border-radius:10px;padding:1rem;cursor:pointer;transition:all .2s" 
+         onmouseover="this.style.borderColor='var(--primary)';this.style.boxShadow='var(--shadow-lg)'" 
+         onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='var(--shadow)'"
+         onclick="nav('calc')">
+      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem">
+        <div style="width:40px;height:40px;border-radius:10px;background:var(--primary-light);display:flex;align-items:center;justify-content:center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/></svg>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:.9rem">Calculator</div>
+          <div style="font-size:.75rem;color:var(--text-light)">Build & analyze laminates</div>
+        </div>
+      </div>
+      <p style="font-size:.8rem;color:var(--text-light);margin:0">Select materials, set thicknesses, and calculate total ${getLabel()} at your test conditions.</p>
+    </div>
+    
+    <div style="border:1.5px solid var(--border);border-radius:10px;padding:1rem;cursor:pointer;transition:all .2s"
+         onmouseover="this.style.borderColor='var(--primary)';this.style.boxShadow='var(--shadow-lg)'"
+         onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='var(--shadow)'"
+         onclick="nav('materials')">
+      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem">
+        <div style="width:40px;height:40px;border-radius:10px;background:var(--success-light);display:flex;align-items:center;justify-content:center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/></svg>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:.9rem">Materials Library</div>
+          <div style="font-size:.75rem;color:var(--text-light)">Browse & manage ${totalMats} materials</div>
+        </div>
+      </div>
+      <p style="font-size:.8rem;color:var(--text-light);margin:0">Search, filter, and add custom materials with WVTR/OTR data at multiple conditions.</p>
+    </div>
+    
+    <div style="border:1.5px solid var(--border);border-radius:10px;padding:1rem;cursor:pointer;transition:all .2s"
+         onmouseover="this.style.borderColor='var(--primary)';this.style.boxShadow='var(--shadow-lg)'"
+         onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='var(--shadow)'"
+         onclick="nav('arrhenius')">
+      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem">
+        <div style="width:40px;height:40px;border-radius:10px;background:var(--warning-light);display:flex;align-items:center;justify-content:center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:.9rem">Arrhenius Analysis</div>
+          <div style="font-size:.75rem;color:var(--text-light)">Predict permeability vs temperature</div>
+        </div>
+      </div>
+      <p style="font-size:.8rem;color:var(--text-light);margin:0">Model temperature dependence for materials with multi-condition data.</p>
+    </div>
+    
+    <div style="border:1.5px solid var(--border);border-radius:10px;padding:1rem;cursor:pointer;transition:all .2s"
+         onmouseover="this.style.borderColor='var(--primary)';this.style.boxShadow='var(--shadow-lg)'"
+         onmouseout="this.style.borderColor='var(--border)';this.style.boxShadow='var(--shadow)'"
+         onclick="nav('laminates')">
+      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem">
+        <div style="width:40px;height:40px;border-radius:10px;background:var(--purple-light);display:flex;align-items:center;justify-content:center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/></svg>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:.9rem">Saved Laminates</div>
+          <div style="font-size:.75rem;color:var(--text-light)">Compare ${totalLams} configurations</div>
+        </div>
+      </div>
+      <p style="font-size:.8rem;color:var(--text-light);margin:0">Review, compare, and export your saved laminate structures and results.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Secondary Actions Row -->
+<div class="grid grid-3">
+  <button class="btn btn-outline" onclick="nav('sensitivity')" style="width:100%;justify-content:center">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:.3rem"><path d="M2 12h4l3-9 4 18 3-9h4"/></svg>
+    Sensitivity
+  </button>
+  <button class="btn btn-outline" onclick="nav('compare')" style="width:100%;justify-content:center" ${totalLams<2?'disabled':''}>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:.3rem"><rect x="2" y="2" width="9" height="9"/><rect x="13" y="2" width="9" height="9"/></svg>
+    Compare
+  </button>
+  <button class="btn btn-outline" onclick="showMatModal()" style="width:100%;justify-content:center">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:.3rem"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    Add Material
+  </button>
+</div>
+
+<!-- Info Footer -->
+<div style="margin-top:1.5rem;text-align:center;font-size:.75rem;color:var(--text-light)">
+  <p>💡 <strong>Tip:</strong> Start with the Calculator to build your first laminate, or browse Materials to explore available data.</p>
+  <p style="margin-top:.25rem">Mode: <strong>${State.mode.toUpperCase()}</strong> • Unit: <strong>${unit}</strong></p>
+</div>
+`;
 }
 
 function renderCalc() {
