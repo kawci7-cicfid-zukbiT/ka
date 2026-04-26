@@ -692,8 +692,9 @@ function doSaveLam() {
 }
 
 /* ============================================================
-   CHARTS - CORRETTA SINTASSI CHART.JS
+   CHARTS & UI RENDERING - CORRETTO E OTTIMIZZATO
    ============================================================ */
+
 function drawBarChart() {
   const canvas = document.getElementById('barChart');
   if (!canvas || !State.calcResult?.layers) return;
@@ -710,7 +711,11 @@ function drawBarChart() {
         borderRadius: 6
       }]
     },
-    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, title: { display: true, text: '% of total resistance' } }, x: { title: { display: true, text: 'Layers' } } } }
+    options: { 
+      responsive: true, 
+      plugins: { legend: { display: false } }, 
+      scales: { y: { beginAtZero: true, title: { display: true, text: '% of total resistance' } }, x: { title: { display: true, text: 'Layers' } } } 
+    }
   });
 }
 
@@ -1118,11 +1123,13 @@ function postCompareRender() {
   const unit = getUnit();
 
   const tableEl = document.getElementById('compare-table');
-  if (tableEl) {
+  if (tableEl && selected.length > 0) {
+    // ✅ CORRETTO: usa selected[0] invece di "l" che non esiste in questo scope
+    const modeLabel = (selected[0].mode || State.mode).toUpperCase();
     tableEl.innerHTML = `<div class="card"><h2>Comparison Table</h2><table class="cond-table">
 <thead><tr><th>Parameter</th>${selected.map(l => `<th>${l.name}</th>`).join('')}</tr></thead>
 <tbody>
-<tr><td><strong>${(l.mode || State.mode).toUpperCase()}</strong></td>${selected.map(l => `<td>${l.total.toFixed(4)} ${unit}</td>`).join('')}</tr>
+<tr><td><strong>${modeLabel}</strong></td>${selected.map(l => `<td>${l.total.toFixed(4)} ${unit}</td>`).join('')}</tr>
 <tr><td><strong>Thickness</strong></td>${selected.map(l => `<td>${l.totalThickness.toFixed(0)} µm</td>`).join('')}</tr>
 <tr><td><strong>Conditions</strong></td>${selected.map(l => `<td>${l.temperature}°C / ${l.humidity}%</td>`).join('')}</tr>
 <tr><td><strong>Recyclable</strong></td>${selected.map(l => `<td><span class="sustainability-flag ${l.recyclable ? 'yes' : 'no'}">${l.recyclable ? '✓ Yes' : '✗ No'}</span></td>`).join('')}</tr>
@@ -1131,23 +1138,37 @@ function postCompareRender() {
 </tbody></table></div>`;
   }
 
-  const canvas = document.getElementById('compareChart'); if (!canvas) return;
-  destroyChart('compare');
-  const ctx = canvas.getContext('2d');
-  chartInstances.compare = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: selected.map(l => l.name),
-      datasets: [{ label: (selected[0].mode || State.mode).toUpperCase(), data: selected.map(l => l.total), backgroundColor: LAYER_COLORS.slice(0, selected.length), borderRadius: 6 }]
-    },
-    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, title: { display: true, text: unit } }, x: { title: { display: true, text: 'Laminates' } } } }
-  });
+  // ✅ Disegna il grafico solo se sono selezionati almeno 2 laminati
+  if (selected.length >= 2) {
+    const canvas = document.getElementById('compareChart'); 
+    if (!canvas) return;
+    destroyChart('compare');
+    const ctx = canvas.getContext('2d');
+    const modeLabel = (selected[0].mode || State.mode).toUpperCase();
+    
+    chartInstances.compare = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: selected.map(l => l.name),
+        datasets: [{ 
+          label: modeLabel, 
+          data: selected.map(l => l.total), 
+          backgroundColor: LAYER_COLORS.slice(0, selected.length), 
+          borderRadius: 6 
+        }]
+      },
+      options: { 
+        responsive: true, 
+        plugins: { legend: { display: false } }, 
+        scales: { y: { beginAtZero: true, title: { display: true, text: unit } }, x: { title: { display: true, text: 'Laminates' } } } 
+      }
+    });
+  }
 }
 
 function renderMaterials() {
   const q = State.searchQuery.toLowerCase();
   const filtered = DB.materials.filter(m => m.name.toLowerCase().includes(q));
-  const unit = getUnit();
   return `<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem;flex-wrap:wrap;gap:.4rem">
 <h2 style="margin:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/></svg>Materials <span class="badge badge-blue">${DB.materials.length}</span></h2>
 <div style="display:flex;gap:.35rem">
