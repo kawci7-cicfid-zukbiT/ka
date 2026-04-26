@@ -1,1 +1,1268 @@
-google.com, pub-8643763701588437, DIRECT, f08c47fec0942fa0
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WVTR/OTR Calculator Pro</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+:root{--primary:#2563eb;--primary-dark:#1d4ed8;--primary-light:#dbeafe;--success:#16a34a;--success-light:#dcfce7;--warning:#d97706;--warning-light:#fef3c7;--danger:#dc2626;--danger-light:#fee2e2;--purple:#7c3aed;--purple-light:#ede9fe;--bg:#f1f5f9;--card:#fff;--text:#0f172a;--text-light:#64748b;--border:#e2e8f0;--radius:12px;--shadow:0 1px 3px rgba(0,0,0,0.08);--shadow-lg:0 10px 25px rgba(0,0,0,0.1)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+.app{min-height:100vh;display:flex;flex-direction:column}
+header{background:linear-gradient(135deg,#0f172a,var(--primary),#38bdf8);color:#fff;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-lg)}
+.header-top{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.5rem;gap:1rem}
+.header-top h1{font-size:1.15rem;font-weight:700;display:flex;align-items:center;gap:.5rem;white-space:nowrap}
+.header-top h1 svg{width:22px;height:22px}
+.mode-toggle{display:flex;align-items:center;gap:.5rem;background:rgba(255,255,255,0.15);padding:.35rem .75rem;border-radius:20px;font-size:.78rem;white-space:nowrap}
+.mode-toggle label{cursor:pointer;display:flex;align-items:center;gap:.3rem}
+.mode-toggle svg{width:15px;height:15px}
+.nav-tabs{display:flex;gap:.1rem;padding:0 .5rem .5rem;overflow-x:auto;scrollbar-width:none}
+.nav-tabs::-webkit-scrollbar{display:none}
+.nav-tab{padding:.4rem .65rem;background:transparent;border:none;border-radius:8px;color:rgba(255,255,255,0.7);cursor:pointer;font-size:.72rem;font-weight:500;transition:all .2s;white-space:nowrap;display:flex;align-items:center;gap:.3rem}
+.nav-tab:hover{background:rgba(255,255,255,0.15);color:#fff}
+.nav-tab.active{background:rgba(255,255,255,0.95);color:var(--primary-dark)}
+.nav-tab svg{width:13px;height:13px}
+main{flex:1;padding:1.25rem;max-width:1400px;margin:0 auto;width:100%}
+.card{background:var(--card);border-radius:var(--radius);padding:1.25rem;box-shadow:var(--shadow);margin-bottom:1rem;border:1px solid var(--border)}
+.card h2{font-size:.95rem;font-weight:600;margin-bottom:.75rem;display:flex;align-items:center;gap:.4rem}
+.card h2 svg{width:16px;height:16px;color:var(--primary)}
+.grid{display:grid;gap:1rem}.grid-2{grid-template-columns:1fr}.grid-3{grid-template-columns:1fr}
+@media(min-width:768px){.grid-2{grid-template-columns:1fr 1fr}.grid-3{grid-template-columns:1fr 1fr 1fr}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;padding:.55rem .9rem;border:none;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .15s}
+.btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:var(--shadow-lg)}
+.btn:active:not(:disabled){transform:translateY(0)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover:not(:disabled){background:var(--primary-dark)}
+.btn-success{background:var(--success);color:#fff}.btn-warning{background:var(--warning);color:#fff}.btn-purple{background:var(--purple);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text)}
+.btn-outline:hover:not(:disabled){border-color:var(--primary);color:var(--primary)}
+.btn-sm{padding:.3rem .6rem;font-size:.72rem}.btn-full{width:100%}
+.form-group{margin-bottom:.7rem}
+.form-group label{display:block;font-size:.75rem;font-weight:600;margin-bottom:.15rem;color:var(--text-light)}
+.form-input{width:100%;padding:.45rem .7rem;border:1.5px solid var(--border);border-radius:8px;font-size:.82rem;transition:all .15s;background:#fff}
+.form-input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
+select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .7rem center;padding-right:2rem}
+.badge{display:inline-flex;align-items:center;padding:.1rem .4rem;border-radius:20px;font-size:.65rem;font-weight:600}
+.badge-blue{background:var(--primary-light);color:var(--primary)}.badge-green{background:var(--success-light);color:var(--success)}
+.badge-yellow{background:var(--warning-light);color:var(--warning)}.badge-red{background:var(--danger-light);color:var(--danger)}
+.badge-purple{background:var(--purple-light);color:var(--purple)}
+.layer-card{background:#f8fafc;border:1.5px solid var(--border);border-radius:10px;padding:.85rem;margin-bottom:.5rem;position:relative}
+.layer-badge{position:absolute;top:-9px;left:10px;background:var(--primary);color:#fff;font-size:.6rem;font-weight:700;padding:.08rem .45rem;border-radius:20px}
+.layer-grid{display:grid;grid-template-columns:1fr;gap:.45rem;margin-top:.3rem}
+@media(min-width:550px){.layer-grid{grid-template-columns:2fr 1fr 1fr auto}}
+.alert{padding:.65rem .85rem;border-radius:8px;font-size:.78rem;margin-bottom:.65rem;display:flex;gap:.45rem;align-items:flex-start}
+.alert-error{background:var(--danger-light);border:1px solid #fca5a5;color:var(--danger)}
+.alert-warning{background:var(--warning-light);border:1px solid #fcd34d;color:#92400e}
+.alert-success{background:var(--success-light);border:1px solid #86efac;color:#15803d}
+.alert-info{background:var(--primary-light);border:1px solid #93c5fd;color:#1e40af}
+.alert-icon{flex-shrink:0;width:14px;height:14px}
+.result-card{text-align:center;padding:1.25rem;background:linear-gradient(135deg,var(--primary-light),#e0f2fe);border:2px solid #93c5fd;border-radius:var(--radius)}
+.result-value{font-size:2rem;font-weight:800;color:var(--primary);line-height:1.2}
+.result-unit{font-size:.78rem;color:var(--text-light)}
+.result-detail{margin-top:.65rem;font-size:.74rem;color:var(--text-light);text-align:left}
+.result-detail div{padding:.25rem 0;border-bottom:1px solid #bae6fd}
+.result-detail div:last-child{border-bottom:none}
+.material-item{border:1.5px solid var(--border);border-radius:10px;overflow:hidden;transition:all .2s}
+.material-item:hover{box-shadow:var(--shadow-lg)}
+.mat-header{display:flex;align-items:center;justify-content:space-between;padding:.7rem .9rem;cursor:pointer;background:#fafbfc}
+.mat-header h3{font-size:.82rem;font-weight:600}.mat-header .chevron{transition:transform .2s;width:13px;height:13px;color:var(--text-light)}
+.material-item.expanded .mat-header .chevron{transform:rotate(180deg)}
+.mat-body{padding:.85rem;display:none}.material-item.expanded .mat-body{display:block}
+.mat-tags{display:flex;flex-wrap:wrap;gap:.35rem}
+.mat-tag{background:#f1f5f9;padding:.15rem .45rem;border-radius:6px;font-size:.68rem;color:var(--text-light)}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:200;padding:1rem}
+.modal-overlay.active{display:flex}
+.modal{background:var(--card);border-radius:var(--radius);width:100%;max-width:650px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:slideUp .2s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.15rem;border-bottom:1px solid var(--border)}
+.modal-header h2{font-size:.95rem;font-weight:600}
+.modal-body{padding:1.15rem}.modal-footer{display:flex;gap:.4rem;justify-content:flex-end;padding:.65rem 1.15rem;border-top:1px solid var(--border)}
+.modal-footer .btn{width:auto}
+.chart-container{position:relative;width:100%;max-width:600px;margin:0 auto;min-height:250px;background:#fafbfc;border-radius:8px;padding:.5rem}
+.empty-state{text-align:center;padding:2rem 1rem;color:var(--text-light)}
+.empty-state svg{width:36px;height:36px;margin-bottom:.65rem;opacity:.4}
+.hero{height:110px;position:relative;margin-bottom:1.15rem;overflow:hidden;border-radius:var(--radius);background:linear-gradient(135deg,#0c4a6e 0%,#0369a1 40%,#0ea5e9 100%)}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 70%,rgba(56,189,248,0.3),transparent 50%),radial-gradient(circle at 70% 30%,rgba(147,197,253,0.25),transparent 50%);animation:heroPulse 6s ease-in-out infinite}
+@keyframes heroPulse{0%,100%{opacity:.6;transform:scale(1)}50%{opacity:1;transform:scale(1.05)}}
+.hero-content{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:#fff;z-index:2}
+.hero-content h2{font-size:1.1rem;font-weight:700;text-shadow:0 2px 8px rgba(0,0,0,0.3)}
+.hero-content p{font-size:.72rem;opacity:.9}
+.home-btns{display:grid;grid-template-columns:1fr 1fr;gap:.55rem}
+@media(max-width:380px){.home-btns{grid-template-columns:1fr}}
+.reliability-meter{display:flex;align-items:center;gap:.45rem;padding:.45rem .65rem;border-radius:8px;font-size:.74rem;font-weight:600;margin:.45rem 0}
+.reliability-high{background:var(--success-light);color:var(--success)}
+.reliability-medium{background:var(--warning-light);color:var(--warning)}
+.reliability-low{background:var(--danger-light);color:var(--danger)}
+.wvtr-row-form{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.4rem;padding:.55rem 0;border-bottom:1px solid var(--border)}
+.wvtr-row-form:last-child{border-bottom:none}
+@media(max-width:600px){.wvtr-row-form{grid-template-columns:1fr}}
+.search-input{position:relative}.search-input svg{position:absolute;left:.6rem;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--text-light)}
+.search-input input{padding-left:1.8rem}
+.cond-table{width:100%;border-collapse:collapse;margin:.5rem 0;font-size:.72rem}
+.cond-table th{background:var(--primary-light);color:var(--primary);padding:.4rem .6rem;text-align:left;font-weight:600}
+.cond-table td{padding:.35rem .6rem;border-bottom:1px solid var(--border)}
+.cond-table tr:last-child td{border-bottom:none}
+.cond-table tr:hover td{background:#f8fafc}
+.fade-in{animation:fadeIn .3s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.sustainability-flag{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .5rem;border-radius:6px;font-size:.7rem;font-weight:600}
+.sustainability-flag.yes{background:var(--success-light);color:var(--success)}
+.sustainability-flag.no{background:var(--danger-light);color:var(--danger)}
+.import-area{border:2px dashed var(--border);border-radius:8px;padding:1rem;text-align:center;cursor:pointer;transition:border-color .2s}
+.import-area:hover{border-color:var(--primary)}
+.import-area textarea{width:100%;min-height:100px;border:1px solid var(--border);border-radius:6px;padding:.5rem;font-family:monospace;font-size:.75rem;resize:vertical}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+<div class="header-top">
+<h1>
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg>
+WVTR/OTR Pro
+</h1>
+<div class="mode-toggle">
+<label><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg><input type="radio" name="mode" value="wvtr" checked onchange="setMode('wvtr')">WVTR</label>
+<label><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8" stroke-dasharray="4 3"/></svg><input type="radio" name="mode" value="otr" onchange="setMode('otr')">OTR</label>
+</div>
+<button class="btn btn-sm btn-danger" onclick="clearProject()" title="Clear current calculation">🗑️ New</button>
+</div>
+<div class="nav-tabs" id="nav-tabs"></div>
+</header>
+<main id="app-content"></main>
+</div>
+<div class="modal-overlay" id="modal-overlay"><div class="modal" id="modal"><div class="modal-header"><h2 id="modal-title"></h2><button class="btn btn-sm btn-outline" onclick="Modal.close()">✕</button></div><div class="modal-body" id="modal-body"></div><div class="modal-footer" id="modal-footer"></div></div></div>
+<script>
+const Engine={
+  R_GAS:8.314,
+  mode:'wvtr',
+  validateData(mat){
+    const e=[];
+    const vals=this.mode==='wvtr'?mat.wvtrValues:mat.otrValues;
+    if(!vals?.length)e.push(`No ${this.mode.toUpperCase()} data`);
+    if(!mat.validConditions?.length)e.push('No test conditions');
+    if(vals&&mat.validConditions&&vals.length!==mat.validConditions.length)e.push(`${this.mode.toUpperCase()} count != conditions count`);
+    for(let i=0;i<(vals||[]).length;i++){
+      const w=vals[i];
+      if(!w||w.value==null||isNaN(w.value))e.push(`Row ${i+1}: ${this.mode.toUpperCase()} null/NaN`);
+      else if(w.value<0)e.push(`Row ${i+1}: ${this.mode.toUpperCase()} negative`);
+      if(!w||w.thickness==null||isNaN(w.thickness))e.push(`Row ${i+1}: Thickness null/NaN`);
+      else if(w.thickness<=0)e.push(`Row ${i+1}: Thickness must be > 0`);
+    }
+    return e;
+  },
+  getValues(mat){return this.mode==='wvtr'?mat.wvtrValues:mat.otrValues;},
+  getUnits(){return this.mode==='wvtr'?{value:'g/m²·day',label:'WVTR'}:{value:'cc/m²·day',label:'OTR'};},
+  findCommonConditions(layers,materials){
+    const mats=layers.filter(l=>l.mid!==null).map(l=>materials.find(m=>m.id===l.mid)).filter(Boolean);
+    if(!mats.length)return{conditions:[],error:null,warning:null,matInfo:null};
+    const allE=mats.flatMap(m=>Engine.validateData(m));
+    if(allE.length)return{conditions:[],error:allE.join('. '),warning:null,matInfo:null};
+    let common=[...mats[0].validConditions];
+    for(let i=1;i<mats.length;i++){
+      const nc=mats[i].validConditions;
+      common=common.filter(c=>nc.some(n=>Math.abs(n.temperature-c.temperature)<0.01&&Math.abs(n.humidity-c.humidity)<0.01));
+    }
+    const matInfo=mats.map(m=>({name:m.name,conditions:m.validConditions.map(c=>`${c.temperature}°C/${c.humidity}%`)}));
+    if(!common.length)return{conditions:[],error:`No common test conditions. Available per material:`,warning:null,matInfo};
+    return{conditions:common,error:null,warning:null,matInfo};
+  },
+  calcLayerResistance(layer,material,condition){
+    const vals=this.getValues(material);
+    const idx=material.validConditions.findIndex(c=>Math.abs(c.temperature-condition.temperature)<0.01&&Math.abs(c.humidity-condition.humidity)<0.01);
+    if(idx<0)return{resistance:null,error:'Condition not found'};
+    const wd=vals[idx];
+    if(!wd||wd.value==null||wd.thickness==null)return{resistance:null,error:'Missing data'};
+    if(wd.value<=0.00001)return{resistance:Infinity,transmissionAtThickness:0,isBarrier:true};
+    const product=wd.value*wd.thickness;
+    const resistance=layer.thick/product;
+    return{resistance,transmissionAtThickness:1/resistance,isBarrier:false};
+  },
+  calcTotal(layers,materials,condition){
+    const results=[];let totalR=0;
+    for(let i=0;i<layers.length;i++){
+      const layer=layers[i];
+      if(layer.mid===null||layer.thick<=0)return{error:'All layers must have material and thickness > 0'};
+      const mat=materials.find(m=>m.id===layer.mid);
+      if(!mat)return{error:`Material not found for layer ${i+1}`};
+      const res=Engine.calcLayerResistance(layer,mat,condition);
+      if(res.error)return{error:res.error};
+      if(res.resistance===null)return{error:'Calculation failed'};
+      results.push({layerIndex:i,materialName:mat.name,thickness:layer.thick,resistance:res.resistance,transmissionAtThickness:res.transmissionAtThickness,isBarrier:res.isBarrier});
+      if(res.resistance===Infinity)return{total:0,layers:results,isBarrier:true,error:null};
+      totalR+=res.resistance;
+    }
+    const total=totalR>0?1/totalR:0;
+    results.forEach(r=>{r.resistancePct=totalR>0?(r.resistance/totalR)*100:0;});
+    return{total,layers:results,totalResistance:totalR,isBarrier:false,error:null};
+  },
+  validateArrhenius(mat){
+    const vals=this.getValues(mat);
+    const e=this.validateData(mat);if(e.length)return{valid:false,error:e.join('. ')};
+    if(vals.length<2)return{valid:false,error:'Need ≥2 data points'};
+    if(new Set(mat.validConditions.map(c=>c.temperature)).size<2)return{valid:false,error:'Need ≥2 different temperatures'};
+    const hums=mat.validConditions.map(c=>c.humidity);
+    if(Math.max(...hums)-Math.min(...hums)>5)return{valid:false,error:'Humidity must be same (max 5% diff)'};
+    for(const w of vals)if(w.value<=0)return{valid:false,error:'All values must be > 0'};
+    return{valid:true};
+  },
+  calcArrheniusParams(mat){
+    const v=this.validateArrhenius(mat);
+    if(!v.valid)return{valid:false,error:v.error};
+    const vals=this.getValues(mat);
+    const R=Engine.R_GAS;
+    const dps=mat.validConditions.map((c,i)=>({T_K:c.temperature+273.15,trans:vals[i].value})).filter(d=>d.trans>0);
+    let sx=0,sy=0,sxy=0,sx2=0;
+    for(const dp of dps){const x=1/dp.T_K,y=Math.log(dp.trans);sx+=x;sy+=y;sxy+=x*y;sx2+=x*x;}
+    const slope=(dps.length*sxy-sx*sy)/(dps.length*sx2-sx*sx);
+    const intercept=(sy-slope*sx)/dps.length;
+    const Ea=-slope*R;const A=Math.exp(intercept);
+    const ym=dps.reduce((s,d)=>s+Math.log(d.trans),0)/dps.length;
+    let ssT=0,ssR=0;
+    for(const dp of dps){const ya=Math.log(dp.trans),yp=slope*(1/dp.T_K)+intercept;ssT+=(ya-ym)**2;ssR+=(ya-yp)**2;}
+    return{valid:true,Ea,A,rSquared:ssT>0?1-ssR/ssT:1,dataPoints:dps};
+  },
+  predict(A,Ea,tempC){return A*Math.exp(-Ea/(Engine.R_GAS*(tempC+273.15)));},
+  applyArrhenius(mat,targetTempC){
+    const p=this.calcArrheniusParams(mat);
+    if(!p.valid)return{error:p.error};
+    const pred=this.predict(p.A,p.Ea,targetTempC);
+    const minT=Math.min(...p.dataPoints.map(d=>d.T_K))-273.15;
+    const maxT=Math.max(...p.dataPoints.map(d=>d.T_K))-273.15;
+    return{Ea:p.Ea,A:p.A,predicted:pred,targetTempC,minTemp:minT,maxTemp:maxT,isExtrapolation:targetTempC<minT-1||targetTempC>maxT+1,dataPoints:p.dataPoints,rSquared:p.rSquared};
+  },
+  calcSensitivityCurve(layers,materials,condition,targetLayerIdx,tMin,tMax,steps){
+    const points=[];
+    const targetLayer=layers[targetLayerIdx];
+    if(!targetLayer||targetLayer.mid===null)return{error:'Invalid target layer'};
+    const mat=materials.find(m=>m.id===targetLayer.mid);
+    if(!mat)return{error:'Material not found'};
+    const step=(tMax-tMin)/steps;
+    for(let t=tMin;t<=tMax;t+=step){
+      const testLayers=layers.map((l,i)=>i===targetLayerIdx?{...l,thick:t}:l);
+      const res=this.calcTotal(testLayers,materials,condition);
+      if(!res.error)points.push({thickness:t,total:res.total});
+    }
+    return{points,error:null};
+  },
+  optimizeForTarget(layers,materials,condition,targetValue,barrierLayerIdx){
+    const barrier=layers[barrierLayerIdx];
+    if(!barrier||barrier.mid===null)return{error:'Invalid barrier layer'};
+    const mat=materials.find(m=>m.id===barrier.mid);
+    if(!mat)return{error:'Material not found'};
+    const vals=this.getValues(mat);
+    const condIdx=mat.validConditions.findIndex(c=>Math.abs(c.temperature-condition.temperature)<0.01&&Math.abs(c.humidity-condition.humidity)<0.01);
+    if(condIdx<0)return{error:'Condition not found'};
+    const ref=vals[condIdx];
+    if(ref.value<=0)return{error:'Reference value is 0'};
+    let otherR=0;
+    for(let i=0;i<layers.length;i++){
+      if(i===barrierLayerIdx)continue;
+      const l=layers[i];if(l.mid===null||l.thick<=0)continue;
+      const m=materials.find(m=>m.id===l.mid);if(!m)continue;
+      const res=this.calcLayerResistance(l,m,condition);
+      if(res.resistance!==null&&res.resistance!==Infinity)otherR+=res.resistance;
+    }
+    const requiredTotalR=1/targetValue;
+    const barrierR=requiredTotalR-otherR;
+    if(barrierR<=0)return{thickness:0.1,error:'Target too high - other layers already sufficient'};
+    const product=ref.value*ref.thickness;
+    const thickness=barrierR*product;
+    return{thickness:Math.max(thickness,0.1),targetResistance:barrierR,error:null};
+  },
+  checkRecyclability(layers,materials){
+    const families=new Set();
+    layers.forEach(l=>{if(l.mid===null)return;const mat=materials.find(m=>m.id===l.mid);if(!mat)return;if(mat.family)families.add(mat.family);});
+    return{recyclable:families.size<=1&&families.size>0,families:[...families],monoStructure:families.size===1};
+  }
+};
+
+const POLYMER_FAMILIES={PE:['LDPE','HDPE','LLDPE','Polyethylene'],PP:['PP','BOPP','Polypropylene','CPP'],PET:['PET','PETG','Polyester'],PA:['Nylon 6','Nylon 6.6','Polyamide','PA','MXD6'],EVOH:['EVOH'],PVC:['PVC','PVDC'],PU:['Polyurethane','TPU'],PS:['PS','EPS','XPS'],PC:['Polycarbonate'],AL:['Aluminum','Alu'],Paper:['Paper','Kraft','Cardboard'],Other:['Other']};
+function getFamily(name){const n=name.toLowerCase();for(const[family,keywords]of Object.entries(POLYMER_FAMILIES)){if(keywords.some(k=>n.includes(k.toLowerCase())))return family;}return'Other';}
+
+const DEFAULT_MATERIALS=[
+  {name:"PET (multi-temp)",family:"PET",wvtrValues:[{value:1.0,thickness:500},{value:2.0,thickness:500},{value:4.0,thickness:500}],otrValues:[{value:150,thickness:500},{value:200,thickness:500},{value:350,thickness:500}],validConditions:[{temperature:23,humidity:50},{temperature:38,humidity:50},{temperature:50,humidity:50}]},
+  {name:"Nylon 6 (multi-temp)",family:"PA",wvtrValues:[{value:10.0,thickness:100},{value:25.0,thickness:100},{value:50.0,thickness:100}],otrValues:[{value:30,thickness:100},{value:60,thickness:100},{value:120,thickness:100}],validConditions:[{temperature:23,humidity:60},{temperature:38,humidity:60},{temperature:50,humidity:60}]},
+  {name:"LDPE (multi-temp)",family:"PE",wvtrValues:[{value:0.8,thickness:100},{value:1.5,thickness:100},{value:2.8,thickness:100}],otrValues:[{value:800,thickness:100},{value:1200,thickness:100},{value:2000,thickness:100}],validConditions:[{temperature:20,humidity:50},{temperature:30,humidity:50},{temperature:40,humidity:50}]},
+  {name:"EVOH (multi-temp)",family:"EVOH",wvtrValues:[{value:0.05,thickness:100},{value:0.15,thickness:100},{value:0.40,thickness:100}],otrValues:[{value:0.5,thickness:100},{value:1.5,thickness:100},{value:4.0,thickness:100}],validConditions:[{temperature:23,humidity:50},{temperature:38,humidity:50},{temperature:50,humidity:50}]},
+  {name:"PP (multi-temp)",family:"PP",wvtrValues:[{value:0.5,thickness:50},{value:1.0,thickness:50},{value:2.0,thickness:50}],otrValues:[{value:500,thickness:50},{value:800,thickness:50},{value:1500,thickness:50}],validConditions:[{temperature:25,humidity:60},{temperature:38,humidity:60},{temperature:50,humidity:60}]},
+  {name:"Aluminum",family:"AL",wvtrValues:[{value:0.01,thickness:20}],otrValues:[{value:0.005,thickness:20}],validConditions:[{temperature:30,humidity:60}]},
+  {name:"BOPP",family:"PP",wvtrValues:[{value:0.8,thickness:50}],otrValues:[{value:500,thickness:50}],validConditions:[{temperature:30,humidity:60}]},
+  {name:"Rigid PVC",family:"PVC",wvtrValues:[{value:1.5,thickness:500}],otrValues:[{value:200,thickness:500}],validConditions:[{temperature:25,humidity:50}]},
+  {name:"HDPE",family:"PE",wvtrValues:[{value:0.5,thickness:1000}],otrValues:[{value:400,thickness:1000}],validConditions:[{temperature:38,humidity:50}]},
+  {name:"PLA",family:"Other",wvtrValues:[{value:5.0,thickness:300}],otrValues:[{value:100,thickness:300}],validConditions:[{temperature:25,humidity:50}]},
+  {name:"Kraft Paper",family:"Paper",wvtrValues:[{value:500.0,thickness:300}],otrValues:[{value:50000,thickness:300}],validConditions:[{temperature:23,humidity:50}]},
+  {name:"PVDC",family:"PVC",wvtrValues:[{value:0.4,thickness:50}],otrValues:[{value:5,thickness:50}],validConditions:[{temperature:38,humidity:90}]},
+  {name:"Polyurethane",family:"PU",wvtrValues:[{value:0.3,thickness:200}],otrValues:[{value:100,thickness:200}],validConditions:[{temperature:30,humidity:60}]},
+  {name:"Polycarbonate",family:"PC",wvtrValues:[{value:0.4,thickness:1000}],otrValues:[{value:80,thickness:1000}],validConditions:[{temperature:25,humidity:50}]}
+].map((m,i)=>({...m,id:i}));
+
+const DB={
+  materials:[],laminates:[],version:'3.0',
+  load(){
+    this.materials=DEFAULT_MATERIALS.map(m=>({...m}));
+    try{
+      const savedMats=localStorage.getItem('wvtr_mats_v3');
+      if(savedMats){
+        const userMats=JSON.parse(savedMats);
+        const defaultIds=new Set(DEFAULT_MATERIALS.map(m=>m.id));
+        userMats.forEach(um=>{
+          if(!defaultIds.has(um.id)){
+            um.id=Math.max(...this.materials.map(m=>m.id),0)+1;
+            this.materials.push(um);
+          }
+        });
+      }
+      const savedLams=localStorage.getItem('wvtr_lams_v3');
+      if(savedLams)this.laminates=JSON.parse(savedLams);
+    }catch(e){console.warn('Load error:',e);}
+  },
+  save(){
+    try{
+      const defaultIds=new Set(DEFAULT_MATERIALS.map(m=>m.id));
+      const userMats=this.materials.filter(m=>!defaultIds.has(m.id));
+      localStorage.setItem('wvtr_mats_v3',JSON.stringify(userMats));
+      localStorage.setItem('wvtr_lams_v3',JSON.stringify(this.laminates));
+    }catch(e){console.warn('Save error:',e);}
+  },
+  saveState(state){
+    try{
+      const stateData={layers:state.layers,selCond:state.selCond,mode:state.mode,timestamp:Date.now()};
+      localStorage.setItem('wvtr_state_v3',JSON.stringify(stateData));
+    }catch(e){}
+  },
+  loadState(){
+    try{const s=localStorage.getItem('wvtr_state_v3');if(s)return JSON.parse(s);}catch(e){}
+    return null;
+  },
+  addMat(m){m.id=Math.max(...this.materials.map(x=>x.id),0)+1;m.family=getFamily(m.name);this.materials.push(m);this.save();return m.id;},
+  updateMat(id,m){const i=this.materials.findIndex(x=>x.id===id);if(i>=0){m.family=getFamily(m.name);this.materials[i]={...m,id};this.save();}},
+  deleteMat(id){this.materials=this.materials.filter(x=>x.id!==id);this.save();},
+  addLam(l){l.id=Date.now();this.laminates.push(l);this.save();return l.id;},
+  deleteLam(id){this.laminates=this.laminates.filter(x=>x.id!==id);this.save();},
+  importMats(mats){mats.forEach(m=>{m.id=Math.max(...this.materials.map(x=>x.id),0)+1;m.family=getFamily(m.name);this.materials.push(m);});this.save();},
+  exportAll(){
+    return JSON.stringify({materials:this.materials,laminates:this.laminates,version:this.version,exportDate:new Date().toISOString()});
+  },
+  importAll(data){
+    try{
+      const parsed=JSON.parse(data);
+      if(parsed.materials)this.materials=parsed.materials;
+      if(parsed.laminates)this.laminates=parsed.laminates;
+      this.save();
+      return true;
+    }catch(e){return false;}
+  }
+};
+
+const State={
+  tab:'home',
+  layers:[{mid:null,thick:0}],
+  selCond:null, // {temperature, humidity}
+  laminateName:'',
+  autoCalc:false,
+  calcResult:null,calcError:null,
+  showSaveConfirm:false,
+  searchQuery:'',
+  mode:'wvtr',
+  sensLayerIdx:0,
+  targetValue:0.5,
+  compareIds:[]
+};
+
+const LAYER_COLORS=['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899'];
+const TABS=[
+  {id:'home',label:'Home',svg:'<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>'},
+  {id:'calc',label:'Calculator',svg:'<rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/>'},
+  {id:'arrhenius',label:'Arrhenius',svg:'<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>'},
+  {id:'sensitivity',label:'Sensitivity',svg:'<path d="M2 12h4l3-9 4 18 3-9h4"/>'},
+  {id:'compare',label:'Compare',svg:'<rect x="2" y="2" width="9" height="9"/><rect x="13" y="2" width="9" height="9"/><rect x="2" y="13" width="9" height="9"/><rect x="13" y="13" width="9" height="9"/>'},
+  {id:'materials',label:'Materials',svg:'<path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>'},
+  {id:'laminates',label:'Laminates',svg:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>'}
+];
+
+let chartInstances={};
+function destroyChart(id){if(chartInstances[id]){chartInstances[id].destroy();delete chartInstances[id];}}
+
+function renderNav(){
+  document.getElementById('nav-tabs').innerHTML=TABS.map(t=>`<button class="nav-tab${State.tab===t.id?' active':''}" data-tab="${t.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${t.svg}</svg>${t.label}</button>`).join('');
+  document.querySelectorAll('.nav-tab').forEach(btn=>{btn.onclick=()=>{State.tab=btn.dataset.tab;renderNav();renderContent();postNavRender();};});
+}
+
+function setMode(mode){
+  State.mode=mode;Engine.mode=mode;
+  document.querySelectorAll('input[name="mode"]').forEach(r=>r.checked=r.value===mode);
+  DB.saveState(State);
+  renderNav();renderContent();postNavRender();
+}
+
+function postNavRender(){
+  setTimeout(()=>{
+    if(State.tab==='calc'&&State.calcResult)postCalcRender();
+    if(State.tab==='arrhenius')postArrheniusRender();
+    if(State.tab==='sensitivity')postSensitivityRender();
+    if(State.tab==='compare')postCompareRender();
+    if(State.tab==='laminates'&&DB.laminates.length>=2)drawLamChart();
+  },150);
+}
+
+function renderContent(){
+  const c=document.getElementById('app-content');
+  switch(State.tab){
+    case'home':c.innerHTML=renderHome();break;
+    case'calc':c.innerHTML=renderCalc();break;
+    case'arrhenius':c.innerHTML=renderArrhenius();break;
+    case'sensitivity':c.innerHTML=renderSensitivity();break;
+    case'compare':c.innerHTML=renderCompare();break;
+    case'materials':c.innerHTML=renderMaterials();break;
+    case'laminates':c.innerHTML=renderLaminates();break;
+  }
+}
+
+function render(){renderNav();renderContent();}
+function nav(tab){State.tab=tab;renderNav();renderContent();postNavRender();}
+
+function clearProject(){
+  if(!confirm('Clear current calculation? (Materials and saved laminates will be kept)'))return;
+  State.layers=[{mid:null,thick:0}];State.selCond=null;State.laminateName='';State.calcResult=null;State.calcError=null;
+  DB.saveState(State);render();
+}
+
+function renderHome(){
+  return`<div class="hero"><div class="hero-content"><h2>WVTR/OTR Calculator Pro</h2><p>Resistance-based multilayer analysis from experimental data</p></div></div>
+<div class="card"><div class="home-btns">
+<button class="btn btn-primary" onclick="showMatModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Add Material</button>
+<button class="btn btn-warning" onclick="nav('materials')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/></svg>Materials (${DB.materials.length})</button>
+<button class="btn btn-purple" onclick="nav('laminates')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/></svg>Laminates (${DB.laminates.length})</button>
+<button class="btn btn-success" onclick="nav('calc')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/></svg>Calculator</button>
+<button class="btn btn-outline" onclick="nav('arrhenius')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Arrhenius</button>
+<button class="btn btn-outline" onclick="nav('sensitivity')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h4l3-9 4 18 3-9h4"/></svg>Sensitivity</button>
+<button class="btn btn-outline" onclick="nav('compare')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="9" height="9"/><rect x="13" y="2" width="9" height="9"/></svg>Compare</button>
+</div></div>`;
+}
+
+function rStr(v){return v===Infinity?'∞':v==null?'-':v.toFixed(4);}
+function getUnit(){return Engine.getUnits().value;}
+function getLabel(){return Engine.getUnits().label;}
+
+function renderCalc(){
+  const common=Engine.findCommonConditions(State.layers,DB.materials);
+  const hasMats=State.layers.some(l=>l.mid!==null);
+  
+  let condHTML='';
+  if(!hasMats) condHTML=`<div class="alert alert-info"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Add at least one material with thickness to see conditions</div>`;
+  else if(common.error){
+    condHTML=`<div class="alert alert-error"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>${common.error}</div>`;
+    if(common.matInfo){
+      condHTML+=`<div class="alert alert-warning"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg><div style="width:100%"><strong>Available conditions per material:</strong><table class="cond-table"><thead><tr><th>Material</th><th>Conditions</th></tr></thead><tbody>${common.matInfo.map(m=>`<tr><td><strong>${m.name}</strong></td><td>${m.conditions.join(', ')}</td></tr>`).join('')}</tbody></table></div></div>`;
+    }
+  }else{
+    const conditions=common.conditions;
+    condHTML=`<div class="form-group"><label>Test Conditions (only valid combinations shown)</label>
+<select class="form-input" id="sel-cond" onchange="onCondSelect()">
+<option value="">Select temperature/humidity...</option>
+${conditions.map(c=>`<option value="${c.temperature}|${c.humidity}"${State.selCond&&State.selCond.temperature===c.temperature&&State.selCond.humidity===c.humidity?' selected':''}>${c.temperature}°C / ${c.humidity}%</option>`).join('')}
+</select></div>`;
+  }
+  
+  const layersHTML=State.layers.map((l,i)=>{
+    const res=State.calcResult?.layers?.[i];
+    const mat=l.mid!==null?DB.materials.find(m=>m.id===l.mid):null;
+    return`<div class="layer-card"><span class="layer-badge">LAYER ${i+1}</span>
+<div class="layer-grid">
+<div class="form-group" style="margin:0"><label>Material</label><select class="form-input" onchange="onLayerChange(${i},'mid',this.value)"><option value="">Select...</option>${DB.materials.map(m=>`<option value="${m.id}"${l.mid===m.id?' selected':''}>${m.name}</option>`).join('')}</select></div>
+<div class="form-group" style="margin:0"><label>Thickness (µm)</label><input type="number" step="any" class="form-input" value="${l.thick||''}" placeholder="0" onchange="onLayerChange(${i},'thick',this.value)"></div>
+<div style="display:flex;align-items:center;gap:.3rem">
+${i>0?`<button class="btn btn-sm btn-danger" onclick="rmLayer(${i})">✕</button>`:''}
+${res&&res.transmissionAtThickness>0?`<span class="badge badge-green">${res.transmissionAtThickness.toFixed(3)}</span>`:''}
+${res?.isBarrier?`<span class="badge badge-purple">BARRIER</span>`:''}
+</div></div>
+${res?`<div style="margin-top:.35rem;font-size:.68rem;color:var(--text-light)">R: ${rStr(res.resistance)} · ${res.resistancePct.toFixed(1)}%</div>`:''}
+</div>`;}).join('');
+  
+  const selectedCond=State.selCond?`${State.selCond.temperature}°C/${State.selCond.humidity}%`:null;
+  const canCalc=!!selectedCond&&State.layers.every(l=>l.mid!==null&&l.thick>0);
+  const hasResult=State.calcResult&&!State.calcResult.error&&State.calcResult.total>0;
+  
+  let resultHTML='';
+  if(State.calcError) resultHTML=`<div class="alert alert-error"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/></svg>${State.calcError}</div>`;
+  else if(hasResult){
+    resultHTML=`<div class="result-card fade-in"><div class="result-value">${State.calcResult.total.toFixed(6)}</div><div class="result-unit">${getUnit()}</div></div>
+<div class="result-detail">${State.calcResult.layers.map(r=>`<div><strong>${r.materialName}</strong> (${r.thickness}µm): ${getLabel()}=${r.transmissionAtThickness.toFixed(4)} · R=${rStr(r.resistance)} · ${r.resistancePct.toFixed(1)}%</div>`).join('')}<div style="padding-top:.25rem;border-top:2px solid #93c5fd;margin-top:.25rem"><strong>Total R:</strong> ${rStr(State.calcResult.totalResistance)} day·m²/g</div></div>`;
+  }
+  
+  return`<div class="grid grid-2">
+<div>
+<div class="card"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>Laminate Structure</h2>
+${layersHTML}
+<button class="btn btn-outline btn-full" onclick="addLayer()"${State.layers.length&&State.layers[State.layers.length-1].mid===null?' disabled':''}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Layer</button>
+</div>
+<div class="card"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>Test Conditions</h2>
+${condHTML}
+${selectedCond?`<p style="font-size:.75rem;color:var(--text-light);margin-top:.5rem">Selected: <strong>${selectedCond}</strong></p>`:''}
+<div style="display:flex;align-items:center;gap:.4rem;margin:.5rem 0">
+<div onclick="toggleAutoCalc()" style="width:36px;height:20px;background:${State.autoCalc?'var(--primary)':'var(--border)'};border-radius:10px;position:relative;cursor:pointer;transition:background .2s">
+<div style="position:absolute;top:2px;${State.autoCalc?'right:2px':'left:2px'};width:16px;height:16px;background:#fff;border-radius:50%;transition:left .2s"></div>
+</div><span style="font-size:.75rem;color:var(--text-light)">Auto-calculate</span>
+</div>
+<button class="btn btn-danger btn-full" onclick="doCalc()"${!canCalc?' disabled':''}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4,14 10,14 10,20 14,20 14,14 20,14 20,10 14,10 14,4 10,4 10,10 4,10"/></svg>Calculate ${getLabel()}</button>
+</div>
+</div>
+<div>
+<div class="card"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/></svg>Result</h2>
+${resultHTML||'<p style="color:var(--text-light);font-size:.8rem;text-align:center;padding:1.5rem">Configure layers & conditions, then calculate</p>'}
+</div>
+${hasResult?`
+<div class="card"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>${getLabel()} vs Temperature</h2>
+<div class="chart-container"><canvas id="lamCurveChart"></canvas></div>
+<div id="lamCurveLegend" style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.5rem;justify-content:center"></div>
+</div>
+<div class="card"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/></svg>Save Laminate</h2>
+<div style="display:flex;gap:.4rem;align-items:flex-end">
+<div class="form-group" style="flex:1;margin:0"><label>Name</label><input type="text" class="form-input" id="lam-name" value="${State.laminateName}" placeholder="Laminate name..." oninput="State.laminateName=this.value;updateSaveBtn()"></div>
+<button class="btn btn-primary" id="save-btn" onclick="doSaveLam()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/></svg>Save</button>
+</div>
+<div id="save-feedback"></div>
+</div>`:''}
+</div></div>`;
+}
+
+function updateSaveBtn(){const btn=document.getElementById('save-btn');if(btn)btn.disabled=State.laminateName.trim()==='';}
+
+function onCondSelect(){
+  const sel=document.getElementById('sel-cond');
+  if(sel&&sel.value){
+    const parts=sel.value.split('|');
+    State.selCond={temperature:parseFloat(parts[0]),humidity:parseFloat(parts[1])};
+  }else{State.selCond=null;}
+  DB.saveState(State);
+  if(State.autoCalc)doCalcSilent();
+  else renderContent();
+}
+
+function onLayerChange(i,field,val){
+  if(field==='mid')State.layers[i].mid=val!==''?parseFloat(val):null;else State.layers[i].thick=parseFloat(val)||0;
+  DB.saveState(State);
+  if(State.autoCalc)doCalcSilent();else renderContent();
+}
+
+function addLayer(){State.layers.push({mid:null,thick:0});DB.saveState(State);renderContent();}
+function rmLayer(i){if(State.layers.length<=1)return;State.layers.splice(i,1);DB.saveState(State);renderContent();}
+function toggleAutoCalc(){State.autoCalc=!State.autoCalc;renderContent();}
+
+function doCalc(){
+  if(!State.selCond){State.calcError='Select test conditions first';State.calcResult=null;renderContent();return;}
+  if(!State.layers.every(l=>l.mid!==null&&l.thick>0)){State.calcError='Complete all layers';State.calcResult=null;renderContent();return;}
+  const common=Engine.findCommonConditions(State.layers,DB.materials);
+  if(common.error){State.calcError=common.error;State.calcResult=null;renderContent();return;}
+  const result=Engine.calcTotal(State.layers,DB.materials,State.selCond);
+  if(result.error){State.calcError=result.error;State.calcResult=null;}else{State.calcResult=result;State.calcError=null;}
+  renderContent();setTimeout(()=>{if(State.calcResult&&!State.calcResult.error)postCalcRender();},150);
+}
+
+function doCalcSilent(){
+  if(!State.selCond)return;
+  if(!State.layers.every(l=>l.mid!==null&&l.thick>0))return;
+  const common=Engine.findCommonConditions(State.layers,DB.materials);
+  if(common.error)return;
+  const result=Engine.calcTotal(State.layers,DB.materials,State.selCond);
+  if(!result.error){State.calcResult=result;State.calcError=null;renderContent();setTimeout(()=>postCalcRender(),150);}
+}
+
+function postCalcRender(){drawBarChart();drawLaminateCurveChart();}
+
+function doSaveLam(){
+  const name=State.laminateName.trim();
+  if(!name){alert('Enter a name');return;}
+  if(!State.calcResult||State.calcResult.total<=0){alert('Calculate first');return;}
+  const tt=State.layers.reduce((s,l)=>s+(l.thick||0),0);
+  const rec=Engine.checkRecyclability(State.layers,DB.materials);
+  DB.addLam({name,total:State.calcResult.total,totalThickness:tt,humidity:State.selCond.humidity,temperature:State.selCond.temperature,mode:State.mode,recyclable:rec.recyclable,monoStructure:rec.monoStructure,layerCount:State.layers.length,layers:JSON.parse(JSON.stringify(State.layers))});
+  State.laminateName='';
+  const nameEl=document.getElementById('lam-name');if(nameEl)nameEl.value='';
+  const btn=document.getElementById('save-btn');if(btn)btn.disabled=true;
+  const fb=document.getElementById('save-feedback');
+  if(fb)fb.innerHTML='<div class="alert alert-success" style="margin-top:.5rem">✓ Laminate saved!</div>';
+  setTimeout(()=>{const f=document.getElementById('save-feedback');if(f)f.innerHTML='';},3000);
+}
+
+// ============================================
+// CHARTS
+// ============================================
+function drawBarChart(){
+  const canvas=document.getElementById('barChart');
+  if(!canvas||!State.calcResult?.layers)return;
+  destroyChart('bar');
+  const ctx=canvas.getContext('2d');
+  chartInstances.bar=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:State.calcResult.layers.map((l,i)=>`L${i+1} ${l.materialName}`),
+      datasets:[{
+        label:'Resistance %',
+        data:State.calcResult.layers.map(l=>parseFloat(l.resistancePct.toFixed(1))),
+        backgroundColor:LAYER_COLORS.slice(0,State.calcResult.layers.length),
+        borderRadius:6
+      }]
+    },
+    options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'% of total resistance'}},x:{title:{display:true,text:'Layers'}}}}
+  });
+}
+
+function drawLaminateCurveChart(){
+  const canvas=document.getElementById('lamCurveChart');
+  if(!canvas||!State.calcResult)return;
+  destroyChart('lamCurve');
+  const unit=getUnit();
+  const datasets=[];
+  const allTemps=[];const allVals=[];
+  
+  State.layers.forEach((layer,i)=>{
+    if(layer.mid===null||layer.thick<=0)return;
+    const mat=DB.materials.find(m=>m.id===layer.mid);
+    if(!mat)return;
+    const color=LAYER_COLORS[i%LAYER_COLORS.length];
+    const vals=Engine.getValues(mat);
+    const dataPoints=[];
+    vals.forEach((w,j)=>{
+      const cond=mat.validConditions[j];
+      if(cond){
+        const product=w.value*w.thickness;
+        const resistance=layer.thick/product;
+        const trans=resistance>0?1/resistance:0;
+        dataPoints.push({x:cond.temperature,y:trans});
+        allTemps.push(cond.temperature);allVals.push(trans);
+      }
+    });
+    datasets.push({
+      label:`${mat.name}`,
+      data:dataPoints,
+      borderColor:color,backgroundColor:color,borderWidth:2,showLine:true,type:'scatter',order:2,pointRadius:5,pointHoverRadius:7
+    });
+    
+    const p=Engine.calcArrheniusParams(mat);
+    if(p.valid){
+      const curveData=[];
+      const tMin=Math.min(...mat.validConditions.map(c=>c.temperature))-10;
+      const tMax=Math.max(...mat.validConditions.map(c=>c.temperature))+10;
+      for(let t=tMin;t<=tMax;t+=0.5){
+        const transMat=Engine.predict(p.A,p.Ea,t);
+        const product=transMat*Engine.getValues(mat)[0].thickness;
+        const resistance=layer.thick/product;
+        const trans=resistance>0?1/resistance:0;
+        curveData.push({x:t,y:trans});
+        allTemps.push(t);allVals.push(trans);
+      }
+      datasets.push({
+        label:`${mat.name} (fit)`,
+        data:curveData,
+        borderColor:color,backgroundColor:'transparent',borderWidth:1.5,borderDash:[5,3],pointRadius:0,type:'line',order:1,showLine:true
+      });
+    }
+  });
+  
+  // Laminate total curve
+  const laminateCurve=[];
+  if(allTemps.length>0){
+    const tMin=Math.min(...allTemps)-5;const tMax=Math.max(...allTemps)+5;
+    for(let t=tMin;t<=tMax;t+=0.5){
+      let totalR=0;let valid=true;
+      for(const layer of State.layers){
+        if(layer.mid===null||layer.thick<=0){valid=false;break;}
+        const mat=DB.materials.find(m=>m.id===layer.mid);if(!mat){valid=false;break;}
+        const condIdx=mat.validConditions.findIndex(c=>Math.abs(c.temperature-t)<0.01);
+        if(condIdx>=0){
+          const vals=Engine.getValues(mat);const wd=vals[condIdx];
+          if(wd.value<=0.00001){valid=false;break;}
+          const product=wd.value*wd.thickness;totalR+=layer.thick/product;
+        }else{
+          const p=Engine.calcArrheniusParams(mat);
+          if(p.valid){
+            const transMat=Engine.predict(p.A,p.Ea,t);
+            const product=transMat*Engine.getValues(mat)[0].thickness;
+            totalR+=layer.thick/product;
+          }else{valid=false;break;}
+        }
+      }
+      if(valid&&totalR>0)laminateCurve.push({x:t,y:1/totalR});
+    }
+  }
+  if(laminateCurve.length>0){
+    datasets.push({
+      label:'Laminate Total',
+      data:laminateCurve,
+      borderColor:'#dc2626',backgroundColor:'rgba(220,38,38,0.1)',borderWidth:2.5,pointRadius:0,type:'line',fill:false,order:0
+    });
+  }
+  
+  if(datasets.length===0)return;
+  
+  const ctx=canvas.getContext('2d');
+  chartInstances.lamCurve=new Chart(ctx,{
+    type:'line',
+    data:{datasets},
+    options:{
+      responsive:true,
+      interaction:{mode:'nearest',axis:'x',intersect:false},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}}}},
+      scales:{x:{type:'linear',title:{display:true,text:'Temperature (°C)'}},y:{title:{display:true,text:getLabel()+` (${unit})`},beginAtZero:true}}
+    }
+  });
+  
+  const legendEl=document.getElementById('lamCurveLegend');
+  if(legendEl){
+    let html='';
+    datasets.forEach((d)=>{
+      const color=d.borderColor||d.backgroundColor;
+      html+=`<span style="display:inline-flex;align-items:center;gap:.3rem;font-size:.7rem;color:var(--text-light)"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color}"></span>${d.label}</span>`;
+    });
+    legendEl.innerHTML=html;
+  }
+}
+
+// ============================================
+// ARRHENIUS
+// ============================================
+function renderArrhenius(){
+  const arrMats=DB.materials.filter(m=>Engine.validateArrhenius(m).valid);
+  return`<div class="card"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Arrhenius Analysis</h2>
+<p style="font-size:.78rem;color:var(--text-light);margin-bottom:.75rem">Predict ${getLabel()} at unmeasured temperatures. Requires ≥2 data points at different temperatures with same humidity.</p>
+<div class="grid grid-2">
+<div class="form-group"><label>Material (must have multi-temp data)</label><select class="form-input" id="arr-mat"><option value="">Select...</option>${DB.materials.map(m=>{const v=Engine.validateArrhenius(m);return`<option value="${m.id}"${!v.valid?' disabled':''}>${m.name}${!v.valid?' (single temp)':' ✓'}</option>`;}).join('')}</select></div>
+<div class="form-group"><label>Target Temperature (°C)</label><input type="number" step="any" class="form-input" id="arr-temp" value="25" oninput="onArrChange()"></div>
+</div><div id="arr-result"></div></div>
+<div class="grid grid-2">
+<div class="card"><h2>${getLabel()} vs Temperature</h2><div class="chart-container"><canvas id="arrTempCanvas"></canvas></div></div>
+<div class="card"><h2>Arrhenius Plot (ln(${getLabel()}) vs 1/T)</h2><div class="chart-container"><canvas id="arrLinCanvas"></canvas></div></div>
+</div>`;
+}
+
+function postArrheniusRender(){
+  setTimeout(()=>{
+    const sel=document.getElementById('arr-mat');
+    const arrMats=DB.materials.filter(m=>Engine.validateArrhenius(m).valid);
+    if(sel&&arrMats.length>0&&!sel.value)sel.value=arrMats[0].id;
+    if(sel&&sel.value)onArrChange();
+    else{clearArrCanvas('arrTempCanvas');clearArrCanvas('arrLinCanvas');}
+  },100);
+}
+
+function onArrChange(){
+  const selMat=document.getElementById('arr-mat');
+  const selTemp=document.getElementById('arr-temp');
+  const resEl=document.getElementById('arr-result');
+  if(!selMat||!selTemp)return;
+  
+  const matId=parseFloat(selMat.value);
+  const targetTemp=parseFloat(selTemp.value)||25;
+  
+  if(!matId){
+    if(resEl)resEl.innerHTML='';
+    clearArrCanvas('arrTempCanvas');clearArrCanvas('arrLinCanvas');
+    return;
+  }
+  
+  const mat=DB.materials.find(m=>m.id===matId);
+  if(!mat)return;
+  
+  const v=Engine.validateArrhenius(mat);
+  if(!v.valid){
+    if(resEl)resEl.innerHTML=`<div class="alert alert-error"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/></svg>${v.error}</div>`;
+    clearArrCanvas('arrTempCanvas');clearArrCanvas('arrLinCanvas');
+    return;
+  }
+  
+  const r=Engine.applyArrhenius(mat,targetTemp);
+  if(r.error){
+    if(resEl)resEl.innerHTML=`<div class="alert alert-error"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/></svg>${r.error}</div>`;
+    clearArrCanvas('arrTempCanvas');clearArrCanvas('arrLinCanvas');
+    return;
+  }
+  
+  let warn='';
+  if(r.isExtrapolation)warn=`<div class="alert alert-warning"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg><strong>Extrapolation</strong> — target ${targetTemp}°C is outside measured range (${r.minTemp.toFixed(0)}–${r.maxTemp.toFixed(0)}°C). Results have lower confidence.</div>`;
+  
+  if(resEl)resEl.innerHTML=warn+`<div class="reliability-meter ${r.rSquared>0.95?'reliability-high':r.rSquared>0.8?'reliability-medium':'reliability-low'}">R²=${r.rSquared.toFixed(4)} · Ea=${(r.Ea/1000).toFixed(2)} kJ/mol</div>
+<div class="grid grid-3" style="margin-top:.4rem">
+<div><div style="font-size:.65rem;color:var(--text-light)">Activation Energy</div><div style="font-weight:700">${(r.Ea/1000).toFixed(2)} kJ/mol</div></div>
+<div><div style="font-size:.65rem;color:var(--text-light)">Pre-exponential A</div><div style="font-weight:700">${r.A.toExponential(3)}</div></div>
+<div><div style="font-size:.65rem;color:var(--text-light)">Predicted at ${r.targetTempC}°C</div><div style="font-size:1rem;font-weight:700;color:var(--primary)">${r.predicted.toFixed(6)}</div></div>
+</div>
+<div style="margin-top:.35rem;font-size:.65rem;color:var(--text-light)">Measured range: ${r.minTemp.toFixed(0)}–${r.maxTemp.toFixed(0)}°C · ${r.isExtrapolation?'⚠ EXTRAPOLATION':'✓ INTERPOLATION'}</div>`;
+  
+  drawArrTempChart(mat,r);
+  drawArrLinChart(mat,r);
+}
+
+function clearArrCanvas(id){
+  const c=document.getElementById(id);if(!c)return;
+  destroyChart(id.replace('Canvas',''));
+  const ctx=c.getContext('2d');
+  c.width=500*window.devicePixelRatio;c.height=280*window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio,window.devicePixelRatio);
+  ctx.fillStyle='#f8fafc';ctx.fillRect(0,0,500,280);
+  ctx.fillStyle='#94a3b8';ctx.font='13px sans-serif';ctx.textAlign='center';
+  ctx.fillText('Select a multi-temp material',250,145);
+}
+
+function drawArrTempChart(mat,r){
+  destroyChart('arrTemp');
+  const canvas=document.getElementById('arrTempCanvas');if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  
+  const vals=Engine.getValues(mat);
+  const dataPoints=mat.wvtrValues.map((w,i)=>({x:mat.validConditions[i].temperature,y:w.value}));
+  
+  const datasets=[{
+    label:'Measured data',
+    data:dataPoints,
+    borderColor:'#ef4444',backgroundColor:'#ef4444',borderWidth:0,pointRadius:6,pointHoverRadius:8,type:'scatter',order:1
+  }];
+  
+  if(r&&!r.error){
+    const curveData=[];
+    const tMin=Math.min(r.minTemp-10,Math.min(...dataPoints.map(d=>d.x))-5);
+    const tMax=Math.max(r.maxTemp+10,Math.max(...dataPoints.map(d=>d.x))+5);
+    for(let t=tMin;t<=tMax;t+=0.5){
+      const w=Engine.predict(r.A,r.Ea,t);
+      curveData.push({x:t,y:w});
+    }
+    datasets.push({
+      label:'Arrhenius fit',
+      data:curveData,
+      borderColor:'#3b82f6',backgroundColor:'transparent',borderWidth:2,pointRadius:0,type:'line',order:0
+    });
+    
+    // Target point
+    datasets.push({
+      label:`Target: ${r.targetTempC}°C → ${r.predicted.toFixed(4)}`,
+      data:[{x:r.targetTempC,y:r.predicted}],
+      borderColor:'#22c55e',backgroundColor:'#22c55e',borderWidth:0,pointRadius:8,pointHoverRadius:10,type:'scatter',order:0
+    });
+  }
+  
+  chartInstances.arrTemp=new Chart(ctx,{
+    type:'line',
+    data:{datasets},
+    options:{
+      responsive:true,
+      interaction:{mode:'nearest',axis:'x',intersect:false},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}}}},
+      scales:{x:{type:'linear',title:{display:true,text:'Temperature (°C)'}},y:{title:{display:true,text:getLabel()+` (${getUnit()})`},beginAtZero:true}}
+    }
+  });
+}
+
+function drawArrLinChart(mat,r){
+  destroyChart('arrLin');
+  const canvas=document.getElementById('arrLinCanvas');if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  
+  if(!r||!r.dataPoints||r.dataPoints.length<2){
+    ctx.fillStyle='#94a3b8';ctx.font='13px sans-serif';ctx.textAlign='center';
+    ctx.fillText('Need ≥2 data points',250,140);return;
+  }
+  
+  const dps=r.dataPoints;
+  const dataPoints=dps.map(d=>({x:1/d.T_K,y:Math.log(d.trans)}));
+  
+  // Linear fit line
+  const slope=-r.Ea/Engine.R_GAS;
+  const intercept=Math.log(r.A);
+  const minX=Math.min(...dataPoints.map(d=>d.x))*0.98;
+  const maxX=Math.max(...dataPoints.map(d=>d.x))*1.02;
+  
+  const datasets=[
+    {
+      label:'Experimental',
+      data:dataPoints,
+      borderColor:'#ef4444',backgroundColor:'#ef4444',borderWidth:0,pointRadius:6,pointHoverRadius:8,type:'scatter',order:1
+    },
+    {
+      label:'Linear fit',
+      data:[{x:minX,y:slope*minX+intercept},{x:maxX,y:slope*maxX+intercept}],
+      borderColor:'#3b82f6',backgroundColor:'transparent',borderWidth:2,pointRadius:0,type:'line',order:0
+    }
+  ];
+  
+  chartInstances.arrLin=new Chart(ctx,{
+    type:'line',
+    data:{datasets},
+    options:{
+      responsive:true,
+      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}}}},
+      scales:{x:{type:'linear',title:{display:true,text:'1/T (K⁻¹)'}},y:{title:{display:true,text:`ln(${getLabel()})`}}}
+    }
+  });
+}
+
+// ============================================
+// SENSITIVITY
+// ============================================
+function renderSensitivity(){
+  const hasMats=State.layers.some(l=>l.mid!==null);
+  const layerOptions=State.layers.map((l,i)=>{
+    const mat=l.mid!==null?DB.materials.find(m=>m.id===l.mid):null;
+    return`<option value="${i}"${State.sensLayerIdx===i?' selected':''}>L${i+1}: ${mat?mat.name:'Unknown'} (${l.thick||0}µm)</option>`;
+  }).join('');
+  
+  return`<div class="grid grid-2">
+<div class="card"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h4l3-9 4 18 3-9h4"/></svg>Sensitivity Analysis</h2>
+<p style="font-size:.78rem;color:var(--text-light);margin-bottom:.75rem">See how ${getLabel()} changes when varying one layer's thickness</p>
+${!hasMats?'<div class="alert alert-info"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/></svg>Configure layers in Calculator first</div>':
+`<div class="grid grid-2">
+<div class="form-group"><label>Layer to vary</label><select class="form-input" id="sens-layer" onchange="onSensChange()">${layerOptions}</select></div>
+<div class="form-group"><label>Thickness range (µm)</label><div style="display:flex;gap:.5rem"><input type="number" step="any" class="form-input" id="sens-tmin" value="10" onchange="onSensChange()" placeholder="Min"><input type="number" step="any" class="form-input" id="sens-tmax" value="500" onchange="onSensChange()" placeholder="Max"></div></div>
+</div>
+</div>
+<div class="card"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h4l3-9 4 18 3-9h4"/></svg>${getLabel()} vs Thickness</h2>
+<div class="chart-container"><canvas id="sensChart"></canvas></div></div>`}
+</div>
+<div class="card"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Cost-Saving Optimizer</h2>
+<p style="font-size:.78rem;color:var(--text-light);margin-bottom:.75rem">Find minimum barrier layer thickness to meet target</p>
+<div class="grid grid-2">
+<div class="form-group"><label>Target ${getLabel()} (${getUnit()})</label><input type="number" step="any" class="form-input" id="opt-target" value="${State.targetValue}" onchange="doOptimize()"></div>
+<div class="form-group"><label>Barrier layer</label><select class="form-input" id="opt-layer" onchange="doOptimize()">${State.layers.map((l,i)=>{const mat=l.mid!==null?DB.materials.find(m=>m.id===l.mid):null;return`<option value="${i}">L${i+1}: ${mat?mat.name:'Unknown'}</option>`;}).join('')}</select></div>
+</div>
+<div id="opt-result"></div>
+</div>
+</div>`;
+}
+
+function onSensChange(){
+  State.sensLayerIdx=parseInt(document.getElementById('sens-layer')?.value||0);
+  drawSensitivityChart();
+}
+
+function postSensitivityRender(){
+  if(State.layers.some(l=>l.mid!==null)){
+    setTimeout(()=>{drawSensitivityChart();doOptimize();},100);
+  }
+}
+
+function drawSensitivityChart(){
+  const canvas=document.getElementById('sensChart');if(!canvas)return;
+  destroyChart('sens');
+  
+  const layerIdx=State.sensLayerIdx;
+  const tMin=parseFloat(document.getElementById('sens-tmin')?.value||10);
+  const tMax=parseFloat(document.getElementById('sens-tmax')?.value||500);
+  
+  // Use first available condition or selCond
+  const common=Engine.findCommonConditions(State.layers,DB.materials);
+  const condition=State.selCond||(common.conditions&&common.conditions[0])||{temperature:25,humidity:50};
+  
+  const result=Engine.calcSensitivityCurve(State.layers,DB.materials,condition,layerIdx,tMin,tMax,100);
+  if(result.error)return;
+  
+  const ctx=canvas.getContext('2d');
+  chartInstances.sens=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:result.points.map(p=>p.thickness.toFixed(0)),
+      datasets:[{
+        label:`${getLabel()} vs Layer ${layerIdx+1} thickness`,
+        data:result.points.map(p=>parseFloat(p.total.toFixed(6))),
+        borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.1)',fill:true,tension:0.4,pointRadius:0,borderWidth:2
+      }]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{display:false}},
+      scales:{x:{title:{display:true,text:'Layer thickness (µm)'}},y:{title:{display:true,text:`Total ${getLabel()} (${getUnit()})`},beginAtZero:true}}
+    }
+  });
+}
+
+function doOptimize(){
+  const target=parseFloat(document.getElementById('opt-target')?.value||0.5);
+  const barrierIdx=parseInt(document.getElementById('opt-layer')?.value||0);
+  const resEl=document.getElementById('opt-result');if(!resEl)return;
+  
+  const common=Engine.findCommonConditions(State.layers,DB.materials);
+  const condition=State.selCond||(common.conditions&&common.conditions[0]);
+  
+  if(!condition||!State.layers.every(l=>l.mid!==null&&l.thick>0)){
+    resEl.innerHTML='<div class="alert alert-info"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/></svg>Configure and calculate first</div>';
+    return;
+  }
+  
+  const result=Engine.optimizeForTarget(State.layers,DB.materials,condition,target,barrierIdx);
+  if(result.error){
+    resEl.innerHTML=`<div class="alert alert-warning"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>${result.error}</div>`;
+    return;
+  }
+  
+  const mat=DB.materials.find(m=>m.id===State.layers[barrierIdx].mid);
+  const current=State.layers[barrierIdx].thick;
+  resEl.innerHTML=`<div class="alert alert-success"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+<div>To achieve <strong>target ${getLabel()} ≤ ${target} ${getUnit()}</strong> at ${condition.temperature}°C/${condition.humidity}%:</div>
+<div style="margin-top:.35rem"><strong>${mat?mat.name:'Layer '+(barrierIdx+1)}</strong> minimum thickness: <strong style="font-size:1.1rem;color:var(--primary)">${result.thickness.toFixed(1)} µm</strong></div>
+<div style="margin-top:.25rem;font-size:.72rem;color:var(--text-light)">Current: ${current}µm → Suggested: ${result.thickness.toFixed(1)}µm (${result.thickness<current?'✓ Material savings possible':'⚠ Increase thickness needed'})</div>
+</div>`;
+}
+
+// ============================================
+// COMPARE
+// ============================================
+function renderCompare(){
+  const unit=getUnit();
+  if(DB.laminates.length<2){
+    return`<div class="card"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="9" height="9"/><rect x="13" y="2" width="9" height="9"/></svg><p>Save ≥2 laminates to compare</p></div></div>`;
+  }
+  
+  return`<div class="card"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="9" height="9"/><rect x="13" y="2" width="9" height="9"/></svg>Side-by-Side Comparison</h2>
+<p style="font-size:.78rem;color:var(--text-light);margin-bottom:.75rem">Select up to 3 laminates to compare</p>
+<div class="grid grid-2">
+${DB.laminates.slice(0,6).map(l=>`<label style="display:flex;align-items:center;gap:.5rem;padding:.5rem;border:1px solid var(--border);border-radius:8px;cursor:pointer;${State.compareIds.includes(l.id)?'background:var(--primary-light);border-color:var(--primary)':''}">
+<input type="checkbox" ${State.compareIds.includes(l.id)?'checked':''} onchange="toggleCompare(${l.id})" style="accent-color:var(--primary)">
+<div><div style="font-weight:600;font-size:.82rem">${l.name}</div><div style="font-size:.7rem;color:var(--text-light)">${l.total.toFixed(4)} ${unit} · ${l.totalThickness}µm</div></div>
+</label>`).join('')}
+</div>
+</div>
+<div id="compare-table"></div>
+<div class="card"><h2>Comparison Chart</h2><div class="chart-container"><canvas id="compareChart"></canvas></div></div>`;
+}
+
+function toggleCompare(id){
+  const idx=State.compareIds.indexOf(id);
+  if(idx>=0)State.compareIds.splice(idx,1);
+  else if(State.compareIds.length<3)State.compareIds.push(id);
+  renderContent();postCompareRender();
+}
+
+function postCompareRender(){
+  if(State.compareIds.length<1)return;
+  const selected=DB.laminates.filter(l=>State.compareIds.includes(l.id));
+  const unit=getUnit();
+  
+  const tableEl=document.getElementById('compare-table');
+  if(tableEl){
+    tableEl.innerHTML=`<div class="card"><h2>Comparison Table</h2><table class="cond-table">
+<thead><tr><th>Parameter</th>${selected.map(l=>`<th>${l.name}</th>`).join('')}</tr></thead>
+<tbody>
+<tr><td><strong>${(l.mode||State.mode).toUpperCase()}</strong></td>${selected.map(l=>`<td>${l.total.toFixed(4)} ${unit}</td>`).join('')}</tr>
+<tr><td><strong>Thickness</strong></td>${selected.map(l=>`<td>${l.totalThickness.toFixed(0)} µm</td>`).join('')}</tr>
+<tr><td><strong>Conditions</strong></td>${selected.map(l=>`<td>${l.temperature}°C / ${l.humidity}%</td>`).join('')}</tr>
+<tr><td><strong>Recyclable</strong></td>${selected.map(l=>`<td><span class="sustainability-flag ${l.recyclable?'yes':'no'}">${l.recyclable?'✓ Yes':'✗ No'}</span></td>`).join('')}</tr>
+<tr><td><strong>Mono-structure</strong></td>${selected.map(l=>`<td><span class="sustainability-flag ${l.monoStructure?'yes':'no'}">${l.monoStructure?'✓ Yes':'✗ No'}</span></td>`).join('')}</tr>
+<tr><td><strong>Layers</strong></td>${selected.map(l=>`<td>${l.layerCount||'-'}</td>`).join('')}</tr>
+</tbody></table></div>`;
+  }
+  
+  const canvas=document.getElementById('compareChart');if(!canvas)return;
+  destroyChart('compare');
+  const ctx=canvas.getContext('2d');
+  chartInstances.compare=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:selected.map(l=>l.name),
+      datasets:[{label:(selected[0].mode||State.mode).toUpperCase(),data:selected.map(l=>l.total),backgroundColor:LAYER_COLORS.slice(0,selected.length),borderRadius:6}]
+    },
+    options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:unit}},x:{title:{display:true,text:'Laminates'}}}}
+  });
+}
+
+// ============================================
+// MATERIALS
+// ============================================
+function renderMaterials(){
+  const q=State.searchQuery.toLowerCase();
+  const filtered=DB.materials.filter(m=>m.name.toLowerCase().includes(q));
+  const unit=getUnit();
+  return`<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem;flex-wrap:wrap;gap:.4rem">
+<h2 style="margin:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/></svg>Materials <span class="badge badge-blue">${DB.materials.length}</span></h2>
+<div style="display:flex;gap:.35rem">
+<button class="btn btn-sm btn-primary" onclick="showMatModal()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add</button>
+<button class="btn btn-sm btn-outline" onclick="showBulkImport()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Import</button>
+<button class="btn btn-sm btn-outline" onclick="exportDB()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Export</button>
+</div></div>
+<div class="form-group search-input"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" class="form-input" placeholder="Search materials..." oninput="State.searchQuery=this.value;renderContent()"></div>
+<div class="grid">${filtered.length===0?'<div class="empty-state"><p>No materials found</p></div>':''}
+${filtered.map(m=>{const v=Engine.validateArrhenius(m);return`<div class="material-item" onclick="this.classList.toggle('expanded')"><div class="mat-header"><h3>${m.name} <span style="font-weight:400;color:var(--text-light);font-size:.7rem">[${m.family||'?'}]</span>${v.valid?' <span class="badge badge-green">Arrhenius ✓</span>':''}</h3><svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div><div class="mat-body"><div class="mat-tags">${Engine.getValues(m).map((w,i)=>`<span class="mat-tag">${getLabel()}: ${w.value} @ ${w.thickness}µm · ${m.validConditions[i]?.temperature}°C/${m.validConditions[i]?.humidity}%</span>`).join('')}</div><div style="margin-top:.45rem;display:flex;gap:.35rem"><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();showMatModal(${m.id})">Edit</button><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();DB.deleteMat(${m.id});render()">Delete</button></div></div></div>`;}).join('')}</div></div>`;
+}
+
+// ============================================
+// LAMINATES
+// ============================================
+function renderLaminates(){
+  const unit=getUnit();
+  if(!DB.laminates.length)return`<div class="card"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/></svg><p>No laminates saved yet</p></div></div>`;
+  const colors=['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#06b6d4'];
+  return`<div class="card"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/></svg>Laminates <span class="badge badge-purple">${DB.laminates.length}</span></h2>
+<div class="grid grid-2">${DB.laminates.map((l,i)=>`<div style="border:1.5px solid var(--border);border-radius:10px;padding:.85rem;border-top:4px solid ${colors[i%colors.length]}">
+<div style="font-weight:600;font-size:.85rem;margin-bottom:.35rem">${l.name}</div>
+<div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center">
+<div><div style="font-size:.65rem;color:var(--text-light)">${(l.mode||State.mode).toUpperCase()}</div><div style="font-size:1.2rem;font-weight:700;color:var(--primary)">${l.total.toFixed(5)}</div><div style="font-size:.65rem;color:var(--text-light)">${unit}</div></div>
+<div><div style="font-size:.65rem;color:var(--text-light)">Thickness</div><div style="font-weight:600">${l.totalThickness.toFixed(0)} µm</div></div>
+<div><div style="font-size:.65rem;color:var(--text-light)">Conditions</div><div style="font-weight:600">${l.temperature}°C / ${l.humidity}%</div></div>
+<div><div style="font-size:.65rem;color:var(--text-light)">Recyclable</div><span class="sustainability-flag ${l.recyclable?'yes':'no'}">${l.recyclable?'✓ Yes':'✗ No'}</span></div>
+</div>
+<div style="margin-top:.45rem;text-align:right"><button class="btn btn-sm btn-danger" onclick="DB.deleteLam(${l.id});render()">Delete</button></div></div>`).join('')}</div></div>
+${DB.laminates.length>=2?`<div class="card"><h2>WVTR Comparison</h2><div class="chart-container"><canvas id="lamChart"></canvas></div></div>`:''}`;
+}
+
+function drawLamChart(){
+  if(DB.laminates.length<2)return;
+  const canvas=document.getElementById('lamChart');if(!canvas)return;
+  destroyChart('lam');
+  const ctx=canvas.getContext('2d');
+  chartInstances.lam=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:DB.laminates.map(l=>l.name),
+      datasets:[{label:(DB.laminates[0].mode||State.mode).toUpperCase(),data:DB.laminates.map(l=>l.total),backgroundColor:LAYER_COLORS.slice(0,DB.laminates.length),borderRadius:6}]
+    },
+    options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:getUnit()}},x:{title:{display:true,text:'Laminates'}}}}
+  });
+}
+
+// ============================================
+// MODAL
+// ============================================
+const Modal={
+  open(title,body,onSave){
+    document.getElementById('modal-title').textContent=title;
+    document.getElementById('modal-body').innerHTML=body;
+    document.getElementById('modal-footer').innerHTML=`<button class="btn btn-outline" onclick="Modal.close()">Cancel</button><button class="btn btn-primary" id="modal-save-btn">Save</button>`;
+    document.getElementById('modal-save-btn').onclick=()=>{if(onSave())Modal.close();};
+    document.getElementById('modal-overlay').classList.add('active');
+  },
+  close(){document.getElementById('modal-overlay').classList.remove('active');}
+};
+
+function showMatModal(editId){
+  const mat=editId?DB.materials.find(m=>m.id===editId):null;
+  const wvtrVals=mat?mat.wvtrValues:[{value:'',thickness:''}];
+  const otrVals=mat?mat.otrValues:[{value:'',thickness:''}];
+  const conds=mat?mat.validConditions:[{temperature:'',humidity:''}];
+  
+  const rows=wvtrVals.map((w,i)=>{
+    const o=otrVals[i]||{value:'',thickness:''};
+    const c=conds[i]||{temperature:'',humidity:''};
+    return`<div class="wvtr-row-form">
+<div>
+<div class="form-group"><label>WVTR (g/m²·day)</label><input type="number" step="any" class="form-input mf-wvtr" value="${w.value}"></div>
+<div class="form-group"><label>Thickness WVTR (µm)</label><input type="number" step="any" class="form-input mf-wvtr-thick" value="${w.thickness}"></div>
+</div>
+<div>
+<div class="form-group"><label>OTR (cc/m²·day)</label><input type="number" step="any" class="form-input mf-otr" value="${o.value}"></div>
+<div class="form-group"><label>Thickness OTR (µm)</label><input type="number" step="any" class="form-input mf-otr-thick" value="${o.thickness}"></div>
+</div>
+<div>
+<div class="form-group"><label>Temperature (°C)</label><input type="number" step="any" class="form-input mf-temp" value="${c.temperature}"></div>
+<div class="form-group"><label>Humidity (%)</label><input type="number" step="any" class="form-input mf-hum" value="${c.humidity}"></div>
+</div>
+</div>`;
+  }).join('');
+  
+  Modal.open(editId?'Edit Material':'Add Material',`<div class="form-group"><label>Name</label><input type="text" class="form-input" id="mf-name" value="${mat?mat.name:''}"></div><div id="mf-rows">${rows}</div><button class="btn btn-outline btn-full" onclick="addMatRow()" style="margin-top:.4rem"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Condition</button>`,()=>{
+    const name=document.getElementById('mf-name').value.trim();
+    if(!name){alert('Enter name');return false;}
+    const wvtrs=document.querySelectorAll('.mf-wvtr'),wvtrThicks=document.querySelectorAll('.mf-wvtr-thick'),
+    otr=document.querySelectorAll('.mf-otr'),otrThicks=document.querySelectorAll('.mf-otr-thick'),
+    temps=document.querySelectorAll('.mf-temp'),hums=document.querySelectorAll('.mf-hum');
+    const wv=[],ot=[],vc=[];
+    for(let i=0;i<wvtrs.length;i++){
+      const wv_val=parseFloat(wvtrs[i].value),wv_t=parseFloat(wvtrThicks[i].value);
+      const ot_val=parseFloat(otr[i].value),ot_t=parseFloat(otrThicks[i].value);
+      const te=parseFloat(temps[i].value),h=parseFloat(hums[i].value);
+      if(isNaN(wv_val)||wv_val<0){alert(`WVTR invalid (row ${i+1})`);return false;}
+      if(isNaN(wv_t)||wv_t<=0){alert(`WVTR thickness > 0 (row ${i+1})`);return false;}
+      if(isNaN(ot_val)||ot_val<0){alert(`OTR invalid (row ${i+1})`);return false;}
+      if(isNaN(ot_t)||ot_t<=0){alert(`OTR thickness > 0 (row ${i+1})`);return false;}
+      if(isNaN(te)){alert(`Temperature required (row ${i+1})`);return false;}
+      if(isNaN(h)){alert(`Humidity required (row ${i+1})`);return false;}
+      wv.push({value:wv_val,thickness:wv_t});ot.push({value:ot_val,thickness:ot_t});vc.push({temperature:te,humidity:h});
+    }
+    if(editId)DB.updateMat(editId,{name,wvtrValues:wv,otrValues:ot,validConditions:vc,family:getFamily(name)});
+    else DB.addMat({name,wvtrValues:wv,otrValues:ot,validConditions:vc});
+    return true;
+  });
+}
+
+function addMatRow(){
+  document.getElementById('mf-rows').insertAdjacentHTML('beforeend',`<div class="wvtr-row-form">
+<div><div class="form-group"><label>WVTR (g/m²·day)</label><input type="number" step="any" class="form-input mf-wvtr" value=""></div><div class="form-group"><label>Thickness WVTR (µm)</label><input type="number" step="any" class="form-input mf-wvtr-thick" value=""></div></div>
+<div><div class="form-group"><label>OTR (cc/m²·day)</label><input type="number" step="any" class="form-input mf-otr" value=""></div><div class="form-group"><label>Thickness OTR (µm)</label><input type="number" step="any" class="form-input mf-otr-thick" value=""></div></div>
+<div><div class="form-group"><label>Temperature (°C)</label><input type="number" step="any" class="form-input mf-temp" value=""></div><div class="form-group"><label>Humidity (%)</label><input type="number" step="any" class="form-input mf-hum" value=""></div></div>
+</div>`);
+}
+
+function showBulkImport(){
+  Modal.open('Bulk Import (CSV/Paste)',`
+<p style="font-size:.78rem;color:var(--text-light);margin-bottom:.75rem">Paste data in CSV format. Columns: Name, Family, WVTR, WVTR_Thickness, OTR, OTR_Thickness, Temp1, Hum1, Temp2, Hum2, Temp3, Hum3</p>
+<div class="import-area">
+<textarea id="bulk-data" placeholder="PET,PET,1.0,500,150,500,23,50,38,50,50,50&#10;Nylon 6,PA,10,100,30,100,23,60,38,60,50,60"></textarea>
+</div>
+<p style="font-size:.7rem;color:var(--text-light);margin-top:.5rem">Or <a href="#" onclick="document.getElementById('bulk-file').click();return false">upload JSON file</a><input type="file" id="bulk-file" accept=".json" style="display:none" onchange="importFile(this)"></p>
+`,()=>{
+    const data=document.getElementById('bulk-data').value.trim();
+    if(!data){alert('Paste data first');return false;}
+    try{
+      const lines=data.split('\n').filter(l=>l.trim());
+      let count=0;
+      lines.forEach(line=>{
+        const cols=line.split(/[,\t]/).map(s=>s.trim());
+        if(cols.length<7)return;
+        const name=cols[0];const family=cols[1]||getFamily(cols[0]);
+        const wvtr=parseFloat(cols[2])||0;const wvtrT=parseFloat(cols[3])||0;
+        const otr=parseFloat(cols[4])||0;const otrT=parseFloat(cols[5])||0;
+        const validConditions=[];
+        for(let i=6;i<cols.length;i+=2){
+          const te=parseFloat(cols[i]);const h=parseFloat(cols[i+1]);
+          if(!isNaN(te)&&!isNaN(h))validConditions.push({temperature:te,humidity:h});
+        }
+        if(name&&validConditions.length>0){
+          DB.addMat({name,family:getFamily(name),wvtrValues:[{value:wvtr,thickness:wvtrT}],otrValues:[{value:otr,thickness:otrT}],validConditions});
+          count++;
+        }
+      });
+      alert(`Imported ${count} materials successfully`);
+      render();return true;
+    }catch(e){alert('Import error: '+e.message);return false;}
+  });
+}
+
+function importFile(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=JSON.parse(e.target.result);
+      if(data.materials){
+        DB.importAll(JSON.stringify(data));
+        alert(`Imported ${data.materials.length} materials and ${(data.laminates||[]).length} laminates`);
+        Modal.close();render();
+      }
+    }catch(err){alert('File import error: '+err.message);}
+  };
+  reader.readAsText(file);
+}
+
+function exportDB(){
+  const json=DB.exportAll();
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`wvtr-otr-backup-${new Date().toISOString().split('T')[0]}.json`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ============================================
+// INIT
+// ============================================
+DB.load();
+const savedState=DB.loadState();
+if(savedState){
+  if(savedState.layers)State.layers=savedState.layers;
+  if(savedState.selCond)State.selCond=savedState.selCond;
+  if(savedState.mode)setMode(savedState.mode);
+}
+render();
+</script>
+</body>
+</html>
+
