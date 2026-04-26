@@ -134,6 +134,9 @@ WVTR/OTR Pro
 </div>
 <div class="modal-overlay" id="modal-overlay"><div class="modal" id="modal"><div class="modal-header"><h2 id="modal-title"></h2><button class="btn btn-sm btn-outline" onclick="Modal.close()">✕</button></div><div class="modal-body" id="modal-body"></div><div class="modal-footer" id="modal-footer"></div></div></div>
 <script>
+/* ============================================================
+   ENGINE - Logica di calcolo
+   ============================================================ */
 const Engine={
   R_GAS:8.314,
   mode:'wvtr',
@@ -278,6 +281,9 @@ const Engine={
   }
 };
 
+/* ============================================================
+   MATERIAL DATABASE - 104 materiali hardcoded
+   ============================================================ */
 const POLYMER_FAMILIES = {
   PE: ['LDPE', 'HDPE', 'LLDPE', 'Polyethylene'],
   PP: ['PP', 'BOPP', 'Polypropylene', 'CPP'],
@@ -303,14 +309,11 @@ function getFamily(name) {
 }
 
 const DEFAULT_MATERIALS = [
-  // --- Materiali Multi-Temperatura (Predefiniti) ---
   { name: "PET (multi-temp)", wvtrValues: [{ value: 1.0, thickness: 500 }, { value: 2.0, thickness: 500 }, { value: 4.0, thickness: 500 }], otrValues: [{ value: 150, thickness: 500 }, { value: 200, thickness: 500 }, { value: 350, thickness: 500 }], validConditions: [{ temperature: 23, humidity: 50 }, { temperature: 38, humidity: 50 }, { temperature: 50, humidity: 50 }] },
   { name: "Nylon 6 (multi-temp)", wvtrValues: [{ value: 10.0, thickness: 100 }, { value: 25.0, thickness: 100 }, { value: 50.0, thickness: 100 }], otrValues: [{ value: 30, thickness: 100 }, { value: 60, thickness: 100 }, { value: 120, thickness: 100 }], validConditions: [{ temperature: 23, humidity: 60 }, { temperature: 38, humidity: 60 }, { temperature: 50, humidity: 60 }] },
   { name: "LDPE (multi-temp)", wvtrValues: [{ value: 0.8, thickness: 100 }, { value: 1.5, thickness: 100 }, { value: 2.8, thickness: 100 }], otrValues: [{ value: 800, thickness: 100 }, { value: 1200, thickness: 100 }, { value: 2000, thickness: 100 }], validConditions: [{ temperature: 20, humidity: 50 }, { temperature: 30, humidity: 50 }, { temperature: 40, humidity: 50 }] },
   { name: "EVOH (multi-temp)", wvtrValues: [{ value: 0.05, thickness: 100 }, { value: 0.15, thickness: 100 }, { value: 0.40, thickness: 100 }], otrValues: [{ value: 0.5, thickness: 100 }, { value: 1.5, thickness: 100 }, { value: 4.0, thickness: 100 }], validConditions: [{ temperature: 23, humidity: 50 }, { temperature: 38, humidity: 50 }, { temperature: 50, humidity: 50 }] },
   { name: "PP (multi-temp)", wvtrValues: [{ value: 0.5, thickness: 50 }, { value: 1.0, thickness: 50 }, { value: 2.0, thickness: 50 }], otrValues: [{ value: 500, thickness: 50 }, { value: 800, thickness: 50 }, { value: 1500, thickness: 50 }], validConditions: [{ temperature: 25, humidity: 60 }, { temperature: 38, humidity: 60 }, { temperature: 50, humidity: 60 }] },
-
-  // --- Database Esteso ---
   { name: "Polyurethane", wvtrValues: [{ value: 0.3, thickness: 200 }], otrValues: [{ value: 100, thickness: 200 }], validConditions: [{ temperature: 30, humidity: 60 }] },
   { name: "Low-Density Polyethylene (LDPE)", wvtrValues: [{ value: 1.2, thickness: 100 }], otrValues: [{ value: 7500, thickness: 100 }], validConditions: [{ temperature: 23, humidity: 50 }] },
   { name: "Biaxially Oriented Polypropylene (BOPP)", wvtrValues: [{ value: 0.8, thickness: 50 }], otrValues: [{ value: 2000, thickness: 50 }], validConditions: [{ temperature: 30, humidity: 60 }] },
@@ -415,145 +418,133 @@ const DEFAULT_MATERIALS = [
   { name: "Polypropylene Random Copolymer (PP-R)", wvtrValues: [{ value: 0.9, thickness: 400 }], otrValues: [{ value: 2200, thickness: 400 }], validConditions: [{ temperature: 30, humidity: 60 }] },
   { name: "Polyoxymethylene Copolymer (Co-POM)", wvtrValues: [{ value: 1.5, thickness: 1000 }], otrValues: [{ value: 280, thickness: 1000 }], validConditions: [{ temperature: 25, humidity: 50 }] },
   { name: "Polyamide-Imide (PAI)", wvtrValues: [{ value: 0.7, thickness: 300 }], otrValues: [{ value: 90, thickness: 300 }], validConditions: [{ temperature: 35, humidity: 70 }] }
-].map((m, i) => ({
-  ...m,
-  id: i,
-  family: getFamily(m.name)
-}));
-  
-const DB={
-  materials:[],laminates:[],version:'3.0',
-  load(){
-    this.materials=DEFAULT_MATERIALS.map(m=>({...m}));
-    try{
-      const savedMats=localStorage.getItem('wvtr_mats_v3');
-      if(savedMats){
-        const userMats=JSON.parse(savedMats);
-        const defaultIds=new Set(DEFAULT_MATERIALS.map(m=>m.id));
-        userMats.forEach(um=>{
-          if(!defaultIds.has(um.id)){
-            um.id=Math.max(...this.materials.map(m=>m.id),0)+1;
+].map((m, i) => ({ ...m, id: i, family: getFamily(m.name) }));
+
+/* ============================================================
+   DATABASE & STATE
+   ============================================================ */
+const DB = {
+  materials: [], laminates: [], version: '3.0',
+  load() {
+    this.materials = DEFAULT_MATERIALS.map(m => ({ ...m }));
+    try {
+      const savedMats = localStorage.getItem('wvtr_mats_v3');
+      if (savedMats) {
+        const userMats = JSON.parse(savedMats);
+        const defaultIds = new Set(DEFAULT_MATERIALS.map(m => m.id));
+        userMats.forEach(um => {
+          if (!defaultIds.has(um.id)) {
+            um.id = Math.max(...this.materials.map(m => m.id), 0) + 1;
             this.materials.push(um);
           }
         });
       }
-      const savedLams=localStorage.getItem('wvtr_lams_v3');
-      if(savedLams)this.laminates=JSON.parse(savedLams);
-    }catch(e){console.warn('Load error:',e);}
+      const savedLams = localStorage.getItem('wvtr_lams_v3');
+      if (savedLams) this.laminates = JSON.parse(savedLams);
+    } catch (e) { console.warn('Load error:', e); }
   },
-  save(){
-    try{
-      const defaultIds=new Set(DEFAULT_MATERIALS.map(m=>m.id));
-      const userMats=this.materials.filter(m=>!defaultIds.has(m.id));
-      localStorage.setItem('wvtr_mats_v3',JSON.stringify(userMats));
-      localStorage.setItem('wvtr_lams_v3',JSON.stringify(this.laminates));
-    }catch(e){console.warn('Save error:',e);}
+  save() {
+    try {
+      const defaultIds = new Set(DEFAULT_MATERIALS.map(m => m.id));
+      const userMats = this.materials.filter(m => !defaultIds.has(m.id));
+      localStorage.setItem('wvtr_mats_v3', JSON.stringify(userMats));
+      localStorage.setItem('wvtr_lams_v3', JSON.stringify(this.laminates));
+    } catch (e) { console.warn('Save error:', e); }
   },
-  saveState(state){
-    try{
-      const stateData={layers:state.layers,selCond:state.selCond,mode:state.mode,timestamp:Date.now()};
-      localStorage.setItem('wvtr_state_v3',JSON.stringify(stateData));
-    }catch(e){}
+  saveState(state) {
+    try {
+      const stateData = { layers: state.layers, selCond: state.selCond, mode: state.mode, timestamp: Date.now() };
+      localStorage.setItem('wvtr_state_v3', JSON.stringify(stateData));
+    } catch (e) {}
   },
-  loadState(){
-    try{const s=localStorage.getItem('wvtr_state_v3');if(s)return JSON.parse(s);}catch(e){}
+  loadState() {
+    try { const s = localStorage.getItem('wvtr_state_v3'); if (s) return JSON.parse(s); } catch (e) {}
     return null;
   },
-  addMat(m){m.id=Math.max(...this.materials.map(x=>x.id),0)+1;m.family=getFamily(m.name);this.materials.push(m);this.save();return m.id;},
-  updateMat(id,m){const i=this.materials.findIndex(x=>x.id===id);if(i>=0){m.family=getFamily(m.name);this.materials[i]={...m,id};this.save();}},
-  deleteMat(id){this.materials=this.materials.filter(x=>x.id!==id);this.save();},
-  addLam(l){l.id=Date.now();this.laminates.push(l);this.save();return l.id;},
-  deleteLam(id){this.laminates=this.laminates.filter(x=>x.id!==id);this.save();},
-  importMats(mats){mats.forEach(m=>{m.id=Math.max(...this.materials.map(x=>x.id),0)+1;m.family=getFamily(m.name);this.materials.push(m);});this.save();},
-  exportAll(){
-    return JSON.stringify({materials:this.materials,laminates:this.laminates,version:this.version,exportDate:new Date().toISOString()});
-  },
-  importAll(data){
-    try{
-      const parsed=JSON.parse(data);
-      if(parsed.materials)this.materials=parsed.materials;
-      if(parsed.laminates)this.laminates=parsed.laminates;
-      this.save();
-      return true;
-    }catch(e){return false;}
-  }
+  addMat(m) { m.id = Math.max(...this.materials.map(x => x.id), 0) + 1; m.family = getFamily(m.name); this.materials.push(m); this.save(); return m.id; },
+  updateMat(id, m) { const i = this.materials.findIndex(x => x.id === id); if (i >= 0) { m.family = getFamily(m.name); this.materials[i] = { ...m, id }; this.save(); } },
+  deleteMat(id) { this.materials = this.materials.filter(x => x.id !== id); this.save(); },
+  addLam(l) { l.id = Date.now(); this.laminates.push(l); this.save(); return l.id; },
+  deleteLam(id) { this.laminates = this.laminates.filter(x => x.id !== id); this.save(); },
+  importMats(mats) { mats.forEach(m => { m.id = Math.max(...this.materials.map(x => x.id), 0) + 1; m.family = getFamily(m.name); this.materials.push(m); }); this.save(); },
+  exportAll() { return JSON.stringify({ materials: this.materials, laminates: this.laminates, version: this.version, exportDate: new Date().toISOString() }); },
+  importAll(data) { try { const parsed = JSON.parse(data); if (parsed.materials) this.materials = parsed.materials; if (parsed.laminates) this.laminates = parsed.laminates; this.save(); return true; } catch (e) { return false; } }
 };
 
-const State={
-  tab:'home',
-  layers:[{mid:null,thick:0}],
-  selCond:null, // {temperature, humidity}
-  laminateName:'',
-  autoCalc:false,
-  calcResult:null,calcError:null,
-  showSaveConfirm:false,
-  searchQuery:'',
-  mode:'wvtr',
-  sensLayerIdx:0,
-  targetValue:0.5,
-  compareIds:[]
+const State = {
+  tab: 'home', layers: [{ mid: null, thick: 0 }], selCond: null, laminateName: '', autoCalc: false,
+  calcResult: null, calcError: null, showSaveConfirm: false, searchQuery: '', mode: 'wvtr',
+  sensLayerIdx: 0, targetValue: 0.5, compareIds: []
 };
 
-const LAYER_COLORS=['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899'];
-const TABS=[
-  {id:'home',label:'Home',svg:'<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>'},
-  {id:'calc',label:'Calculator',svg:'<rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/>'},
-  {id:'arrhenius',label:'Arrhenius',svg:'<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>'},
-  {id:'sensitivity',label:'Sensitivity',svg:'<path d="M2 12h4l3-9 4 18 3-9h4"/>'},
-  {id:'compare',label:'Compare',svg:'<rect x="2" y="2" width="9" height="9"/><rect x="13" y="2" width="9" height="9"/><rect x="2" y="13" width="9" height="9"/><rect x="13" y="13" width="9" height="9"/>'},
-  {id:'materials',label:'Materials',svg:'<path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>'},
-  {id:'laminates',label:'Laminates',svg:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>'}
+const LAYER_COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899'];
+const TABS = [
+  { id: 'home', label: 'Home', svg: '<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>' },
+  { id: 'calc', label: 'Calculator', svg: '<rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/>' },
+  { id: 'arrhenius', label: 'Arrhenius', svg: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>' },
+  { id: 'sensitivity', label: 'Sensitivity', svg: '<path d="M2 12h4l3-9 4 18 3-9h4"/>' },
+  { id: 'compare', label: 'Compare', svg: '<rect x="2" y="2" width="9" height="9"/><rect x="13" y="2" width="9" height="9"/><rect x="2" y="13" width="9" height="9"/><rect x="13" y="13" width="9" height="9"/>' },
+  { id: 'materials', label: 'Materials', svg: '<path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>' },
+  { id: 'laminates', label: 'Laminates', svg: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>' }
 ];
 
-let chartInstances={};
-function destroyChart(id){if(chartInstances[id]){chartInstances[id].destroy();delete chartInstances[id];}}
+let chartInstances = {};
+function destroyChart(id) { if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; } }
 
-function renderNav(){
-  document.getElementById('nav-tabs').innerHTML=TABS.map(t=>`<button class="nav-tab${State.tab===t.id?' active':''}" data-tab="${t.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${t.svg}</svg>${t.label}</button>`).join('');
-  document.querySelectorAll('.nav-tab').forEach(btn=>{btn.onclick=()=>{State.tab=btn.dataset.tab;renderNav();renderContent();postNavRender();};});
+function renderNav() {
+  document.getElementById('nav-tabs').innerHTML = TABS.map(t => `<button class="nav-tab${State.tab === t.id ? ' active' : ''}" data-tab="${t.id}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${t.svg}</svg>${t.label}</button>`).join('');
+  document.querySelectorAll('.nav-tab').forEach(btn => { btn.onclick = () => { State.tab = btn.dataset.tab; renderNav(); renderContent(); postNavRender(); }; });
 }
 
-function setMode(mode){
-  State.mode=mode;Engine.mode=mode;
-  document.querySelectorAll('input[name="mode"]').forEach(r=>r.checked=r.value===mode);
-  DB.saveState(State);
-  renderNav();renderContent();postNavRender();
+function setMode(mode) {
+  State.mode = mode; Engine.mode = mode;
+  document.querySelectorAll('input[name="mode"]').forEach(r => r.checked = r.value === mode);
+  DB.saveState(State); renderNav(); renderContent(); postNavRender();
 }
 
-function postNavRender(){
-  setTimeout(()=>{
-    if(State.tab==='calc'&&State.calcResult)postCalcRender();
-    if(State.tab==='arrhenius')postArrheniusRender();
-    if(State.tab==='sensitivity')postSensitivityRender();
-    if(State.tab==='compare')postCompareRender();
-    if(State.tab==='laminates'&&DB.laminates.length>=2)drawLamChart();
-  },150);
+function postNavRender() {
+  setTimeout(() => {
+    if (State.tab === 'calc' && State.calcResult) postCalcRender();
+    if (State.tab === 'arrhenius') postArrheniusRender();
+    if (State.tab === 'sensitivity') postSensitivityRender();
+    if (State.tab === 'compare') postCompareRender();
+    if (State.tab === 'laminates' && DB.laminates.length >= 2) drawLamChart();
+  }, 150);
 }
 
-function renderContent(){
-  const c=document.getElementById('app-content');
-  switch(State.tab){
-    case'home':c.innerHTML=renderHome();break;
-    case'calc':c.innerHTML=renderCalc();break;
-    case'arrhenius':c.innerHTML=renderArrhenius();break;
-    case'sensitivity':c.innerHTML=renderSensitivity();break;
-    case'compare':c.innerHTML=renderCompare();break;
-    case'materials':c.innerHTML=renderMaterials();break;
-    case'laminates':c.innerHTML=renderLaminates();break;
+function renderContent() {
+  const c = document.getElementById('app-content');
+  try {
+    switch (State.tab) {
+      case 'home': c.innerHTML = renderHome(); break;
+      case 'calc': c.innerHTML = renderCalc(); break;
+      case 'arrhenius': c.innerHTML = renderArrhenius(); break;
+      case 'sensitivity': c.innerHTML = renderSensitivity(); break;
+      case 'compare': c.innerHTML = renderCompare(); break;
+      case 'materials': c.innerHTML = renderMaterials(); break;
+      case 'laminates': c.innerHTML = renderLaminates(); break;
+      default: c.innerHTML = renderHome();
+    }
+  } catch (e) {
+    console.error('Render error:', e);
+    c.innerHTML = `<div class="alert alert-error"><strong>Render Error:</strong> ${e.message}<br><small>${e.stack}</small></div>`;
   }
 }
 
-function render(){renderNav();renderContent();}
-function nav(tab){State.tab=tab;renderNav();renderContent();postNavRender();}
-
-function clearProject(){
-  if(!confirm('Clear current calculation? (Materials and saved laminates will be kept)'))return;
-  State.layers=[{mid:null,thick:0}];State.selCond=null;State.laminateName='';State.calcResult=null;State.calcError=null;
-  DB.saveState(State);render();
+function render() { renderNav(); renderContent(); }
+function nav(tab) { State.tab = tab; renderNav(); renderContent(); postNavRender(); }
+function clearProject() {
+  if (!confirm('Clear current calculation? (Materials and saved laminates will be kept)')) return;
+  State.layers = [{ mid: null, thick: 0 }]; State.selCond = null; State.laminateName = ''; State.calcResult = null; State.calcError = null;
+  DB.saveState(State); render();
 }
 
-function renderHome(){
-  return`<div class="hero"><div class="hero-content"><h2>WVTR/OTR Calculator Pro</h2><p>Resistance-based multilayer analysis from experimental data</p></div></div>
+function rStr(v) { return v === Infinity ? '∞' : v == null ? '-' : v.toFixed(4); }
+function getUnit() { return Engine.getUnits().value; }
+function getLabel() { return Engine.getUnits().label; }
+
+function renderHome() {
+  return `<div class="hero"><div class="hero-content"><h2>WVTR/OTR Calculator Pro</h2><p>Resistance-based multilayer analysis from experimental data</p></div></div>
 <div class="card"><div class="home-btns">
 <button class="btn btn-primary" onclick="showMatModal()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Add Material</button>
 <button class="btn btn-warning" onclick="nav('materials')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/></svg>Materials (${DB.materials.length})</button>
@@ -565,78 +556,74 @@ function renderHome(){
 </div></div>`;
 }
 
-function rStr(v){return v===Infinity?'∞':v==null?'-':v.toFixed(4);}
-function getUnit(){return Engine.getUnits().value;}
-function getLabel(){return Engine.getUnits().label;}
-
-function renderCalc(){
-  const common=Engine.findCommonConditions(State.layers,DB.materials);
-  const hasMats=State.layers.some(l=>l.mid!==null);
-  
-  let condHTML='';
-  if(!hasMats) condHTML=`<div class="alert alert-info"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Add at least one material with thickness to see conditions</div>`;
-  else if(common.error){
-    condHTML=`<div class="alert alert-error"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>${common.error}</div>`;
-    if(common.matInfo){
-      condHTML+=`<div class="alert alert-warning"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg><div style="width:100%"><strong>Available conditions per material:</strong><table class="cond-table"><thead><tr><th>Material</th><th>Conditions</th></tr></thead><tbody>${common.matInfo.map(m=>`<tr><td><strong>${m.name}</strong></td><td>${m.conditions.join(', ')}</td></tr>`).join('')}</tbody></table></div></div>`;
+function renderCalc() {
+  const common = Engine.findCommonConditions(State.layers, DB.materials);
+  const hasMats = State.layers.some(l => l.mid !== null);
+  let condHTML = '';
+  if (!hasMats) condHTML = `<div class="alert alert-info"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Add at least one material with thickness to see conditions</div>`;
+  else if (common.error) {
+    condHTML = `<div class="alert alert-error"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>${common.error}</div>`;
+    if (common.matInfo) {
+      condHTML += `<div class="alert alert-warning"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg><div style="width:100%"><strong>Available conditions per material:</strong><table class="cond-table"><thead><tr><th>Material</th><th>Conditions</th></tr></thead><tbody>${common.matInfo.map(m => `<tr><td><strong>${m.name}</strong></td><td>${m.conditions.join(', ')}</td></tr>`).join('')}</tbody></table></div></div>`;
     }
-  }else{
-    const conditions=common.conditions;
-    condHTML=`<div class="form-group"><label>Test Conditions (only valid combinations shown)</label>
+  } else {
+    const conditions = common.conditions;
+    condHTML = `<div class="form-group"><label>Test Conditions (only valid combinations shown)</label>
 <select class="form-input" id="sel-cond" onchange="onCondSelect()">
 <option value="">Select temperature/humidity...</option>
-${conditions.map(c=>`<option value="${c.temperature}|${c.humidity}"${State.selCond&&State.selCond.temperature===c.temperature&&State.selCond.humidity===c.humidity?' selected':''}>${c.temperature}°C / ${c.humidity}%</option>`).join('')}
+${conditions.map(c => `<option value="${c.temperature}|${c.humidity}"${State.selCond && State.selCond.temperature === c.temperature && State.selCond.humidity === c.humidity ? ' selected' : ''}>${c.temperature}°C / ${c.humidity}%</option>`).join('')}
 </select></div>`;
   }
-  
-  const layersHTML=State.layers.map((l,i)=>{
-    const res=State.calcResult?.layers?.[i];
-    const mat=l.mid!==null?DB.materials.find(m=>m.id===l.mid):null;
-    return`<div class="layer-card"><span class="layer-badge">LAYER ${i+1}</span>
+
+  const layersHTML = State.layers.map((l, i) => {
+    const res = State.calcResult?.layers?.[i];
+    const mat = l.mid !== null ? DB.materials.find(m => m.id === l.mid) : null;
+    return `<div class="layer-card"><span class="layer-badge">LAYER ${i + 1}</span>
 <div class="layer-grid">
-<div class="form-group" style="margin:0"><label>Material</label><select class="form-input" onchange="onLayerChange(${i},'mid',this.value)"><option value="">Select...</option>${DB.materials.map(m=>`<option value="${m.id}"${l.mid===m.id?' selected':''}>${m.name}</option>`).join('')}</select></div>
-<div class="form-group" style="margin:0"><label>Thickness (µm)</label><input type="number" step="any" class="form-input" value="${l.thick||''}" placeholder="0" onchange="onLayerChange(${i},'thick',this.value)"></div>
+<div class="form-group" style="margin:0"><label>Material</label><select class="form-input" onchange="onLayerChange(${i},'mid',this.value)"><option value="">Select...</option>${DB.materials.map(m => `<option value="${m.id}"${l.mid === m.id ? ' selected' : ''}>${m.name}</option>`).join('')}</select></div>
+<div class="form-group" style="margin:0"><label>Thickness (µm)</label><input type="number" step="any" class="form-input" value="${l.thick || ''}" placeholder="0" onchange="onLayerChange(${i},'thick',this.value)"></div>
 <div style="display:flex;align-items:center;gap:.3rem">
-${i>0?`<button class="btn btn-sm btn-danger" onclick="rmLayer(${i})">✕</button>`:''}
-${res&&res.transmissionAtThickness>0?`<span class="badge badge-green">${res.transmissionAtThickness.toFixed(3)}</span>`:''}
-${res?.isBarrier?`<span class="badge badge-purple">BARRIER</span>`:''}
+${i > 0 ? `<button class="btn btn-sm btn-danger" onclick="rmLayer(${i})">✕</button>` : ''}
+${res && res.transmissionAtThickness > 0 ? `<span class="badge badge-green">${res.transmissionAtThickness.toFixed(3)}</span>` : ''}
+${res?.isBarrier ? `<span class="badge badge-purple">BARRIER</span>` : ''}
 </div></div>
-${res?`<div style="margin-top:.35rem;font-size:.68rem;color:var(--text-light)">R: ${rStr(res.resistance)} · ${res.resistancePct.toFixed(1)}%</div>`:''}
-</div>`;}).join('');
-  
-  const selectedCond=State.selCond?`${State.selCond.temperature}°C/${State.selCond.humidity}%`:null;
-  const canCalc=!!selectedCond&&State.layers.every(l=>l.mid!==null&&l.thick>0);
-  const hasResult=State.calcResult&&!State.calcResult.error&&State.calcResult.total>0;
-  
-  let resultHTML='';
-  if(State.calcError) resultHTML=`<div class="alert alert-error"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/></svg>${State.calcError}</div>`;
-  else if(hasResult){
-    resultHTML=`<div class="result-card fade-in"><div class="result-value">${State.calcResult.total.toFixed(6)}</div><div class="result-unit">${getUnit()}</div></div>
-<div class="result-detail">${State.calcResult.layers.map(r=>`<div><strong>${r.materialName}</strong> (${r.thickness}µm): ${getLabel()}=${r.transmissionAtThickness.toFixed(4)} · R=${rStr(r.resistance)} · ${r.resistancePct.toFixed(1)}%</div>`).join('')}<div style="padding-top:.25rem;border-top:2px solid #93c5fd;margin-top:.25rem"><strong>Total R:</strong> ${rStr(State.calcResult.totalResistance)} day·m²/g</div></div>`;
+${res ? `<div style="margin-top:.35rem;font-size:.68rem;color:var(--text-light)">R: ${rStr(res.resistance)} · ${res.resistancePct.toFixed(1)}%</div>` : ''}
+</div>`;
+  }).join('');
+
+  const selectedCond = State.selCond ? `${State.selCond.temperature}°C/${State.selCond.humidity}%` : null;
+  const canCalc = !!selectedCond && State.layers.every(l => l.mid !== null && l.thick > 0);
+  const hasResult = State.calcResult && !State.calcResult.error && State.calcResult.total > 0;
+
+  let resultHTML = '';
+  if (State.calcError) resultHTML = `<div class="alert alert-error"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/></svg>${State.calcError}</div>`;
+  else if (hasResult) {
+    resultHTML = `<div class="result-card fade-in"><div class="result-value">${State.calcResult.total.toFixed(6)}</div><div class="result-unit">${getUnit()}</div></div>
+<div class="result-detail">${State.calcResult.layers.map(r => `<div><strong>${r.materialName}</strong> (${r.thickness}µm): ${getLabel()}=${r.transmissionAtThickness.toFixed(4)} · R=${rStr(r.resistance)} · ${r.resistancePct.toFixed(1)}%</div>`).join('')}<div style="padding-top:.25rem;border-top:2px solid #93c5fd;margin-top:.25rem"><strong>Total R:</strong> ${rStr(State.calcResult.totalResistance)} day·m²/g</div></div>`;
   }
-  
-  return`<div class="grid grid-2">
+
+  return `<div class="grid grid-2">
 <div>
 <div class="card"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>Laminate Structure</h2>
 ${layersHTML}
-<button class="btn btn-outline btn-full" onclick="addLayer()"${State.layers.length&&State.layers[State.layers.length-1].mid===null?' disabled':''}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Layer</button>
+<button class="btn btn-outline btn-full" onclick="addLayer()"${State.layers.length && State.layers[State.layers.length - 1].mid === null ? ' disabled' : ''}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Layer</button>
 </div>
 <div class="card"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>Test Conditions</h2>
 ${condHTML}
-${selectedCond?`<p style="font-size:.75rem;color:var(--text-light);margin-top:.5rem">Selected: <strong>${selectedCond}</strong></p>`:''}
+${selectedCond ? `<p style="font-size:.75rem;color:var(--text-light);margin-top:.5rem">Selected: <strong>${selectedCond}</strong></p>` : ''}
 <div style="display:flex;align-items:center;gap:.4rem;margin:.5rem 0">
-<div onclick="toggleAutoCalc()" style="width:36px;height:20px;background:${State.autoCalc?'var(--primary)':'var(--border)'};border-radius:10px;position:relative;cursor:pointer;transition:background .2s">
-<div style="position:absolute;top:2px;${State.autoCalc?'right:2px':'left:2px'};width:16px;height:16px;background:#fff;border-radius:50%;transition:left .2s"></div>
+<div onclick="toggleAutoCalc()" style="width:36px;height:20px;background:${State.autoCalc ? 'var(--primary)' : 'var(--border)'};border-radius:10px;position:relative;cursor:pointer;transition:background .2s">
+<div style="position:absolute;top:2px;${State.autoCalc ? 'right:2px' : 'left:2px'};width:16px;height:16px;background:#fff;border-radius:50%;transition:left .2s"></div>
 </div><span style="font-size:.75rem;color:var(--text-light)">Auto-calculate</span>
 </div>
-<button class="btn btn-danger btn-full" onclick="doCalc()"${!canCalc?' disabled':''}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4,14 10,14 10,20 14,20 14,14 20,14 20,10 14,10 14,4 10,4 10,10 4,10"/></svg>Calculate ${getLabel()}</button>
+<button class="btn btn-danger btn-full" onclick="doCalc()"${!canCalc ? ' disabled' : ''}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4,14 10,14 10,20 14,20 14,14 20,14 20,10 14,10 14,4 10,4 10,10 4,10"/></svg>Calculate ${getLabel()}</button>
 </div>
 </div>
 <div>
 <div class="card"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/></svg>Result</h2>
-${resultHTML||'<p style="color:var(--text-light);font-size:.8rem;text-align:center;padding:1.5rem">Configure layers & conditions, then calculate</p>'}
+${resultHTML || '<p style="color:var(--text-light);font-size:.8rem;text-align:center;padding:1.5rem">Configure layers & conditions, then calculate</p>'}
 </div>
-${hasResult?`
+${hasResult ? `
 <div class="card"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>${getLabel()} vs Temperature</h2>
 <div class="chart-container"><canvas id="lamCurveChart"></canvas></div>
 <div id="lamCurveLegend" style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.5rem;justify-content:center"></div>
@@ -647,212 +634,202 @@ ${hasResult?`
 <button class="btn btn-primary" id="save-btn" onclick="doSaveLam()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/></svg>Save</button>
 </div>
 <div id="save-feedback"></div>
-</div>`:''}
+</div>` : ''}
 </div></div>`;
 }
 
-function updateSaveBtn(){const btn=document.getElementById('save-btn');if(btn)btn.disabled=State.laminateName.trim()==='';}
-
-function onCondSelect(){
-  const sel=document.getElementById('sel-cond');
-  if(sel&&sel.value){
-    const parts=sel.value.split('|');
-    State.selCond={temperature:parseFloat(parts[0]),humidity:parseFloat(parts[1])};
-  }else{State.selCond=null;}
+function updateSaveBtn() { const btn = document.getElementById('save-btn'); if (btn) btn.disabled = State.laminateName.trim() === ''; }
+function onCondSelect() {
+  const sel = document.getElementById('sel-cond');
+  if (sel && sel.value) {
+    const parts = sel.value.split('|');
+    State.selCond = { temperature: parseFloat(parts[0]), humidity: parseFloat(parts[1]) };
+  } else { State.selCond = null; }
   DB.saveState(State);
-  if(State.autoCalc)doCalcSilent();
-  else renderContent();
+  if (State.autoCalc) doCalcSilent(); else renderContent();
 }
-
-function onLayerChange(i,field,val){
-  if(field==='mid')State.layers[i].mid=val!==''?parseFloat(val):null;else State.layers[i].thick=parseFloat(val)||0;
+function onLayerChange(i, field, val) {
+  if (field === 'mid') State.layers[i].mid = val !== '' ? parseFloat(val) : null; else State.layers[i].thick = parseFloat(val) || 0;
   DB.saveState(State);
-  if(State.autoCalc)doCalcSilent();else renderContent();
+  if (State.autoCalc) doCalcSilent(); else renderContent();
+}
+function addLayer() { State.layers.push({ mid: null, thick: 0 }); DB.saveState(State); renderContent(); }
+function rmLayer(i) { if (State.layers.length <= 1) return; State.layers.splice(i, 1); DB.saveState(State); renderContent(); }
+function toggleAutoCalc() { State.autoCalc = !State.autoCalc; renderContent(); }
+
+function doCalc() {
+  if (!State.selCond) { State.calcError = 'Select test conditions first'; State.calcResult = null; renderContent(); return; }
+  if (!State.layers.every(l => l.mid !== null && l.thick > 0)) { State.calcError = 'Complete all layers'; State.calcResult = null; renderContent(); return; }
+  const common = Engine.findCommonConditions(State.layers, DB.materials);
+  if (common.error) { State.calcError = common.error; State.calcResult = null; renderContent(); return; }
+  const result = Engine.calcTotal(State.layers, DB.materials, State.selCond);
+  if (result.error) { State.calcError = result.error; State.calcResult = null; } else { State.calcResult = result; State.calcError = null; }
+  renderContent(); setTimeout(() => { if (State.calcResult && !State.calcResult.error) postCalcRender(); }, 150);
+}
+function doCalcSilent() {
+  if (!State.selCond) return;
+  if (!State.layers.every(l => l.mid !== null && l.thick > 0)) return;
+  const common = Engine.findCommonConditions(State.layers, DB.materials);
+  if (common.error) return;
+  const result = Engine.calcTotal(State.layers, DB.materials, State.selCond);
+  if (!result.error) { State.calcResult = result; State.calcError = null; renderContent(); setTimeout(() => postCalcRender(), 150); }
+}
+function postCalcRender() { drawBarChart(); drawLaminateCurveChart(); }
+
+function doSaveLam() {
+  const name = State.laminateName.trim();
+  if (!name) { alert('Enter a name'); return; }
+  if (!State.calcResult || State.calcResult.total <= 0) { alert('Calculate first'); return; }
+  const tt = State.layers.reduce((s, l) => s + (l.thick || 0), 0);
+  const rec = Engine.checkRecyclability(State.layers, DB.materials);
+  DB.addLam({ name, total: State.calcResult.total, totalThickness: tt, humidity: State.selCond.humidity, temperature: State.selCond.temperature, mode: State.mode, recyclable: rec.recyclable, monoStructure: rec.monoStructure, layerCount: State.layers.length, layers: JSON.parse(JSON.stringify(State.layers)) });
+  State.laminateName = '';
+  const nameEl = document.getElementById('lam-name'); if (nameEl) nameEl.value = '';
+  const btn = document.getElementById('save-btn'); if (btn) btn.disabled = true;
+  const fb = document.getElementById('save-feedback');
+  if (fb) fb.innerHTML = '<div class="alert alert-success" style="margin-top:.5rem">✓ Laminate saved!</div>';
+  setTimeout(() => { const f = document.getElementById('save-feedback'); if (f) f.innerHTML = ''; }, 3000);
 }
 
-function addLayer(){State.layers.push({mid:null,thick:0});DB.saveState(State);renderContent();}
-function rmLayer(i){if(State.layers.length<=1)return;State.layers.splice(i,1);DB.saveState(State);renderContent();}
-function toggleAutoCalc(){State.autoCalc=!State.autoCalc;renderContent();}
-
-function doCalc(){
-  if(!State.selCond){State.calcError='Select test conditions first';State.calcResult=null;renderContent();return;}
-  if(!State.layers.every(l=>l.mid!==null&&l.thick>0)){State.calcError='Complete all layers';State.calcResult=null;renderContent();return;}
-  const common=Engine.findCommonConditions(State.layers,DB.materials);
-  if(common.error){State.calcError=common.error;State.calcResult=null;renderContent();return;}
-  const result=Engine.calcTotal(State.layers,DB.materials,State.selCond);
-  if(result.error){State.calcError=result.error;State.calcResult=null;}else{State.calcResult=result;State.calcError=null;}
-  renderContent();setTimeout(()=>{if(State.calcResult&&!State.calcResult.error)postCalcRender();},150);
-}
-
-function doCalcSilent(){
-  if(!State.selCond)return;
-  if(!State.layers.every(l=>l.mid!==null&&l.thick>0))return;
-  const common=Engine.findCommonConditions(State.layers,DB.materials);
-  if(common.error)return;
-  const result=Engine.calcTotal(State.layers,DB.materials,State.selCond);
-  if(!result.error){State.calcResult=result;State.calcError=null;renderContent();setTimeout(()=>postCalcRender(),150);}
-}
-
-function postCalcRender(){drawBarChart();drawLaminateCurveChart();}
-
-function doSaveLam(){
-  const name=State.laminateName.trim();
-  if(!name){alert('Enter a name');return;}
-  if(!State.calcResult||State.calcResult.total<=0){alert('Calculate first');return;}
-  const tt=State.layers.reduce((s,l)=>s+(l.thick||0),0);
-  const rec=Engine.checkRecyclability(State.layers,DB.materials);
-  DB.addLam({name,total:State.calcResult.total,totalThickness:tt,humidity:State.selCond.humidity,temperature:State.selCond.temperature,mode:State.mode,recyclable:rec.recyclable,monoStructure:rec.monoStructure,layerCount:State.layers.length,layers:JSON.parse(JSON.stringify(State.layers))});
-  State.laminateName='';
-  const nameEl=document.getElementById('lam-name');if(nameEl)nameEl.value='';
-  const btn=document.getElementById('save-btn');if(btn)btn.disabled=true;
-  const fb=document.getElementById('save-feedback');
-  if(fb)fb.innerHTML='<div class="alert alert-success" style="margin-top:.5rem">✓ Laminate saved!</div>';
-  setTimeout(()=>{const f=document.getElementById('save-feedback');if(f)f.innerHTML='';},3000);
-}
-
-// ============================================
-// CHARTS
-// ============================================
-function drawBarChart(){
-  const canvas=document.getElementById('barChart');
-  if(!canvas||!State.calcResult?.layers)return;
+/* ============================================================
+   CHARTS - CORRETTA SINTASSI CHART.JS
+   ============================================================ */
+function drawBarChart() {
+  const canvas = document.getElementById('barChart');
+  if (!canvas || !State.calcResult?.layers) return;
   destroyChart('bar');
-  const ctx=canvas.getContext('2d');
-  chartInstances.bar=new Chart(ctx,{
-    type:'bar',
-    data:{
-      labels:State.calcResult.layers.map((l,i)=>`L${i+1} ${l.materialName}`),
-      datasets:[{
-        label:'Resistance %',
-        data:State.calcResult.layers.map(l=>parseFloat(l.resistancePct.toFixed(1))),
-        backgroundColor:LAYER_COLORS.slice(0,State.calcResult.layers.length),
-        borderRadius:6
+  const ctx = canvas.getContext('2d');
+  chartInstances.bar = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: State.calcResult.layers.map((l, i) => `L${i + 1} ${l.materialName}`),
+      datasets: [{
+        label: 'Resistance %',
+        data: State.calcResult.layers.map(l => parseFloat(l.resistancePct.toFixed(1))),
+        backgroundColor: LAYER_COLORS.slice(0, State.calcResult.layers.length),
+        borderRadius: 6
       }]
     },
-    options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'% of total resistance'}},x:{title:{display:true,text:'Layers'}}}}
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, title: { display: true, text: '% of total resistance' } }, x: { title: { display: true, text: 'Layers' } } } }
   });
 }
 
-function drawLaminateCurveChart(){
-  const canvas=document.getElementById('lamCurveChart');
-  if(!canvas||!State.calcResult)return;
+function drawLaminateCurveChart() {
+  const canvas = document.getElementById('lamCurveChart');
+  if (!canvas || !State.calcResult) return;
   destroyChart('lamCurve');
-  const unit=getUnit();
-  const datasets=[];
-  const allTemps=[];const allVals=[];
-  
-  State.layers.forEach((layer,i)=>{
-    if(layer.mid===null||layer.thick<=0)return;
-    const mat=DB.materials.find(m=>m.id===layer.mid);
-    if(!mat)return;
-    const color=LAYER_COLORS[i%LAYER_COLORS.length];
-    const vals=Engine.getValues(mat);
-    const dataPoints=[];
-    vals.forEach((w,j)=>{
-      const cond=mat.validConditions[j];
-      if(cond){
-        const product=w.value*w.thickness;
-        const resistance=layer.thick/product;
-        const trans=resistance>0?1/resistance:0;
-        dataPoints.push({x:cond.temperature,y:trans});
-        allTemps.push(cond.temperature);allVals.push(trans);
+  const unit = getUnit();
+  const datasets = [];
+  const allTemps = []; const allVals = [];
+
+  State.layers.forEach((layer, i) => {
+    if (layer.mid === null || layer.thick <= 0) return;
+    const mat = DB.materials.find(m => m.id === layer.mid);
+    if (!mat) return;
+    const color = LAYER_COLORS[i % LAYER_COLORS.length];
+    const vals = Engine.getValues(mat);
+    const dataPoints = [];
+    vals.forEach((w, j) => {
+      const cond = mat.validConditions[j];
+      if (cond) {
+        const product = w.value * w.thickness;
+        const resistance = layer.thick / product;
+        const trans = resistance > 0 ? 1 / resistance : 0;
+        dataPoints.push({ x: cond.temperature, y: trans });
+        allTemps.push(cond.temperature); allVals.push(trans);
       }
     });
     datasets.push({
-      label:`${mat.name}`,
-      data:dataPoints,
-      borderColor:color,backgroundColor:color,borderWidth:2,showLine:true,type:'scatter',order:2,pointRadius:5,pointHoverRadius:7
+      label: `${mat.name}`,
+      data: dataPoints,
+      borderColor: color, backgroundColor: color, borderWidth: 2, showLine: true, type: 'scatter', order: 2, pointRadius: 5, pointHoverRadius: 7
     });
-    
-    const p=Engine.calcArrheniusParams(mat);
-    if(p.valid){
-      const curveData=[];
-      const tMin=Math.min(...mat.validConditions.map(c=>c.temperature))-10;
-      const tMax=Math.max(...mat.validConditions.map(c=>c.temperature))+10;
-      for(let t=tMin;t<=tMax;t+=0.5){
-        const transMat=Engine.predict(p.A,p.Ea,t);
-        const product=transMat*Engine.getValues(mat)[0].thickness;
-        const resistance=layer.thick/product;
-        const trans=resistance>0?1/resistance:0;
-        curveData.push({x:t,y:trans});
-        allTemps.push(t);allVals.push(trans);
+
+    const p = Engine.calcArrheniusParams(mat);
+    if (p.valid) {
+      const curveData = [];
+      const tMin = Math.min(...mat.validConditions.map(c => c.temperature)) - 10;
+      const tMax = Math.max(...mat.validConditions.map(c => c.temperature)) + 10;
+      for (let t = tMin; t <= tMax; t += 0.5) {
+        const transMat = Engine.predict(p.A, p.Ea, t);
+        const product = transMat * Engine.getValues(mat)[0].thickness;
+        const resistance = layer.thick / product;
+        const trans = resistance > 0 ? 1 / resistance : 0;
+        curveData.push({ x: t, y: trans });
+        allTemps.push(t); allVals.push(trans);
       }
       datasets.push({
-        label:`${mat.name} (fit)`,
-        data:curveData,
-        borderColor:color,backgroundColor:'transparent',borderWidth:1.5,borderDash:[5,3],pointRadius:0,type:'line',order:1,showLine:true
+        label: `${mat.name} (fit)`,
+        data: curveData,
+        borderColor: color, backgroundColor: 'transparent', borderWidth: 1.5, borderDash: [5, 3], pointRadius: 0, type: 'line', order: 1, showLine: true
       });
     }
   });
-  
-  // Laminate total curve
-  const laminateCurve=[];
-  if(allTemps.length>0){
-    const tMin=Math.min(...allTemps)-5;const tMax=Math.max(...allTemps)+5;
-    for(let t=tMin;t<=tMax;t+=0.5){
-      let totalR=0;let valid=true;
-      for(const layer of State.layers){
-        if(layer.mid===null||layer.thick<=0){valid=false;break;}
-        const mat=DB.materials.find(m=>m.id===layer.mid);if(!mat){valid=false;break;}
-        const condIdx=mat.validConditions.findIndex(c=>Math.abs(c.temperature-t)<0.01);
-        if(condIdx>=0){
-          const vals=Engine.getValues(mat);const wd=vals[condIdx];
-          if(wd.value<=0.00001){valid=false;break;}
-          const product=wd.value*wd.thickness;totalR+=layer.thick/product;
-        }else{
-          const p=Engine.calcArrheniusParams(mat);
-          if(p.valid){
-            const transMat=Engine.predict(p.A,p.Ea,t);
-            const product=transMat*Engine.getValues(mat)[0].thickness;
-            totalR+=layer.thick/product;
-          }else{valid=false;break;}
+
+  const laminateCurve = [];
+  if (allTemps.length > 0) {
+    const tMin = Math.min(...allTemps) - 5; const tMax = Math.max(...allTemps) + 5;
+    for (let t = tMin; t <= tMax; t += 0.5) {
+      let totalR = 0; let valid = true;
+      for (const layer of State.layers) {
+        if (layer.mid === null || layer.thick <= 0) { valid = false; break; }
+        const mat = DB.materials.find(m => m.id === layer.mid); if (!mat) { valid = false; break; }
+        const condIdx = mat.validConditions.findIndex(c => Math.abs(c.temperature - t) < 0.01);
+        if (condIdx >= 0) {
+          const vals = Engine.getValues(mat); const wd = vals[condIdx];
+          if (wd.value <= 0.00001) { valid = false; break; }
+          const product = wd.value * wd.thickness; totalR += layer.thick / product;
+        } else {
+          const p = Engine.calcArrheniusParams(mat);
+          if (p.valid) {
+            const transMat = Engine.predict(p.A, p.Ea, t);
+            const product = transMat * Engine.getValues(mat)[0].thickness;
+            totalR += layer.thick / product;
+          } else { valid = false; break; }
         }
       }
-      if(valid&&totalR>0)laminateCurve.push({x:t,y:1/totalR});
+      if (valid && totalR > 0) laminateCurve.push({ x: t, y: 1 / totalR });
     }
   }
-  if(laminateCurve.length>0){
+  if (laminateCurve.length > 0) {
     datasets.push({
-      label:'Laminate Total',
-      data:laminateCurve,
-      borderColor:'#dc2626',backgroundColor:'rgba(220,38,38,0.1)',borderWidth:2.5,pointRadius:0,type:'line',fill:false,order:0
+      label: 'Laminate Total',
+      data: laminateCurve,
+      borderColor: '#dc2626', backgroundColor: 'rgba(220,38,38,0.1)', borderWidth: 2.5, pointRadius: 0, type: 'line', fill: false, order: 0
     });
   }
-  
-  if(datasets.length===0)return;
-  
-  const ctx=canvas.getContext('2d');
-  chartInstances.lamCurve=new Chart(ctx,{
-    type:'line',
-    data:{datasets},
-    options:{
-      responsive:true,
-      interaction:{mode:'nearest',axis:'x',intersect:false},
-      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}}}},
-      scales:{x:{type:'linear',title:{display:true,text:'Temperature (°C)'}},y:{title:{display:true,text:getLabel()+` (${unit})`},beginAtZero:true}}
+
+  if (datasets.length === 0) return;
+
+  const ctx = canvas.getContext('2d');
+  chartInstances.lamCurve = new Chart(ctx, {
+    type: 'line',
+    data: { datasets: datasets },
+    options: {
+      responsive: true,
+      interaction: { mode: 'nearest', axis: 'x', intersect: false },
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } },
+      scales: { x: { type: 'linear', title: { display: true, text: 'Temperature (°C)' } }, y: { title: { display: true, text: getLabel() + ` (${unit})` }, beginAtZero: true } }
     }
   });
-  
-  const legendEl=document.getElementById('lamCurveLegend');
-  if(legendEl){
-    let html='';
-    datasets.forEach((d)=>{
-      const color=d.borderColor||d.backgroundColor;
-      html+=`<span style="display:inline-flex;align-items:center;gap:.3rem;font-size:.7rem;color:var(--text-light)"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color}"></span>${d.label}</span>`;
+
+  const legendEl = document.getElementById('lamCurveLegend');
+  if (legendEl) {
+    let html = '';
+    datasets.forEach((d) => {
+      const color = d.borderColor || d.backgroundColor;
+      html += `<span style="display:inline-flex;align-items:center;gap:.3rem;font-size:.7rem;color:var(--text-light)"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color}"></span>${d.label}</span>`;
     });
-    legendEl.innerHTML=html;
+    legendEl.innerHTML = html;
   }
 }
 
-// ============================================
-// ARRHENIUS
-// ============================================
-function renderArrhenius(){
-  const arrMats=DB.materials.filter(m=>Engine.validateArrhenius(m).valid);
-  return`<div class="card"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Arrhenius Analysis</h2>
+function renderArrhenius() {
+  const arrMats = DB.materials.filter(m => Engine.validateArrhenius(m).valid);
+  return `<div class="card"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Arrhenius Analysis</h2>
 <p style="font-size:.78rem;color:var(--text-light);margin-bottom:.75rem">Predict ${getLabel()} at unmeasured temperatures. Requires ≥2 data points at different temperatures with same humidity.</p>
 <div class="grid grid-2">
-<div class="form-group"><label>Material (must have multi-temp data)</label><select class="form-input" id="arr-mat"><option value="">Select...</option>${DB.materials.map(m=>{const v=Engine.validateArrhenius(m);return`<option value="${m.id}"${!v.valid?' disabled':''}>${m.name}${!v.valid?' (single temp)':' ✓'}</option>`;}).join('')}</select></div>
+<div class="form-group"><label>Material (must have multi-temp data)</label><select class="form-input" id="arr-mat"><option value="">Select...</option>${DB.materials.map(m => { const v = Engine.validateArrhenius(m); return `<option value="${m.id}"${!v.valid ? ' disabled' : ''}>${m.name}${!v.valid ? ' (single temp)' : ' ✓'}</option>`; }).join('')}</select></div>
 <div class="form-group"><label>Target Temperature (°C)</label><input type="number" step="any" class="form-input" id="arr-temp" value="25" oninput="onArrChange()"></div>
 </div><div id="arr-result"></div></div>
 <div class="grid grid-2">
@@ -861,180 +838,165 @@ function renderArrhenius(){
 </div>`;
 }
 
-function postArrheniusRender(){
-  setTimeout(()=>{
-    const sel=document.getElementById('arr-mat');
-    const arrMats=DB.materials.filter(m=>Engine.validateArrhenius(m).valid);
-    if(sel&&arrMats.length>0&&!sel.value)sel.value=arrMats[0].id;
-    if(sel&&sel.value)onArrChange();
-    else{clearArrCanvas('arrTempCanvas');clearArrCanvas('arrLinCanvas');}
-  },100);
+function postArrheniusRender() {
+  setTimeout(() => {
+    const sel = document.getElementById('arr-mat');
+    const arrMats = DB.materials.filter(m => Engine.validateArrhenius(m).valid);
+    if (sel && arrMats.length > 0 && !sel.value) sel.value = arrMats[0].id;
+    if (sel && sel.value) onArrChange();
+    else { clearArrCanvas('arrTempCanvas'); clearArrCanvas('arrLinCanvas'); }
+  }, 100);
 }
 
-function onArrChange(){
-  const selMat=document.getElementById('arr-mat');
-  const selTemp=document.getElementById('arr-temp');
-  const resEl=document.getElementById('arr-result');
-  if(!selMat||!selTemp)return;
-  
-  const matId=parseFloat(selMat.value);
-  const targetTemp=parseFloat(selTemp.value)||25;
-  
-  if(!matId){
-    if(resEl)resEl.innerHTML='';
-    clearArrCanvas('arrTempCanvas');clearArrCanvas('arrLinCanvas');
+function onArrChange() {
+  const selMat = document.getElementById('arr-mat');
+  const selTemp = document.getElementById('arr-temp');
+  const resEl = document.getElementById('arr-result');
+  if (!selMat || !selTemp) return;
+
+  const matId = parseFloat(selMat.value);
+  const targetTemp = parseFloat(selTemp.value) || 25;
+
+  if (!matId) {
+    if (resEl) resEl.innerHTML = '';
+    clearArrCanvas('arrTempCanvas'); clearArrCanvas('arrLinCanvas');
     return;
   }
-  
-  const mat=DB.materials.find(m=>m.id===matId);
-  if(!mat)return;
-  
-  const v=Engine.validateArrhenius(mat);
-  if(!v.valid){
-    if(resEl)resEl.innerHTML=`<div class="alert alert-error"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/></svg>${v.error}</div>`;
-    clearArrCanvas('arrTempCanvas');clearArrCanvas('arrLinCanvas');
+
+  const mat = DB.materials.find(m => m.id === matId);
+  if (!mat) return;
+
+  const v = Engine.validateArrhenius(mat);
+  if (!v.valid) {
+    if (resEl) resEl.innerHTML = `<div class="alert alert-error"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/></svg>${v.error}</div>`;
+    clearArrCanvas('arrTempCanvas'); clearArrCanvas('arrLinCanvas');
     return;
   }
-  
-  const r=Engine.applyArrhenius(mat,targetTemp);
-  if(r.error){
-    if(resEl)resEl.innerHTML=`<div class="alert alert-error"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/></svg>${r.error}</div>`;
-    clearArrCanvas('arrTempCanvas');clearArrCanvas('arrLinCanvas');
+
+  const r = Engine.applyArrhenius(mat, targetTemp);
+  if (r.error) {
+    if (resEl) resEl.innerHTML = `<div class="alert alert-error"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/></svg>${r.error}</div>`;
+    clearArrCanvas('arrTempCanvas'); clearArrCanvas('arrLinCanvas');
     return;
   }
-  
-  let warn='';
-  if(r.isExtrapolation)warn=`<div class="alert alert-warning"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg><strong>Extrapolation</strong> — target ${targetTemp}°C is outside measured range (${r.minTemp.toFixed(0)}–${r.maxTemp.toFixed(0)}°C). Results have lower confidence.</div>`;
-  
-  if(resEl)resEl.innerHTML=warn+`<div class="reliability-meter ${r.rSquared>0.95?'reliability-high':r.rSquared>0.8?'reliability-medium':'reliability-low'}">R²=${r.rSquared.toFixed(4)} · Ea=${(r.Ea/1000).toFixed(2)} kJ/mol</div>
+
+  let warn = '';
+  if (r.isExtrapolation) warn = `<div class="alert alert-warning"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg><strong>Extrapolation</strong> — target ${targetTemp}°C is outside measured range (${r.minTemp.toFixed(0)}–${r.maxTemp.toFixed(0)}°C). Results have lower confidence.</div>`;
+
+  if (resEl) resEl.innerHTML = warn + `<div class="reliability-meter ${r.rSquared > 0.95 ? 'reliability-high' : r.rSquared > 0.8 ? 'reliability-medium' : 'reliability-low'}">R²=${r.rSquared.toFixed(4)} · Ea=${(r.Ea / 1000).toFixed(2)} kJ/mol</div>
 <div class="grid grid-3" style="margin-top:.4rem">
-<div><div style="font-size:.65rem;color:var(--text-light)">Activation Energy</div><div style="font-weight:700">${(r.Ea/1000).toFixed(2)} kJ/mol</div></div>
+<div><div style="font-size:.65rem;color:var(--text-light)">Activation Energy</div><div style="font-weight:700">${(r.Ea / 1000).toFixed(2)} kJ/mol</div></div>
 <div><div style="font-size:.65rem;color:var(--text-light)">Pre-exponential A</div><div style="font-weight:700">${r.A.toExponential(3)}</div></div>
 <div><div style="font-size:.65rem;color:var(--text-light)">Predicted at ${r.targetTempC}°C</div><div style="font-size:1rem;font-weight:700;color:var(--primary)">${r.predicted.toFixed(6)}</div></div>
 </div>
-<div style="margin-top:.35rem;font-size:.65rem;color:var(--text-light)">Measured range: ${r.minTemp.toFixed(0)}–${r.maxTemp.toFixed(0)}°C · ${r.isExtrapolation?'⚠ EXTRAPOLATION':'✓ INTERPOLATION'}</div>`;
-  
-  drawArrTempChart(mat,r);
-  drawArrLinChart(mat,r);
+<div style="margin-top:.35rem;font-size:.65rem;color:var(--text-light)">Measured range: ${r.minTemp.toFixed(0)}–${r.maxTemp.toFixed(0)}°C · ${r.isExtrapolation ? '⚠ EXTRAPOLATION' : '✓ INTERPOLATION'}</div>`;
+
+  drawArrTempChart(mat, r);
+  drawArrLinChart(mat, r);
 }
 
-function clearArrCanvas(id){
-  const c=document.getElementById(id);if(!c)return;
-  destroyChart(id.replace('Canvas',''));
-  const ctx=c.getContext('2d');
-  c.width=500*window.devicePixelRatio;c.height=280*window.devicePixelRatio;
-  ctx.scale(window.devicePixelRatio,window.devicePixelRatio);
-  ctx.fillStyle='#f8fafc';ctx.fillRect(0,0,500,280);
-  ctx.fillStyle='#94a3b8';ctx.font='13px sans-serif';ctx.textAlign='center';
-  ctx.fillText('Select a multi-temp material',250,145);
+function clearArrCanvas(id) {
+  const c = document.getElementById(id); if (!c) return;
+  destroyChart(id.replace('Canvas', ''));
+  const ctx = c.getContext('2d');
+  c.width = 500 * window.devicePixelRatio; c.height = 280 * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  ctx.fillStyle = '#f8fafc'; ctx.fillRect(0, 0, 500, 280);
+  ctx.fillStyle = '#94a3b8'; ctx.font = '13px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('Select a multi-temp material', 250, 145);
 }
 
-function drawArrTempChart(mat,r){
+function drawArrTempChart(mat, r) {
   destroyChart('arrTemp');
-  const canvas=document.getElementById('arrTempCanvas');if(!canvas)return;
-  const ctx=canvas.getContext('2d');
-  
-  const vals=Engine.getValues(mat);
-  const dataPoints=mat.wvtrValues.map((w,i)=>({x:mat.validConditions[i].temperature,y:w.value}));
-  
-  const datasets=[{
-    label:'Measured data',
-    data:dataPoints,
-    borderColor:'#ef4444',backgroundColor:'#ef4444',borderWidth:0,pointRadius:6,pointHoverRadius:8,type:'scatter',order:1
+  const canvas = document.getElementById('arrTempCanvas'); if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  const vals = Engine.getValues(mat);
+  const dataPoints = mat.wvtrValues.map((w, i) => ({ x: mat.validConditions[i].temperature, y: w.value }));
+
+  const datasets = [{
+    label: 'Measured data',
+    data: dataPoints,
+    borderColor: '#ef4444', backgroundColor: '#ef4444', borderWidth: 0, pointRadius: 6, pointHoverRadius: 8, type: 'scatter', order: 1
   }];
-  
-  if(r&&!r.error){
-    const curveData=[];
-    const tMin=Math.min(r.minTemp-10,Math.min(...dataPoints.map(d=>d.x))-5);
-    const tMax=Math.max(r.maxTemp+10,Math.max(...dataPoints.map(d=>d.x))+5);
-    for(let t=tMin;t<=tMax;t+=0.5){
-      const w=Engine.predict(r.A,r.Ea,t);
-      curveData.push({x:t,y:w});
+
+  if (r && !r.error) {
+    const curveData = [];
+    const tMin = Math.min(r.minTemp - 10, Math.min(...dataPoints.map(d => d.x)) - 5);
+    const tMax = Math.max(r.maxTemp + 10, Math.max(...dataPoints.map(d => d.x)) + 5);
+    for (let t = tMin; t <= tMax; t += 0.5) {
+      const w = Engine.predict(r.A, r.Ea, t);
+      curveData.push({ x: t, y: w });
     }
     datasets.push({
-      label:'Arrhenius fit',
-      data:curveData,
-      borderColor:'#3b82f6',backgroundColor:'transparent',borderWidth:2,pointRadius:0,type:'line',order:0
+      label: 'Arrhenius fit',
+      data: curveData,
+      borderColor: '#3b82f6', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, type: 'line', order: 0
     });
-    
-    // Target point
     datasets.push({
-      label:`Target: ${r.targetTempC}°C → ${r.predicted.toFixed(4)}`,
-      data:[{x:r.targetTempC,y:r.predicted}],
-      borderColor:'#22c55e',backgroundColor:'#22c55e',borderWidth:0,pointRadius:8,pointHoverRadius:10,type:'scatter',order:0
+      label: `Target: ${r.targetTempC}°C → ${r.predicted.toFixed(4)}`,
+      data: [{ x: r.targetTempC, y: r.predicted }],
+      borderColor: '#22c55e', backgroundColor: '#22c55e', borderWidth: 0, pointRadius: 8, pointHoverRadius: 10, type: 'scatter', order: 0
     });
   }
-  
-  chartInstances.arrTemp=new Chart(ctx,{
-    type:'line',
-    data:{datasets},
-    options:{
-      responsive:true,
-      interaction:{mode:'nearest',axis:'x',intersect:false},
-      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}}}},
-      scales:{x:{type:'linear',title:{display:true,text:'Temperature (°C)'}},y:{title:{display:true,text:getLabel()+` (${getUnit()})`},beginAtZero:true}}
+
+  chartInstances.arrTemp = new Chart(ctx, {
+    type: 'line',
+    data: { datasets: datasets },
+    options: {
+      responsive: true,
+      interaction: { mode: 'nearest', axis: 'x', intersect: false },
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } },
+      scales: { x: { type: 'linear', title: { display: true, text: 'Temperature (°C)' } }, y: { title: { display: true, text: getLabel() + ` (${getUnit()})` }, beginAtZero: true } }
     }
   });
 }
 
-function drawArrLinChart(mat,r){
+function drawArrLinChart(mat, r) {
   destroyChart('arrLin');
-  const canvas=document.getElementById('arrLinCanvas');if(!canvas)return;
-  const ctx=canvas.getContext('2d');
-  
-  if(!r||!r.dataPoints||r.dataPoints.length<2){
-    ctx.fillStyle='#94a3b8';ctx.font='13px sans-serif';ctx.textAlign='center';
-    ctx.fillText('Need ≥2 data points',250,140);return;
+  const canvas = document.getElementById('arrLinCanvas'); if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  if (!r || !r.dataPoints || r.dataPoints.length < 2) {
+    ctx.fillStyle = '#94a3b8'; ctx.font = '13px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Need ≥2 data points', 250, 140); return;
   }
-  
-  const dps=r.dataPoints;
-  const dataPoints=dps.map(d=>({x:1/d.T_K,y:Math.log(d.trans)}));
-  
-  // Linear fit line
-  const slope=-r.Ea/Engine.R_GAS;
-  const intercept=Math.log(r.A);
-  const minX=Math.min(...dataPoints.map(d=>d.x))*0.98;
-  const maxX=Math.max(...dataPoints.map(d=>d.x))*1.02;
-  
-  const datasets=[
-    {
-      label:'Experimental',
-      data:dataPoints,
-      borderColor:'#ef4444',backgroundColor:'#ef4444',borderWidth:0,pointRadius:6,pointHoverRadius:8,type:'scatter',order:1
-    },
-    {
-      label:'Linear fit',
-      data:[{x:minX,y:slope*minX+intercept},{x:maxX,y:slope*maxX+intercept}],
-      borderColor:'#3b82f6',backgroundColor:'transparent',borderWidth:2,pointRadius:0,type:'line',order:0
-    }
+
+  const dps = r.dataPoints;
+  const dataPoints = dps.map(d => ({ x: 1 / d.T_K, y: Math.log(d.trans) }));
+  const slope = -r.Ea / Engine.R_GAS;
+  const intercept = Math.log(r.A);
+  const minX = Math.min(...dataPoints.map(d => d.x)) * 0.98;
+  const maxX = Math.max(...dataPoints.map(d => d.x)) * 1.02;
+
+  const datasets = [
+    { label: 'Experimental', data: dataPoints, borderColor: '#ef4444', backgroundColor: '#ef4444', borderWidth: 0, pointRadius: 6, pointHoverRadius: 8, type: 'scatter', order: 1 },
+    { label: 'Linear fit', data: [{ x: minX, y: slope * minX + intercept }, { x: maxX, y: slope * maxX + intercept }], borderColor: '#3b82f6', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, type: 'line', order: 0 }
   ];
-  
-  chartInstances.arrLin=new Chart(ctx,{
-    type:'line',
-    data:{datasets},
-    options:{
-      responsive:true,
-      plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}}}},
-      scales:{x:{type:'linear',title:{display:true,text:'1/T (K⁻¹)'}},y:{title:{display:true,text:`ln(${getLabel()})`}}}
+
+  chartInstances.arrLin = new Chart(ctx, {
+    type: 'line',
+    data: { datasets: datasets },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } },
+      scales: { x: { type: 'linear', title: { display: true, text: '1/T (K⁻¹)' } }, y: { title: { display: true, text: `ln(${getLabel()})` } } }
     }
   });
 }
 
-// ============================================
-// SENSITIVITY
-// ============================================
-function renderSensitivity(){
-  const hasMats=State.layers.some(l=>l.mid!==null);
-  const layerOptions=State.layers.map((l,i)=>{
-    const mat=l.mid!==null?DB.materials.find(m=>m.id===l.mid):null;
-    return`<option value="${i}"${State.sensLayerIdx===i?' selected':''}>L${i+1}: ${mat?mat.name:'Unknown'} (${l.thick||0}µm)</option>`;
+function renderSensitivity() {
+  const hasMats = State.layers.some(l => l.mid !== null);
+  const layerOptions = State.layers.map((l, i) => {
+    const mat = l.mid !== null ? DB.materials.find(m => m.id === l.mid) : null;
+    return `<option value="${i}"${State.sensLayerIdx === i ? ' selected' : ''}>L${i + 1}: ${mat ? mat.name : 'Unknown'} (${l.thick || 0}µm)</option>`;
   }).join('');
-  
-  return`<div class="grid grid-2">
+
+  return `<div class="grid grid-2">
 <div class="card"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h4l3-9 4 18 3-9h4"/></svg>Sensitivity Analysis</h2>
 <p style="font-size:.78rem;color:var(--text-light);margin-bottom:.75rem">See how ${getLabel()} changes when varying one layer's thickness</p>
-${!hasMats?'<div class="alert alert-info"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/></svg>Configure layers in Calculator first</div>':
-`<div class="grid grid-2">
+${!hasMats ? '<div class="alert alert-info"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/></svg>Configure layers in Calculator first</div>' :
+    `<div class="grid grid-2">
 <div class="form-group"><label>Layer to vary</label><select class="form-input" id="sens-layer" onchange="onSensChange()">${layerOptions}</select></div>
 <div class="form-group"><label>Thickness range (µm)</label><div style="display:flex;gap:.5rem"><input type="number" step="any" class="form-input" id="sens-tmin" value="10" onchange="onSensChange()" placeholder="Min"><input type="number" step="any" class="form-input" id="sens-tmax" value="500" onchange="onSensChange()" placeholder="Max"></div></div>
 </div>
@@ -1046,100 +1008,95 @@ ${!hasMats?'<div class="alert alert-info"><svg class="alert-icon" viewBox="0 0 2
 <p style="font-size:.78rem;color:var(--text-light);margin-bottom:.75rem">Find minimum barrier layer thickness to meet target</p>
 <div class="grid grid-2">
 <div class="form-group"><label>Target ${getLabel()} (${getUnit()})</label><input type="number" step="any" class="form-input" id="opt-target" value="${State.targetValue}" onchange="doOptimize()"></div>
-<div class="form-group"><label>Barrier layer</label><select class="form-input" id="opt-layer" onchange="doOptimize()">${State.layers.map((l,i)=>{const mat=l.mid!==null?DB.materials.find(m=>m.id===l.mid):null;return`<option value="${i}">L${i+1}: ${mat?mat.name:'Unknown'}</option>`;}).join('')}</select></div>
+<div class="form-group"><label>Barrier layer</label><select class="form-input" id="opt-layer" onchange="doOptimize()">${State.layers.map((l, i) => { const mat = l.mid !== null ? DB.materials.find(m => m.id === l.mid) : null; return `<option value="${i}">L${i + 1}: ${mat ? mat.name : 'Unknown'}</option>`; }).join('')}</select></div>
 </div>
 <div id="opt-result"></div>
 </div>
 </div>`;
 }
 
-function onSensChange(){
-  State.sensLayerIdx=parseInt(document.getElementById('sens-layer')?.value||0);
+function onSensChange() {
+  State.sensLayerIdx = parseInt(document.getElementById('sens-layer')?.value || 0);
   drawSensitivityChart();
 }
 
-function postSensitivityRender(){
-  if(State.layers.some(l=>l.mid!==null)){
-    setTimeout(()=>{drawSensitivityChart();doOptimize();},100);
+function postSensitivityRender() {
+  if (State.layers.some(l => l.mid !== null)) {
+    setTimeout(() => { drawSensitivityChart(); doOptimize(); }, 100);
   }
 }
 
-function drawSensitivityChart(){
-  const canvas=document.getElementById('sensChart');if(!canvas)return;
+function drawSensitivityChart() {
+  const canvas = document.getElementById('sensChart'); if (!canvas) return;
   destroyChart('sens');
-  
-  const layerIdx=State.sensLayerIdx;
-  const tMin=parseFloat(document.getElementById('sens-tmin')?.value||10);
-  const tMax=parseFloat(document.getElementById('sens-tmax')?.value||500);
-  
-  // Use first available condition or selCond
-  const common=Engine.findCommonConditions(State.layers,DB.materials);
-  const condition=State.selCond||(common.conditions&&common.conditions[0])||{temperature:25,humidity:50};
-  
-  const result=Engine.calcSensitivityCurve(State.layers,DB.materials,condition,layerIdx,tMin,tMax,100);
-  if(result.error)return;
-  
-  const ctx=canvas.getContext('2d');
-  chartInstances.sens=new Chart(ctx,{
-    type:'line',
-    data:{
-      labels:result.points.map(p=>p.thickness.toFixed(0)),
-      datasets:[{
-        label:`${getLabel()} vs Layer ${layerIdx+1} thickness`,
-        data:result.points.map(p=>parseFloat(p.total.toFixed(6))),
-        borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.1)',fill:true,tension:0.4,pointRadius:0,borderWidth:2
+
+  const layerIdx = State.sensLayerIdx;
+  const tMin = parseFloat(document.getElementById('sens-tmin')?.value || 10);
+  const tMax = parseFloat(document.getElementById('sens-tmax')?.value || 500);
+  const common = Engine.findCommonConditions(State.layers, DB.materials);
+  const condition = State.selCond || (common.conditions && common.conditions[0]) || { temperature: 25, humidity: 50 };
+
+  const result = Engine.calcSensitivityCurve(State.layers, DB.materials, condition, layerIdx, tMin, tMax, 100);
+  if (result.error) return;
+
+  const ctx = canvas.getContext('2d');
+  chartInstances.sens = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: result.points.map(p => p.thickness.toFixed(0)),
+      datasets: [{
+        label: `${getLabel()} vs Layer ${layerIdx + 1} thickness`,
+        data: result.points.map(p => parseFloat(p.total.toFixed(6))),
+        borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2
       }]
     },
-    options:{
-      responsive:true,
-      plugins:{legend:{display:false}},
-      scales:{x:{title:{display:true,text:'Layer thickness (µm)'}},y:{title:{display:true,text:`Total ${getLabel()} (${getUnit()})`},beginAtZero:true}}
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { x: { title: { display: true, text: 'Layer thickness (µm)' } }, y: { title: { display: true, text: `Total ${getLabel()} (${getUnit()})` }, beginAtZero: true } }
     }
   });
 }
 
-function doOptimize(){
-  const target=parseFloat(document.getElementById('opt-target')?.value||0.5);
-  const barrierIdx=parseInt(document.getElementById('opt-layer')?.value||0);
-  const resEl=document.getElementById('opt-result');if(!resEl)return;
-  
-  const common=Engine.findCommonConditions(State.layers,DB.materials);
-  const condition=State.selCond||(common.conditions&&common.conditions[0]);
-  
-  if(!condition||!State.layers.every(l=>l.mid!==null&&l.thick>0)){
-    resEl.innerHTML='<div class="alert alert-info"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/></svg>Configure and calculate first</div>';
+function doOptimize() {
+  const target = parseFloat(document.getElementById('opt-target')?.value || 0.5);
+  const barrierIdx = parseInt(document.getElementById('opt-layer')?.value || 0);
+  const resEl = document.getElementById('opt-result'); if (!resEl) return;
+
+  const common = Engine.findCommonConditions(State.layers, DB.materials);
+  const condition = State.selCond || (common.conditions && common.conditions[0]);
+
+  if (!condition || !State.layers.every(l => l.mid !== null && l.thick > 0)) {
+    resEl.innerHTML = '<div class="alert alert-info"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/></svg>Configure and calculate first</div>';
     return;
   }
-  
-  const result=Engine.optimizeForTarget(State.layers,DB.materials,condition,target,barrierIdx);
-  if(result.error){
-    resEl.innerHTML=`<div class="alert alert-warning"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>${result.error}</div>`;
+
+  const result = Engine.optimizeForTarget(State.layers, DB.materials, condition, target, barrierIdx);
+  if (result.error) {
+    resEl.innerHTML = `<div class="alert alert-warning"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>${result.error}</div>`;
     return;
   }
-  
-  const mat=DB.materials.find(m=>m.id===State.layers[barrierIdx].mid);
-  const current=State.layers[barrierIdx].thick;
-  resEl.innerHTML=`<div class="alert alert-success"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+
+  const mat = DB.materials.find(m => m.id === State.layers[barrierIdx].mid);
+  const current = State.layers[barrierIdx].thick;
+  resEl.innerHTML = `<div class="alert alert-success"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
 <div>To achieve <strong>target ${getLabel()} ≤ ${target} ${getUnit()}</strong> at ${condition.temperature}°C/${condition.humidity}%:</div>
-<div style="margin-top:.35rem"><strong>${mat?mat.name:'Layer '+(barrierIdx+1)}</strong> minimum thickness: <strong style="font-size:1.1rem;color:var(--primary)">${result.thickness.toFixed(1)} µm</strong></div>
-<div style="margin-top:.25rem;font-size:.72rem;color:var(--text-light)">Current: ${current}µm → Suggested: ${result.thickness.toFixed(1)}µm (${result.thickness<current?'✓ Material savings possible':'⚠ Increase thickness needed'})</div>
+<div style="margin-top:.35rem"><strong>${mat ? mat.name : 'Layer ' + (barrierIdx + 1)}</strong> minimum thickness: <strong style="font-size:1.1rem;color:var(--primary)">${result.thickness.toFixed(1)} µm</strong></div>
+<div style="margin-top:.25rem;font-size:.72rem;color:var(--text-light)">Current: ${current}µm → Suggested: ${result.thickness.toFixed(1)}µm (${result.thickness < current ? '✓ Material savings possible' : '⚠ Increase thickness needed'})</div>
 </div>`;
 }
 
-// ============================================
-// COMPARE
-// ============================================
-function renderCompare(){
-  const unit=getUnit();
-  if(DB.laminates.length<2){
-    return`<div class="card"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="9" height="9"/><rect x="13" y="2" width="9" height="9"/></svg><p>Save ≥2 laminates to compare</p></div></div>`;
+function renderCompare() {
+  const unit = getUnit();
+  if (DB.laminates.length < 2) {
+    return `<div class="card"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="9" height="9"/><rect x="13" y="2" width="9" height="9"/></svg><p>Save ≥2 laminates to compare</p></div></div>`;
   }
-  
-  return`<div class="card"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="9" height="9"/><rect x="13" y="2" width="9" height="9"/></svg>Side-by-Side Comparison</h2>
+
+  return `<div class="card"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="9" height="9"/><rect x="13" y="2" width="9" height="9"/></svg>Side-by-Side Comparison</h2>
 <p style="font-size:.78rem;color:var(--text-light);margin-bottom:.75rem">Select up to 3 laminates to compare</p>
 <div class="grid grid-2">
-${DB.laminates.slice(0,6).map(l=>`<label style="display:flex;align-items:center;gap:.5rem;padding:.5rem;border:1px solid var(--border);border-radius:8px;cursor:pointer;${State.compareIds.includes(l.id)?'background:var(--primary-light);border-color:var(--primary)':''}">
-<input type="checkbox" ${State.compareIds.includes(l.id)?'checked':''} onchange="toggleCompare(${l.id})" style="accent-color:var(--primary)">
+${DB.laminates.slice(0, 6).map(l => `<label style="display:flex;align-items:center;gap:.5rem;padding:.5rem;border:1px solid var(--border);border-radius:8px;cursor:pointer;${State.compareIds.includes(l.id) ? 'background:var(--primary-light);border-color:var(--primary)' : ''}">
+<input type="checkbox" ${State.compareIds.includes(l.id) ? 'checked' : ''} onchange="toggleCompare(${l.id})" style="accent-color:var(--primary)">
 <div><div style="font-weight:600;font-size:.82rem">${l.name}</div><div style="font-size:.7rem;color:var(--text-light)">${l.total.toFixed(4)} ${unit} · ${l.totalThickness}µm</div></div>
 </label>`).join('')}
 </div>
@@ -1148,53 +1105,50 @@ ${DB.laminates.slice(0,6).map(l=>`<label style="display:flex;align-items:center;
 <div class="card"><h2>Comparison Chart</h2><div class="chart-container"><canvas id="compareChart"></canvas></div></div>`;
 }
 
-function toggleCompare(id){
-  const idx=State.compareIds.indexOf(id);
-  if(idx>=0)State.compareIds.splice(idx,1);
-  else if(State.compareIds.length<3)State.compareIds.push(id);
-  renderContent();postCompareRender();
+function toggleCompare(id) {
+  const idx = State.compareIds.indexOf(id);
+  if (idx >= 0) State.compareIds.splice(idx, 1);
+  else if (State.compareIds.length < 3) State.compareIds.push(id);
+  renderContent(); postCompareRender();
 }
 
-function postCompareRender(){
-  if(State.compareIds.length<1)return;
-  const selected=DB.laminates.filter(l=>State.compareIds.includes(l.id));
-  const unit=getUnit();
-  
-  const tableEl=document.getElementById('compare-table');
-  if(tableEl){
-    tableEl.innerHTML=`<div class="card"><h2>Comparison Table</h2><table class="cond-table">
-<thead><tr><th>Parameter</th>${selected.map(l=>`<th>${l.name}</th>`).join('')}</tr></thead>
+function postCompareRender() {
+  if (State.compareIds.length < 1) return;
+  const selected = DB.laminates.filter(l => State.compareIds.includes(l.id));
+  const unit = getUnit();
+
+  const tableEl = document.getElementById('compare-table');
+  if (tableEl) {
+    tableEl.innerHTML = `<div class="card"><h2>Comparison Table</h2><table class="cond-table">
+<thead><tr><th>Parameter</th>${selected.map(l => `<th>${l.name}</th>`).join('')}</tr></thead>
 <tbody>
-<tr><td><strong>${(l.mode||State.mode).toUpperCase()}</strong></td>${selected.map(l=>`<td>${l.total.toFixed(4)} ${unit}</td>`).join('')}</tr>
-<tr><td><strong>Thickness</strong></td>${selected.map(l=>`<td>${l.totalThickness.toFixed(0)} µm</td>`).join('')}</tr>
-<tr><td><strong>Conditions</strong></td>${selected.map(l=>`<td>${l.temperature}°C / ${l.humidity}%</td>`).join('')}</tr>
-<tr><td><strong>Recyclable</strong></td>${selected.map(l=>`<td><span class="sustainability-flag ${l.recyclable?'yes':'no'}">${l.recyclable?'✓ Yes':'✗ No'}</span></td>`).join('')}</tr>
-<tr><td><strong>Mono-structure</strong></td>${selected.map(l=>`<td><span class="sustainability-flag ${l.monoStructure?'yes':'no'}">${l.monoStructure?'✓ Yes':'✗ No'}</span></td>`).join('')}</tr>
-<tr><td><strong>Layers</strong></td>${selected.map(l=>`<td>${l.layerCount||'-'}</td>`).join('')}</tr>
+<tr><td><strong>${(l.mode || State.mode).toUpperCase()}</strong></td>${selected.map(l => `<td>${l.total.toFixed(4)} ${unit}</td>`).join('')}</tr>
+<tr><td><strong>Thickness</strong></td>${selected.map(l => `<td>${l.totalThickness.toFixed(0)} µm</td>`).join('')}</tr>
+<tr><td><strong>Conditions</strong></td>${selected.map(l => `<td>${l.temperature}°C / ${l.humidity}%</td>`).join('')}</tr>
+<tr><td><strong>Recyclable</strong></td>${selected.map(l => `<td><span class="sustainability-flag ${l.recyclable ? 'yes' : 'no'}">${l.recyclable ? '✓ Yes' : '✗ No'}</span></td>`).join('')}</tr>
+<tr><td><strong>Mono-structure</strong></td>${selected.map(l => `<td><span class="sustainability-flag ${l.monoStructure ? 'yes' : 'no'}">${l.monoStructure ? '✓ Yes' : '✗ No'}</span></td>`).join('')}</tr>
+<tr><td><strong>Layers</strong></td>${selected.map(l => `<td>${l.layerCount || '-'}</td>`).join('')}</tr>
 </tbody></table></div>`;
   }
-  
-  const canvas=document.getElementById('compareChart');if(!canvas)return;
+
+  const canvas = document.getElementById('compareChart'); if (!canvas) return;
   destroyChart('compare');
-  const ctx=canvas.getContext('2d');
-  chartInstances.compare=new Chart(ctx,{
-    type:'bar',
-    data:{
-      labels:selected.map(l=>l.name),
-      datasets:[{label:(selected[0].mode||State.mode).toUpperCase(),data:selected.map(l=>l.total),backgroundColor:LAYER_COLORS.slice(0,selected.length),borderRadius:6}]
+  const ctx = canvas.getContext('2d');
+  chartInstances.compare = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: selected.map(l => l.name),
+      datasets: [{ label: (selected[0].mode || State.mode).toUpperCase(), data: selected.map(l => l.total), backgroundColor: LAYER_COLORS.slice(0, selected.length), borderRadius: 6 }]
     },
-    options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:unit}},x:{title:{display:true,text:'Laminates'}}}}
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, title: { display: true, text: unit } }, x: { title: { display: true, text: 'Laminates' } } } }
   });
 }
 
-// ============================================
-// MATERIALS
-// ============================================
-function renderMaterials(){
-  const q=State.searchQuery.toLowerCase();
-  const filtered=DB.materials.filter(m=>m.name.toLowerCase().includes(q));
-  const unit=getUnit();
-  return`<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem;flex-wrap:wrap;gap:.4rem">
+function renderMaterials() {
+  const q = State.searchQuery.toLowerCase();
+  const filtered = DB.materials.filter(m => m.name.toLowerCase().includes(q));
+  const unit = getUnit();
+  return `<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem;flex-wrap:wrap;gap:.4rem">
 <h2 style="margin:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/></svg>Materials <span class="badge badge-blue">${DB.materials.length}</span></h2>
 <div style="display:flex;gap:.35rem">
 <button class="btn btn-sm btn-primary" onclick="showMatModal()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add</button>
@@ -1202,69 +1156,66 @@ function renderMaterials(){
 <button class="btn btn-sm btn-outline" onclick="exportDB()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Export</button>
 </div></div>
 <div class="form-group search-input"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" class="form-input" placeholder="Search materials..." oninput="State.searchQuery=this.value;renderContent()"></div>
-<div class="grid">${filtered.length===0?'<div class="empty-state"><p>No materials found</p></div>':''}
-${filtered.map(m=>{const v=Engine.validateArrhenius(m);return`<div class="material-item" onclick="this.classList.toggle('expanded')"><div class="mat-header"><h3>${m.name} <span style="font-weight:400;color:var(--text-light);font-size:.7rem">[${m.family||'?'}]</span>${v.valid?' <span class="badge badge-green">Arrhenius ✓</span>':''}</h3><svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div><div class="mat-body"><div class="mat-tags">${Engine.getValues(m).map((w,i)=>`<span class="mat-tag">${getLabel()}: ${w.value} @ ${w.thickness}µm · ${m.validConditions[i]?.temperature}°C/${m.validConditions[i]?.humidity}%</span>`).join('')}</div><div style="margin-top:.45rem;display:flex;gap:.35rem"><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();showMatModal(${m.id})">Edit</button><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();DB.deleteMat(${m.id});render()">Delete</button></div></div></div>`;}).join('')}</div></div>`;
+<div class="grid">${filtered.length === 0 ? '<div class="empty-state"><p>No materials found</p></div>' : ''}
+${filtered.map(m => { const v = Engine.validateArrhenius(m); return `<div class="material-item" onclick="this.classList.toggle('expanded')"><div class="mat-header"><h3>${m.name} <span style="font-weight:400;color:var(--text-light);font-size:.7rem">[${m.family || '?'}]</span>${v.valid ? ' <span class="badge badge-green">Arrhenius ✓</span>' : ''}</h3><svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div><div class="mat-body"><div class="mat-tags">${Engine.getValues(m).map((w, i) => `<span class="mat-tag">${getLabel()}: ${w.value} @ ${w.thickness}µm · ${m.validConditions[i]?.temperature}°C/${m.validConditions[i]?.humidity}%</span>`).join('')}</div><div style="margin-top:.45rem;display:flex;gap:.35rem"><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();showMatModal(${m.id})">Edit</button><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();DB.deleteMat(${m.id});render()">Delete</button></div></div></div>`; }).join('')}</div></div>`;
 }
 
-// ============================================
-// LAMINATES
-// ============================================
-function renderLaminates(){
-  const unit=getUnit();
-  if(!DB.laminates.length)return`<div class="card"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/></svg><p>No laminates saved yet</p></div></div>`;
-  const colors=['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#06b6d4'];
-  return`<div class="card"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/></svg>Laminates <span class="badge badge-purple">${DB.laminates.length}</span></h2>
-<div class="grid grid-2">${DB.laminates.map((l,i)=>`<div style="border:1.5px solid var(--border);border-radius:10px;padding:.85rem;border-top:4px solid ${colors[i%colors.length]}">
+function renderLaminates() {
+  const unit = getUnit();
+  if (!DB.laminates.length) return `<div class="card"><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/></svg><p>No laminates saved yet</p></div></div>`;
+  const colors = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+  return `<div class="card"><h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/></svg>Laminates <span class="badge badge-purple">${DB.laminates.length}</span></h2>
+<div class="grid grid-2">${DB.laminates.map((l, i) => `<div style="border:1.5px solid var(--border);border-radius:10px;padding:.85rem;border-top:4px solid ${colors[i % colors.length]}">
 <div style="font-weight:600;font-size:.85rem;margin-bottom:.35rem">${l.name}</div>
 <div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center">
-<div><div style="font-size:.65rem;color:var(--text-light)">${(l.mode||State.mode).toUpperCase()}</div><div style="font-size:1.2rem;font-weight:700;color:var(--primary)">${l.total.toFixed(5)}</div><div style="font-size:.65rem;color:var(--text-light)">${unit}</div></div>
+<div><div style="font-size:.65rem;color:var(--text-light)">${(l.mode || State.mode).toUpperCase()}</div><div style="font-size:1.2rem;font-weight:700;color:var(--primary)">${l.total.toFixed(5)}</div><div style="font-size:.65rem;color:var(--text-light)">${unit}</div></div>
 <div><div style="font-size:.65rem;color:var(--text-light)">Thickness</div><div style="font-weight:600">${l.totalThickness.toFixed(0)} µm</div></div>
 <div><div style="font-size:.65rem;color:var(--text-light)">Conditions</div><div style="font-weight:600">${l.temperature}°C / ${l.humidity}%</div></div>
-<div><div style="font-size:.65rem;color:var(--text-light)">Recyclable</div><span class="sustainability-flag ${l.recyclable?'yes':'no'}">${l.recyclable?'✓ Yes':'✗ No'}</span></div>
+<div><div style="font-size:.65rem;color:var(--text-light)">Recyclable</div><span class="sustainability-flag ${l.recyclable ? 'yes' : 'no'}">${l.recyclable ? '✓ Yes' : '✗ No'}</span></div>
 </div>
 <div style="margin-top:.45rem;text-align:right"><button class="btn btn-sm btn-danger" onclick="DB.deleteLam(${l.id});render()">Delete</button></div></div>`).join('')}</div></div>
-${DB.laminates.length>=2?`<div class="card"><h2>WVTR Comparison</h2><div class="chart-container"><canvas id="lamChart"></canvas></div></div>`:''}`;
+${DB.laminates.length >= 2 ? `<div class="card"><h2>WVTR Comparison</h2><div class="chart-container"><canvas id="lamChart"></canvas></div></div>` : ''}`;
 }
 
-function drawLamChart(){
-  if(DB.laminates.length<2)return;
-  const canvas=document.getElementById('lamChart');if(!canvas)return;
+function drawLamChart() {
+  if (DB.laminates.length < 2) return;
+  const canvas = document.getElementById('lamChart'); if (!canvas) return;
   destroyChart('lam');
-  const ctx=canvas.getContext('2d');
-  chartInstances.lam=new Chart(ctx,{
-    type:'bar',
-    data:{
-      labels:DB.laminates.map(l=>l.name),
-      datasets:[{label:(DB.laminates[0].mode||State.mode).toUpperCase(),data:DB.laminates.map(l=>l.total),backgroundColor:LAYER_COLORS.slice(0,DB.laminates.length),borderRadius:6}]
+  const ctx = canvas.getContext('2d');
+  chartInstances.lam = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: DB.laminates.map(l => l.name),
+      datasets: [{ label: (DB.laminates[0].mode || State.mode).toUpperCase(), data: DB.laminates.map(l => l.total), backgroundColor: LAYER_COLORS.slice(0, DB.laminates.length), borderRadius: 6 }]
     },
-    options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:getUnit()}},x:{title:{display:true,text:'Laminates'}}}}
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, title: { display: true, text: getUnit() } }, x: { title: { display: true, text: 'Laminates' } } } }
   });
 }
 
-// ============================================
-// MODAL
-// ============================================
-const Modal={
-  open(title,body,onSave){
-    document.getElementById('modal-title').textContent=title;
-    document.getElementById('modal-body').innerHTML=body;
-    document.getElementById('modal-footer').innerHTML=`<button class="btn btn-outline" onclick="Modal.close()">Cancel</button><button class="btn btn-primary" id="modal-save-btn">Save</button>`;
-    document.getElementById('modal-save-btn').onclick=()=>{if(onSave())Modal.close();};
+/* ============================================================
+   MODAL & IMPORT/EXPORT
+   ============================================================ */
+const Modal = {
+  open(title, body, onSave) {
+    document.getElementById('modal-title').textContent = title;
+    document.getElementById('modal-body').innerHTML = body;
+    document.getElementById('modal-footer').innerHTML = `<button class="btn btn-outline" onclick="Modal.close()">Cancel</button><button class="btn btn-primary" id="modal-save-btn">Save</button>`;
+    document.getElementById('modal-save-btn').onclick = () => { if (onSave()) Modal.close(); };
     document.getElementById('modal-overlay').classList.add('active');
   },
-  close(){document.getElementById('modal-overlay').classList.remove('active');}
+  close() { document.getElementById('modal-overlay').classList.remove('active'); }
 };
 
-function showMatModal(editId){
-  const mat=editId?DB.materials.find(m=>m.id===editId):null;
-  const wvtrVals=mat?mat.wvtrValues:[{value:'',thickness:''}];
-  const otrVals=mat?mat.otrValues:[{value:'',thickness:''}];
-  const conds=mat?mat.validConditions:[{temperature:'',humidity:''}];
-  
-  const rows=wvtrVals.map((w,i)=>{
-    const o=otrVals[i]||{value:'',thickness:''};
-    const c=conds[i]||{temperature:'',humidity:''};
-    return`<div class="wvtr-row-form">
+function showMatModal(editId) {
+  const mat = editId ? DB.materials.find(m => m.id === editId) : null;
+  const wvtrVals = mat ? mat.wvtrValues : [{ value: '', thickness: '' }];
+  const otrVals = mat ? mat.otrValues : [{ value: '', thickness: '' }];
+  const conds = mat ? mat.validConditions : [{ temperature: '', humidity: '' }];
+
+  const rows = wvtrVals.map((w, i) => {
+    const o = otrVals[i] || { value: '', thickness: '' };
+    const c = conds[i] || { temperature: '', humidity: '' };
+    return `<div class="wvtr-row-form">
 <div>
 <div class="form-group"><label>WVTR (g/m²·day)</label><input type="number" step="any" class="form-input mf-wvtr" value="${w.value}"></div>
 <div class="form-group"><label>Thickness WVTR (µm)</label><input type="number" step="any" class="form-input mf-wvtr-thick" value="${w.thickness}"></div>
@@ -1279,113 +1230,126 @@ function showMatModal(editId){
 </div>
 </div>`;
   }).join('');
-  
-  Modal.open(editId?'Edit Material':'Add Material',`<div class="form-group"><label>Name</label><input type="text" class="form-input" id="mf-name" value="${mat?mat.name:''}"></div><div id="mf-rows">${rows}</div><button class="btn btn-outline btn-full" onclick="addMatRow()" style="margin-top:.4rem"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Condition</button>`,()=>{
-    const name=document.getElementById('mf-name').value.trim();
-    if(!name){alert('Enter name');return false;}
-    const wvtrs=document.querySelectorAll('.mf-wvtr'),wvtrThicks=document.querySelectorAll('.mf-wvtr-thick'),
-    otr=document.querySelectorAll('.mf-otr'),otrThicks=document.querySelectorAll('.mf-otr-thick'),
-    temps=document.querySelectorAll('.mf-temp'),hums=document.querySelectorAll('.mf-hum');
-    const wv=[],ot=[],vc=[];
-    for(let i=0;i<wvtrs.length;i++){
-      const wv_val=parseFloat(wvtrs[i].value),wv_t=parseFloat(wvtrThicks[i].value);
-      const ot_val=parseFloat(otr[i].value),ot_t=parseFloat(otrThicks[i].value);
-      const te=parseFloat(temps[i].value),h=parseFloat(hums[i].value);
-      if(isNaN(wv_val)||wv_val<0){alert(`WVTR invalid (row ${i+1})`);return false;}
-      if(isNaN(wv_t)||wv_t<=0){alert(`WVTR thickness > 0 (row ${i+1})`);return false;}
-      if(isNaN(ot_val)||ot_val<0){alert(`OTR invalid (row ${i+1})`);return false;}
-      if(isNaN(ot_t)||ot_t<=0){alert(`OTR thickness > 0 (row ${i+1})`);return false;}
-      if(isNaN(te)){alert(`Temperature required (row ${i+1})`);return false;}
-      if(isNaN(h)){alert(`Humidity required (row ${i+1})`);return false;}
-      wv.push({value:wv_val,thickness:wv_t});ot.push({value:ot_val,thickness:ot_t});vc.push({temperature:te,humidity:h});
+
+  Modal.open(editId ? 'Edit Material' : 'Add Material', `<div class="form-group"><label>Name</label><input type="text" class="form-input" id="mf-name" value="${mat ? mat.name : ''}"></div><div id="mf-rows">${rows}</div><button class="btn btn-outline btn-full" onclick="addMatRow()" style="margin-top:.4rem"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Condition</button>`, () => {
+    const name = document.getElementById('mf-name').value.trim();
+    if (!name) { alert('Enter name'); return false; }
+    const wvtrs = document.querySelectorAll('.mf-wvtr'), wvtrThicks = document.querySelectorAll('.mf-wvtr-thick'),
+      otr = document.querySelectorAll('.mf-otr'), otrThicks = document.querySelectorAll('.mf-otr-thick'),
+      temps = document.querySelectorAll('.mf-temp'), hums = document.querySelectorAll('.mf-hum');
+    const wv = [], ot = [], vc = [];
+    for (let i = 0; i < wvtrs.length; i++) {
+      const wv_val = parseFloat(wvtrs[i].value), wv_t = parseFloat(wvtrThicks[i].value);
+      const ot_val = parseFloat(otr[i].value), ot_t = parseFloat(otrThicks[i].value);
+      const te = parseFloat(temps[i].value), h = parseFloat(hums[i].value);
+      if (isNaN(wv_val) || wv_val < 0) { alert(`WVTR invalid (row ${i + 1})`); return false; }
+      if (isNaN(wv_t) || wv_t <= 0) { alert(`WVTR thickness > 0 (row ${i + 1})`); return false; }
+      if (isNaN(ot_val) || ot_val < 0) { alert(`OTR invalid (row ${i + 1})`); return false; }
+      if (isNaN(ot_t) || ot_t <= 0) { alert(`OTR thickness > 0 (row ${i + 1})`); return false; }
+      if (isNaN(te)) { alert(`Temperature required (row ${i + 1})`); return false; }
+      if (isNaN(h)) { alert(`Humidity required (row ${i + 1})`); return false; }
+      wv.push({ value: wv_val, thickness: wv_t }); ot.push({ value: ot_val, thickness: ot_t }); vc.push({ temperature: te, humidity: h });
     }
-    if(editId)DB.updateMat(editId,{name,wvtrValues:wv,otrValues:ot,validConditions:vc,family:getFamily(name)});
-    else DB.addMat({name,wvtrValues:wv,otrValues:ot,validConditions:vc});
+    if (editId) DB.updateMat(editId, { name, wvtrValues: wv, otrValues: ot, validConditions: vc, family: getFamily(name) });
+    else DB.addMat({ name, wvtrValues: wv, otrValues: ot, validConditions: vc });
     return true;
   });
 }
 
-function addMatRow(){
-  document.getElementById('mf-rows').insertAdjacentHTML('beforeend',`<div class="wvtr-row-form">
+function addMatRow() {
+  document.getElementById('mf-rows').insertAdjacentHTML('beforeend', `<div class="wvtr-row-form">
 <div><div class="form-group"><label>WVTR (g/m²·day)</label><input type="number" step="any" class="form-input mf-wvtr" value=""></div><div class="form-group"><label>Thickness WVTR (µm)</label><input type="number" step="any" class="form-input mf-wvtr-thick" value=""></div></div>
 <div><div class="form-group"><label>OTR (cc/m²·day)</label><input type="number" step="any" class="form-input mf-otr" value=""></div><div class="form-group"><label>Thickness OTR (µm)</label><input type="number" step="any" class="form-input mf-otr-thick" value=""></div></div>
 <div><div class="form-group"><label>Temperature (°C)</label><input type="number" step="any" class="form-input mf-temp" value=""></div><div class="form-group"><label>Humidity (%)</label><input type="number" step="any" class="form-input mf-hum" value=""></div></div>
 </div>`);
 }
 
-function showBulkImport(){
-  Modal.open('Bulk Import (CSV/Paste)',`
+function showBulkImport() {
+  Modal.open('Bulk Import (CSV/Paste)', `
 <p style="font-size:.78rem;color:var(--text-light);margin-bottom:.75rem">Paste data in CSV format. Columns: Name, Family, WVTR, WVTR_Thickness, OTR, OTR_Thickness, Temp1, Hum1, Temp2, Hum2, Temp3, Hum3</p>
 <div class="import-area">
 <textarea id="bulk-data" placeholder="PET,PET,1.0,500,150,500,23,50,38,50,50,50&#10;Nylon 6,PA,10,100,30,100,23,60,38,60,50,60"></textarea>
 </div>
 <p style="font-size:.7rem;color:var(--text-light);margin-top:.5rem">Or <a href="#" onclick="document.getElementById('bulk-file').click();return false">upload JSON file</a><input type="file" id="bulk-file" accept=".json" style="display:none" onchange="importFile(this)"></p>
-`,()=>{
-    const data=document.getElementById('bulk-data').value.trim();
-    if(!data){alert('Paste data first');return false;}
-    try{
-      const lines=data.split('\n').filter(l=>l.trim());
-      let count=0;
-      lines.forEach(line=>{
-        const cols=line.split(/[,\t]/).map(s=>s.trim());
-        if(cols.length<7)return;
-        const name=cols[0];const family=cols[1]||getFamily(cols[0]);
-        const wvtr=parseFloat(cols[2])||0;const wvtrT=parseFloat(cols[3])||0;
-        const otr=parseFloat(cols[4])||0;const otrT=parseFloat(cols[5])||0;
-        const validConditions=[];
-        for(let i=6;i<cols.length;i+=2){
-          const te=parseFloat(cols[i]);const h=parseFloat(cols[i+1]);
-          if(!isNaN(te)&&!isNaN(h))validConditions.push({temperature:te,humidity:h});
+`, () => {
+    const data = document.getElementById('bulk-data').value.trim();
+    if (!data) { alert('Paste data first'); return false; }
+    try {
+      const lines = data.split('\n').filter(l => l.trim());
+      let count = 0;
+      lines.forEach(line => {
+        const cols = line.split(/[,\t]/).map(s => s.trim());
+        if (cols.length < 7) return;
+        const name = cols[0]; const family = cols[1] || getFamily(cols[0]);
+        const wvtr = parseFloat(cols[2]) || 0; const wvtrT = parseFloat(cols[3]) || 0;
+        const otr = parseFloat(cols[4]) || 0; const otrT = parseFloat(cols[5]) || 0;
+        const validConditions = [];
+        for (let i = 6; i < cols.length; i += 2) {
+          const te = parseFloat(cols[i]); const h = parseFloat(cols[i + 1]);
+          if (!isNaN(te) && !isNaN(h)) validConditions.push({ temperature: te, humidity: h });
         }
-        if(name&&validConditions.length>0){
-          DB.addMat({name,family:getFamily(name),wvtrValues:[{value:wvtr,thickness:wvtrT}],otrValues:[{value:otr,thickness:otrT}],validConditions});
+        if (name && validConditions.length > 0) {
+          DB.addMat({ name, family: getFamily(name), wvtrValues: [{ value: wvtr, thickness: wvtrT }], otrValues: [{ value: otr, thickness: otrT }], validConditions });
           count++;
         }
       });
       alert(`Imported ${count} materials successfully`);
-      render();return true;
-    }catch(e){alert('Import error: '+e.message);return false;}
+      render(); return true;
+    } catch (e) { alert('Import error: ' + e.message); return false; }
   });
 }
 
-function importFile(input){
-  const file=input.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=function(e){
-    try{
-      const data=JSON.parse(e.target.result);
-      if(data.materials){
+function importFile(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.materials) {
         DB.importAll(JSON.stringify(data));
-        alert(`Imported ${data.materials.length} materials and ${(data.laminates||[]).length} laminates`);
-        Modal.close();render();
+        alert(`Imported ${data.materials.length} materials and ${(data.laminates || []).length} laminates`);
+        Modal.close(); render();
       }
-    }catch(err){alert('File import error: '+err.message);}
+    } catch (err) { alert('File import error: ' + err.message); }
   };
   reader.readAsText(file);
 }
 
-function exportDB(){
-  const json=DB.exportAll();
-  const blob=new Blob([json],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;a.download=`wvtr-otr-backup-${new Date().toISOString().split('T')[0]}.json`;
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
+function exportDB() {
+  const json = DB.exportAll();
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `wvtr-otr-backup-${new Date().toISOString().split('T')[0]}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
 
-// ============================================
-// INIT
-// ============================================
-DB.load();
-const savedState=DB.loadState();
-if(savedState){
-  if(savedState.layers)State.layers=savedState.layers;
-  if(savedState.selCond)State.selCond=savedState.selCond;
-  if(savedState.mode)setMode(savedState.mode);
+/* ============================================================
+   INIT - Con error handling robusto
+   ============================================================ */
+try {
+  console.log('🚀 App starting...');
+  DB.load();
+  console.log(`✅ Loaded ${DB.materials.length} materials`);
+  const savedState = DB.loadState();
+  if (savedState) {
+    if (savedState.layers) State.layers = savedState.layers;
+    if (savedState.selCond) State.selCond = savedState.selCond;
+    if (savedState.mode) setMode(savedState.mode);
+  }
+  console.log('🎨 Rendering UI...');
+  render();
+  console.log('✨ App ready');
+} catch (e) {
+  console.error('💥 FATAL ERROR:', e);
+  document.getElementById('app-content').innerHTML = `
+    <div class="alert alert-error" style="margin:1rem">
+      <strong>🚨 Startup Error:</strong><br>
+      <code>${e.message}</code><br><br>
+      <details><summary>Stack trace</summary><pre>${e.stack}</pre></details>
+    </div>`;
 }
-render();
 </script>
 </body>
 </html>
-
