@@ -425,7 +425,9 @@ var DB = {
   importAll: function(dataStr) { try { var parsed = JSON.parse(dataStr); if (parsed.materials) this.materials = parsed.materials; if (parsed.laminates) this.laminates = parsed.laminates; this.save(); return true; } catch (e) { return false; } },
   syncCommunityDB: function() {
     var self=this;
-    return fetch('https://raw.githubusercontent.com/kawci7-cicfid-zukbiT/wvtr-materials-database/main/materials.json', {cache:'no-store'})
+    // ✅ Cache-busting: aggiunge timestamp per forzare refresh
+    var url = 'https://raw.githubusercontent.com/kawci7-cicfid-zukbiT/wvtr-materials-database/main/materials.json?' + Date.now();
+    return fetch(url, {cache:'no-store'})
       .then(function(r){if(!r.ok) throw new Error('HTTP '+r.status);return r.json();})
       .then(function(data){
         if(data.materials&&Array.isArray(data.materials)){
@@ -545,6 +547,48 @@ function searchMaterialWeb(matName) {
     '</div></div>'+
     '<div class="alert alert-info"><svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><div><strong>When you find the data:</strong><br>1. Copy WVTR, OTR, temperature and humidity<br>2. Return to this app<br>3. Click "Add Material"<br>4. Paste the values<br><br><strong>Useful sites:</strong><br>MatWeb.com, Omnexus.specialchem.com, Plasticseurope.org, ULprospector.com</div></div>',
     function(){return true;}
+  );
+}
+
+// ✅ Funzione per submit alla community - POSIZIONATA CORRETTAMENTE
+function submitMaterialToCommunity(mat) {
+  var cleanMat = {
+    name: mat.name,
+    family: mat.family,
+    wvtrValues: mat.wvtrValues,
+    otrValues: mat.otrValues,
+    validConditions: mat.validConditions
+  };
+  
+  var jsonStr = JSON.stringify(cleanMat, null, 2);
+  var encodedTitle = encodeURIComponent('New Material: ' + mat.name);
+  var encodedBody = encodeURIComponent(
+    '### Material JSON Data\n```json\n' + jsonStr + '\n```\n\n' +
+    '### Data Source\n[Add link if available]\n\n' +
+    '- [x] I confirm this data is accurate and from a reliable source\n' +
+    '- [x] I agree to share this data under CC-BY-4.0 license'
+  );
+  
+  var issueUrl = 'https://github.com/kawci7-cicfid-zukbiT/wvtr-materials-database/issues/new?' +
+    'template=new-material.yml' +
+    '&title=' + encodedTitle +
+    '&body=' + encodedBody;
+  
+  window.open(issueUrl, '_blank');
+  
+  Modal.open('✅ Submission Started', 
+    '<div style="font-size:.9rem;line-height:1.6">' +
+    '<p><strong>' + mat.name + '</strong> is ready for submission!</p>' +
+    '<ol>' +
+    '<li>A GitHub issue has been opened in your browser</li>' +
+    '<li>Review the pre-filled JSON data</li>' +
+    '<li>Check the confirmation boxes</li>' +
+    '<li>Click <strong>"Submit new issue"</strong></li>' +
+    '</ol>' +
+    '<p style="background:var(--primary-light);padding:.5rem;border-radius:6px;margin-top:1rem">' +
+    '🔄 Once approved, your material will automatically appear in everyone\'s app after they click <strong>"Sync DB"</strong>!' +
+    '</p></div>',
+    function(){ return true; }
   );
 }
 
@@ -1046,6 +1090,16 @@ function renderMaterials(){
       var tags='';
       for(var t=0;t<vals.length;t++) tags+='<span class="mat-tag">'+getLabel()+': '+vals[t].value+' @ '+vals[t].thickness+'um - '+m.validConditions[t].temperature+'\u00b0C/'+m.validConditions[t].humidity+'%</span>';
       var escName=m.name.replace(/'/g,"\\'");
+      
+      // ✅ Controlla se è materiale utente per mostrare pulsante Submit
+      var isUserMat = true;
+      for(var di=0; di<DEFAULT_MATERIALS.length; di++) {
+        if(DEFAULT_MATERIALS[di].id === m.id) {
+          isUserMat = false;
+          break;
+        }
+      }
+      
       html+='<div class="material-item" onclick="this.classList.toggle(\'expanded\')">'+
         '<div class="mat-header"><h3>'+m.name+' <span style="font-weight:400;color:var(--text-light);font-size:.7rem">['+(m.family||'?')+']</span>'+(v.valid?' <span class="badge badge-green">Arrhenius</span>':'')+'</h3>'+
         '<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>'+
@@ -1053,8 +1107,21 @@ function renderMaterials(){
         '<div class="search-tools">'+
         '<button class="btn btn-sm btn-outline" onclick="event.stopPropagation();showMatModal('+m.id+')">Edit</button>'+
         '<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">Delete</button>'+
-        '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">Cerca Online</button>'+
-        '</div></div></div>';
+        '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Cerca Online</button>';
+      
+      // ✅ Pulsante Submit solo per materiali utente
+      if(isUserMat) {
+        var matForSubmit = JSON.stringify({
+          name: m.name,
+          family: m.family,
+          wvtrValues: m.wvtrValues,
+          otrValues: m.otrValues,
+          validConditions: m.validConditions
+        }).replace(/'/g, "\\'");
+        html+='<button class="btn btn-sm btn-success" style="margin-left:.35rem" onclick="event.stopPropagation();submitMaterialToCommunity('+matForSubmit+')">🌍 Submit</button>';
+      }
+      
+      html+='</div></div></div>';
     }
   }
   html+='</div></div>';
@@ -1245,4 +1312,3 @@ try{
 </script>
 </body>
 </html>
-
