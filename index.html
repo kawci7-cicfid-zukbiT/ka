@@ -552,41 +552,82 @@ function searchMaterialWeb(matName) {
 
 // ✅ Funzione per submit alla community - POSIZIONATA CORRETTAMENTE
 function submitMaterialToCommunity(mat) {
+  // ✅ Debug: log nella console
+  console.log('🚀 Submit clicked for:', mat);
+  
+  // ✅ Validazione input
+  if (!mat || !mat.name) {
+    console.error('❌ Invalid material object:', mat);
+    alert('Errore: Materiale non valido');
+    return;
+  }
+  
+  // ✅ Prepara JSON pulito
   var cleanMat = {
     name: mat.name,
-    family: mat.family,
-    wvtrValues: mat.wvtrValues,
-    otrValues: mat.otrValues,
-    validConditions: mat.validConditions
+    family: mat.family || 'Other',
+    wvtrValues: mat.wvtrValues || [],
+    otrValues: mat.otrValues || [],
+    validConditions: mat.validConditions || []
   };
   
   var jsonStr = JSON.stringify(cleanMat, null, 2);
+  
+  // ✅ Encoding sicuro per URL
   var encodedTitle = encodeURIComponent('New Material: ' + mat.name);
-  var encodedBody = encodeURIComponent(
-    '### Material JSON Data\n```json\n' + jsonStr + '\n```\n\n' +
-    '### Data Source\n[Add link if available]\n\n' +
-    '- [x] I confirm this data is accurate and from a reliable source\n' +
-    '- [x] I agree to share this data under CC-BY-4.0 license'
-  );
   
-  var issueUrl = 'https://github.com/kawci7-cicfid-zukbiT/wvtr-materials-database/issues/new?' +
-    'template=new-material.yml' +
-    '&title=' + encodedTitle +
-    '&body=' + encodedBody;
+  // ✅ Body più compatto per evitare limiti URL
+  var bodyText = '## New Material Submission\n\n' +
+    '### Material Data (JSON)\n' +
+    '```json\n' + jsonStr + '\n```\n\n' +
+    '### Checklist\n' +
+    '- [x] I confirm this data is accurate\n' +
+    '- [x] I agree to CC-BY-4.0 license';
+    
+  var encodedBody = encodeURIComponent(bodyText);
   
-  window.open(issueUrl, '_blank');
+  // ✅ Costruisci URL passo-passo con debug
+  var baseUrl = 'https://github.com/kawci7-cicfid-zukbiT/wvtr-materials-database/issues/new';
+  var params = 'template=new-material.yml&title=' + encodedTitle + '&body=' + encodedBody;
+  var issueUrl = baseUrl + '?' + params;
   
+  console.log('🔗 Generated URL length:', issueUrl.length);
+  console.log('🔗 URL preview:', issueUrl.substring(0, 200) + '...');
+  
+  // ✅ Controllo limite URL GitHub (~8000 chars)
+  if (issueUrl.length > 7500) {
+    console.warn('⚠️ URL too long for GitHub! Consider using a shorter material name or fewer conditions.');
+    alert('⚠️ Il materiale è troppo complesso per l\'invio diretto.\n\nSuggerimento:\n1. Esporta il materiale con "Export"\n2. Invia il file JSON manualmente via Issue');
+    return;
+  }
+  
+  // ✅ Prova ad aprire la nuova scheda
+  var newWindow = window.open(issueUrl, '_blank');
+  
+  // ✅ Gestione popup blocker
+  if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+    console.error('❌ Popup blocked by browser');
+    alert('⚠️ Popup bloccato!\n\nPer favore:\n1. Clicca sull\'icona 🚫 nella barra degli indirizzi\n2. Consenti i popup per questo sito\n3. Riprova a cliccare "Submit"');
+    return;
+  }
+  
+  // ✅ Feedback all'utente
   Modal.open('✅ Submission Started', 
     '<div style="font-size:.9rem;line-height:1.6">' +
     '<p><strong>' + mat.name + '</strong> is ready for submission!</p>' +
     '<ol>' +
-    '<li>A GitHub issue has been opened in your browser</li>' +
-    '<li>Review the pre-filled JSON data</li>' +
-    '<li>Check the confirmation boxes</li>' +
-    '<li>Click <strong>"Submit new issue"</strong></li>' +
+    '<li>Una nuova scheda GitHub è stata aperta</li>' +
+    '<li>Verifica che il JSON sia corretto</li>' +
+    '<li>Spunta le caselle di conferma</li>' +
+    '<li>Clicca <strong>"Submit new issue"</strong></li>' +
     '</ol>' +
     '<p style="background:var(--primary-light);padding:.5rem;border-radius:6px;margin-top:1rem">' +
-    '🔄 Once approved, your material will automatically appear in everyone\'s app after they click <strong>"Sync DB"</strong>!' +
+    '🔄 Una volta approvato, il materiale sarà disponibile per tutti dopo "Sync DB"!' +
+    '</p>' +
+    '<p style="font-size:.75rem;color:var(--text-light);margin-top:.5rem">' +
+    '<strong>Debug info:</strong><br>' +
+    'URL length: ' + issueUrl.length + ' chars<br>' +
+    'Material: ' + mat.name + ' (' + (cleanMat.wvtrValues?.length || 0) + ' WVTR entries)' +
     '</p></div>',
     function(){ return true; }
   );
