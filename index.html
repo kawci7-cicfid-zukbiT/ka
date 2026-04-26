@@ -550,7 +550,7 @@ function searchMaterialWeb(matName) {
   );
 }
 
-// ✅ Funzione per submit alla community - POSIZIONATA CORRETTAMENTE
+// ✅ Funzione per submit alla community - VERSIONE CORRETTA E ROBUSTA
 function submitMaterialToCommunity(mat) {
   // ✅ Debug: log nella console
   console.log('🚀 Submit clicked for:', mat);
@@ -562,7 +562,7 @@ function submitMaterialToCommunity(mat) {
     return;
   }
   
-  // ✅ Prepara JSON pulito
+  // ✅ Prepara JSON pulito (senza id interni o proprietà extra)
   var cleanMat = {
     name: mat.name,
     family: mat.family || 'Other',
@@ -573,66 +573,89 @@ function submitMaterialToCommunity(mat) {
   
   var jsonStr = JSON.stringify(cleanMat, null, 2);
   
-  // ✅ Encoding sicuro per URL
-  var encodedTitle = encodeURIComponent('New Material: ' + mat.name);
+  // ✅ Encoding sicuro per URL (titolo)
+  var encodedTitle = encodeURIComponent('[New Material]: ' + mat.name);
   
-  // ✅ Body più compatto per evitare limiti URL
-  var bodyText = '## New Material Submission\n\n' +
-    '### Material Data (JSON)\n' +
+  // ✅ Body in formato Markdown compatibile con template .md
+  var bodyText = 
+    '## Material JSON Data\n\n' +
     '```json\n' + jsonStr + '\n```\n\n' +
-    '### Checklist\n' +
-    '- [x] I confirm this data is accurate\n' +
-    '- [x] I agree to CC-BY-4.0 license';
+    '## Checklist\n\n' +
+    '- [ ] I confirm this data is accurate and from a reliable source\n' +
+    '- [ ] I agree to share this data under CC-BY-4.0 license\n\n' +
+    '## Data Source (optional)\n\n' +
+    '<!-- Add link to datasheet or publication if available -->\n';
     
   var encodedBody = encodeURIComponent(bodyText);
   
-  // ✅ Costruisci URL passo-passo con debug
+  // ✅ Costruisci URL passo-passo
   var baseUrl = 'https://github.com/kawci7-cicfid-zukbiT/wvtr-materials-database/issues/new';
-  var params = 'template=new-material.yml&title=' + encodedTitle + '&body=' + encodedBody;
+  
+  // ✅ IMPORTANTE: template=.md (NON .yml) per supportare pre-compilamento via URL
+  var params = 'template=new-material.md&title=' + encodedTitle + '&body=' + encodedBody;
   var issueUrl = baseUrl + '?' + params;
   
-  console.log('🔗 Generated URL length:', issueUrl.length);
-  console.log('🔗 URL preview:', issueUrl.substring(0, 200) + '...');
+  // ✅ Encoding finale dell'URL per gestire caratteri speciali nel JSON
+  var safeUrl = encodeURI(issueUrl);
   
-  // ✅ Controllo limite URL GitHub (~8000 chars)
-  if (issueUrl.length > 7500) {
-    console.warn('⚠️ URL too long for GitHub! Consider using a shorter material name or fewer conditions.');
-    alert('⚠️ Il materiale è troppo complesso per l\'invio diretto.\n\nSuggerimento:\n1. Esporta il materiale con "Export"\n2. Invia il file JSON manualmente via Issue');
+  // ✅ Log di debug
+  console.log('🔗 Generated URL length:', safeUrl.length);
+  console.log('🔗 Template used: new-material.md');
+  console.log('🔗 URL preview:', safeUrl.substring(0, 200) + '...');
+  
+  // ✅ Controllo limite URL GitHub (~8000 chars max)
+  if (safeUrl.length > 7500) {
+    console.warn('⚠️ URL too long for GitHub! Length:', safeUrl.length);
+    alert('⚠️ Il materiale è troppo complesso per l\'invio diretto.\n\nSuggerimento:\n1. Usa "Export" per scaricare il JSON\n2. Crea manualmente una Issue e incolla il contenuto');
     return;
   }
   
   // ✅ Prova ad aprire la nuova scheda
-  var newWindow = window.open(issueUrl, '_blank');
+  console.log('🪟 Opening GitHub issue...');
+  var newWindow = window.open(safeUrl, '_blank');
   
   // ✅ Gestione popup blocker
   if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
     console.error('❌ Popup blocked by browser');
-    alert('⚠️ Popup bloccato!\n\nPer favore:\n1. Clicca sull\'icona 🚫 nella barra degli indirizzi\n2. Consenti i popup per questo sito\n3. Riprova a cliccare "Submit"');
+    
+    // Fallback: mostra un modal con link cliccabile
+    Modal.open('🔗 Apri GitHub manualmente', 
+      '<div style="font-size:.9rem;line-height:1.6">' +
+      '<p>Il browser ha bloccato l\'apertura automatica della scheda.</p>' +
+      '<p>Clicca sul pulsante qui sotto per aprire GitHub:</p>' +
+      '<a href="' + safeUrl + '" target="_blank" class="btn btn-primary" ' +
+      'style="display:inline-block;margin:1rem 0;padding:0.75rem 1.5rem;text-decoration:none">' +
+      '🔗 Apri Issue su GitHub</a>' +
+      '<p style="font-size:.75rem;color:var(--text-light);margin-top:1rem">' +
+      '<strong>Suggerimento:</strong> Per evitare questo messaggio in futuro,<br>' +
+      'consenti i popup per questo sito nelle impostazioni del browser.' +
+      '</p></div>',
+      function(){ return true; }
+    );
     return;
   }
   
-  // ✅ Feedback all'utente
+  // ✅ Feedback all'utente (se tutto è andato bene)
   Modal.open('✅ Submission Started', 
     '<div style="font-size:.9rem;line-height:1.6">' +
-    '<p><strong>' + mat.name + '</strong> is ready for submission!</p>' +
+    '<p><strong>' + mat.name + '</strong> è pronto per l\'invio!</p>' +
     '<ol>' +
-    '<li>Una nuova scheda GitHub è stata aperta</li>' +
-    '<li>Verifica che il JSON sia corretto</li>' +
+    '<li>GitHub si è aperto in una nuova scheda</li>' +
+    '<li>Il JSON è già pre-compilato nella descrizione</li>' +
     '<li>Spunta le caselle di conferma</li>' +
     '<li>Clicca <strong>"Submit new issue"</strong></li>' +
     '</ol>' +
     '<p style="background:var(--primary-light);padding:.5rem;border-radius:6px;margin-top:1rem">' +
-    '🔄 Una volta approvato, il materiale sarà disponibile per tutti dopo "Sync DB"!' +
+    '🔄 Dopo l\'approvazione, il materiale sarà disponibile per tutti via "Sync DB"!' +
     '</p>' +
     '<p style="font-size:.75rem;color:var(--text-light);margin-top:.5rem">' +
     '<strong>Debug info:</strong><br>' +
-    'URL length: ' + issueUrl.length + ' chars<br>' +
+    'URL length: ' + safeUrl.length + ' chars<br>' +
     'Material: ' + mat.name + ' (' + (cleanMat.wvtrValues?.length || 0) + ' WVTR entries)' +
     '</p></div>',
     function(){ return true; }
   );
 }
-
 function renderHome() {
   var totalMats=DB.materials.length;
   var totalLams=DB.laminates.length;
