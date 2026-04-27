@@ -1110,7 +1110,7 @@ var html='<div class="card"><div style="display:flex;align-items:center;justify-
       }
       
      // Badge per materiali community
-const isComm = m.isCommunity === true || (typeof m.id === 'string' && m.id.startsWith('fb_'));
+const isComm = m.isCommunity || (m.id && String(m.id).startsWith('fb_'));
 const commBadge = isComm ? '<span class="badge badge-purple" style="margin-left:0.5rem">🌍 Community</span>' : '';
       
 html+='<div class="material-item" onclick="this.classList.toggle(\'expanded\')">'+
