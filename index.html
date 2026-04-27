@@ -631,6 +631,20 @@ async function submitToFirebase(mat) {
     }
   }
 } 
+// ✅ Nuova funzione: cerca il materiale per ID e poi pubblica
+async function submitToFirebaseById(matId) {
+  // Cerca il materiale nel database locale
+  var mat = DB.materials.find(function(m) { return m.id === matId; });
+  
+  if(!mat) {
+    alert("❌ Materiale non trovato");
+    return;
+  }
+  
+  // Ora chiama la funzione originale con l'oggetto corretto
+  await submitToFirebase(mat);
+}
+  
 function renderHome() {
   var totalMats=DB.materials.length;
   var totalLams=DB.laminates.length;
@@ -1151,16 +1165,10 @@ html+='<div class="material-item" onclick="this.classList.toggle(\'expanded\')">
         '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Online</button>';
       
       // ✅ Pulsante Submit solo per materiali utente
-      if(isUserMat) {
-        var matForSubmit = JSON.stringify({
-          name: m.name,
-          family: m.family,
-          wvtrValues: m.wvtrValues,
-          otrValues: m.otrValues,
-          validConditions: m.validConditions
-        }).replace(/'/g, "\\'");
-        html+='<button class="btn btn-sm btn-success" style="margin-left:.35rem" onclick="event.stopPropagation();submitToFirebase('+matForSubmit+')">🌍 Pubblica</button>';
-      }
+      // ✅ NUOVO (passa solo l'ID - robusto)
+if(isUserMat) {
+  html+='<button class="btn btn-sm btn-success" style="margin-left:.35rem" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">🌍 Pubblica</button>';
+}
       
       html+='</div></div></div>';
     }
@@ -1378,4 +1386,3 @@ function exportDB(){
 </script>
 </body>
 </html>
-
