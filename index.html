@@ -1009,7 +1009,7 @@ function render() {
 function initHomeAnimations() {
   if(State.tab !== 'home') return;
   
-  // 1. Attiva animazioni features con Intersection Observer
+  // 1. Features animation
   const featuresSection = document.getElementById('featuresSection');
   if(featuresSection) {
     const observer = new IntersectionObserver((entries) => {
@@ -1027,116 +1027,31 @@ function initHomeAnimations() {
     observer.observe(featuresSection);
   }
   
-  // 2. Inizializza grafici demo animati (con delay per assicurare che i canvas esistano)
+  // 2. Demo charts
   setTimeout(initDemoCharts, 400);
   
-  // 3. Count-up animation per le statistiche
+  // 3. Count-up
   setTimeout(initCountUp, 100);
   
-  // 4. Animate progress bars
+  // 4. Progress bars
   document.querySelectorAll('.progress-fill').forEach(bar => {
     bar.style.animation = 'progressGrow 1.2s ease-out forwards';
   });
-  /* === ANIMAZIONE GOCCE D'ACQUA === */
-.water-drops-container {
-  position: relative;
-  height: 120px;
-  margin: 1.5rem 0;
-  overflow: hidden;
-  border-radius: var(--radius);
-  background: linear-gradient(180deg, var(--primary-light) 0%, #fff 100%);
-  border: 1px solid var(--border);
-}
-
-.water-drop {
-  position: absolute;
-  width: 20px;
-  height: 30px;
-  background: radial-gradient(ellipse at bottom, rgba(37, 99, 235, 0.8) 0%, rgba(147, 197, 253, 0.4) 70%, transparent 100%);
-  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-  animation: floatDrop 6s infinite ease-in-out;
-  filter: blur(0.5px);
-  opacity: 0.8;
-}
-
-.water-drop::before {
-  content: '';
-  position: absolute;
-  top: 30%;
-  left: 25%;
-  width: 50%;
-  height: 40%;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 50%;
-  filter: blur(1px);
-}
-
-.water-drop:nth-child(1) { left: 15%; animation-delay: 0s; animation-duration: 7s; }
-.water-drop:nth-child(2) { left: 35%; animation-delay: 1.5s; animation-duration: 8s; }
-.water-drop:nth-child(3) { left: 55%; animation-delay: 3s; animation-duration: 6.5s; }
-.water-drop:nth-child(4) { left: 75%; animation-delay: 4.5s; animation-duration: 7.5s; }
-.water-drop:nth-child(5) { left: 25%; animation-delay: 2s; animation-duration: 9s; }
-
-@keyframes floatDrop {
-  0%, 100% {
-    transform: translateY(100px) scale(0.8) rotate(0deg);
-    opacity: 0;
-  }
-  10% {
-    opacity: 0.8;
-  }
-  50% {
-    transform: translateY(-20px) scale(1.1) rotate(5deg);
-    opacity: 1;
-  }
-  90% {
-    opacity: 0.6;
-  }
-}
-
-/* Effetto ripple quando le gocce "toccano" il fondo */
-.water-ripple {
-  position: absolute;
-  bottom: 0;
-  width: 40px;
-  height: 10px;
-  background: radial-gradient(ellipse, rgba(37, 99, 235, 0.3) 0%, transparent 70%);
-  border-radius: 50%;
-  animation: ripple 2s infinite ease-out;
-  opacity: 0;
-}
-
-.water-ripple:nth-child(1) { left: 15%; animation-delay: 0s; }
-.water-ripple:nth-child(2) { left: 35%; animation-delay: 1.5s; }
-.water-ripple:nth-child(3) { left: 55%; animation-delay: 3s; }
-.water-ripple:nth-child(4) { left: 75%; animation-delay: 4.5s; }
-
-@keyframes ripple {
-  0% { transform: scale(0.5); opacity: 0.6; }
-  100% { transform: scale(3); opacity: 0; }
-}
-
-/* Text overlay sulle gocce */
-.water-caption {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  color: var(--text);
-  font-size: 0.85rem;
-  font-weight: 500;
-  z-index: 2;
-  text-shadow: 0 1px 2px rgba(255,255,255,0.8);
-}
-
-.water-caption strong {
-  color: var(--primary);
-  display: block;
-  font-size: 1rem;
-  margin-bottom: 0.2rem;
-}
-}
+  
+  // === ✨ INTERATTIVITÀ GOCCE D'ACQUA (SOLO JS, NO CSS) ===
+  const drops = document.querySelectorAll('.water-drop');
+  drops.forEach(drop => {
+    drop.addEventListener('mouseenter', function() {
+      this.style.animationPlayState = 'paused';
+      this.style.filter = 'blur(0) brightness(1.2)';
+    });
+    drop.addEventListener('mouseleave', function() {
+      this.style.animationPlayState = 'running';
+      this.style.filter = 'blur(0.5px) brightness(1)';
+    });
+  });
+  
+}  // ← Chiusura funzione
 
 function initDemoCharts() {
   // Verifica che siamo nella home e che Chart.js sia caricato
@@ -1265,7 +1180,7 @@ function initCountUp() {
 
 function nav(tab) { State.tab=tab; renderNav(); renderContent(); postNavRender(); }
 function clearProject() {
-  if(!confirm('Clear current calculation?')) return;
+ if(!confirm('Cancel current calculation and clear all layers?')) return;
   State.layers=[{mid:null,thick:0}];State.selCond=null;State.laminateName='';State.calcResult=null;State.calcError=null;
   DB.saveState(State);render();
 }
