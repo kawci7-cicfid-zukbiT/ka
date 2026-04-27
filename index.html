@@ -1346,11 +1346,24 @@ function exportDB(){
 }
 
 // ✅ Avvio app corretto con Firebase
-// ✅ Avvio app corretto con Firebase
+// ✅ Avvio app con attesa per Firebase
 (async function initApp() {
+  console.log("🚀 Avvio app...");
+  
+  // ⏳ Attendi che Firebase si carichi (max 5 secondi)
+  let retries = 0;
+  while(!window.communityDB && retries < 50) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    retries++;
+  }
+  
+  if(!window.communityDB) {
+    console.warn("⚠️ Firebase non caricato dopo 5 secondi");
+  } else {
+    console.log("✅ Firebase pronto!");
+  }
+  
   try {
-    console.log("🚀 Avvio app...");
-    
     // 1. Carica materiali locali (default + localStorage)
     DB.load();
     console.log("📦 Materiali locali caricati:", DB.materials.length);
@@ -1376,8 +1389,8 @@ function exportDB(){
       for(const fm of fbMats) {
         const normalizedName = fm.name.toLowerCase();
         if(!existingNames.has(normalizedName) && fm.name) {
-          fm.id = 'fb_' + fm.id;  // Prefisso per distinguere
-          fm.isCommunity = true;   // Flag per UI
+          fm.id = 'fb_' + fm.id;
+          fm.isCommunity = true;
           DB.materials.push(fm);
           existingNames.add(normalizedName);
           addedCount++;
@@ -1386,21 +1399,14 @@ function exportDB(){
       
       console.log("✅ Materiali community aggiunti:", addedCount);
       console.log("📊 Totale materiali disponibili:", DB.materials.length);
-      
-      if(addedCount > 0) {
-        console.log(`✅ +${addedCount} materiali dalla community`);
-      }
-    } else {
-      console.warn("⚠️ communityDB non definito!");
     }
     
-    // 4. Renderizza l'app con tutti i materiali
+    // 4. Renderizza l'app
     console.log("🎨 Rendering app...");
     render();
     
   } catch(e) {
     console.error("❌ Init error:", e);
-    // Fallback: renderizza comunque con materiali locali
     DB.materials = DEFAULT_MATERIALS.slice();
     render();
   }
