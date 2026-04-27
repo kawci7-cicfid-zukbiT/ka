@@ -170,21 +170,32 @@ select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csv
   };
 
   // ✅ Funzione: Carica materiali dalla community
-  window.loadFromCommunity = async function() {
-    try {
-      const q = window.fbQuery(
-        window.fbCollection(window.communityDB, "materials"),
-        window.fbOrderBy("createdAt", "desc")
-      );
-      const snapshot = await window.fbGetDocs(q);
-      const mats = [];
-      snapshot.forEach(doc => mats.push({ id: doc.id, ...doc.data() }));
-      return mats;
-    } catch(e) {
-      console.error("❌ Load error:", e);
-      return [];
-    }
-  };
+  // ✅ Funzione: Carica materiali dalla community
+window.loadFromCommunity = async function() {
+  try {
+    console.log("🔍 Query Firestore in corso...");
+    const q = window.fbQuery(
+      window.fbCollection(window.communityDB, "materials"),
+      window.fbOrderBy("createdAt", "desc")
+    );
+    const snapshot = await window.fbGetDocs(q);
+    console.log("📄 Documenti trovati:", snapshot.size);
+    
+    const mats = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      console.log("📦 Documento caricato:", doc.id, data.name);
+      mats.push({ id: doc.id, ...data });
+    });
+    
+    console.log("✅ Totale materiali caricati:", mats.length);
+    return mats;
+  } catch(e) {
+    console.error("❌ Load error:", e);
+    console.error("❌ Errore dettagliato:", e.code, e.message);
+    return [];
+  }
+};
 </script>
 <div class="app">
 <header>
@@ -1335,10 +1346,14 @@ function exportDB(){
 }
 
 // ✅ Avvio app corretto con Firebase
+// ✅ Avvio app corretto con Firebase
 (async function initApp() {
   try {
+    console.log("🚀 Avvio app...");
+    
     // 1. Carica materiali locali (default + localStorage)
     DB.load();
+    console.log("📦 Materiali locali caricati:", DB.materials.length);
     
     // 2. Carica stato salvato
     var savedState = DB.loadState();
@@ -1350,8 +1365,9 @@ function exportDB(){
     
     // 3. Carica materiali dalla community Firebase
     if(window.communityDB) {
-      console.log("🔄 Caricamento materiali community...");
+      console.log("🔄 Caricamento materiali community da Firebase...");
       const fbMats = await window.loadFromCommunity();
+      console.log("📥 Materiali trovati su Firebase:", fbMats.length);
       
       // Merge: aggiungi solo materiali nuovi (evita duplicati per nome)
       const existingNames = new Set(DB.materials.map(m => m.name.toLowerCase()));
@@ -1368,12 +1384,18 @@ function exportDB(){
         }
       }
       
+      console.log("✅ Materiali community aggiunti:", addedCount);
+      console.log("📊 Totale materiali disponibili:", DB.materials.length);
+      
       if(addedCount > 0) {
         console.log(`✅ +${addedCount} materiali dalla community`);
       }
+    } else {
+      console.warn("⚠️ communityDB non definito!");
     }
     
     // 4. Renderizza l'app con tutti i materiali
+    console.log("🎨 Rendering app...");
     render();
     
   } catch(e) {
@@ -1383,6 +1405,7 @@ function exportDB(){
     render();
   }
 })();
+  
 </script>
 </body>
 </html>
