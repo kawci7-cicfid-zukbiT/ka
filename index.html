@@ -597,27 +597,6 @@ function searchMaterialWeb(matName) {
   );
 }
   
-  // Feedback visivo sul bottone
-  const btn = event?.target;
-  if(btn) {
-    btn.disabled = true;
-    btn.innerText = "⏳...";
-  }
-  
-  const result = await window.saveToCommunity(mat);
-  
-  if(result.success) {
-    alert("✅ Pubblicato! Il materiale è ora visibile a tutti.");
-    // Ricarica per mostrare il nuovo materiale
-    location.reload();
-  } else {
-    alert("❌ Errore: " + result.error);
-    if(btn) {
-      btn.disabled = false;
-      btn.innerText = "🌍 Pubblica";
-    }
-  }
-}
 async function submitToFirebase(mat) {
   if(!window.communityDB) {
     alert("⚠️ Database non connesso. Riprova più tardi.");
