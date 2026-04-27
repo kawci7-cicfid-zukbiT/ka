@@ -1081,7 +1081,7 @@ function render() {
 function initHomeAnimations() {
   if(State.tab !== 'home') return;
   
-  // 1. Features animation
+  // 1. Features animation con Intersection Observer
   const featuresSection = document.getElementById('featuresSection');
   if(featuresSection) {
     const observer = new IntersectionObserver((entries) => {
@@ -1099,29 +1099,20 @@ function initHomeAnimations() {
     observer.observe(featuresSection);
   }
   
-  // 2. Demo charts
-  setTimeout(initDemoCharts, 400);
+  // 2. Demo charts (con delay per sicurezza)
+  if(typeof Chart !== 'undefined') {
+    setTimeout(initDemoCharts, 400);
+  }
   
-  // 3. Count-up
+  // 3. Count-up animation
   setTimeout(initCountUp, 100);
   
-  // 4. Progress bars
+  // 4. Progress bars animation
   document.querySelectorAll('.progress-fill').forEach(bar => {
     bar.style.animation = 'progressGrow 1.2s ease-out forwards';
   });
   
-  // === ✨ INTERATTIVITÀ GOCCE D'ACQUA (SOLO JS, NO CSS) ===
-  const drops = document.querySelectorAll('.water-drop');
-  drops.forEach(drop => {
-    drop.addEventListener('mouseenter', function() {
-      this.style.animationPlayState = 'paused';
-      this.style.filter = 'blur(0) brightness(1.2)';
-    });
-    drop.addEventListener('mouseleave', function() {
-      this.style.animationPlayState = 'running';
-      this.style.filter = 'blur(0.5px) brightness(1)';
-    });
-      // === INTERATTIVITÀ BOLLE DI SFONDO ===
+  // 5. Interattività gocce di SFONDO (bg-drop)
   const bgDrops = document.querySelectorAll('.bg-drop');
   bgDrops.forEach(drop => {
     drop.addEventListener('mouseenter', function() {
@@ -1134,7 +1125,7 @@ function initHomeAnimations() {
     });
   });
   
-}  // ← Chiusura funzione
+}  // ← ✅ Chiusura CORRETTA della funzione
 
 function initDemoCharts() {
   // Verifica che siamo nella home e che Chart.js sia caricato
