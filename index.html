@@ -120,6 +120,72 @@ select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csv
 </style>
 </head>
 <body>
+<!-- 🔥 FIREBASE COMMUNITY SETUP -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA6qFSRGcknbBbjVzV4F3CoLkdBA_fqkvk",
+    authDomain: "wvtr-community.firebaseapp.com",
+    projectId: "wvtr-community",
+    storageBucket: "wvtr-community.firebasestorage.app",
+    messagingSenderId: "317445771576",
+    appId: "1:317445771576:web:62908e2b54fbbcb08ab1cd"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  
+  // Rendi disponibile globalmente
+  window.communityDB = db;
+  window.fbAddDoc = addDoc;
+  window.fbGetDocs = getDocs;
+  window.fbCollection = collection;
+  window.fbQuery = query;
+  window.fbOrderBy = orderBy;
+  
+  console.log("🔥 Firebase connesso!");
+
+  // ✅ Funzione: Salva materiale nella community
+  window.saveToCommunity = async function(mat) {
+    try {
+      const docRef = await window.fbAddDoc(
+        window.fbCollection(window.communityDB, "materials"),
+        {
+          name: mat.name,
+          family: mat.family || "Other",
+          wvtrValues: mat.wvtrValues || [],
+          otrValues: mat.otrValues || [],
+          validConditions: mat.validConditions || [],
+          createdAt: new Date().toISOString(),
+          author: "anonymous"
+        }
+      );
+      return { success: true, id: docRef.id };
+    } catch(e) {
+      console.error("❌ Save error:", e);
+      return { success: false, error: e.message };
+    }
+  };
+
+  // ✅ Funzione: Carica materiali dalla community
+  window.loadFromCommunity = async function() {
+    try {
+      const q = window.fbQuery(
+        window.fbCollection(window.communityDB, "materials"),
+        window.fbOrderBy("createdAt", "desc")
+      );
+      const snapshot = await window.fbGetDocs(q);
+      const mats = [];
+      snapshot.forEach(doc => mats.push({ id: doc.id, ...doc.data() }));
+      return mats;
+    } catch(e) {
+      console.error("❌ Load error:", e);
+      return [];
+    }
+  };
+</script>
 <div class="app">
 <header>
 <div class="header-top">
@@ -422,42 +488,23 @@ var DB = {
   deleteLam: function(id) { this.laminates = this.laminates.filter(function(x){return x.id!==id;}); this.save(); },
   importMats: function(mats) { for(var i=0;i<mats.length;i++){mats[i].id=Math.max.apply(null,this.materials.map(function(x){return x.id;}))+1;mats[i].family=getFamily(mats[i].name);this.materials.push(mats[i]);} this.save(); },
   exportAll: function() { return JSON.stringify({ materials: this.materials, laminates: this.laminates, version: this.version, exportDate: new Date().toISOString() }); },
-  importAll: function(dataStr) { try { var parsed = JSON.parse(dataStr); if (parsed.materials) this.materials = parsed.materials; if (parsed.laminates) this.laminates = parsed.laminates; this.save(); return true; } catch (e) { return false; } },
-  syncCommunityDB: function() {
-    var self=this;
-    // ✅ Cache-busting: aggiunge timestamp per forzare refresh
-    var url = 'https://raw.githubusercontent.com/kawci7-cicfid-zukbiT/wvtr-materials-database/main/materials.json?' + Date.now();
-    return fetch(url, {cache:'no-store'})
-      .then(function(r){if(!r.ok) throw new Error('HTTP '+r.status);return r.json();})
-      .then(function(data){
-        if(data.materials&&Array.isArray(data.materials)){
-          var existingNames={};
-          for(var i=0;i<self.materials.length;i++) existingNames[self.materials[i].name.toLowerCase()]=true;
-          var newMats=[];
-          for(var j=0;j<data.materials.length;j++){
-            if(!existingNames[data.materials[j].name.toLowerCase()]){
-              data.materials[j].id=Math.max.apply(null,self.materials.map(function(x){return x.id;}))+1;
-              data.materials[j].family=getFamily(data.materials[j].name);
-              self.materials.push(data.materials[j]);
-              newMats.push(data.materials[j]);
-              existingNames[data.materials[j].name.toLowerCase()]=true;
-            }
-          }
-          if(newMats.length>0) self.save();
-          self.dbLastSync=new Date();
-          localStorage.setItem('wvtr_db_sync_v3',self.dbLastSync.toISOString());
-          return {success:true,added:newMats.length,total:self.materials.length};
-        }
-        return {success:false,error:'Invalid format'};
-      })
-      .catch(function(e){return {success:false,error:e.message};});
-  }
-};
+  importAll: function(dataStr) { 
+    try { 
+      var parsed = JSON.parse(dataStr); 
+      if (parsed.materials) this.materials = parsed.materials; 
+      if (parsed.laminates) this.laminates = parsed.laminates; 
+      this.save(); 
+      return true; 
+    } catch (e) { 
+      return false; 
+    } 
+  }  // ✅ Aggiungi questa parentesi graffa di chiusura
+};  // ✅ E questa per chiudere DB
 
 var State = {
   tab: 'home', layers: [{ mid: null, thick: 0 }], selCond: null, laminateName: '', autoCalc: false,
   calcResult: null, calcError: null, searchQuery: '', mode: 'wvtr',
-  sensLayerIdx: 0, targetValue: 0.5, compareIds: [], dbSyncStatus: 'offline'
+  sensLayerIdx: 0, targetValue: 0.5, compareIds: []
 };
 
 var LAYER_COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899'];
@@ -549,113 +596,53 @@ function searchMaterialWeb(matName) {
     function(){return true;}
   );
 }
-
-// ✅ Funzione per submit alla community - VERSIONE CORRETTA E ROBUSTA
-function submitMaterialToCommunity(mat) {
-  // ✅ Debug: log nella console
-  console.log('🚀 Submit clicked for:', mat);
   
-  // ✅ Validazione input
-  if (!mat || !mat.name) {
-    console.error('❌ Invalid material object:', mat);
-    alert('Errore: Materiale non valido');
-    return;
+  // Feedback visivo sul bottone
+  const btn = event?.target;
+  if(btn) {
+    btn.disabled = true;
+    btn.innerText = "⏳...";
   }
   
-  // ✅ Prepara JSON pulito (senza id interni o proprietà extra)
-  var cleanMat = {
-    name: mat.name,
-    family: mat.family || 'Other',
-    wvtrValues: mat.wvtrValues || [],
-    otrValues: mat.otrValues || [],
-    validConditions: mat.validConditions || []
-  };
+  const result = await window.saveToCommunity(mat);
   
-  var jsonStr = JSON.stringify(cleanMat, null, 2);
-  
-  // ✅ Encoding sicuro per URL (titolo)
-  var encodedTitle = encodeURIComponent('[New Material]: ' + mat.name);
-  
-  // ✅ Body in formato Markdown compatibile con template .md
-  var bodyText = 
-    '## Material JSON Data\n\n' +
-    '```json\n' + jsonStr + '\n```\n\n' +
-    '## Checklist\n\n' +
-    '- [ ] I confirm this data is accurate and from a reliable source\n' +
-    '- [ ] I agree to share this data under CC-BY-4.0 license\n\n' +
-    '## Data Source (optional)\n\n' +
-    '<!-- Add link to datasheet or publication if available -->\n';
-    
-  var encodedBody = encodeURIComponent(bodyText);
-  
-  // ✅ Costruisci URL passo-passo
-  var baseUrl = 'https://github.com/kawci7-cicfid-zukbiT/wvtr-materials-database/issues/new';
-  
-  // ✅ IMPORTANTE: template=.md (NON .yml) per supportare pre-compilamento via URL
-  var params = 'template=new-material.md&title=' + encodedTitle + '&body=' + encodedBody;
-  var issueUrl = baseUrl + '?' + params;
-  
-  // ✅ Encoding finale dell'URL per gestire caratteri speciali nel JSON
-  var safeUrl = encodeURI(issueUrl);
-  
-  // ✅ Log di debug
-  console.log('🔗 Generated URL length:', safeUrl.length);
-  console.log('🔗 Template used: new-material.md');
-  console.log('🔗 URL preview:', safeUrl.substring(0, 200) + '...');
-  
-  // ✅ Controllo limite URL GitHub (~8000 chars max)
-  if (safeUrl.length > 7500) {
-    console.warn('⚠️ URL too long for GitHub! Length:', safeUrl.length);
-    alert('⚠️ Il materiale è troppo complesso per l\'invio diretto.\n\nSuggerimento:\n1. Usa "Export" per scaricare il JSON\n2. Crea manualmente una Issue e incolla il contenuto');
-    return;
+  if(result.success) {
+    alert("✅ Pubblicato! Il materiale è ora visibile a tutti.");
+    // Ricarica per mostrare il nuovo materiale
+    location.reload();
+  } else {
+    alert("❌ Errore: " + result.error);
+    if(btn) {
+      btn.disabled = false;
+      btn.innerText = "🌍 Pubblica";
+    }
   }
-  
-  // ✅ Prova ad aprire la nuova scheda
-  console.log('🪟 Opening GitHub issue...');
-  var newWindow = window.open(safeUrl, '_blank');
-  
-  // ✅ Gestione popup blocker
-  if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
-    console.error('❌ Popup blocked by browser');
-    
-    // Fallback: mostra un modal con link cliccabile
-    Modal.open('🔗 Apri GitHub manualmente', 
-      '<div style="font-size:.9rem;line-height:1.6">' +
-      '<p>Il browser ha bloccato l\'apertura automatica della scheda.</p>' +
-      '<p>Clicca sul pulsante qui sotto per aprire GitHub:</p>' +
-      '<a href="' + safeUrl + '" target="_blank" class="btn btn-primary" ' +
-      'style="display:inline-block;margin:1rem 0;padding:0.75rem 1.5rem;text-decoration:none">' +
-      '🔗 Apri Issue su GitHub</a>' +
-      '<p style="font-size:.75rem;color:var(--text-light);margin-top:1rem">' +
-      '<strong>Suggerimento:</strong> Per evitare questo messaggio in futuro,<br>' +
-      'consenti i popup per questo sito nelle impostazioni del browser.' +
-      '</p></div>',
-      function(){ return true; }
-    );
-    return;
-  }
-  
-  // ✅ Feedback all'utente (se tutto è andato bene)
-  Modal.open('✅ Submission Started', 
-    '<div style="font-size:.9rem;line-height:1.6">' +
-    '<p><strong>' + mat.name + '</strong> è pronto per l\'invio!</p>' +
-    '<ol>' +
-    '<li>GitHub si è aperto in una nuova scheda</li>' +
-    '<li>Il JSON è già pre-compilato nella descrizione</li>' +
-    '<li>Spunta le caselle di conferma</li>' +
-    '<li>Clicca <strong>"Submit new issue"</strong></li>' +
-    '</ol>' +
-    '<p style="background:var(--primary-light);padding:.5rem;border-radius:6px;margin-top:1rem">' +
-    '🔄 Dopo l\'approvazione, il materiale sarà disponibile per tutti via "Sync DB"!' +
-    '</p>' +
-    '<p style="font-size:.75rem;color:var(--text-light);margin-top:.5rem">' +
-    '<strong>Debug info:</strong><br>' +
-    'URL length: ' + safeUrl.length + ' chars<br>' +
-    'Material: ' + mat.name + ' (' + (cleanMat.wvtrValues?.length || 0) + ' WVTR entries)' +
-    '</p></div>',
-    function(){ return true; }
-  );
 }
+async function submitToFirebase(mat) {
+  if(!window.communityDB) {
+    alert("⚠️ Database non connesso. Riprova più tardi.");
+    return;
+  }
+  
+  const btn = event?.target;
+  if(btn) {
+    btn.disabled = true;
+    btn.innerText = "⏳...";
+  }
+  
+  const result = await window.saveToCommunity(mat);
+  
+  if(result.success) {
+    alert("✅ Pubblicato! Il materiale è ora visibile a tutti.");
+    location.reload();
+  } else {
+    alert("❌ Errore: " + result.error);
+    if(btn) {
+      btn.disabled = false;
+      btn.innerText = "🌍 Pubblica";
+    }
+  }
+}  
 function renderHome() {
   var totalMats=DB.materials.length;
   var totalLams=DB.laminates.length;
@@ -1135,7 +1122,6 @@ function renderMaterials(){
     '<div style="display:flex;gap:.35rem;flex-wrap:wrap">'+
     '<span class="db-status '+syncStatus+'">'+syncLabel+'</span>'+
     '<button class="btn btn-sm btn-primary" onclick="showMatModal()">+ Add</button>'+
-    '<button class="btn btn-sm btn-outline" onclick="doSync()">Sync DB</button>'+
     '<button class="btn btn-sm btn-outline" onclick="showBulkImport()">Import</button>'+
     '<button class="btn btn-sm btn-outline" onclick="exportDB()">Export</button>'+
     '</div></div>'+
@@ -1164,8 +1150,12 @@ function renderMaterials(){
         }
       }
       
-      html+='<div class="material-item" onclick="this.classList.toggle(\'expanded\')">'+
-        '<div class="mat-header"><h3>'+m.name+' <span style="font-weight:400;color:var(--text-light);font-size:.7rem">['+(m.family||'?')+']</span>'+(v.valid?' <span class="badge badge-green">Arrhenius</span>':'')+'</h3>'+
+     // Badge per materiali community
+const isComm = m.isCommunity || (m.id && m.id.startsWith('fb_'));
+const commBadge = isComm ? '<span class="badge badge-purple" style="margin-left:0.5rem">🌍 Community</span>' : '';
+
+html+='<div class="material-item" onclick="this.classList.toggle(\'expanded\')">'+
+  '<div class="mat-header"><h3>'+m.name+commBadge+' <span style="font-weight:400;color:var(--text-light);font-size:.7rem">['+(m.family||'?')+']</span>'+(v.valid?' <span class="badge badge-green">Arrhenius</span>':'')+'</h3>'+
         '<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>'+
         '<div class="mat-body"><div class="mat-tags">'+tags+'</div>'+
         '<div class="search-tools">'+
@@ -1182,7 +1172,7 @@ function renderMaterials(){
           otrValues: m.otrValues,
           validConditions: m.validConditions
         }).replace(/'/g, "\\'");
-        html+='<button class="btn btn-sm btn-success" style="margin-left:.35rem" onclick="event.stopPropagation();submitMaterialToCommunity('+matForSubmit+')">🌍 Submit</button>';
+        html+='<button class="btn btn-sm btn-success" style="margin-left:.35rem" onclick="event.stopPropagation();submitToFirebase('+matForSubmit+')">🌍 Pubblica</button>';
       }
       
       html+='</div></div></div>';
@@ -1199,17 +1189,6 @@ function onMatSearch(val){
     var input=document.getElementById('material-search');
     if(input){input.focus();var len=val?val.length:0;input.setSelectionRange(len,len);}
   },10);
-}
-
-function doSync(){
-  State.dbSyncStatus='syncing';
-  renderContent();
-  DB.syncCommunityDB().then(function(r){
-    State.dbSyncStatus=r.success?'synced':'error';
-    render();
-    if(r.success) alert('Synced! Added '+r.added+' new materials (total: '+r.total+')');
-    else alert('Sync failed: '+r.error);
-  });
 }
 
 function renderLaminates(){
@@ -1360,19 +1339,57 @@ function exportDB(){
   URL.revokeObjectURL(url);
 }
 
-try{
-  DB.load();
-  var savedState=DB.loadState();
-  if(savedState){
-    if(savedState.layers) State.layers=savedState.layers;
-    if(savedState.selCond) State.selCond=savedState.selCond;
-    if(savedState.mode){State.mode=savedState.mode;Engine.mode=savedState.mode;}
+// ✅ Avvio app corretto con Firebase
+(async function initApp() {
+  try {
+    // 1. Carica materiali locali (default + localStorage)
+    DB.load();
+    
+    // 2. Carica stato salvato
+    var savedState = DB.loadState();
+    if(savedState){
+      if(savedState.layers) State.layers = savedState.layers;
+      if(savedState.selCond) State.selCond = savedState.selCond;
+      if(savedState.mode) { State.mode = savedState.mode; Engine.mode = savedState.mode; }
+    }
+    
+    // 3. Carica materiali dalla community Firebase
+    if(window.communityDB) {
+      console.log("🔄 Caricamento materiali community...");
+      const fbMats = await window.loadFromCommunity();
+      
+      // Merge: aggiungi solo materiali nuovi (evita duplicati per nome)
+      const existingNames = new Set(DB.materials.map(m => m.name.toLowerCase()));
+      let addedCount = 0;
+      
+      for(const fm of fbMats) {
+        const normalizedName = fm.name.toLowerCase();
+        if(!existingNames.has(normalizedName) && fm.name) {
+          fm.id = 'fb_' + fm.id;  // Prefisso per distinguere
+          fm.isCommunity = true;   // Flag per UI
+          DB.materials.push(fm);
+          existingNames.add(normalizedName);
+          addedCount++;
+        }
+      }
+      
+      if(addedCount > 0) {
+        console.log(`✅ +${addedCount} materiali dalla community`);
+      }
+    }
+    
+    // 4. Renderizza l'app con tutti i materiali
+    render();
+    
+  } catch(e) {
+    console.error("❌ Init error:", e);
+    // Fallback: renderizza comunque con materiali locali
+    DB.materials = DEFAULT_MATERIALS.slice();
+    render();
   }
-  render();
-}catch(e){
-  console.error('FATAL ERROR:',e);
-  document.getElementById('app-content').innerHTML='<div class="alert alert-error" style="margin:1rem"><strong>Startup Error:</strong><br><code>'+e.message+'</code><br><br><details><summary>Stack trace</summary><pre>'+e.stack+'</pre></details></div>';
-}
+})();
 </script>
+</body>
+</html>
 </body>
 </html>
