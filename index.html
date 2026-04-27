@@ -602,7 +602,35 @@ async function submitToFirebase(mat) {
     alert("⚠️ Database non connesso. Riprova più tardi.");
     return;
   }
-}  
+  
+  // Feedback visivo
+  const btn = event?.target;
+  if(btn) {
+    btn.disabled = true;
+    btn.innerText = "⏳...";
+  }
+  
+  try {
+    const result = await window.saveToCommunity(mat);
+    
+    if(result.success) {
+      alert("✅ Pubblicato! Il materiale è ora visibile a tutti.");
+      location.reload();
+    } else {
+      alert("❌ Errore: " + result.error);
+      if(btn) {
+        btn.disabled = false;
+        btn.innerText = "🌍 Pubblica";
+      }
+    }
+  } catch(e) {
+    alert("Errore imprevisto: " + e.message);
+    if(btn) {
+      btn.disabled = false;
+      btn.innerText = "🌍 Pubblica";
+    }
+  }
+} 
 function renderHome() {
   var totalMats=DB.materials.length;
   var totalLams=DB.laminates.length;
