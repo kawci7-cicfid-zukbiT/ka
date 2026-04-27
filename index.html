@@ -623,25 +623,6 @@ async function submitToFirebase(mat) {
     alert("⚠️ Database non connesso. Riprova più tardi.");
     return;
   }
-  
-  const btn = event?.target;
-  if(btn) {
-    btn.disabled = true;
-    btn.innerText = "⏳...";
-  }
-  
-  const result = await window.saveToCommunity(mat);
-  
-  if(result.success) {
-    alert("✅ Pubblicato! Il materiale è ora visibile a tutti.");
-    location.reload();
-  } else {
-    alert("❌ Errore: " + result.error);
-    if(btn) {
-      btn.disabled = false;
-      btn.innerText = "🌍 Pubblica";
-    }
-  }
 }  
 function renderHome() {
   var totalMats=DB.materials.length;
@@ -1114,16 +1095,15 @@ function renderMaterials(){
     var m=DB.materials[i];
     if(!q||m.name.toLowerCase().indexOf(q)>=0||(m.family&&m.family.toLowerCase().indexOf(q)>=0)) filtered.push(m);
   }
-  var syncStatus=State.dbSyncStatus;
-  var syncLabel=syncStatus==='synced'?'Synced':syncStatus==='syncing'?'Syncing...':syncStatus==='error'?'Sync failed':'Not synced';
-
-  var html='<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem;flex-wrap:wrap;gap:.4rem">'+
-    '<h2 style="margin:0">Materials <span class="badge badge-blue">'+DB.materials.length+'</span></h2>'+
-    '<div style="display:flex;gap:.35rem;flex-wrap:wrap">'+
-    '<span class="db-status '+syncStatus+'">'+syncLabel+'</span>'+
-    '<button class="btn btn-sm btn-primary" onclick="showMatModal()">+ Add</button>'+
-    '<button class="btn btn-sm btn-outline" onclick="showBulkImport()">Import</button>'+
-    '<button class="btn btn-sm btn-outline" onclick="exportDB()">Export</button>'+
+// ✅ CODICE CORRETTO (senza dbSyncStatus):
+var html='<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem;flex-wrap:wrap;gap:.4rem">'+
+  '<h2 style="margin:0">Materials <span class="badge badge-blue">'+DB.materials.length+'</span></h2>'+
+  '<div style="display:flex;gap:.35rem;flex-wrap:wrap">'+
+  
+  // ✅ UNA SOLA SERIE DI PULSANTI:
+  '<button class="btn btn-sm btn-primary" onclick="showMatModal()">+ Add</button>'+
+  '<button class="btn btn-sm btn-outline" onclick="showBulkImport()">Import</button>'+
+  '<button class="btn btn-sm btn-outline" onclick="exportDB()">Export</button>'+
     '</div></div>'+
     '<div class="form-group search-input"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'+
     '<input type="text" class="form-input" id="material-search" placeholder="Search materials by name or family..." value="'+State.searchQuery+'" oninput="onMatSearch(this.value)"></div>';
@@ -1391,5 +1371,4 @@ function exportDB(){
 </script>
 </body>
 </html>
-</body>
-</html>
+
