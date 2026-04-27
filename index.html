@@ -529,6 +529,78 @@ select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csv
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+/* === SFONDO BOLLE D'ACQUA SFUOCATE (background layer) === */
+.bg-drops {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.bg-drop {
+  position: absolute;
+  width: 30px;
+  height: 45px;
+  background: radial-gradient(ellipse at bottom, rgba(37, 99, 235, 0.25) 0%, rgba(147, 197, 253, 0.08) 70%, transparent 100%);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  animation: floatBgDrop 18s infinite ease-in-out;
+  filter: blur(1.5px);
+  opacity: 0.7;
+}
+
+.bg-drop::before {
+  content: '';
+  position: absolute;
+  top: 30%;
+  left: 25%;
+  width: 50%;
+  height: 40%;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  filter: blur(2px);
+}
+
+/* Posizioni e timing variati per effetto naturale */
+.bg-drop:nth-child(1) { left: 10%; animation-delay: 0s; animation-duration: 20s; }
+.bg-drop:nth-child(2) { left: 30%; animation-delay: 4s; animation-duration: 24s; }
+.bg-drop:nth-child(3) { left: 55%; animation-delay: 8s; animation-duration: 22s; }
+.bg-drop:nth-child(4) { left: 75%; animation-delay: 12s; animation-duration: 26s; }
+.bg-drop:nth-child(5) { left: 20%; animation-delay: 2s; animation-duration: 19s; }
+.bg-drop:nth-child(6) { left: 45%; animation-delay: 10s; animation-duration: 23s; }
+.bg-drop:nth-child(7) { left: 85%; animation-delay: 6s; animation-duration: 21s; }
+.bg-drop:nth-child(8) { left: 5%; animation-delay: 14s; animation-duration: 25s; }
+
+@keyframes floatBgDrop {
+  0%, 100% {
+    transform: translateY(100vh) scale(0.4) rotate(0deg);
+    opacity: 0;
+  }
+  10% { opacity: 0.7; }
+  50% {
+    transform: translateY(30vh) scale(1.1) rotate(8deg);
+    opacity: 1;
+  }
+  90% { opacity: 0.5; }
+}
+
+/* Sfocatura leggera sull'hero per effetto profondità */
+.hero::before {
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* Assicurati che il contenuto dell'hero sia sopra le bolle */
+.hero-content {
+  position: relative;
+  z-index: 2;
+}
+.hero-particles {
+  z-index: 1;
+}
 </style>
 </head>
 <body>
@@ -1049,6 +1121,17 @@ function initHomeAnimations() {
       this.style.animationPlayState = 'running';
       this.style.filter = 'blur(0.5px) brightness(1)';
     });
+      // === INTERATTIVITÀ BOLLE DI SFONDO ===
+  const bgDrops = document.querySelectorAll('.bg-drop');
+  bgDrops.forEach(drop => {
+    drop.addEventListener('mouseenter', function() {
+      this.style.filter = 'blur(0.5px) brightness(1.3)';
+      this.style.opacity = '1';
+    });
+    drop.addEventListener('mouseleave', function() {
+      this.style.filter = 'blur(1.5px) brightness(1)';
+      this.style.opacity = '0.7';
+    });
   });
   
 }  // ← Chiusura funzione
@@ -1281,6 +1364,18 @@ function renderHome() {
         </div>
       </div>
     </div>
+    
+    <!-- BACKGROUND WATER DROPS (sfondo sfuocato) -->
+<div class="bg-drops" aria-hidden="true">
+  <div class="bg-drop"></div>
+  <div class="bg-drop"></div>
+  <div class="bg-drop"></div>
+  <div class="bg-drop"></div>
+  <div class="bg-drop"></div>
+  <div class="bg-drop"></div>
+  <div class="bg-drop"></div>
+  <div class="bg-drop"></div>
+</div>
 
     <!-- FEATURES SECTION -->
     <div class="features-section" id="featuresSection">
@@ -1360,8 +1455,8 @@ function renderHome() {
     <!-- STATS CARDS -->
     <div class="grid grid-3" style="margin-bottom:1.5rem">
       <div class="card" style="text-align:center;padding:1rem;animation:statEntrance 0.4s ease forwards;opacity:0">
-        <div style="font-size:1.8rem;font-weight:700;color:var(--primary)" class="count-up" data-target="${totalMats}">0</div>
-        <div style="font-size:0.75rem;color:var(--text-light)">Materials Available</div>
+       <div style="font-size:1.8rem;font-weight:700;color:var(--primary)" class="count-up" data-target="${totalMats}">${totalMats}</div>
+       <div style="font-size:0.75rem;color:var(--text-light)">Materials Available</div>
         <div class="progress-bar"><div class="progress-fill" style="--progress: ${Math.min(totalMats/50*100,100)}%"></div></div>
       </div>
       <div class="card" style="text-align:center;padding:1rem;animation:statEntrance 0.4s ease forwards 0.15s;opacity:0">
@@ -1422,23 +1517,6 @@ function renderHome() {
         </div>
       </div>
     </div>
-
-<!-- WATER DROPS ANIMATION -->
-<div class="water-drops-container">
-  <div class="water-drop"></div>
-  <div class="water-drop"></div>
-  <div class="water-drop"></div>
-  <div class="water-drop"></div>
-  <div class="water-drop"></div>
-  <div class="water-ripple"></div>
-  <div class="water-ripple"></div>
-  <div class="water-ripple"></div>
-  <div class="water-ripple"></div>
-  <div class="water-caption">
-    <strong>✨ Interactive Preview</strong>
-    Hover over features to explore • Click cards to navigate
-  </div>
-</div>
 
     <!-- FOOTER INFO -->
     <div style="margin-top:2rem;text-align:center;font-size:0.72rem;color:var(--text-light);padding:1rem;border-top:1px solid var(--border)">
