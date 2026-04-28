@@ -650,13 +650,6 @@ WVTR/OTR Pro
 <label><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg><input type="radio" name="mode" value="wvtr" checked onchange="setMode('wvtr')">WVTR</label>
 <label><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8" stroke-dasharray="4 3"/></svg><input type="radio" name="mode" value="otr" onchange="setMode('otr')">OTR</label>
 </div>
-<button class="btn btn-sm btn-danger" onclick="clearProject()" title="Cancel current calculation and start fresh">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;margin-right:4px">
-    <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m-6 12v-4m-4 4h8"/>
-  </svg>
-  Cancel Calculation
-</button>
-</div>
 <div class="nav-tabs" id="nav-tabs"></div>
 </header>
 <main id="app-content"></main>
@@ -982,11 +975,11 @@ var LAYER_COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b
 var TABS = [
   { id: 'home', label: 'Home', svg: '<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>' },
   { id: 'calc', label: 'Calculator', svg: '<rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/>' },
-  { id: 'arrhenius', label: 'Arrhenius', svg: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>' },
   { id: 'sensitivity', label: 'Sensitivity', svg: '<path d="M2 12h4l3-9 4 18 3-9h4"/>' },
   { id: 'compare', label: 'Compare', svg: '<rect x="2" y="2" width="9" height="9"/><rect x="13" y="2" width="9" height="9"/><rect x="2" y="13" width="9" height="9"/><rect x="13" y="13" width="9" height="9"/>' },
-  { id: 'materials', label: 'Materials', svg: '<path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>' },
-  { id: 'laminates', label: 'Laminates', svg: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>' }
+  { id: 'arrhenius', label: 'Arrhenius', svg: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>' },
+  { id: 'materials', label: 'Materials DB', svg: '<path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>' },
+  { id: 'laminates', label: 'Laminates DB', svg: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>' }
 ];
 
 var chartInstances = {};
@@ -1027,7 +1020,7 @@ function renderContent() {
   try {
     switch(State.tab) {
       case 'home': c.innerHTML=renderHome(); break;
-      case 'calc': c.innerHTML=renderCalc(); break;
+      case 'calc': c.innerHTML=; break;
       case 'arrhenius': c.innerHTML=renderArrhenius(); break;
       case 'sensitivity': c.innerHTML=renderSensitivity(); break;
       case 'compare': c.innerHTML=renderCompare(); break;
@@ -1511,78 +1504,107 @@ function recordUserVote(matId, voteType) {
 }
 
 function renderCalc() {
-  var common=Engine.findCommonConditions(State.layers,DB.materials);
-  var hasMats=State.layers.some(function(l){return l.mid!==null;});
-  var condHTML='';
-  if(!hasMats) condHTML='<div class="alert alert-info">Add at least one material with thickness</div>';
-  else if(common.error) {
-    condHTML='<div class="alert alert-error">'+common.error+'</div>';
+  var common = Engine.findCommonConditions(State.layers, DB.materials);
+  var hasMats = State.layers.some(function(l){ return l.mid !== null; });
+  
+  // ✅ HEADER CARD con titolo e pulsante Cancel
+  var cardHeader = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">'+
+    '<h2 style="margin:0;display:flex;align-items:center;gap:0.4rem">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--primary)">'+
+        '<rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/>'+
+      '</svg>'+
+      'Laminate Structure'+
+    '</h2>'+
+    // ✅ PULSANTE CANCEL SPOSTATO QUI
+    '<button class="btn btn-sm btn-danger" onclick="clearProject()" title="Cancel current calculation and clear all layers" style="display:inline-flex;align-items:center;gap:0.3rem">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">'+
+        '<path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m-6 12v-4m-4 4h8"/>'+
+      '</svg>'+
+      'Cancel'+
+    '</button>'+
+  '</div>';
+  
+  var condHTML = '';
+  if(!hasMats) {
+    condHTML = '<div class="alert alert-info">Add at least one material with thickness</div>';
+  } else if(common.error) {
+    condHTML = '<div class="alert alert-error">'+common.error+'</div>';
     if(common.matInfo) {
-      var infoHTML='<table class="cond-table"><thead><tr><th>Material</th><th>Conditions</th></tr></thead><tbody>';
-      for(var mi=0;mi<common.matInfo.length;mi++) infoHTML+='<tr><td><strong>'+common.matInfo[mi].name+'</strong></td><td>'+common.matInfo[mi].conditions.join(', ')+'</td></tr>';
-      infoHTML+='</tbody></table>';
-      condHTML+='<div class="alert alert-warning"><strong>Available conditions:</strong>'+infoHTML+'</div>';
+      var infoHTML = '<table class="cond-table"><thead><tr><th>Material</th><th>Conditions</th></tr></thead><tbody>';
+      for(var mi=0; mi<common.matInfo.length; mi++) {
+        infoHTML += '<tr><td><strong>'+common.matInfo[mi].name+'</strong></td><td>'+common.matInfo[mi].conditions.join(', ')+'</td></tr>';
+      }
+      infoHTML += '</tbody></table>';
+      condHTML += '<div class="alert alert-warning"><strong>Available conditions:</strong>'+infoHTML+'</div>';
     }
   } else {
-    var opts='<option value="">Select temperature/humidity...</option>';
-    for(var ci=0;ci<common.conditions.length;ci++){
-      var c=common.conditions[ci];
-      var sel=State.selCond&&State.selCond.temperature===c.temperature&&State.selCond.humidity===c.humidity?' selected':'';
-      opts+='<option value="'+c.temperature+'|'+c.humidity+'"'+sel+'>'+c.temperature+'\u00b0C / '+c.humidity+'%</option>';
+    var opts = '<option value="">Select temperature/humidity...</option>';
+    for(var ci=0; ci<common.conditions.length; ci++){
+      var c = common.conditions[ci];
+      var sel = State.selCond && State.selCond.temperature === c.temperature && State.selCond.humidity === c.humidity ? ' selected' : '';
+      opts += '<option value="'+c.temperature+'|'+c.humidity+'"'+sel+'>'+c.temperature+'\u00b0C / '+c.humidity+'%</option>';
     }
-    condHTML='<div class="form-group"><label>Test Conditions</label><select class="form-input" id="sel-cond" onchange="onCondSelect()">'+opts+'</select></div>';
+    condHTML = '<div class="form-group"><label>Test Conditions</label><select class="form-input" id="sel-cond" onchange="onCondSelect()">'+opts+'</select></div>';
   }
 
-  var layersHTML='';
-  for(var i=0;i<State.layers.length;i++){
-    var l=State.layers[i];
-    var res=State.calcResult&&State.calcResult.layers?State.calcResult.layers[i]:null;
-    var mat=null;if(l.mid!==null) for(var m=0;m<DB.materials.length;m++) if(DB.materials[m].id===l.mid){mat=DB.materials[m];break;}
-    var matOpts='<option value="">Select...</option>';
-    for(var j=0;j<DB.materials.length;j++) matOpts+='<option value="'+DB.materials[j].id+'"'+(l.mid===DB.materials[j].id?' selected':'')+'>'+DB.materials[j].name+'</option>';
-    layersHTML+='<div class="layer-card"><span class="layer-badge">LAYER '+(i+1)+'</span>'+
+  var layersHTML = '';
+  for(var i=0; i<State.layers.length; i++){
+    var l = State.layers[i];
+    var res = State.calcResult && State.calcResult.layers ? State.calcResult.layers[i] : null;
+    var mat = null;
+    if(l.mid !== null) {
+      for(var m=0; m<DB.materials.length; m++) {
+        if(DB.materials[m].id === l.mid) { mat = DB.materials[m]; break; }
+      }
+    }
+    var matOpts = '<option value="">Select...</option>';
+    for(var j=0; j<DB.materials.length; j++) {
+      matOpts += '<option value="'+DB.materials[j].id+'"'+(l.mid === DB.materials[j].id ? ' selected' : '')+'>'+DB.materials[j].name+'</option>';
+    }
+    layersHTML += '<div class="layer-card"><span class="layer-badge">LAYER '+(i+1)+'</span>'+
       '<div class="layer-grid">'+
       '<div class="form-group" style="margin:0"><label>Material</label><select class="form-input" onchange="onLayerChange('+i+',\'mid\',this.value)">'+matOpts+'</select></div>'+
-      '<div class="form-group" style="margin:0"><label>Thickness (um)</label><input type="number" step="any" class="form-input" value="'+(l.thick||'')+'" placeholder="0" onchange="onLayerChange('+i+',\'thick\',this.value)"></div>'+
-      '<div style="display:flex;align-items:center;gap:.3rem">'+(i>0?'<button class="btn btn-sm btn-danger" onclick="rmLayer('+i+')">X</button>':'')+
-      (res&&res.transmissionAtThickness>0?'<span class="badge badge-green">'+res.transmissionAtThickness.toFixed(3)+'</span>':'')+
-      (res&&res.isBarrier?'<span class="badge badge-purple">BARRIER</span>':'')+
+      '<div class="form-group" style="margin:0"><label>Thickness (µm)</label><input type="number" step="any" class="form-input" value="'+(l.thick||'')+'" placeholder="0" onchange="onLayerChange('+i+',\'thick\',this.value)"></div>'+
+      '<div style="display:flex;align-items:center;gap:.3rem">'+(i>0 ? '<button class="btn btn-sm btn-danger" onclick="rmLayer('+i+')">X</button>' : '')+
+      (res && res.transmissionAtThickness > 0 ? '<span class="badge badge-green">'+res.transmissionAtThickness.toFixed(3)+'</span>' : '')+
+      (res && res.isBarrier ? '<span class="badge badge-purple">BARRIER</span>' : '')+
       '</div></div>'+
-      (res?'<div style="margin-top:.35rem;font-size:.68rem;color:var(--text-light)">R: '+rStr(res.resistance)+' - '+res.resistancePct.toFixed(1)+'%</div>':'')+
+      (res ? '<div style="margin-top:.35rem;font-size:.68rem;color:var(--text-light)">R: '+rStr(res.resistance)+' - '+res.resistancePct.toFixed(1)+'%</div>' : '')+
       '</div>';
   }
 
-  var selectedCond=State.selCond?State.selCond.temperature+'\u00b0C/'+State.selCond.humidity+'%':null;
-  var canCalc=!!selectedCond&&State.layers.every(function(l){return l.mid!==null&&l.thick>0;});
-  var hasResult=State.calcResult&&!State.calcResult.error&&State.calcResult.total>0;
+  var selectedCond = State.selCond ? State.selCond.temperature+'\u00b0C/'+State.selCond.humidity+'%' : null;
+  var canCalc = !!selectedCond && State.layers.every(function(l){ return l.mid !== null && l.thick > 0; });
+  var hasResult = State.calcResult && !State.calcResult.error && State.calcResult.total > 0;
 
-  var resultHTML='';
-  if(State.calcError) resultHTML='<div class="alert alert-error">'+State.calcError+'</div>';
-  else if(hasResult){
-    resultHTML='<div class="result-card fade-in"><div class="result-value">'+State.calcResult.total.toFixed(6)+'</div><div class="result-unit">'+getUnit()+'</div></div>';
-    var detail='';
-    for(var r=0;r<State.calcResult.layers.length;r++){
-      var rl=State.calcResult.layers[r];
-      detail+='<div><strong>'+rl.materialName+'</strong> ('+rl.thickness+'um): '+getLabel()+'='+rl.transmissionAtThickness.toFixed(4)+' R='+rStr(rl.resistance)+' '+rl.resistancePct.toFixed(1)+'%</div>';
+  var resultHTML = '';
+  if(State.calcError) {
+    resultHTML = '<div class="alert alert-error">'+State.calcError+'</div>';
+  } else if(hasResult){
+    resultHTML = '<div class="result-card fade-in"><div class="result-value">'+State.calcResult.total.toFixed(6)+'</div><div class="result-unit">'+getUnit()+'</div></div>';
+    var detail = '';
+    for(var r=0; r<State.calcResult.layers.length; r++){
+      var rl = State.calcResult.layers[r];
+      detail += '<div><strong>'+rl.materialName+'</strong> ('+rl.thickness+'µm): '+getLabel()+' = '+rl.transmissionAtThickness.toFixed(4)+' '+getUnit()+' • R='+rStr(rl.resistance)+' • '+rl.resistancePct.toFixed(1)+'%</div>';
     }
-    detail+='<div style="padding-top:.25rem;border-top:2px solid #93c5fd;margin-top:.25rem"><strong>Total R:</strong> '+rStr(State.calcResult.totalResistance)+'</div>';
-    resultHTML+='<div class="result-detail">'+detail+'</div>';
+    detail += '<div style="padding-top:.25rem;border-top:2px solid #93c5fd;margin-top:.25rem"><strong>Total R:</strong> '+rStr(State.calcResult.totalResistance)+'</div>';
+    resultHTML += '<div class="result-detail">'+detail+'</div>';
   }
 
   return '<div class="grid grid-2">'+
-    '<div><div class="card"><h2>Laminate Structure</h2>'+layersHTML+
-    '<button class="btn btn-outline btn-full" onclick="addLayer()"'+(State.layers.length>0&&State.layers[State.layers.length-1].mid===null?' disabled':'')+'>+ Add Layer</button></div>'+
+    '<div><div class="card">'+cardHeader+layersHTML+
+    '<button class="btn btn-outline btn-full" onclick="addLayer()"'+(State.layers.length>0 && State.layers[State.layers.length-1].mid===null ? ' disabled' : '')+'>+ Add Layer</button></div>'+
     '<div class="card"><h2>Test Conditions</h2>'+condHTML+
-    (selectedCond?'<p style="font-size:.75rem;color:var(--text-light);margin-top:.5rem">Selected: <strong>'+selectedCond+'</strong></p>':'')+
+    (selectedCond ? '<p style="font-size:.75rem;color:var(--text-light);margin-top:.5rem">Selected: <strong>'+selectedCond+'</strong></p>' : '')+
     '<div style="display:flex;align-items:center;gap:.4rem;margin:.5rem 0">'+
     '<div onclick="toggleAutoCalc()" style="width:36px;height:20px;background:'+(State.autoCalc?'var(--primary)':'var(--border)')+';border-radius:10px;position:relative;cursor:pointer"><div style="position:absolute;top:2px;'+(State.autoCalc?'right:2px':'left:2px')+';width:16px;height:16px;background:#fff;border-radius:50%;transition:left .2s"></div></div>'+
     '<span style="font-size:.75rem;color:var(--text-light)">Auto-calculate</span></div>'+
     '<button class="btn btn-danger btn-full" onclick="doCalc()"'+(canCalc?'':' disabled')+'>Calculate '+getLabel()+'</button></div></div>'+
     '<div><div class="card"><h2>Result</h2>'+(resultHTML||'<p style="color:var(--text-light);font-size:.8rem;text-align:center;padding:1.5rem">Configure layers and calculate</p>')+'</div>'+
-    (hasResult?'<div class="card"><h2>'+getLabel()+' vs Temperature</h2><div class="chart-container"><canvas id="lamCurveChart"></canvas></div><div id="lamCurveLegend" style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.5rem;justify-content:center"></div></div>'+
+    (hasResult ? '<div class="card"><h2>'+getLabel()+' vs Temperature</h2><div class="chart-container"><canvas id="lamCurveChart"></canvas></div><div id="lamCurveLegend" style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.5rem;justify-content:center"></div></div>'+
     '<div class="card"><h2>Save Laminate</h2><div style="display:flex;gap:.4rem;align-items:flex-end">'+
     '<div class="form-group" style="flex:1;margin:0"><label>Name</label><input type="text" class="form-input" id="lam-name" value="'+State.laminateName+'" placeholder="Name..." oninput="State.laminateName=this.value;updateSaveBtn()"></div>'+
-    '<button class="btn btn-primary" id="save-btn" onclick="doSaveLam()">Save</button></div><div id="save-feedback"></div></div>':'')+
+    '<button class="btn btn-primary" id="save-btn" onclick="doSaveLam()">Save</button></div><div id="save-feedback"></div></div>' : '')+
     '</div></div>';
 }
 
@@ -2115,74 +2137,158 @@ var Modal = {
 };
 
 function showMatModal(editId) {
-  var mat=null; if(editId) for(var i=0;i<DB.materials.length;i++) if(DB.materials[i].id===editId){mat=DB.materials[i];break;}
+  var mat = null; 
+  if(editId) {
+    for(var i=0; i<DB.materials.length; i++) {
+      if(DB.materials[i].id === editId) { mat = DB.materials[i]; break; }
+    }
+  }
   
-  var wvtrVals=mat?mat.wvtrValues:[{value:'',thickness:''}];
-  var otrVals=mat?mat.otrValues:[{value:'',thickness:''}];
-  var conds=mat?mat.validConditions:[{temperature:'',humidity:''}];
+  // ✅ Determina quali valori mostrare in base alla modalità corrente
+  var currentMode = State.mode; // 'wvtr' o 'otr'
+  var currentLabel = currentMode === 'wvtr' ? 'WVTR' : 'OTR';
+  var currentUnit = currentMode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
+  var currentValues = currentMode === 'wvtr' 
+    ? (mat ? mat.wvtrValues : [{value:'',thickness:''}])
+    : (mat ? mat.otrValues : [{value:'',thickness:''}]);
+  
+  var conds = mat ? mat.validConditions : [{temperature:'',humidity:''}];
   
   // ✅ Family dropdown options
-  var familyOpts='<option value="">Select family...</option>';
+  var familyOpts = '<option value="">Select family...</option>';
   for(var fam in POLYMER_FAMILIES){
-    var selected=(mat && mat.family===fam)?' selected':'';
-    familyOpts+='<option value="'+fam+'"'+selected+'>'+fam+'</option>';
+    var selected = (mat && mat.family === fam) ? ' selected' : '';
+    familyOpts += '<option value="'+fam+'"'+selected+'>'+fam+'</option>';
   }
   
-  var testMethod=mat?mat.testMethod||'':'';
+  var testMethod = mat ? mat.testMethod || '' : '';
   
-  var rows='';
-  for(var i=0;i<wvtrVals.length;i++){
-    var o=otrVals[i]||{value:'',thickness:''};
-    var c=conds[i]||{temperature:'',humidity:''};
-    rows+='<div class="wvtr-row-form">'+
-      '<div><div class="form-group"><label>WVTR</label><input type="number" step="any" class="form-input mf-wvtr" value="'+(wvtrVals[i].value||'')+'"></div><div class="form-group"><label>WVTR Thickness (um)</label><input type="number" step="any" class="form-input mf-wvtr-thick" value="'+(wvtrVals[i].thickness||'')+'"></div></div>'+
-      '<div><div class="form-group"><label>OTR</label><input type="number" step="any" class="form-input mf-otr" value="'+(o.value||'')+'"></div><div class="form-group"><label>OTR Thickness (um)</label><input type="number" step="any" class="form-input mf-otr-thick" value="'+(o.thickness||'')+'"></div></div>'+
-      '<div><div class="form-group"><label>Temperature (deg C)</label><input type="number" step="any" class="form-input mf-temp" value="'+(c.temperature||'')+'"></div><div class="form-group"><label>Humidity (%)</label><input type="number" step="any" class="form-input mf-hum" value="'+(c.humidity||'')+'"></div></div></div>';
+  // ✅ Genera righe SOLO per la modalità corrente + condizioni
+  var rows = '';
+  for(var i=0; i<currentValues.length; i++){
+    var v = currentValues[i] || {value:'',thickness:''};
+    var c = conds[i] || {temperature:'',humidity:''};
+    
+    rows += '<div class="wvtr-row-form" style="grid-template-columns:1fr 1fr">'+
+      '<div style="display:flex;gap:0.4rem">'+
+        '<div class="form-group" style="margin:0;flex:1">'+
+          '<label>'+currentLabel+' Value</label>'+
+          '<input type="number" step="any" class="form-input mf-val" value="'+(v.value||'')+'" placeholder="0">'+
+        '</div>'+
+        '<div class="form-group" style="margin:0;flex:1">'+
+          '<label>Thickness (µm)</label>'+
+          '<input type="number" step="any" class="form-input mf-thick" value="'+(v.thickness||'')+'" placeholder="0">'+
+        '</div>'+
+      '</div>'+
+      '<div style="display:flex;gap:0.4rem">'+
+        '<div class="form-group" style="margin:0;flex:1">'+
+          '<label>Temp (°C)</label>'+
+          '<input type="number" step="any" class="form-input mf-temp" value="'+(c.temperature||'')+'" placeholder="23">'+
+        '</div>'+
+        '<div class="form-group" style="margin:0;flex:1">'+
+          '<label>Humidity (%)</label>'+
+          '<input type="number" step="any" class="form-input mf-hum" value="'+(c.humidity||'')+'" placeholder="50">'+
+        '</div>'+
+      '</div>'+
+    '</div>';
   }
   
-  Modal.open(editId?'Edit Material':'Add Material',
+  // ✅ Modal content con solo i campi necessari
+  Modal.open(editId ? 'Edit Material' : 'Add Material',
     '<div class="form-group"><label>Name *</label><input type="text" class="form-input" id="mf-name" value="'+(mat?mat.name:'')+'"></div>'+
     '<div class="form-group"><label>Material Family</label><select class="form-input" id="mf-family">'+familyOpts+'</select><span style="font-size:0.7rem;color:var(--text-light)">Select the polymer family for categorization</span></div>'+
     '<div class="form-group"><label>Test Method</label><input type="text" class="form-input" id="mf-testmethod" value="'+testMethod+'" placeholder="e.g., ASTM F1249, ISO 15106-3, MOCON..."><span style="font-size:0.7rem;color:var(--text-light)">Standard or method used for testing (optional)</span></div>'+
+    
+    // ✅ Badge che mostra la modalità corrente
+    '<div style="margin:0.5rem 0;padding:0.4rem 0.6rem;background:var(--primary-light);border-radius:6px;display:flex;align-items:center;gap:0.4rem">'+
+      '<span class="badge badge-blue">'+currentLabel+'</span>'+
+      '<span style="font-size:0.75rem;color:var(--text-light)">Entering data for <strong>'+currentLabel+'</strong> • Unit: '+currentUnit+'</span>'+
+    '</div>'+
+    
     '<div id="mf-rows">'+rows+'</div>'+
-    '<button class="btn btn-outline btn-full" onclick="addMatRow()" style="margin-top:.4rem">+ Add Condition</button>',
+    '<button class="btn btn-outline btn-full" onclick="addMatRow()" style="margin-top:0.4rem">+ Add Condition</button>',
+    
+    // ✅ Funzione di salvataggio
     function(){
-      var name=document.getElementById('mf-name').value.trim();
-      var family=document.getElementById('mf-family').value;
-      var testMethod=document.getElementById('mf-testmethod').value.trim();
-      if(!name){alert('Enter material name');return false;}
-      var wvtrs=document.querySelectorAll('.mf-wvtr'),wvtrThicks=document.querySelectorAll('.mf-wvtr-thick'),
-        otr=document.querySelectorAll('.mf-otr'),otrThicks=document.querySelectorAll('.mf-otr-thick'),
-        temps=document.querySelectorAll('.mf-temp'),hums=document.querySelectorAll('.mf-hum');
-      var wv=[],ot=[],vc=[];
-      for(var i=0;i<wvtrs.length;i++){
-        var wv_val=parseFloat(wvtrs[i].value),wv_t=parseFloat(wvtrThicks[i].value);
-        var ot_val=parseFloat(otr[i].value),ot_t=parseFloat(otrThicks[i].value);
-        var te=parseFloat(temps[i].value),h=parseFloat(hums[i].value);
-        if(isNaN(wv_val)||wv_val<0){alert('WVTR invalid row '+(i+1));return false;}
-        if(isNaN(wv_t)||wv_t<=0){alert('WVTR thickness must be > 0 row '+(i+1));return false;}
-        if(isNaN(ot_val)||ot_val<0){alert('OTR invalid row '+(i+1));return false;}
-        if(isNaN(ot_t)||ot_t<=0){alert('OTR thickness must be > 0 row '+(i+1));return false;}
-        if(isNaN(te)){alert('Temperature required row '+(i+1));return false;}
-        if(isNaN(h)){alert('Humidity required row '+(i+1));return false;}
-        wv.push({value:wv_val,thickness:wv_t});ot.push({value:ot_val,thickness:ot_t});vc.push({temperature:te,humidity:h});
+      var name = document.getElementById('mf-name').value.trim();
+      var family = document.getElementById('mf-family').value;
+      var testMethod = document.getElementById('mf-testmethod').value.trim();
+      
+      if(!name) { alert('Enter material name'); return false; }
+      
+      // ✅ Recupera solo i campi della modalità corrente
+      var vals = document.querySelectorAll('.mf-val');
+      var thicks = document.querySelectorAll('.mf-thick');
+      var temps = document.querySelectorAll('.mf-temp');
+      var hums = document.querySelectorAll('.mf-hum');
+      
+      var valuesArray = [];
+      var conditionsArray = [];
+      
+      for(var i=0; i<vals.length; i++){
+        var val = parseFloat(vals[i].value);
+        var thick = parseFloat(thicks[i].value);
+        var temp = parseFloat(temps[i].value);
+        var hum = parseFloat(hums[i].value);
+        
+        if(isNaN(val) || val < 0) { alert(currentLabel+' value invalid row '+(i+1)); return false; }
+        if(isNaN(thick) || thick <= 0) { alert('Thickness must be > 0 row '+(i+1)); return false; }
+        if(isNaN(temp)) { alert('Temperature required row '+(i+1)); return false; }
+        if(isNaN(hum)) { alert('Humidity required row '+(i+1)); return false; }
+        
+        valuesArray.push({ value: val, thickness: thick });
+        conditionsArray.push({ temperature: temp, humidity: hum });
       }
-      var finalFamily=family||getFamily(name);
-      var matData={name:name,family:finalFamily,wvtrValues:wv,otrValues:ot,validConditions:vc};
-      if(testMethod) matData.testMethod=testMethod;
-      if(editId) DB.updateMat(editId,matData);
-      else DB.addMat(matData);
+      
+      // ✅ Costruisci l'oggetto materiale con SOLO i dati della modalità corrente
+      var finalFamily = family || getFamily(name);
+      var matData = {
+        name: name,
+        family: finalFamily,
+        wvtrValues: currentMode === 'wvtr' ? valuesArray : (mat ? mat.wvtrValues : []),
+        otrValues: currentMode === 'otr' ? valuesArray : (mat ? mat.otrValues : []),
+        validConditions: conditionsArray
+      };
+      
+      if(testMethod) matData.testMethod = testMethod;
+      
+      if(editId) {
+        DB.updateMat(editId, matData);
+      } else {
+        DB.addMat(matData);
+      }
       return true;
     }
   );
 }
 
 function addMatRow(){
+  var currentMode = State.mode;
+  var currentLabel = currentMode === 'wvtr' ? 'WVTR' : 'OTR';
+  
   document.getElementById('mf-rows').insertAdjacentHTML('beforeend',
-    '<div class="wvtr-row-form">'+
-    '<div><div class="form-group"><label>WVTR</label><input type="number" step="any" class="form-input mf-wvtr" value=""></div><div class="form-group"><label>WVTR Thickness (um)</label><input type="number" step="any" class="form-input mf-wvtr-thick" value=""></div></div>'+
-    '<div><div class="form-group"><label>OTR</label><input type="number" step="any" class="form-input mf-otr" value=""></div><div class="form-group"><label>OTR Thickness (um)</label><input type="number" step="any" class="form-input mf-otr-thick" value=""></div></div>'+
-    '<div><div class="form-group"><label>Temperature (deg C)</label><input type="number" step="any" class="form-input mf-temp" value=""></div><div class="form-group"><label>Humidity (%)</label><input type="number" step="any" class="form-input mf-hum" value=""></div></div></div>');
+    '<div class="wvtr-row-form" style="grid-template-columns:1fr 1fr">'+
+      '<div style="display:flex;gap:0.4rem">'+
+        '<div class="form-group" style="margin:0;flex:1">'+
+          '<label>'+currentLabel+' Value</label>'+
+          '<input type="number" step="any" class="form-input mf-val" value="" placeholder="0">'+
+        '</div>'+
+        '<div class="form-group" style="margin:0;flex:1">'+
+          '<label>Thickness (µm)</label>'+
+          '<input type="number" step="any" class="form-input mf-thick" value="" placeholder="0">'+
+        '</div>'+
+      '</div>'+
+      '<div style="display:flex;gap:0.4rem">'+
+        '<div class="form-group" style="margin:0;flex:1">'+
+          '<label>Temp (°C)</label>'+
+          '<input type="number" step="any" class="form-input mf-temp" value="" placeholder="23">'+
+        '</div>'+
+        '<div class="form-group" style="margin:0;flex:1">'+
+          '<label>Humidity (%)</label>'+
+          '<input type="number" step="any" class="form-input mf-hum" value="" placeholder="50">'+
+        '</div>'+
+      '</div>'+
+    '</div>');
 }
 
 function showBulkImport(){
