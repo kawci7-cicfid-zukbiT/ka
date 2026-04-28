@@ -1490,7 +1490,12 @@ function onArrChange(){
   return;
 }
   var r=Engine.applyArrhenius(mat,targetTemp);
-  if(r.error){if(resEl) rt alert-error">'+r.error+'</div>';clearArrCanvas('arrTempCanvas');clearArrCanvas('arrLinCanvas');return;}
+  if(r.error){
+  if(resEl) resEl.innerHTML='<div class="alert alert-error">'+r.error+'</div>';
+  clearArrCanvas('arrTempCanvas');
+  clearArrCanvas('arrLinCanvas');
+  return;
+}
   var warn='';if(r.isExtrapolation) warn='<div class="alert alert-warning">Extrapolation - target '+targetTemp+' is outside measured range ('+r.minTemp.toFixed(0)+'-'+r.maxTemp.toFixed(0)+')</div>';
   var relClass=r.rSquared>0.95?'reliability-high':r.rSquared>0.8?'reliability-medium':'reliability-low';
   if(resEl) resEl.innerHTML=warn+'<div class="reliability-meter '+relClass+'">R2='+r.rSquared.toFixed(4)+' Ea='+(r.Ea/1000).toFixed(2)+' kJ/mol</div>'+
@@ -1598,7 +1603,7 @@ function doOptimize(){
   var resEl=document.getElementById('opt-result');if(!resEl) return;
   var common=Engine.findCommonConditions(State.layers,DB.materials);
   var condition=State.selCond||(common.conditions&&common.conditions[0]);
-  if(!condition||!State.layers.every(...)){
+  if(!condition || !State.layers.every(function(l){ return l.mid!==null && l.thick>0; })){
   resEl.innerHTML='<div class="alert alert-info">Configure and calculate first</div>';
   return;
 }
