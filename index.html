@@ -1448,14 +1448,23 @@ function renderHome() {
 }
   // ✅ Vota affidabilità materiale
 async function voteReliability(matId, voteType) {
+  // ✅ Controlla se ha già votato
+  if(hasUserVoted(matId)) {
+    alert("⚠️ You have already voted for this material");
+    return;
+  }
+  
   var mat = DB.materials.find(m => m.id === matId);
   if(!mat) return;
   if(!mat.reliabilityVotes) mat.reliabilityVotes = { up: 0, down: 0 };
   if(voteType === 'up') mat.reliabilityVotes.up++;
   else mat.reliabilityVotes.down++;
+  
+  // ✅ Registra il voto locale
+  recordUserVote(matId, voteType);
   DB.save();
   
-  // Sync con Firebase per materiali community
+  // Sync con Firebase (opzionale)
   if(window.communityDB && mat.isCommunity) {
     try {
       await window.fbAddDoc(
@@ -1487,6 +1496,18 @@ function getReliabilityBadge(score) {
   if(score >= 70) return '<span class="badge badge-green">✓ Reliable '+score+'%</span>';
   if(score >= 40) return '<span class="badge badge-yellow">⚠ Mixed '+score+'%</span>';
   return '<span class="badge badge-red">✗ Unreliable '+score+'%</span>';
+}
+  // ✅ Controlla se l'utente ha già votato questo materiale
+function hasUserVoted(matId) {
+  var votes = JSON.parse(localStorage.getItem('wvtr_user_votes') || '{}');
+  return votes[matId] || null; // restituisce 'up', 'down', o null
+}
+
+// ✅ Registra il voto dell'utente in localStorage
+function recordUserVote(matId, voteType) {
+  var votes = JSON.parse(localStorage.getItem('wvtr_user_votes') || '{}');
+  votes[matId] = voteType;
+  localStorage.setItem('wvtr_user_votes', JSON.stringify(votes));
 }
 
 function renderCalc() {
@@ -1928,86 +1949,117 @@ function postCompareRender(){
 }
 
 function renderMaterials(){
-  var q=State.searchQuery.toLowerCase().trim();
-  var filtered=[];
-  for(var i=0;i<DB.materials.length;i++){
-    var m=DB.materials[i];
-    if(!q||m.name.toLowerCase().indexOf(q)>=0||(m.family&&m.family.toLowerCase().indexOf(q)>=0)) filtered.push(m);
+  var q = State.searchQuery.toLowerCase().trim();
+  var filtered = [];
+  
+  // ✅ FILTRA MATERIALI: mostra solo quelli con dati validi per la modalità corrente
+  for(var i = 0; i < DB.materials.length; i++){
+    var m = DB.materials[i];
+    var vals = Engine.getValues(m);
+    
+    var hasValidData = vals && vals.length > 0 && vals.some(function(v){ 
+      return v && v.value != null && !isNaN(v.value) && v.value > 0; 
+    });
+    
+    if(!hasValidData) continue;
+    
+    if(q && m.name.toLowerCase().indexOf(q) < 0 && (!m.family || m.family.toLowerCase().indexOf(q) < 0)){
+      continue;
+    }
+    filtered.push(m);
   }
 
-  var html='<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem;flex-wrap:wrap;gap:.4rem">'+
-    '<h2 style="margin:0">Materials <span class="badge badge-blue">'+DB.materials.length+'</span></h2>'+
+  var currentUnit = getUnit();
+  var currentLabel = getLabel();
+  
+  var html = '<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem;flex-wrap:wrap;gap:.4rem">'+
+    '<h2 style="margin:0">Materials <span class="badge badge-blue">'+filtered.length+'</span></h2>'+
     '<div style="display:flex;gap:.35rem;flex-wrap:wrap">'+
+    '<span class="badge badge-purple" style="font-size:0.7rem">'+currentLabel+' mode • Unit: '+currentUnit+'</span>'+
     '<button class="btn btn-sm btn-primary" onclick="showMatModal()">+ Add</button>'+
     '<button class="btn btn-sm btn-outline" onclick="showBulkImport()">Import</button>'+
     '<button class="btn btn-sm btn-outline" onclick="exportDB()">Export</button>'+
     '</div></div>'+
     '<div class="form-group search-input"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'+
-    '<input type="text" class="form-input" id="material-search" placeholder="Search materials by name or family..." value="'+State.searchQuery+'" oninput="onMatSearch(this.value)"></div>';
+    '<input type="text" class="form-input" id="material-search" placeholder="Search '+currentLabel.toLowerCase()+' materials..." value="'+State.searchQuery+'" oninput="onMatSearch(this.value)"></div>';
 
-  if(q) html+='<p style="font-size:.75rem;color:var(--text-light);margin-bottom:.5rem">Showing '+filtered.length+' of '+DB.materials.length+' for "'+State.searchQuery+'"</p>';
-
+  if(q) html+='<p style="font-size:.75rem;color:var(--text-light);margin-bottom:.5rem">Showing '+filtered.length+' materials with '+currentLabel+' data for "'+State.searchQuery+'"</p>';
+  
   html+='<div class="grid">';
-  if(filtered.length===0) html+='<div class="empty-state"><p>No materials found'+(q?' for "'+State.searchQuery+'"':'')+'</p></div>';
-  else {
-    for(var i=0;i<filtered.length;i++){
-      var m=filtered[i];
-      var v=Engine.validateArrhenius(m);
-      var vals=Engine.getValues(m);
-      var tags='';
-      for(var t=0;t<vals.length;t++) tags+='<span class="mat-tag">'+getLabel()+': '+vals[t].value+' @ '+vals[t].thickness+'um - '+m.validConditions[t].temperature+'\u00b0C/'+m.validConditions[t].humidity+'%</span>';
-      var escName=m.name.replace(/'/g,"\\'");
+  
+  if(filtered.length===0) {
+    html+='<div class="empty-state"><p>No materials found'+(q?' for "'+State.searchQuery+'"':'')+'</p></div>';
+  } else {
+    for(var i=0; i<filtered.length; i++){
+      var m = filtered[i];
+      var v = Engine.validateArrhenius(m);
+      var vals = Engine.getValues(m);
+      
+      // ✅ TAGS CON UNITÀ DI MISURA
+      var tags = '';
+      for(var t=0; t<vals.length; t++){
+        tags += '<span class="mat-tag">'+getLabel()+': <strong>'+vals[t].value+'</strong> '+currentUnit+' @ '+vals[t].thickness+'µm • '+m.validConditions[t].temperature+'°C/'+m.validConditions[t].humidity+'%</span>';
+      }
+      
+      var escName = m.name.replace(/'/g, "\\'");
       
       var isUserMat = true;
       for(var di=0; di<DEFAULT_MATERIALS.length; di++) {
         if(DEFAULT_MATERIALS[di].id === m.id) { isUserMat = false; break; }
       }
       
-      // ✅ Badge community (con var invece di const)
       var isComm = m.isCommunity || (m.id && String(m.id).startsWith('fb_'));
       var commBadge = isComm ? '<span class="badge badge-purple" style="margin-left:0.5rem">🌍 Community</span>' : '';
 
-      // ✅ Calcola reliability score
+      // ✅ Reliability score e badge
       var relScore = getReliabilityScore(m);
       var relBadge = getReliabilityBadge(relScore);
       
-      // ✅ Pulsanti voto (con controllo compatibilità)
-      var upCount = (m.reliabilityVotes && m.reliabilityVotes.up) ? m.reliabilityVotes.up : 0;
-      var downCount = (m.reliabilityVotes && m.reliabilityVotes.down) ? m.reliabilityVotes.down : 0;
-      
+      // ✅ Gestione voto utente (max 1 voto) - SENZA CONTATORI VISIBILI
+      var userVote = hasUserVoted(m.id);
+      var voteDisabled = userVote ? 'disabled' : '';
+      var voteOpacity = userVote ? 'opacity:0.5;cursor:not-allowed' : '';
+      var upActive = userVote === 'up' ? 'style="background:var(--success-light);border-color:var(--success);color:var(--success)"' : '';
+      var downActive = userVote === 'down' ? 'style="background:var(--danger-light);border-color:var(--danger);color:var(--danger)"' : '';
+
+      // ✅ Pulsanti di voto SENZA NUMERI
       var voteButtons = `
         <div style="display:flex;align-items:center;gap:0.3rem;margin-top:0.5rem;flex-wrap:wrap">
           <span style="font-size:0.7rem;color:var(--text-light)">Reliability:</span>
           ${relBadge}
-          <button class="btn btn-sm btn-outline" style="padding:0.2rem 0.5rem;font-size:0.7rem"
-                  onclick="event.stopPropagation();voteReliability(${m.id},'up')" title="Mark as reliable">
-            👍 <span>${upCount}</span>
+          <button class="btn btn-sm btn-outline" style="padding:0.2rem 0.5rem;font-size:0.7rem;${voteOpacity}"
+                  ${voteDisabled} onclick="event.stopPropagation();voteReliability(${m.id},'up')" 
+                  title="${userVote ? 'Already voted' : 'Mark as reliable'}" ${upActive}>
+            👍
           </button>
-          <button class="btn btn-sm btn-outline" style="padding:0.2rem 0.5rem;font-size:0.7rem"
-                  onclick="event.stopPropagation();voteReliability(${m.id},'down')" title="Mark as unreliable">
-            👎 <span>${downCount}</span>
+          <button class="btn btn-sm btn-outline" style="padding:0.2rem 0.5rem;font-size:0.7rem;${voteOpacity}"
+                  ${voteDisabled} onclick="event.stopPropagation();voteReliability(${m.id},'down')" 
+                  title="${userVote ? 'Already voted' : 'Mark as unreliable'}" ${downActive}>
+            👎
           </button>
         </div>
       `;
       
-      html+='<div class="material-item" onclick="this.classList.toggle(\'expanded\')">'+
+      html += '<div class="material-item" onclick="this.classList.toggle(\'expanded\')">'+
         '<div class="mat-header"><h3>'+m.name+commBadge+' <span style="font-weight:400;color:var(--text-light);font-size:.7rem">['+(m.family||'?')+']</span>'+(v.valid?' <span class="badge badge-green">Arrhenius</span>':'')+'</h3>'+
         '<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>'+
-        '<div class="mat-body"><div class="mat-tags">'+tags+'</div>'+
-        (m.testMethod ? '<div style="margin:0.4rem 0;font-size:0.75rem"><strong>Test Method:</strong> <span style="color:var(--text-light)">'+m.testMethod+'</span></div>' : '') +
-        '<div class="search-tools">'+
-        '<button class="btn btn-sm btn-outline" onclick="event.stopPropagation();showMatModal('+m.id+')">Edit</button>'+
-        '<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">Delete</button>'+
-        '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Online</button>';
+        '<div class="mat-body">'+
+          '<div class="mat-tags">'+tags+'</div>'+
+          (m.testMethod ? '<div style="margin:0.4rem 0;font-size:0.75rem"><strong>Test Method:</strong> <span style="color:var(--text-light)">'+m.testMethod+'</span></div>' : '') +
+          '<div class="search-tools">'+
+            '<button class="btn btn-sm btn-outline" onclick="event.stopPropagation();showMatModal('+m.id+')">Edit</button>'+
+            '<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">Delete</button>'+
+            '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Online</button>';
       
       if(isUserMat) {
-        html+='<button class="btn btn-sm btn-success" style="margin-left:.35rem" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">🌍 Pubblica</button>';
+        html += '<button class="btn btn-sm btn-success" style="margin-left:.35rem" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">🌍 Pubblica</button>';
       }
       
-      html+='</div>'+voteButtons+'</div></div></div>';
+      html += '</div>' + voteButtons + '</div></div></div>';
     }
   }
-  html+='</div></div>';
+  
+  html += '</div></div>';
   return html;
 }
   
