@@ -101,84 +101,7 @@ header{background:linear-gradient(135deg,#0f172a,var(--primary),#38bdf8);color:#
   0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
   50% { box-shadow: 0 0 0 12px rgba(37, 99, 235, 0); }
 }
-  /* === ANIMAZIONE GOCCE D'ACQUA === */
-.water-drops-container {
-  position: relative;
-  height: 120px;
-  margin: 1.5rem 0;
-  overflow: hidden;
-  border-radius: var(--radius);
-  background: linear-gradient(180deg, var(--primary-light) 0%, #fff 100%);
-  border: 1px solid var(--border);
-}
 
-.water-drop {
-  position: absolute;
-  width: 20px;
-  height: 30px;
-  background: radial-gradient(ellipse at bottom, rgba(37, 99, 235, 0.8) 0%, rgba(147, 197, 253, 0.4) 70%, transparent 100%);
-  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-  animation: floatDrop 6s infinite ease-in-out;
-  filter: blur(0.5px);
-  opacity: 0.8;
-}
-
-.water-drop::before {
-  content: '';
-  position: absolute;
-  top: 30%;
-  left: 25%;
-  width: 50%;
-  height: 40%;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 50%;
-  filter: blur(1px);
-}
-
-.water-drop:nth-child(1) { left: 15%; animation-delay: 0s; animation-duration: 7s; }
-.water-drop:nth-child(2) { left: 35%; animation-delay: 1.5s; animation-duration: 8s; }
-.water-drop:nth-child(3) { left: 55%; animation-delay: 3s; animation-duration: 6.5s; }
-.water-drop:nth-child(4) { left: 75%; animation-delay: 4.5s; animation-duration: 7.5s; }
-.water-drop:nth-child(5) { left: 25%; animation-delay: 2s; animation-duration: 9s; }
-
-@keyframes floatDrop {
-  0%, 100% {
-    transform: translateY(100px) scale(0.8) rotate(0deg);
-    opacity: 0;
-  }
-  10% {
-    opacity: 0.8;
-  }
-  50% {
-    transform: translateY(-20px) scale(1.1) rotate(5deg);
-    opacity: 1;
-  }
-  90% {
-    opacity: 0.6;
-  }
-}
-
-/* Effetto ripple quando le gocce "toccano" il fondo */
-.water-ripple {
-  position: absolute;
-  bottom: 0;
-  width: 40px;
-  height: 10px;
-  background: radial-gradient(ellipse, rgba(37, 99, 235, 0.3) 0%, transparent 70%);
-  border-radius: 50%;
-  animation: ripple 2s infinite ease-out;
-  opacity: 0;
-}
-
-.water-ripple:nth-child(1) { left: 15%; animation-delay: 0s; }
-.water-ripple:nth-child(2) { left: 35%; animation-delay: 1.5s; }
-.water-ripple:nth-child(3) { left: 55%; animation-delay: 3s; }
-.water-ripple:nth-child(4) { left: 75%; animation-delay: 4.5s; }
-
-@keyframes ripple {
-  0% { transform: scale(0.5); opacity: 0.6; }
-  100% { transform: scale(3); opacity: 0; }
-}
 
 /* Text overlay sulle gocce */
 .water-caption {
@@ -614,6 +537,28 @@ main { position: relative; z-index: 10; }
 /* Le bolle rimangono sotto tutto */
 .bg-drops { z-index: 0 !important; }
 .bg-drop { z-index: 0 !important; }
+
+  /* Reliability voting */
+.btn-vote { transition: all 0.15s ease; border-width: 1px !important; }
+.btn-vote:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+.btn-vote:active { transform: translateY(0); }
+
+/* Badge tooltip */
+.badge[title] { cursor: help; position: relative; }
+
+/* Material item hover */
+.material-item:hover { box-shadow: var(--shadow-lg); border-color: var(--primary); }
+
+/* Test method label */
+.mat-testmethod { 
+  font-size: 0.72rem; 
+  color: var(--text-light); 
+  padding: 0.2rem 0.4rem; 
+  background: var(--primary-light); 
+  border-radius: 4px; 
+  display: inline-block;
+  margin: 0.2rem 0;
+}
 </style>
 </head>
 <body>
@@ -938,6 +883,7 @@ for(var di=0;di<DEFAULT_MATERIALS.length;di++){
 
 var DB = {
   materials: [], laminates: [], version: '3.0', dbLastSync: null,
+  
   load: function() {
     this.materials = [];
     for(var i=0;i<DEFAULT_MATERIALS.length;i++) this.materials.push(Object.assign({}, DEFAULT_MATERIALS[i]));
@@ -962,6 +908,7 @@ var DB = {
       if (lastSync) this.dbLastSync = new Date(lastSync);
     } catch (e) { console.warn('Load error:', e); }
   },
+  
   save: function() {
     try {
       var defaultIds = {};
@@ -972,30 +919,41 @@ var DB = {
       localStorage.setItem('wvtr_lams_v3', JSON.stringify(this.laminates));
     } catch (e) { console.warn('Save error:', e); }
   },
+  
   saveState: function(state) {
     try {
       var stateData = { layers: state.layers, selCond: state.selCond, mode: state.mode, timestamp: Date.now() };
       localStorage.setItem('wvtr_state_v3', JSON.stringify(stateData));
     } catch (e) {}
   },
+  
   loadState: function() {
     try { var s = localStorage.getItem('wvtr_state_v3'); if (s) return JSON.parse(s); } catch (e) {}
     return null;
   },
+  
   addMat: function(m) {
-    var maxId=0;for(var i=0;i<this.materials.length;i++) if(this.materials[i].id>maxId) maxId=this.materials[i].id;
-    m.id=maxId+1; m.family=getFamily(m.name); this.materials.push(m); this.save(); return m.id;
+    var maxId=0;
+    for(var i=0;i<this.materials.length;i++) if(this.materials[i].id>maxId) maxId=this.materials[i].id;
+    m.id=maxId+1; 
+    m.family = m.family || getFamily(m.name);
+    if(!m.reliabilityVotes) m.reliabilityVotes = { up: 0, down: 0 };
+    this.materials.push(m); this.save(); return m.id;
   },
-  updateMat: function(id, m) {
+  
+  updateMat: function(id, m) {  // ← VIRGOLA QUI, NON },
     for(var i=0;i<this.materials.length;i++){
       if(this.materials[i].id===id){
-        m.family=getFamily(m.name);
+        var existing = this.materials[i];
+        m.reliabilityVotes = m.reliabilityVotes || existing.reliabilityVotes || { up: 0, down: 0 };
+        m.family = m.family || getFamily(m.name);
         this.materials[i]=Object.assign({},m,{id:id});
         this.save();
         break;
       }
     }
-  },
+  },  // ← ✅ VIRGOLA, non chiude l'oggetto
+  
   deleteMat: function(id) { this.materials = this.materials.filter(function(x){return x.id!==id;}); this.save(); },
   addLam: function(l) { l.id=Date.now(); this.laminates.push(l); this.save(); return l.id; },
   deleteLam: function(id) { this.laminates = this.laminates.filter(function(x){return x.id!==id;}); this.save(); },
@@ -1011,9 +969,9 @@ var DB = {
     } catch (e) { 
       return false; 
     } 
-  }  // ✅ Aggiungi questa parentesi graffa di chiusura
-};  // ✅ E questa per chiudere DB
-
+  }  // ← Ultima funzione: NESSUNA virgola
+};  // ← ✅ UNA SOLA chiusura per tutto l'oggetto DB
+  
 var State = {
   tab: 'home', layers: [{ mid: null, thick: 0 }], selCond: null, laminateName: '', autoCalc: false,
   calcResult: null, calcError: null, searchQuery: '', mode: 'wvtr',
@@ -1488,6 +1446,48 @@ function renderHome() {
     </div>
   `;
 }
+  // ✅ Vota affidabilità materiale
+async function voteReliability(matId, voteType) {
+  var mat = DB.materials.find(m => m.id === matId);
+  if(!mat) return;
+  if(!mat.reliabilityVotes) mat.reliabilityVotes = { up: 0, down: 0 };
+  if(voteType === 'up') mat.reliabilityVotes.up++;
+  else mat.reliabilityVotes.down++;
+  DB.save();
+  
+  // Sync con Firebase per materiali community
+  if(window.communityDB && mat.isCommunity) {
+    try {
+      await window.fbAddDoc(
+        window.fbCollection(window.communityDB, "votes"),
+        {
+          materialId: mat.id,
+          voteType: voteType,
+          timestamp: new Date().toISOString(),
+          userId: "anonymous_" + Math.random().toString(36).substr(2,9)
+        }
+      );
+    } catch(e) { console.warn("Vote sync failed:", e); }
+  }
+  renderContent();
+}
+
+// ✅ Calcola score affidabilità (0-100)
+function getReliabilityScore(mat) {
+  if(!mat.reliabilityVotes) return 50;
+  var up = mat.reliabilityVotes.up || 0;
+  var down = mat.reliabilityVotes.down || 0;
+  var total = up + down;
+  if(total === 0) return 50;
+  return Math.round((up / total) * 100);
+}
+
+// ✅ Badge colore in base allo score
+function getReliabilityBadge(score) {
+  if(score >= 70) return '<span class="badge badge-green">✓ Reliable '+score+'%</span>';
+  if(score >= 40) return '<span class="badge badge-yellow">⚠ Mixed '+score+'%</span>';
+  return '<span class="badge badge-red">✗ Unreliable '+score+'%</span>';
+}
 
 function renderCalc() {
   var common=Engine.findCommonConditions(State.layers,DB.materials);
@@ -1934,15 +1934,13 @@ function renderMaterials(){
     var m=DB.materials[i];
     if(!q||m.name.toLowerCase().indexOf(q)>=0||(m.family&&m.family.toLowerCase().indexOf(q)>=0)) filtered.push(m);
   }
-// ✅ CODICE CORRETTO (senza dbSyncStatus):
-var html='<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem;flex-wrap:wrap;gap:.4rem">'+
-  '<h2 style="margin:0">Materials <span class="badge badge-blue">'+DB.materials.length+'</span></h2>'+
-  '<div style="display:flex;gap:.35rem;flex-wrap:wrap">'+
-  
-  // ✅ UNA SOLA SERIE DI PULSANTI:
-  '<button class="btn btn-sm btn-primary" onclick="showMatModal()">+ Add</button>'+
-  '<button class="btn btn-sm btn-outline" onclick="showBulkImport()">Import</button>'+
-  '<button class="btn btn-sm btn-outline" onclick="exportDB()">Export</button>'+
+
+  var html='<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem;flex-wrap:wrap;gap:.4rem">'+
+    '<h2 style="margin:0">Materials <span class="badge badge-blue">'+DB.materials.length+'</span></h2>'+
+    '<div style="display:flex;gap:.35rem;flex-wrap:wrap">'+
+    '<button class="btn btn-sm btn-primary" onclick="showMatModal()">+ Add</button>'+
+    '<button class="btn btn-sm btn-outline" onclick="showBulkImport()">Import</button>'+
+    '<button class="btn btn-sm btn-outline" onclick="exportDB()">Export</button>'+
     '</div></div>'+
     '<div class="form-group search-input"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'+
     '<input type="text" class="form-input" id="material-search" placeholder="Search materials by name or family..." value="'+State.searchQuery+'" oninput="onMatSearch(this.value)"></div>';
@@ -1960,41 +1958,59 @@ var html='<div class="card"><div style="display:flex;align-items:center;justify-
       for(var t=0;t<vals.length;t++) tags+='<span class="mat-tag">'+getLabel()+': '+vals[t].value+' @ '+vals[t].thickness+'um - '+m.validConditions[t].temperature+'\u00b0C/'+m.validConditions[t].humidity+'%</span>';
       var escName=m.name.replace(/'/g,"\\'");
       
-      // ✅ Controlla se è materiale utente per mostrare pulsante Submit
       var isUserMat = true;
       for(var di=0; di<DEFAULT_MATERIALS.length; di++) {
-        if(DEFAULT_MATERIALS[di].id === m.id) {
-          isUserMat = false;
-          break;
-        }
+        if(DEFAULT_MATERIALS[di].id === m.id) { isUserMat = false; break; }
       }
       
-     // Badge per materiali community
-const isComm = m.isCommunity || (m.id && String(m.id).startsWith('fb_'));
-const commBadge = isComm ? '<span class="badge badge-purple" style="margin-left:0.5rem">🌍 Community</span>' : '';
+      // ✅ Badge community (con var invece di const)
+      var isComm = m.isCommunity || (m.id && String(m.id).startsWith('fb_'));
+      var commBadge = isComm ? '<span class="badge badge-purple" style="margin-left:0.5rem">🌍 Community</span>' : '';
+
+      // ✅ Calcola reliability score
+      var relScore = getReliabilityScore(m);
+      var relBadge = getReliabilityBadge(relScore);
       
-html+='<div class="material-item" onclick="this.classList.toggle(\'expanded\')">'+
-  '<div class="mat-header"><h3>'+m.name+commBadge+' <span style="font-weight:400;color:var(--text-light);font-size:.7rem">['+(m.family||'?')+']</span>'+(v.valid?' <span class="badge badge-green">Arrhenius</span>':'')+'</h3>'+
+      // ✅ Pulsanti voto (con controllo compatibilità)
+      var upCount = (m.reliabilityVotes && m.reliabilityVotes.up) ? m.reliabilityVotes.up : 0;
+      var downCount = (m.reliabilityVotes && m.reliabilityVotes.down) ? m.reliabilityVotes.down : 0;
+      
+      var voteButtons = `
+        <div style="display:flex;align-items:center;gap:0.3rem;margin-top:0.5rem;flex-wrap:wrap">
+          <span style="font-size:0.7rem;color:var(--text-light)">Reliability:</span>
+          ${relBadge}
+          <button class="btn btn-sm btn-outline" style="padding:0.2rem 0.5rem;font-size:0.7rem"
+                  onclick="event.stopPropagation();voteReliability(${m.id},'up')" title="Mark as reliable">
+            👍 <span>${upCount}</span>
+          </button>
+          <button class="btn btn-sm btn-outline" style="padding:0.2rem 0.5rem;font-size:0.7rem"
+                  onclick="event.stopPropagation();voteReliability(${m.id},'down')" title="Mark as unreliable">
+            👎 <span>${downCount}</span>
+          </button>
+        </div>
+      `;
+      
+      html+='<div class="material-item" onclick="this.classList.toggle(\'expanded\')">'+
+        '<div class="mat-header"><h3>'+m.name+commBadge+' <span style="font-weight:400;color:var(--text-light);font-size:.7rem">['+(m.family||'?')+']</span>'+(v.valid?' <span class="badge badge-green">Arrhenius</span>':'')+'</h3>'+
         '<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>'+
         '<div class="mat-body"><div class="mat-tags">'+tags+'</div>'+
+        (m.testMethod ? '<div style="margin:0.4rem 0;font-size:0.75rem"><strong>Test Method:</strong> <span style="color:var(--text-light)">'+m.testMethod+'</span></div>' : '') +
         '<div class="search-tools">'+
         '<button class="btn btn-sm btn-outline" onclick="event.stopPropagation();showMatModal('+m.id+')">Edit</button>'+
         '<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">Delete</button>'+
         '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Online</button>';
       
-      // ✅ Pulsante Submit solo per materiali utente
-      // ✅ NUOVO (passa solo l'ID - robusto)
-if(isUserMat) {
-  html+='<button class="btn btn-sm btn-success" style="margin-left:.35rem" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">🌍 Pubblica</button>';
-}
+      if(isUserMat) {
+        html+='<button class="btn btn-sm btn-success" style="margin-left:.35rem" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">🌍 Pubblica</button>';
+      }
       
-      html+='</div></div></div>';
+      html+='</div>'+voteButtons+'</div></div></div>';
     }
   }
   html+='</div></div>';
   return html;
 }
-
+  
 function onMatSearch(val){
   State.searchQuery=val||'';
   renderContent();
@@ -2047,10 +2063,21 @@ var Modal = {
 };
 
 function showMatModal(editId) {
-  var mat=null;if(editId) for(var i=0;i<DB.materials.length;i++) if(DB.materials[i].id===editId){mat=DB.materials[i];break;}
+  var mat=null; if(editId) for(var i=0;i<DB.materials.length;i++) if(DB.materials[i].id===editId){mat=DB.materials[i];break;}
+  
   var wvtrVals=mat?mat.wvtrValues:[{value:'',thickness:''}];
   var otrVals=mat?mat.otrValues:[{value:'',thickness:''}];
   var conds=mat?mat.validConditions:[{temperature:'',humidity:''}];
+  
+  // ✅ Family dropdown options
+  var familyOpts='<option value="">Select family...</option>';
+  for(var fam in POLYMER_FAMILIES){
+    var selected=(mat && mat.family===fam)?' selected':'';
+    familyOpts+='<option value="'+fam+'"'+selected+'>'+fam+'</option>';
+  }
+  
+  var testMethod=mat?mat.testMethod||'':'';
+  
   var rows='';
   for(var i=0;i<wvtrVals.length;i++){
     var o=otrVals[i]||{value:'',thickness:''};
@@ -2060,13 +2087,18 @@ function showMatModal(editId) {
       '<div><div class="form-group"><label>OTR</label><input type="number" step="any" class="form-input mf-otr" value="'+(o.value||'')+'"></div><div class="form-group"><label>OTR Thickness (um)</label><input type="number" step="any" class="form-input mf-otr-thick" value="'+(o.thickness||'')+'"></div></div>'+
       '<div><div class="form-group"><label>Temperature (deg C)</label><input type="number" step="any" class="form-input mf-temp" value="'+(c.temperature||'')+'"></div><div class="form-group"><label>Humidity (%)</label><input type="number" step="any" class="form-input mf-hum" value="'+(c.humidity||'')+'"></div></div></div>';
   }
+  
   Modal.open(editId?'Edit Material':'Add Material',
-    '<div class="form-group"><label>Name</label><input type="text" class="form-input" id="mf-name" value="'+(mat?mat.name:'')+'"></div>'+
+    '<div class="form-group"><label>Name *</label><input type="text" class="form-input" id="mf-name" value="'+(mat?mat.name:'')+'"></div>'+
+    '<div class="form-group"><label>Material Family</label><select class="form-input" id="mf-family">'+familyOpts+'</select><span style="font-size:0.7rem;color:var(--text-light)">Select the polymer family for categorization</span></div>'+
+    '<div class="form-group"><label>Test Method</label><input type="text" class="form-input" id="mf-testmethod" value="'+testMethod+'" placeholder="e.g., ASTM F1249, ISO 15106-3, MOCON..."><span style="font-size:0.7rem;color:var(--text-light)">Standard or method used for testing (optional)</span></div>'+
     '<div id="mf-rows">'+rows+'</div>'+
     '<button class="btn btn-outline btn-full" onclick="addMatRow()" style="margin-top:.4rem">+ Add Condition</button>',
     function(){
       var name=document.getElementById('mf-name').value.trim();
-      if(!name){alert('Enter name');return false;}
+      var family=document.getElementById('mf-family').value;
+      var testMethod=document.getElementById('mf-testmethod').value.trim();
+      if(!name){alert('Enter material name');return false;}
       var wvtrs=document.querySelectorAll('.mf-wvtr'),wvtrThicks=document.querySelectorAll('.mf-wvtr-thick'),
         otr=document.querySelectorAll('.mf-otr'),otrThicks=document.querySelectorAll('.mf-otr-thick'),
         temps=document.querySelectorAll('.mf-temp'),hums=document.querySelectorAll('.mf-hum');
@@ -2083,8 +2115,11 @@ function showMatModal(editId) {
         if(isNaN(h)){alert('Humidity required row '+(i+1));return false;}
         wv.push({value:wv_val,thickness:wv_t});ot.push({value:ot_val,thickness:ot_t});vc.push({temperature:te,humidity:h});
       }
-      if(editId) DB.updateMat(editId,{name:name,wvtrValues:wv,otrValues:ot,validConditions:vc});
-      else DB.addMat({name:name,wvtrValues:wv,otrValues:ot,validConditions:vc});
+      var finalFamily=family||getFamily(name);
+      var matData={name:name,family:finalFamily,wvtrValues:wv,otrValues:ot,validConditions:vc};
+      if(testMethod) matData.testMethod=testMethod;
+      if(editId) DB.updateMat(editId,matData);
+      else DB.addMat(matData);
       return true;
     }
   );
