@@ -1604,18 +1604,19 @@ function doOptimize(){
   var common=Engine.findCommonConditions(State.layers,DB.materials);
   var condition=State.selCond||(common.conditions&&common.conditions[0]);
   if(!condition || !State.layers.every(function(l){ return l.mid!==null && l.thick>0; })){
-  resEl.innerHTML='<div class="alert alert-info">Configure and calculate first</div>';
-  return;
-}
+    resEl.innerHTML='<div class="alert alert-info">Configure and calculate first</div>';
+    return;
+  }
   var result=Engine.optimizeForTarget(State.layers,DB.materials,condition,target,barrierIdx);
   if(result.error){resEl.innerHTML='<div class="alert alert-warning">'+result.error+'</div>';return;}
   var mat=null;for(var m=0;m<DB.materials.length;m++) if(DB.materials[m].id===State.layers[barrierIdx].mid){mat=DB.materials[m];break;}
   var current=State.layers[barrierIdx].thick;
- resEl.innerHTML = '<div class="alert alert-success" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;font-size:0.76rem;line-height:1.2;padding:0.6rem 0.8rem">'+
-  '<span>To achieve <strong>target '+getLabel()+' &le; '+target+' '+getUnit()+'</strong> @ '+condition.temperature+'\u00b0C/'+condition.humidity+'%:</span>'+
-  '<span><strong>'+((mat)?mat.name:'Layer '+(barrierIdx+1))+'</strong> min: <span style="color:var(--primary);font-weight:700">'+result.thickness.toFixed(1)+' um</span></span>'+
-  '<span style="color:var(--text-light);font-size:0.7rem">('+current+'&rarr;'+result.thickness.toFixed(1)+'um, '+(result.thickness<current?'✓ Savings':'⚠ Increase needed')+')</span>'+
-'</div>';
+  resEl.innerHTML = '<div class="alert alert-success" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;font-size:0.76rem;line-height:1.2;padding:0.6rem 0.8rem">'+
+    '<span>To achieve <strong>target '+getLabel()+' &le; '+target+' '+getUnit()+'</strong> @ '+condition.temperature+'\u00b0C/'+condition.humidity+'%:</span>'+
+    '<span><strong>'+((mat)?mat.name:'Layer '+(barrierIdx+1))+'</strong> min: <span style="color:var(--primary);font-weight:700">'+result.thickness.toFixed(1)+' um</span></span>'+
+    '<span style="color:var(--text-light);font-size:0.7rem">('+current+'&rarr;'+result.thickness.toFixed(1)+'um, '+(result.thickness<current?'✓ Savings':'⚠ Increase needed')+')</span>'+
+  '</div>';
+}  // ← ✅ AGGIUNGI QUESTA PARENTESI GRAFFA!
 
 function renderCompare(){
   var unit=getUnit();
