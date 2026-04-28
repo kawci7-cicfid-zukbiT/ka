@@ -203,7 +203,47 @@ select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csv
 @media(max-width:600px){.wvtr-row-form{grid-template-columns:1fr}}
 .search-input{position:relative}.search-input svg{position:absolute;left:.6rem;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--text-light);pointer-events:none}
 .search-input input{padding-left:1.8rem}
-.cond-table{width:100%;border-collapse:collapse;margin:.5rem 0;font-size:.72rem}
+/* === AGGIUNGI QUESTO DOPO .search-input === */
+#material-search {
+  margin-bottom: 1rem;
+}
+
+.card .grid {
+  margin-top: 0.5rem;
+}
+
+/* Per evitare che i tag "escono" dalla card */
+.mat-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.4rem 0;
+}
+
+.mat-tag {
+  background: #f1f5f9;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  color: var(--text-light);
+  white-space: nowrap;
+}
+
+/* Mobile fix */
+@media (max-width: 600px) {
+  .search-input input {
+    font-size: 0.85rem;
+    padding-left: 1.8rem;
+  }
+  .material-item .mat-header h3 {
+    font-size: 0.78rem;
+    max-width: 70%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+  .cond-table{width:100%;border-collapse:collapse;margin:.5rem 0;font-size:.72rem}
 .cond-table th{background:var(--primary-light);color:var(--primary);padding:.4rem .6rem;text-align:left;font-weight:600}
 .cond-table td{padding:.35rem .6rem;border-bottom:1px solid var(--border)}
 .cond-table tr:last-child td{border-bottom:none}
@@ -1940,7 +1980,7 @@ function doOptimize(){
   if(result.error){resEl.innerHTML='<div class="alert alert-warning">'+result.error+'</div>';return;}
   var mat=null;for(var m=0;m<DB.materials.length;m++) if(DB.materials[m].id===State.layers[barrierIdx].mid){mat=DB.materials[m];break;}
   var current=State.layers[barrierIdx].thick;
-  resEl.innerHTML='<div class="alert alert-success"><div>To achieve <strong>target '+getLabel()+' <= '+target+' '+getUnit()+'</strong> at '+condition.temperature+'\u00b0C/'+condition.humidity+'%:</div>'+
+ resEl.innerHTML='<div class="alert alert-success"><div>To achieve <strong>target '+getLabel()+' <= '+target+' '+getUnit()+'</strong> at '+condition.temperature+'\u00b0C/'+condition.humidity+'%:</div>'+
     '<div style="margin-top:.35rem"><strong>'+((mat)?mat.name:'Layer '+(barrierIdx+1))+'</strong> min thickness: <strong style="font-size:1.1rem;color:var(--primary)">'+result.thickness.toFixed(1)+' um</strong></div>'+
     '<div style="margin-top:.25rem;font-size:.72rem;color:var(--text-light)">Current: '+current+'um -> Suggested: '+result.thickness.toFixed(1)+'um ('+(result.thickness<current?'Savings possible':'Increase needed')+')</div></div>';
 }
