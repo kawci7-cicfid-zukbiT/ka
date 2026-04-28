@@ -1690,6 +1690,11 @@ function renderMaterials(){
     filtered.push(m);
   }
 
+  // ✅ ✅ ✅ ORDINAMENTO ALFABETICO - AGGIUNTO QUI ✅ ✅ ✅
+  filtered.sort(function(a, b){
+    return a.name.localeCompare(b.name);
+  });
+
   var currentUnit = getUnit();
   var currentLabel = getLabel();
   
