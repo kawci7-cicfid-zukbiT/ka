@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WVTR/OTR Calculator Pro</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js4.4.4/dist/chart.umd.min.js"></script>
 <style>
 :root{--primary:#2563eb;--primary-dark:#1d4ed8;--primary-light:#dbeafe;--success:#16a34a;--success-light:#dcfce7;--warning:#d97706;--warning-light:#fef3c7;--danger:#dc2626;--danger-light:#fee2e2;--purple:#7c3aed;--purple-light:#ede9fe;--bg:#f1f5f9;--card:#fff;--text:#0f172a;--text-light:#64748b;--border:#e2e8f0;--radius:12px;--shadow:0 1px 3px rgba(0,0,0,0.08);--shadow-lg:0 10px 25px rgba(0,0,0,0.1)}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -2086,7 +2086,7 @@ function renderMaterials(){
       // ✅ TAGS CON UNITÀ DI MISURA
       var tags = '';
       for(var t=0; t<vals.length; t++){
-        tags += '<span class="mat-tag">'+getLabel()+': <strong>'+vals[t].value+'</strong> '+currentUnit+' @ '+vals[t].thickness+'µm • '+m.validConditions[t].temperature+'°C/'+m.validConditions[t].humidity+'%</span>';
+        tags += '<span class="mat-tag">'+getLabel()+': <strong>'+vals[t].value+'</strong> '+currentUnit+' • '+vals[t].thickness+'µm • '+m.validConditions[t].temperature+'°C/'+m.validConditions[t].humidity+'%</span>';
       }
       
       var escName = m.name.replace(/'/g, "\\'");
