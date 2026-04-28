@@ -683,20 +683,33 @@ function renderNav() {
 }
 
 function setMode(mode) {
-  State.mode=mode;Engine.mode=mode;
-  var radios=document.querySelectorAll('input[name="mode"]');
-  for(var r=0;r<radios.length;r++) radios[r].checked=radios[r].value===mode;
-  DB.saveState(State);renderNav();renderContent();postNavRender();
+  State.mode = mode;
+  Engine.mode = mode;
+  
+  var radios = document.querySelectorAll('input[name="mode"]');
+  for(var r = 0; r < radios.length; r++) {
+    radios[r].checked = radios[r].value === mode;
+  }
+  
+  DB.saveState(State);
+  
+  // ✅ USA render() invece di chiamate separate
+  // Questo garantisce che initHomeAnimations() venga chiamato correttamente
+  render();
 }
 
 function postNavRender() {
   setTimeout(function() {
-    if(State.tab==='calc'&&State.calcResult) postCalcRender();
-    if(State.tab==='arrhenius') postArrheniusRender();
-    if(State.tab==='sensitivity') postSensitivityRender();
-    if(State.tab==='compare') postCompareRender();
-    if(State.tab==='laminates'&&DB.laminates.length>=2) drawLamChart();
-  },150);
+    // ✅ AGGIUNTO: gestisci anche il tab home
+    if(State.tab === 'home') {
+      initHomeAnimations();
+    }
+    if(State.tab === 'calc' && State.calcResult) postCalcRender();
+    if(State.tab === 'arrhenius') postArrheniusRender();
+    if(State.tab === 'sensitivity') postSensitivityRender();
+    if(State.tab === 'compare') postCompareRender();
+    if(State.tab === 'laminates' && DB.laminates.length >= 2) drawLamChart();
+  }, 150);
 }
 
 function renderContent() {
@@ -722,24 +735,27 @@ function renderContent() {
 function render() { 
   renderNav(); 
   renderContent(); 
-  setTimeout(initHomeAnimations, 100);  // ← AGGIUNTA
-  postNavRender();                       // ← AGGIUNTA
+  
+  // ✅ Usa requestAnimationFrame per timing perfetto con il DOM
+  requestAnimationFrame(() => {
+    if(State.tab === 'home') {
+      initHomeAnimations();
+    }
+    postNavRender();
+  });
 }
   // === ANIMAZIONI POST-RENDER PER LA HOME ===
 function initHomeAnimations() {
   if(State.tab !== 'home') return;
   
-  // 1. Features animation con Intersection Observer
+  // 1. Features fade-in
   const featuresSection = document.getElementById('featuresSection');
   if(featuresSection) {
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if(entry.isIntersecting) {
           entry.target.classList.add('visible');
-          const cards = entry.target.querySelectorAll('.feature-card');
-          cards.forEach((card, i) => {
-            setTimeout(() => card.classList.add('visible'), i * 100);
-          });
+          entry.target.querySelectorAll('.feature-card').forEach((c, i) => setTimeout(() => c.classList.add('visible'), i * 100));
           observer.unobserve(entry.target);
         }
       });
@@ -747,124 +763,57 @@ function initHomeAnimations() {
     observer.observe(featuresSection);
   }
   
-  // 2. Demo charts (con delay per sicurezza)
-  if(typeof Chart !== 'undefined') {
-    setTimeout(initDemoCharts, 400);
-  }
-  
-  // 3. Count-up animation
-  setTimeout(initCountUp, 100);
-  
-  // 4. Progress bars animation
-  document.querySelectorAll('.progress-fill').forEach(bar => {
-    bar.style.animation = 'progressGrow 1.2s ease-out forwards';
+  // 2. Grafici, contatori e animazioni
+  initDemoCharts();
+  initCountUp();
+  document.querySelectorAll('.progress-fill').forEach(bar => bar.style.animation = 'progressGrow 1.2s ease-out forwards');
+  document.querySelectorAll('.bg-drop').forEach(drop => {
+    drop.addEventListener('mouseenter', () => { drop.style.filter='blur(0.5px) brightness(1.3)'; drop.style.opacity='1'; });
+    drop.addEventListener('mouseleave', () => { drop.style.filter='blur(1.5px) brightness(1)'; drop.style.opacity='0.7'; });
   });
-  
-  // 5. Interattività gocce di SFONDO (bg-drop)
-  const bgDrops = document.querySelectorAll('.bg-drop');
-  bgDrops.forEach(drop => {
-    drop.addEventListener('mouseenter', function() {
-      this.style.filter = 'blur(0.5px) brightness(1.3)';
-      this.style.opacity = '1';
-    });
-    drop.addEventListener('mouseleave', function() {
-      this.style.filter = 'blur(1.5px) brightness(1)';
-      this.style.opacity = '0.7';
-    });
-  });
-  
-}  // ← ✅ Chiusura CORRETTA della funzione
+}
 
 function initDemoCharts() {
-  // Verifica che siamo nella home e che Chart.js sia caricato
-  if(State.tab !== 'home' || typeof Chart === 'undefined') return;
+  if(typeof Chart === 'undefined') return;
   
-  // Chart 1: WVTR vs Temperature (demo data)
   const canvas1 = document.getElementById('demoChart1');
-  if(canvas1) {
-    // Attendi che il canvas sia visibile e abbia dimensioni
-    setTimeout(() => {
-      if(canvas1.offsetParent !== null) {  // Canvas è visibile
-        destroyChart('demo1');
-        const ctx1 = canvas1.getContext('2d');
-        if(ctx1) {
-          chartInstances.demo1 = new Chart(ctx1, {
-            type: 'line',
-            data: {
-              labels: ['20°C', '25°C', '30°C', '38°C', '50°C'],
-              datasets: [{
-                label: 'EVOH 100μm',
-                data: [0.05, 0.08, 0.12, 0.15, 0.40],
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59,130,246,0.1)',
-                fill: true,
-                tension: 0.4,
-                pointRadius: 3,
-                pointHoverRadius: 5
-              }, {
-                label: 'LDPE 100μm',
-                data: [0.8, 1.0, 1.3, 1.5, 2.8],
-                borderColor: '#22c55e',
-                backgroundColor: 'transparent',
-                borderDash: [4, 3],
-                tension: 0.4,
-                pointRadius: 3
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { display: false } },
-              scales: {
-                x: { grid: { display: false }, ticks: { font: { size: 9 } } },
-                y: { 
-                  beginAtZero: true,
-                  grid: { color: 'rgba(0,0,0,0.05)' },
-                  ticks: { font: { size: 9 } },
-                  title: { display: true, text: getUnit(), font: { size: 9 } }
-                }
-              },
-              animation: { duration: 1500, easing: 'easeOutQuart' }
-            }
-          });
-        }
-      }
-    }, 300);  // Delay aggiuntivo per sicurezza
-  }
-  
-  // Chart 2: Layer Resistance Contribution (demo)
   const canvas2 = document.getElementById('demoChart2');
-  if(canvas2) {
-    setTimeout(() => {
-      if(canvas2.offsetParent !== null) {
-        destroyChart('demo2');
-        const ctx2 = canvas2.getContext('2d');
-        if(ctx2) {
-          chartInstances.demo2 = new Chart(ctx2, {
-            type: 'doughnut',
-            data: {
-              labels: ['PET', 'EVOH', 'LDPE'],
-              datasets: [{
-                data: [15, 70, 15],
-                backgroundColor: ['#3b82f6', '#22c55e', '#f59e0b'],
-                borderWidth: 0,
-                hoverOffset: 8
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { 
-                legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9 }, padding: 8 } }
-              },
-              cutout: '65%',
-              animation: { animateRotate: true, animateScale: true, duration: 1200 }
-            }
-          });
-        }
-      }
-    }, 350);
-  }
+  if(!canvas1 || !canvas2) return; // DOM non ancora pronto
+
+  // Distruggi istanze vecchie (se esistono)
+  destroyChart('demo1');
+  destroyChart('demo2');
+
+  const unit = getUnit();
+  const label = getLabel(); // Si aggiorna automaticamente WVTR/OTR
+
+  // 📊 Chart 1: Andamento vs Temperatura
+  chartInstances.demo1 = new Chart(canvas1.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: ['20°C', '25°C', '30°C', '38°C', '50°C'],
+      datasets: [
+        { label: 'EVOH 100μm', data: [0.05, 0.08, 0.12, 0.15, 0.40], borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.4, pointRadius: 3 },
+        { label: 'LDPE 100μm', data: [0.8, 1.0, 1.3, 1.5, 2.8], borderColor: '#22c55e', fill: false, borderDash: [4, 3], tension: 0.4, pointRadius: 3 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { grid: { display: false } }, y: { beginAtZero: true, title: { display: true, text: label + ' (' + unit + ')' } } }
+    }
+  });
+
+  // 🍩 Chart 2: Contributo strati
+  chartInstances.demo2 = new Chart(canvas2.getContext('2d'), {
+    type: 'doughnut',
+    data: { labels: ['PET', 'EVOH', 'LDPE'], datasets: [{ data: [15, 70, 15], backgroundColor: ['#3b82f6', '#22c55e', '#f59e0b'], borderWidth: 0 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } } },
+      cutout: '65%'
+    }
+  });
 }
   
 function initCountUp() {
@@ -900,7 +849,24 @@ function initCountUp() {
 // Aggiungi anche questo CSS per statEntrance
 // (aggiungilo nella sezione <style>)
 
-function nav(tab) { State.tab=tab; renderNav(); renderContent(); postNavRender(); }
+function nav(tab) {
+  State.tab = tab;
+  renderNav();
+  renderContent();
+  
+  // Pulisci i grafici demo quando ESCI da Home
+  if(tab !== 'home') { destroyChart('demo1'); destroyChart('demo2'); }
+  
+  // Riavvia il post-render in modo sincrono con il DOM
+  requestAnimationFrame(() => {
+    if(tab === 'home') initHomeAnimations();
+    if(tab === 'calc' && State.calcResult) postCalcRender();
+    if(tab === 'arrhenius') postArrheniusRender();
+    if(tab === 'sensitivity') postSensitivityRender();
+    if(tab === 'compare') postCompareRender();
+    if(tab === 'laminates' && DB.laminates.length >= 2) drawLamChart();
+  });
+}
 function clearProject() {
  if(!confirm('Cancel current calculation and clear all layers?')) return;
   State.layers=[{mid:null,thick:0}];State.selCond=null;State.laminateName='';State.calcResult=null;State.calcError=null;
@@ -1702,7 +1668,7 @@ function renderMaterials(){
 
   if(q) html+='<p style="font-size:.75rem;color:var(--text-light);margin-bottom:.5rem">Showing '+filtered.length+' of '+DB.materials.length+' for "'+State.searchQuery+'"</p>';
   
-  html+='<div class="grid">';
+  html+='<div class="grid" style="grid-template-columns:1fr">';
   
   if(filtered.length===0) {
     html+='<div class="empty-state"><p>No materials found'+(q?' for "'+State.searchQuery+'"':'')+'</p></div>';
