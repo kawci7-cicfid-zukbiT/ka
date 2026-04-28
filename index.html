@@ -639,22 +639,48 @@ window.loadFromCommunity = async function() {
   }
 };
 </script>
+
 <div class="app">
-<header>
-<div class="header-top">
-<h1>
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg>
-WVTR/OTR Pro
-</h1>
-<div class="mode-toggle">
-<label><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg><input type="radio" name="mode" value="wvtr" checked onchange="setMode('wvtr')">WVTR</label>
-<label><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8" stroke-dasharray="4 3"/></svg><input type="radio" name="mode" value="otr" onchange="setMode('otr')">OTR</label>
+  <header>
+    <div class="header-top">
+      <h1>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
+        </svg>
+        WVTR/OTR Pro
+      </h1>
+      <div class="mode-toggle">
+        <label>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
+          </svg>
+          <input type="radio" name="mode" value="wvtr" checked onchange="setMode('wvtr')">WVTR
+        </label>
+        <label>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8" stroke-dasharray="4 3"/>
+          </svg>
+          <input type="radio" name="mode" value="otr" onchange="setMode('otr')">OTR
+        </label>
+      </div>
+    </div>
+    <div class="nav-tabs" id="nav-tabs"></div>
+  </header>
+  
+  <main id="app-content"></main>
 </div>
-<div class="nav-tabs" id="nav-tabs"></div>
-</header>
-<main id="app-content"></main>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <h2 id="modal-title"></h2>
+      <button class="btn btn-sm btn-outline" onclick="Modal.close()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
+  </div>
 </div>
-<div class="modal-overlay" id="modal-overlay"><div class="modal" id="modal"><div class="modal-header"><h2 id="modal-title"></h2><button class="btn btn-sm btn-outline" onclick="Modal.close()">✕</button></div><div class="modal-body" id="modal-body"></div><div class="modal-footer" id="modal-footer"></div></div></div>
+
 <script>
 const Engine={
   R_GAS:8.314,
@@ -1020,7 +1046,7 @@ function renderContent() {
   try {
     switch(State.tab) {
       case 'home': c.innerHTML=renderHome(); break;
-      case 'calc': c.innerHTML=; break;
+      case 'calc': c.innerHTML=renderCalc(); break;
       case 'arrhenius': c.innerHTML=renderArrhenius(); break;
       case 'sensitivity': c.innerHTML=renderSensitivity(); break;
       case 'compare': c.innerHTML=renderCompare(); break;
