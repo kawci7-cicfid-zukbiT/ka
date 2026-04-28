@@ -652,7 +652,8 @@ var DB = {
 var State = {
   tab: 'home', layers: [{ mid: null, thick: 0 }], selCond: null, laminateName: '', autoCalc: false,
   calcResult: null, calcError: null, searchQuery: '', mode: 'wvtr',
-  sensLayerIdx: 0, targetValue: 0.5, compareIds: []
+  sensLayerIdx: 0, targetValue: 0.5, compareIds: [],
+  selectedTestMethod: ''  // ← ✅ NUOVO: filtro per test method
 };
 
 var LAYER_COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899'];
@@ -686,15 +687,16 @@ function setMode(mode) {
   State.mode = mode;
   Engine.mode = mode;
   
+  // Aggiorna lo stato dei radio button
   var radios = document.querySelectorAll('input[name="mode"]');
   for(var r = 0; r < radios.length; r++) {
     radios[r].checked = radios[r].value === mode;
   }
   
+  // Salva lo stato
   DB.saveState(State);
   
-  // ✅ USA render() invece di chiamate separate
-  // Questo garantisce che initHomeAnimations() venga chiamato correttamente
+  // ✅ CHIAMATA CORRETTA: render() include initHomeAnimations() via requestAnimationFrame
   render();
 }
 
@@ -1173,29 +1175,59 @@ function renderCalc() {
       'Cancel'+
     '</button>'+
   '</div>';
-  
-  var condHTML = '';
-  if(!hasMats) {
-    condHTML = '<div class="alert alert-info">Add at least one material with thickness</div>';
-  } else if(common.error) {
-    condHTML = '<div class="alert alert-error">'+common.error+'</div>';
-    if(common.matInfo) {
-      var infoHTML = '<table class="cond-table"><thead><tr><th>Material</th><th>Conditions</th></tr></thead><tbody>';
-      for(var mi=0; mi<common.matInfo.length; mi++) {
-        infoHTML += '<tr><td><strong>'+common.matInfo[mi].name+'</strong></td><td>'+common.matInfo[mi].conditions.join(', ')+'</td></tr>';
-      }
-      infoHTML += '</tbody></table>';
-      condHTML += '<div class="alert alert-warning"><strong>Available conditions:</strong>'+infoHTML+'</div>';
-    }
-  } else {
-    var opts = '<option value="">Select temperature/humidity...</option>';
-    for(var ci=0; ci<common.conditions.length; ci++){
-      var c = common.conditions[ci];
-      var sel = State.selCond && State.selCond.temperature === c.temperature && State.selCond.humidity === c.humidity ? ' selected' : '';
-      opts += '<option value="'+c.temperature+'|'+c.humidity+'"'+sel+'>'+c.temperature+'\u00b0C / '+c.humidity+'%</option>';
-    }
-    condHTML = '<div class="form-group"><label>Test Conditions</label><select class="form-input" id="sel-cond" onchange="onCondSelect()">'+opts+'</select></div>';
+  // === RACCOGLI TUTTI I TEST METHOD DISPONIBILI (per il filtro) ===
+var testMethods = {};
+for(var i=0; i<DB.materials.length; i++){
+  var m = DB.materials[i];
+  if(m.testMethod && m.testMethod.trim() !== ''){
+    var tm = m.testMethod.trim();
+    testMethods[tm] = true;
   }
+}
+var tmOpts = '<option value="">All test methods</option>';
+var tmList = Object.keys(testMethods).sort();
+for(var t=0; t<tmList.length; t++){
+  var sel = State.selectedTestMethod === tmList[t] ? ' selected' : '';
+  var escaped = tmList[t].replace(/"/g,'&quot;');
+  tmOpts += '<option value="'+escaped+'"'+sel+'>'+tmList[t]+'</option>';
+}
+
+// === HTML DEL FILTRO TEST METHOD ===
+var testMethodFilter = 
+  '<div class="form-group" style="margin-top:0.5rem">'+
+    '<label style="display:flex;align-items:center;gap:0.3rem">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">'+
+        '<path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>'+
+        '<line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/>'+
+      '</svg>'+
+      'Filter by Test Method'+
+    '</label>'+
+    '<select class="form-input" id="filter-testmethod" onchange="onTestMethodFilterChange(this.value)">'+tmOpts+'</select>'+
+    '<span style="font-size:0.65rem;color:var(--text-light)">Show only materials tested with the same standard</span>'+
+  '</div>';
+  
+var condHTML = '';
+if(!hasMats) {
+  condHTML = '<div class="alert alert-info">Add at least one material with thickness</div>' + testMethodFilter;
+} else if(common.error) {
+  condHTML = '<div class="alert alert-error">'+common.error+'</div>' + testMethodFilter;
+  if(common.matInfo) {
+    var infoHTML = '<table class="cond-table"><thead><tr><th>Material</th><th>Conditions</th></tr></thead><tbody>';
+    for(var mi=0; mi<common.matInfo.length; mi++) {
+      infoHTML += '<tr><td><strong>'+common.matInfo[mi].name+'</strong></td><td>'+common.matInfo[mi].conditions.join(', ')+'</td></tr>';
+    }
+    infoHTML += '</tbody></table>';
+    condHTML += '<div class="alert alert-warning"><strong>Available conditions:</strong>'+infoHTML+'</div>';
+  }
+} else {
+  var opts = '<option value="">Select temperature/humidity...</option>';
+  for(var ci=0; ci<common.conditions.length; ci++){
+    var c = common.conditions[ci];
+    var sel = State.selCond && State.selCond.temperature === c.temperature && State.selCond.humidity === c.humidity ? ' selected' : '';
+    opts += '<option value="'+c.temperature+'|'+c.humidity+'"'+sel+'>'+c.temperature+'\u00b0C / '+c.humidity+'%</option>';
+  }
+  condHTML = '<div class="form-group"><label>Test Conditions</label><select class="form-input" id="sel-cond" onchange="onCondSelect()">'+opts+'</select></div>' + testMethodFilter;
+}
 
   var layersHTML = '';
   for(var i=0; i<State.layers.length; i++){
@@ -1208,9 +1240,21 @@ function renderCalc() {
       }
     }
     var matOpts = '<option value="">Select...</option>';
-    for(var j=0; j<DB.materials.length; j++) {
-      matOpts += '<option value="'+DB.materials[j].id+'"'+(l.mid === DB.materials[j].id ? ' selected' : '')+'>'+DB.materials[j].name+'</option>';
-    }
+for(var j=0; j<DB.materials.length; j++){
+  var mat = DB.materials[j];
+  
+  // ✅ APPLICA FILTRO TEST METHOD
+  if(!passesTestMethodFilter(mat)) continue;
+  
+  // Mostra il test method nel label (opzionale, ma utile)
+  var label = mat.name;
+  if(mat.testMethod){
+    label += ' <span style="color:var(--text-light);font-size:0.7em">['+mat.testMethod+']</span>';
+  }
+  
+  var selected = (l.mid === mat.id) ? ' selected' : '';
+  matOpts += '<option value="'+mat.id+'"'+selected+'>'+label+'</option>';
+}
     layersHTML += '<div class="layer-card"><span class="layer-badge">LAYER '+(i+1)+'</span>'+
       '<div class="layer-grid">'+
       '<div class="form-group" style="margin:0"><label>Material</label><select class="form-input" onchange="onLayerChange('+i+',\'mid\',this.value)">'+matOpts+'</select></div>'+
@@ -1265,6 +1309,19 @@ function onCondSelect(){
   else State.selCond=null;
   DB.saveState(State);
   if(State.autoCalc) doCalcSilent(); else renderContent();
+}
+  // ✅ Helper: controlla se un materiale passa il filtro test method
+function passesTestMethodFilter(mat) {
+  if(!State.selectedTestMethod) return true; // Nessun filtro attivo
+  if(!mat.testMethod) return false; // Materiale senza test method → escluso se filtro attivo
+  return mat.testMethod.trim().toLowerCase() === State.selectedTestMethod.trim().toLowerCase();
+}
+
+// ✅ Handler: cambia filtro test method
+function onTestMethodFilterChange(value) {
+  State.selectedTestMethod = value || '';
+  DB.saveState(State);
+  renderContent(); // Ri-renderizza per applicare il filtro
 }
 function onLayerChange(i,field,val){
   if(field==='mid') State.layers[i].mid=val!==''?parseFloat(val):null;
