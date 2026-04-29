@@ -1209,7 +1209,7 @@ if(!hasMats) {
     var sel = State.selCond && State.selCond.temperature === c.temperature && State.selCond.humidity === c.humidity ? ' selected' : '';
     opts += '<option value="'+c.temperature+'|'+c.humidity+'"'+sel+'>'+c.temperature+'\u00b0C / '+c.humidity+'%</option>';
   }
-  condHTML = '<div class="form-group"><label>Test Conditions</label><select class="form-input" id="sel-cond" onchange="onCondSelect()">'+opts+'</select></div>' + testMethodFilter;
+  condHTML = '<div class="form-group"><label>Test Conditions</label><select class="form-input" id="sel-cond" onchange="onCondSelect()">'+opts+'</select></div>';
 }
 
   var layersHTML = '';
