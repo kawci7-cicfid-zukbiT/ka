@@ -1203,15 +1203,6 @@ if(!hasMats) {
     condHTML += '<div class="alert alert-warning"><strong>Available conditions:</strong>'+infoHTML+'</div>';
   }
 } else {
-  // ✅ SOLO select condizioni, senza filtro duplicato
-  var opts = '<option value="">Select temperature/humidity...</option>';
-  for(var ci=0; ci<common.conditions.length; ci++){
-    var c = common.conditions[ci];
-    var sel = State.selCond && State.selCond.temperature === c.temperature && State.selCond.humidity === c.humidity ? ' selected' : '';
-    opts += '<option value="'+c.temperature+'|'+c.humidity+'"'+sel+'>'+c.temperature+'\u00b0C / '+c.humidity+'%</option>';
-  }
-  condHTML = '<div class="form-group"><label>Test Conditions</label><select class="form-input" id="sel-cond" onchange="onCondSelect()">'+opts+'</select></div>';
-} else {
   var opts = '<option value="">Select temperature/humidity...</option>';
   for(var ci=0; ci<common.conditions.length; ci++){
     var c = common.conditions[ci];
