@@ -244,7 +244,7 @@ window.saveToCommunity = async function(mat) {
         otrValues: mat.otrValues || [],
         validConditions: mat.validConditions || [],
         createdAt: new Date().toISOString(),
-        author: "anonymous"
+        author: "Community"
       }
     );
     return { success: true, id: docRef.id };
@@ -274,7 +274,7 @@ window.loadFromCommunity = async function() {
         id: 'fb_' + doc.id,
         ...data,
         testMethod: data.testMethod || "",
-        author: data.author || "anonymous",
+        author: data.author || "Community",
         isMetallized: data.isMetallized || false,  // ← ✅ AGGIUNTO: fallback a false
         isCommunity: true
       });
@@ -1126,7 +1126,7 @@ async function voteReliability(matId, voteType) {
           materialId: mat.id,
           voteType: voteType,
           timestamp: new Date().toISOString(),
-          userId: "anonymous_" + Math.random().toString(36).substr(2,9)
+          userId: "community_" + Math.random().toString(36).substr(2,9)
         }
       );
     } catch(e) { console.warn("Vote sync failed:", e); }
@@ -1184,13 +1184,17 @@ function renderCalc() {
     '</button>'+
   '</div>';
   // === RACCOGLI TUTTI I TEST METHOD DISPONIBILI (per il filtro) ===
+// === RACCOGLI TUTTI I TEST METHOD DISPONIBILI (per il filtro) ===
 var testMethods = {};
 for(var i=0; i<DB.materials.length; i++){
   var m = DB.materials[i];
-  if(m.testMethod && m.testMethod.trim() !== ''){
-    var tm = m.testMethod.trim();
-    testMethods[tm] = true;
-  }
+  
+  // ✅ ✅ ✅ USA IL CAMPO CORRETTO IN BASE ALLA MODALITÀ ✅ ✅ ✅
+  // ✅ Mostra SOLO il test method della modalità corrente
+var currentTM = State.mode === 'wvtr' ? (m.testMethodWVTR || '') : (m.testMethodOTR || '');
+if(currentTM) {
+  tags += '<span class="mat-tag" style="background:var(--primary-light);color:var(--primary)">📋 '+currentTM+'</span> ';
+}
 }
 var tmOpts = '<option value="">All test methods</option>';
 var tmList = Object.keys(testMethods).sort();
@@ -1258,12 +1262,15 @@ for(var j=0; j<DB.materials.length; j++){
   
   // Mostra il test method nel label (opzionale, ma utile)
   // Mostra il test method E il flag metallized nel label
+// Mostra il test method E il flag metallized nel label
 var label = mat.name;
 if(mat.isMetallized){
   label += ' <span style="color:var(--warning);font-size:0.7em">[⚙️ Metallized]</span>';
 }
-if(mat.testMethod){
-  label += ' <span style="color:var(--text-light);font-size:0.7em">['+mat.testMethod+']</span>';
+// ✅ ✅ ✅ MOSTRA SOLO IL TEST METHOD DELLA MODALITÀ CORRENTE ✅ ✅ ✅
+var currentTM = currentMode === 'wvtr' ? (mat.testMethodWVTR || '') : (mat.testMethodOTR || '');
+if(currentTM){
+  label += ' <span style="color:var(--text-light);font-size:0.7em">['+currentTM+']</span>';
 }
   
   var selected = (l.mid === mat.id) ? ' selected' : '';
@@ -1659,10 +1666,26 @@ function doOptimize(){
   var resEl=document.getElementById('opt-result');if(!resEl) return;
   var common=Engine.findCommonConditions(State.layers,DB.materials);
   var condition=State.selCond||(common.conditions&&common.conditions[0]);
+  
   if(!condition || !State.layers.every(function(l){ return l.mid!==null && l.thick>0; })){
     resEl.innerHTML='<div class="alert alert-info">Configure and calculate first</div>';
     return;
   }
+  
+  // ✅ ✅ ✅ CONTROLLO MATERIALI METALLIZZATI ✅ ✅ ✅
+  var barrierLayer=State.layers[barrierIdx];
+  var barrierMat=DB.materials.find(function(m){return m.id===barrierLayer.mid;});
+  
+  if(barrierMat && barrierMat.isMetallized){
+    // Per metallizzati: la barriera NON dipende dallo spessore → ottimizzazione non applicabile
+    resEl.innerHTML = '<div class="alert alert-warning" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;font-size:0.76rem;line-height:1.2;padding:0.6rem 0.8rem">'+
+      '<svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'+
+      '<span><strong>Optimization not applicable:</strong> For metallized/coated films, barrier performance is independent of substrate thickness. The barrier is provided by the surface coating (nm scale), not the bulk material.</span>'+
+    '</div>';
+    return;
+  }
+  
+  // ✅ Comportamento standard per materiali NON metallizzati
   var result=Engine.optimizeForTarget(State.layers,DB.materials,condition,target,barrierIdx);
   if(result.error){resEl.innerHTML='<div class="alert alert-warning">'+result.error+'</div>';return;}
   var mat=null;for(var m=0;m<DB.materials.length;m++) if(DB.materials[m].id===State.layers[barrierIdx].mid){mat=DB.materials[m];break;}
@@ -1930,15 +1953,16 @@ function showMatModal(editId) {
     var selected = (mat && mat.family === fam) ? ' selected' : '';
     familyOpts += '<option value="'+fam+'"'+selected+'>'+fam+'</option>';
   }
-  // ✅ Checkbox per materiali metallizzati (dopo il badge della modalità)
-var metallizedCheck = mat && mat.isMetallized ? 'checked' : '';
-var metallizedHTML = 
-  '<div style="margin:0.5rem 0;padding:0.4rem 0.6rem;background:var(--warning-light);border-radius:6px;display:flex;align-items:center;gap:0.4rem">'+
-    '<input type="checkbox" id="mf-metallized" '+metallizedCheck+' style="accent-color:var(--warning)">'+
-    '<label for="mf-metallized" style="font-size:0.75rem;color:var(--text-light);margin:0;cursor:pointer">'+
-      '<strong>Metallized/Coated film</strong> – Barrier independent of substrate thickness'+
-    '</label>'+
-  '</div>';
+  
+  // ✅ Checkbox per materiali metallizzati
+  var metallizedCheck = mat && mat.isMetallized ? 'checked' : '';
+  var metallizedHTML = 
+    '<div style="margin:0.5rem 0;padding:0.4rem 0.6rem;background:var(--warning-light);border-radius:6px;display:flex;align-items:center;gap:0.4rem">'+
+      '<input type="checkbox" id="mf-metallized" '+metallizedCheck+' style="accent-color:var(--warning)">'+
+      '<label for="mf-metallized" style="font-size:0.75rem;color:var(--text-light);margin:0;cursor:pointer">'+
+        '<strong>Metallized/Coated film</strong> – Barrier independent of substrate thickness'+
+      '</label>'+
+    '</div>';
   
   // ✅ GENERA LE RIGHE DINAMICHE
   var rowsHTML = '';
@@ -1969,48 +1993,126 @@ var metallizedHTML =
     '</div>';
   }
   
-  Modal.open(editId ? 'Edit Material' : 'Add Material',
-  '<div class="form-group"><label>Name *</label><input type="text" class="form-input" id="mf-name" value="'+(mat?mat.name:'')+'"></div>'+
-  '<div class="form-group"><label>Material Family</label><select class="form-input" id="mf-family">'+familyOpts+'</select><span style="font-size:0.7rem;color:var(--text-light)">Select the polymer family for categorization</span></div>'+
-  '<div class="form-group" id="mf-testmethod-group">'+
-    '<label>Test Method</label>'+
-    '<select class="form-input" id="mf-testmethod-select" onchange="onTestMethodSelectChange(this)">'+
-      (function(){
-        var ctm=['','ASTM F1249','ASTM D3985','ISO 15106-3','ISO 15106-2','ASTM E96','JIS K7129','JIS K7126','MOCON PERMATRAN','MOCON OXTRAN','DIN 53122','TAPPI T464','Custom/Other'];
-        var o='<option value="">Select or enter method...</option>';
-        for(var t=0;t<ctm.length;t++){var s=(mat&&mat.testMethod===ctm[t])?' selected':'';o+='<option value="'+ctm[t]+'"'+s+'>'+(ctm[t]||'-- Select --')+'</option>';}
-        o+='<option value="_custom" style="font-weight:600">+ Enter custom method...</option>';
-        return o;
-      })()+
-    '</select>'+
-    '<input type="text" class="form-input" id="mf-testmethod-custom" value="'+(mat&&mat.testMethod&&["","ASTM F1249","ASTM D3985","ISO 15106-3","ISO 15106-2","ASTM E96","JIS K7129","JIS K7126","MOCON PERMATRAN","MOCON OXTRAN","DIN 53122","TAPPI T464","Custom/Other"].indexOf(mat.testMethod)<0?mat.testMethod:"")+'" placeholder="Enter custom method..." style="display:'+(mat&&mat.testMethod&&["","ASTM F1249","ASTM D3985","ISO 15106-3","ISO 15106-2","ASTM E96","JIS K7129","JIS K7126","MOCON PERMATRAN","MOCON OXTRAN","DIN 53122","TAPPI T464","Custom/Other"].indexOf(mat.testMethod)<0?"block":"none")+';margin-top:0.3rem">'+
-    '<span style="font-size:0.7rem;color:var(--text-light)">Standard or method used for testing (optional)</span>'+
-  '</div>'+
-  '<div style="margin:0.5rem 0;padding:0.4rem 0.6rem;background:var(--primary-light);border-radius:6px;display:flex;align-items:center;gap:0.4rem">'+
-    '<span class="badge badge-blue">'+currentLabel+'</span>'+
-    '<span style="font-size:0.75rem;color:var(--text-light)">Entering data for <strong>'+currentLabel+'</strong> • Unit: '+currentUnit+'</span>'+
-  '</div>'+
-  // ✅ ✅ ✅ CHECKBOX METALLIZED AGGIUNTO QUI ✅ ✅ ✅
-  '<div style="margin:0.5rem 0;padding:0.4rem 0.6rem;background:var(--warning-light);border-radius:6px;display:flex;align-items:center;gap:0.5rem">'+
-    '<input type="checkbox" id="mf-metallized" '+(mat && mat.isMetallized ? 'checked' : '')+' style="accent-color:var(--warning);width:16px;height:16px;">'+
-    '<label for="mf-metallized" style="font-size:0.75rem;color:#92400e;margin:0;cursor:pointer">'+
-      '<strong>Metallized/Coated film</strong> – Barrier independent of substrate thickness'+
-    '</label>'+
-  '</div>'+
-  '<div id="mf-rows">'+rowsHTML+'</div>'+
-  '<button class="btn btn-outline btn-full" onclick="addMatRow()" style="margin-top:0.4rem">+ Add Condition</button>',
+  // ✅ ✅ ✅ LISTE SEPARATE PER WVTR E OTR ✅ ✅ ✅
+  var ctmWVTR = ['','ASTM F1249','ISO 15106-3','ASTM E96','JIS K7129','MOCON PERMATRAN','DIN 53122','Custom/Other'];
+  var ctmOTR = ['','ASTM D3985','ISO 15106-2','JIS K7126','MOCON OXTRAN','Custom/Other'];
+  var ctm = currentMode === 'wvtr' ? ctmWVTR : ctmOTR;
   
-  // ✅ FUNZIONE DI SALVATAGGIO (aggiornata per leggere il checkbox)
-  function(){
-    var name = document.getElementById('mf-name').value.trim();
-    var family = document.getElementById('mf-family').value;
+  // ✅ Valore salvato per la modalità corrente
+  var currentTM = currentMode === 'wvtr' ? (mat ? mat.testMethodWVTR : '') : (mat ? mat.testMethodOTR : '');
+  var isCustom = currentTM && ctm.indexOf(currentTM) < 0;
+  
+  Modal.open(editId ? 'Edit Material' : 'Add Material',
+    '<div class="form-group"><label>Name *</label><input type="text" class="form-input" id="mf-name" value="'+(mat?mat.name:'')+'"></div>'+
+    '<div class="form-group"><label>Material Family</label><select class="form-input" id="mf-family">'+familyOpts+'</select><span style="font-size:0.7rem;color:var(--text-light)">Select the polymer family for categorization</span></div>'+
+    '<div class="form-group" id="mf-testmethod-group">'+
+      '<label style="display:flex;align-items:center;gap:0.4rem">'+
+        '<span class="badge badge-blue">'+currentLabel+'</span>'+
+        '<span style="font-size:0.7rem;color:var(--text-light)">Test Method for '+currentLabel+'</span>'+
+      '</label>'+
+      '<select class="form-input" id="mf-testmethod-select" onchange="onTestMethodSelectChange(this)">'+
+        (function(){
+          var o='<option value="">Select or enter method...</option>';
+          for(var t=0;t<ctm.length;t++){
+            var s = (currentTM === ctm[t]) ? ' selected' : '';
+            o+='<option value="'+ctm[t]+'"'+s+'>'+(ctm[t]||'-- Select --')+'</option>';
+          }
+          o+='<option value="_custom" style="font-weight:600">+ Enter custom method...</option>';
+          return o;
+        })()+
+      '</select>'+
+      '<input type="text" class="form-input" id="mf-testmethod-custom" value="'+(isCustom ? currentTM : '')+'" placeholder="Enter custom method..." style="display:'+(isCustom ? 'block' : 'none')+';margin-top:0.3rem">'+
+      '<span style="font-size:0.7rem;color:var(--text-light)">Standard used for testing this material ('+currentLabel+')</span>'+
+    '</div>'+
+    '<div style="margin:0.5rem 0;padding:0.4rem 0.6rem;background:var(--primary-light);border-radius:6px;display:flex;align-items:center;gap:0.4rem">'+
+      '<span class="badge badge-blue">'+currentLabel+'</span>'+
+      '<span style="font-size:0.75rem;color:var(--text-light)">Entering data for <strong>'+currentLabel+'</strong> • Unit: '+currentUnit+'</span>'+
+    '</div>'+
+    metallizedHTML+
+    '<div id="mf-rows">'+rowsHTML+'</div>'+
+    '<button class="btn btn-outline btn-full" onclick="addMatRow()" style="margin-top:0.4rem">+ Add Condition</button>',
     
-    var testMethod = '';
+    // ✅ FUNZIONE DI SALVATAGGIO AGGIORNATA
+    function(){
+      var name = document.getElementById('mf-name').value.trim();
+      var family = document.getElementById('mf-family').value;
+      
+      var tmSelect = document.getElementById('mf-testmethod-select');
+      var tmCustom = document.getElementById('mf-testmethod-custom');
+      var testMethodValue = '';
+      
+      if(tmSelect && tmSelect.value && tmSelect.value !== '_custom') {
+        testMethodValue = tmSelect.value;
+      }
+      if(tmCustom && tmCustom.style && tmCustom.style.display !== 'none' && tmCustom.value && tmCustom.value.trim()) {
+        testMethodValue = tmCustom.value.trim();
+      }
+      
+      // ✅ ✅ ✅ SALVATAGGIO SEPARATO PER WVTR/OTR ✅ ✅ ✅
+      var testMethodWVTR = mat ? mat.testMethodWVTR : '';
+      var testMethodOTR = mat ? mat.testMethodOTR : '';
+      
+      if(currentMode === 'wvtr') {
+        testMethodWVTR = testMethodValue;
+      } else {
+        testMethodOTR = testMethodValue;
+      }
+      
+      var isMetallized = document.getElementById('mf-metallized') ? document.getElementById('mf-metallized').checked : false;
+      
+      if(!name) { alert('Enter material name'); return false; }
+      
+      var vals = document.querySelectorAll('.mf-val');
+      var thicks = document.querySelectorAll('.mf-thick');
+      var temps = document.querySelectorAll('.mf-temp');
+      var hums = document.querySelectorAll('.mf-hum');
+      
+      var valuesArray = [];
+      var conditionsArray = [];
+      
+      for(var i=0; i<vals.length; i++){
+        var val = parseFloat(vals[i].value);
+        var thick = parseFloat(thicks[i].value);
+        var temp = parseFloat(temps[i].value);
+        var hum = parseFloat(hums[i].value);
+        
+        if(isNaN(val) || val < 0) { alert(currentLabel+' value invalid row '+(i+1)); return false; }
+        if(isNaN(thick) || thick <= 0) { alert('Thickness must be > 0 row '+(i+1)); return false; }
+        if(isNaN(temp)) { alert('Temperature required row '+(i+1)); return false; }
+        if(isNaN(hum)) { alert('Humidity required row '+(i+1)); return false; }
+        
+        valuesArray.push({ value: val, thickness: thick });
+        conditionsArray.push({ temperature: temp, humidity: hum });
+      }
+      
+      var finalFamily = family || getFamily(name);
+      var matData = {
+        name: name,
+        family: finalFamily,
+        isMetallized: isMetallized,
+        testMethodWVTR: testMethodWVTR,  // ← ✅ CAMPO SEPARATO
+        testMethodOTR: testMethodOTR,    // ← ✅ CAMPO SEPARATO
+        wvtrValues: currentMode === 'wvtr' ? valuesArray : (mat ? mat.wvtrValues : []),
+        otrValues: currentMode === 'otr' ? valuesArray : (mat ? mat.otrValues : []),
+        validConditions: conditionsArray
+      };
+      
+      if(editId) { DB.updateMat(editId, matData); } else { DB.addMat(matData); }
+      return true;
+    }
+  );
+  
+  // ✅ Inizializza campo custom se c'è un valore personalizzato
+  setTimeout(function(){
     var tmSelect = document.getElementById('mf-testmethod-select');
     var tmCustom = document.getElementById('mf-testmethod-custom');
-    if(tmSelect && tmSelect.value && tmSelect.value !== '_custom') testMethod = tmSelect.value;
-    if(tmCustom && tmCustom.style && tmCustom.style.display !== 'none' && tmCustom.value && tmCustom.value.trim()) testMethod = tmCustom.value.trim();
-
+    if(!tmSelect || !tmCustom) return;
+    if(isCustom){
+      tmCustom.style.display = 'block';
+      tmSelect.value = '';
+    }
+  }, 50);
+}
     // ✅ ✅ ✅ LETTURA FLAG METALLIZED ✅ ✅ ✅
     var isMetallized = document.getElementById('mf-metallized') ? document.getElementById('mf-metallized').checked : false;
     
