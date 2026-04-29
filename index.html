@@ -949,14 +949,14 @@ function renderHome() {
         <div class="hero-particle"></div>
       </div>
       <div class="hero-content">
-        <h2 class="text-gradient">WVTR/OTR Calculator Pro</h2>
+        <h2 class="text-gradient">WVTR/OTR Calculator</h2>
         <p style="font-size:0.8rem;opacity:0.95;margin-top:0.3rem">
           Professional permeability analysis for multilayer packaging
         </p>
         <div style="display:flex;gap:0.5rem;justify-content:center;margin-top:0.6rem;flex-wrap:wrap">
-          <span class="badge badge-blue badge-pulse">📊 Resistance-Based</span>
-          <span class="badge badge-green">🌡️ Arrhenius Ready</span>
-          <span class="badge badge-purple">♻️ Eco-Design</span>
+          <span class="badge badge-blue badge-pulse"> Resistance-Based</span>
+          <span class="badge badge-green"> Arrhenius Ready</span>
+          <span class="badge badge-purple"> Shelf life</span>
         </div>
       </div>
     </div>
@@ -1449,7 +1449,23 @@ function drawLaminateCurveChart(){
     }
   }
   if(laminateCurve.length>0) datasets.push({label:'Laminate Total',data:laminateCurve,borderColor:'#dc2626',backgroundColor:'rgba(220,38,38,0.1)',borderWidth:2.5,pointRadius:0,type:'line',fill:false,order:0});
-
+    // ✅ PUNTO ROSSO: Valore calcolato del laminato alla condizione selezionata
+    if(State.selCond && State.calcResult && State.calcResult.total > 0 && !State.calcResult.isBarrier) {
+      datasets.push({
+        label: '🔴 Current: '+State.calcResult.total.toFixed(4),
+        data: [{x: State.selCond.temperature, y: State.calcResult.total}],
+        borderColor: '#dc2626',
+        backgroundColor: '#dc2626',
+        borderWidth: 3,
+        pointRadius: 8,
+        pointHoverRadius: 10,
+        pointBackgroundColor: '#fff',
+        pointBorderColor: '#dc2626',
+        type: 'scatter',
+        showLine: false,
+        order: -1 // ← Disegna SEMPRE sopra le curve
+      });
+    }
   if(datasets.length===0) return;
   var ctx=canvas.getContext('2d');
   chartInstances.lamCurve=new Chart(ctx,{type:'line',data:{datasets:datasets},options:{responsive:true,interaction:{mode:'nearest',axis:'x',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}}}},scales:{x:{type:'linear',title:{display:true,text:'Temperature (deg C)'}},y:{title:{display:true,text:getLabel()+' ('+unit+')'},beginAtZero:true}}}});
