@@ -1933,12 +1933,17 @@ tmOpts += '<option value="_custom" style="font-weight:600">+ Enter custom method
       var tmSelect = document.getElementById('mf-testmethod-select');
 var tmCustom = document.getElementById('mf-testmethod-custom');
 // ✅ COSÌ (pulito):
+// ✅ RECUPERO TEST METHOD (CODICE PULITO E FUNZIONANTE)
 var testMethod = '';
 var tmSelect = document.getElementById('mf-testmethod-select');
 var tmCustom = document.getElementById('mf-testmethod-custom');
-if(tmSelect && tmSelect.value && tmSelect.value !== '_custom') testMethod = tmSelect.value;
-if(tmCustom && tmCustom.style && tmCustom.style.display !== 'none' && tmCustom.value && tmCustom.value.trim()) testMethod = tmCustom.value.trim();Custom && tmCustom.style.display !== 'none' && tmCustom.value.trim()) testMethod = tmCustom.value.trim();
-      
+
+if(tmSelect && tmSelect.value && tmSelect.value !== '_custom'){
+  testMethod = tmSelect.value;
+}
+if(tmCustom && tmCustom.style && tmCustom.style.display !== 'none' && tmCustom.value && tmCustom.value.trim()){
+  testMethod = tmCustom.value.trim();
+}    
       if(!name) { alert('Enter material name'); return false; }
       
       // ✅ Recupera solo i campi della modalità corrente
