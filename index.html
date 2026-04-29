@@ -298,7 +298,7 @@ window.loadFromCommunity = async function() {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
         </svg>
-        WVTR/OTR Pro
+        WVTR/OTR
       </h1>
       <div class="mode-toggle">
         <label>
@@ -368,19 +368,35 @@ const Engine={
     return{conditions:common,error:null,warning:null,matInfo:matInfo};
   },
   calcLayerResistance:function(layer,material,condition){
-    var vals=this.getValues(material);
-    var idx=-1;
-    for(var i=0;i<material.validConditions.length;i++){
-      if(Math.abs(material.validConditions[i].temperature-condition.temperature)<0.01&&Math.abs(material.validConditions[i].humidity-condition.humidity)<0.01){idx=i;break;}
-    }
-    if(idx<0) return{resistance:null,error:'Condition not found'};
-    var wd=vals[idx];
-    if(!wd||wd.value==null||wd.thickness==null) return{resistance:null,error:'Missing data'};
-    if(wd.value<=0.00001) return{resistance:Infinity,transmissionAtThickness:0,isBarrier:true};
-    var product=wd.value*wd.thickness;
-    var resistance=layer.thick/product;
-    return{resistance:resistance,transmissionAtThickness:1/resistance,isBarrier:false};
-  },
+  var vals=this.getValues(material);
+  var idx=-1;
+  for(var i=0;i<material.validConditions.length;i++){
+    if(Math.abs(material.validConditions[i].temperature-condition.temperature)<0.01&&Math.abs(material.validConditions[i].humidity-condition.humidity)<0.01){idx=i;break;}
+  }
+  if(idx<0) return{resistance:null,error:'Condition not found'};
+  var wd=vals[idx];
+  if(!wd||wd.value==null||wd.thickness==null) return{resistance:null,error:'Missing data'};
+  if(wd.value<=0.00001) return{resistance:Infinity,transmissionAtThickness:0,isBarrier:true};
+  
+  // ✅ ✅ ✅ GESTIONE MATERIALI METALLIZZATI ✅ ✅ ✅
+  if(material.isMetallized){
+    // Per metallizzati: la barriera è una proprietà di superficie, NON scala con lo spessore
+    // Il valore inserito è già la permeabilità del coating (indipendente dal substrato)
+    var surfacePermeability = wd.value;  // valore come inserito dall'utente
+    var resistance = 1 / surfacePermeability;  // resistenza fissa, indipendente da layer.thick
+    return{
+      resistance: resistance,
+      transmissionAtThickness: surfacePermeability,  // valore fisso
+      isBarrier: surfacePermeability < 0.1,  // soglia per considerare "barriera"
+      isMetallized: true  // flag per debug/visualizzazione
+    };
+  }
+  
+  // ✅ Comportamento standard per materiali NON metallizzati
+  var product=wd.value*wd.thickness;
+  var resistance=layer.thick/product;
+  return{resistance:resistance,transmissionAtThickness:1/resistance,isBarrier:false};
+},
   calcTotal:function(layers,materials,condition){
     var results=[];var totalR=0;
     for(var i=0;i<layers.length;i++){
@@ -1242,10 +1258,14 @@ for(var j=0; j<DB.materials.length; j++){
   if(!passesTestMethodFilter(mat)) continue;
   
   // Mostra il test method nel label (opzionale, ma utile)
-  var label = mat.name;
-  if(mat.testMethod){
-    label += ' <span style="color:var(--text-light);font-size:0.7em">['+mat.testMethod+']</span>';
-  }
+  // Mostra il test method E il flag metallized nel label
+var label = mat.name;
+if(mat.isMetallized){
+  label += ' <span style="color:var(--warning);font-size:0.7em">[⚙️ Metallized]</span>';
+}
+if(mat.testMethod){
+  label += ' <span style="color:var(--text-light);font-size:0.7em">['+mat.testMethod+']</span>';
+}
   
   var selected = (l.mid === mat.id) ? ' selected' : '';
   matOpts += '<option value="'+mat.id+'"'+selected+'>'+label+'</option>';
@@ -1772,6 +1792,14 @@ if(isComm) {
   var authorDisplay = author.length > 12 ? author.substring(0,12)+'...' : author;
   commBadge = '<span class="badge badge-purple" style="margin-left:0.5rem;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Shared by: '+author+'">🌍 '+authorDisplay+'</span>';
 }
+      // ✅ TAGS CON VALORI E CONDIZIONI + INFO METALLIZED
+var tags = '';
+if(m.isMetallized) {
+  tags += '<span class="mat-tag" style="background:var(--warning-light);color:var(--warning)">⚙️ Metallized</span> ';
+}
+for(var t=0; t<vals.length; t++){
+  tags += '<span class="mat-tag">'+getLabel()+': <strong>'+vals[t].value+'</strong> '+currentUnit+' • '+vals[t].thickness+'µm • '+m.validConditions[t].temperature+'°C/'+m.validConditions[t].humidity+'%</span>';
+}
       // ✅ ✅ ✅ SISTEMA AFFIDABILITÀ CON PERCENTUALE ✅ ✅ ✅
       var relScore = getReliabilityScore(m);
       var relBadge = getReliabilityBadge(relScore);
@@ -1814,9 +1842,15 @@ if(isComm) {
             '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Online</button>';
       
       // Pulsante Pubblica solo per materiali utente
-      if(isUserMat) {
-        html += '<button class="btn btn-sm btn-success" style="margin-left:.35rem" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">🌍 Pubblica</button>';
-      }
+      // ✅ Pulsante Pubblica: SOLO per materiali utente NON ancora pubblicati
+if(isUserMat && !isComm) {
+  // Materiale utente, non ancora pubblicato → mostra pulsante
+  html += '<button class="btn btn-sm btn-success" style="margin-left:.35rem" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">🌍 Pubblica</button>';
+} else if(isComm) {
+  // ✅ Materiale già nella community → mostra badge "Published" invece del pulsante
+  html += '<span class="badge badge-green" style="margin-left:.35rem;cursor:help" title="Already shared with community">✓ Published</span>';
+}
+// Se è un materiale default → nessun pulsante, nessun badge extra
       
       // ✅ Aggiungi i pulsanti di voto con percentuale
       html += '</div>' + voteButtons + '</div></div>';
@@ -1900,7 +1934,16 @@ function showMatModal(editId) {
     var selected = (mat && mat.family === fam) ? ' selected' : '';
     familyOpts += '<option value="'+fam+'"'+selected+'>'+fam+'</option>';
   }
-  
+  // ✅ Checkbox per materiali metallizzati (dopo il badge della modalità)
+var metallizedCheck = mat && mat.isMetallized ? 'checked' : '';
+var metallizedHTML = 
+  '<div style="margin:0.5rem 0;padding:0.4rem 0.6rem;background:var(--warning-light);border-radius:6px;display:flex;align-items:center;gap:0.4rem">'+
+    '<input type="checkbox" id="mf-metallized" '+metallizedCheck+' style="accent-color:var(--warning)">'+
+    '<label for="mf-metallized" style="font-size:0.75rem;color:var(--text-light);margin:0;cursor:pointer">'+
+      '<strong>Metallized/Coated film</strong> – Barrier independent of substrate thickness'+
+    '</label>'+
+  '</div>';
+  }
   // ✅ GENERA LE RIGHE DINAMICHE
   var rowsHTML = '';
   for(var r=0; r<currentValues.length; r++){
@@ -1931,80 +1974,91 @@ function showMatModal(editId) {
   }
   
   Modal.open(editId ? 'Edit Material' : 'Add Material',
-    '<div class="form-group"><label>Name *</label><input type="text" class="form-input" id="mf-name" value="'+(mat?mat.name:'')+'"></div>'+
-    '<div class="form-group"><label>Material Family</label><select class="form-input" id="mf-family">'+familyOpts+'</select><span style="font-size:0.7rem;color:var(--text-light)">Select the polymer family for categorization</span></div>'+
-    '<div class="form-group" id="mf-testmethod-group">'+
-      '<label>Test Method</label>'+
-      '<select class="form-input" id="mf-testmethod-select" onchange="onTestMethodSelectChange(this)">'+
-        (function(){
-          var ctm=['','ASTM F1249','ASTM D3985','ISO 15106-3','ISO 15106-2','ASTM E96','JIS K7129','JIS K7126','MOCON PERMATRAN','MOCON OXTRAN','DIN 53122','TAPPI T464','Custom/Other'];
-          var o='<option value="">Select or enter method...</option>';
-          for(var t=0;t<ctm.length;t++){var s=(mat&&mat.testMethod===ctm[t])?' selected':'';o+='<option value="'+ctm[t]+'"'+s+'>'+(ctm[t]||'-- Select --')+'</option>';}
-          o+='<option value="_custom" style="font-weight:600">+ Enter custom method...</option>';
-          return o;
-        })()+
-      '</select>'+
-      '<input type="text" class="form-input" id="mf-testmethod-custom" value="'+(mat&&mat.testMethod&&["","ASTM F1249","ASTM D3985","ISO 15106-3","ISO 15106-2","ASTM E96","JIS K7129","JIS K7126","MOCON PERMATRAN","MOCON OXTRAN","DIN 53122","TAPPI T464","Custom/Other"].indexOf(mat.testMethod)<0?mat.testMethod:"")+'" placeholder="Enter custom method..." style="display:'+(mat&&mat.testMethod&&["","ASTM F1249","ASTM D3985","ISO 15106-3","ISO 15106-2","ASTM E96","JIS K7129","JIS K7126","MOCON PERMATRAN","MOCON OXTRAN","DIN 53122","TAPPI T464","Custom/Other"].indexOf(mat.testMethod)<0?"block":"none")+';margin-top:0.3rem">'+
-      '<span style="font-size:0.7rem;color:var(--text-light)">Standard or method used for testing (optional)</span>'+
-    '</div>'+
-    '<div style="margin:0.5rem 0;padding:0.4rem 0.6rem;background:var(--primary-light);border-radius:6px;display:flex;align-items:center;gap:0.4rem">'+
-      '<span class="badge badge-blue">'+currentLabel+'</span>'+
-      '<span style="font-size:0.75rem;color:var(--text-light)">Entering data for <strong>'+currentLabel+'</strong> • Unit: '+currentUnit+'</span>'+
-    '</div>'+
-    '<div id="mf-rows">'+rowsHTML+'</div>'+
-    '<button class="btn btn-outline btn-full" onclick="addMatRow()" style="margin-top:0.4rem">+ Add Condition</button>',
+  '<div class="form-group"><label>Name *</label><input type="text" class="form-input" id="mf-name" value="'+(mat?mat.name:'')+'"></div>'+
+  '<div class="form-group"><label>Material Family</label><select class="form-input" id="mf-family">'+familyOpts+'</select><span style="font-size:0.7rem;color:var(--text-light)">Select the polymer family for categorization</span></div>'+
+  '<div class="form-group" id="mf-testmethod-group">'+
+    '<label>Test Method</label>'+
+    '<select class="form-input" id="mf-testmethod-select" onchange="onTestMethodSelectChange(this)">'+
+      (function(){
+        var ctm=['','ASTM F1249','ASTM D3985','ISO 15106-3','ISO 15106-2','ASTM E96','JIS K7129','JIS K7126','MOCON PERMATRAN','MOCON OXTRAN','DIN 53122','TAPPI T464','Custom/Other'];
+        var o='<option value="">Select or enter method...</option>';
+        for(var t=0;t<ctm.length;t++){var s=(mat&&mat.testMethod===ctm[t])?' selected':'';o+='<option value="'+ctm[t]+'"'+s+'>'+(ctm[t]||'-- Select --')+'</option>';}
+        o+='<option value="_custom" style="font-weight:600">+ Enter custom method...</option>';
+        return o;
+      })()+
+    '</select>'+
+    '<input type="text" class="form-input" id="mf-testmethod-custom" value="'+(mat&&mat.testMethod&&["","ASTM F1249","ASTM D3985","ISO 15106-3","ISO 15106-2","ASTM E96","JIS K7129","JIS K7126","MOCON PERMATRAN","MOCON OXTRAN","DIN 53122","TAPPI T464","Custom/Other"].indexOf(mat.testMethod)<0?mat.testMethod:"")+'" placeholder="Enter custom method..." style="display:'+(mat&&mat.testMethod&&["","ASTM F1249","ASTM D3985","ISO 15106-3","ISO 15106-2","ASTM E96","JIS K7129","JIS K7126","MOCON PERMATRAN","MOCON OXTRAN","DIN 53122","TAPPI T464","Custom/Other"].indexOf(mat.testMethod)<0?"block":"none")+';margin-top:0.3rem">'+
+    '<span style="font-size:0.7rem;color:var(--text-light)">Standard or method used for testing (optional)</span>'+
+  '</div>'+
+  '<div style="margin:0.5rem 0;padding:0.4rem 0.6rem;background:var(--primary-light);border-radius:6px;display:flex;align-items:center;gap:0.4rem">'+
+    '<span class="badge badge-blue">'+currentLabel+'</span>'+
+    '<span style="font-size:0.75rem;color:var(--text-light)">Entering data for <strong>'+currentLabel+'</strong> • Unit: '+currentUnit+'</span>'+
+  '</div>'+
+  // ✅ ✅ ✅ CHECKBOX METALLIZED AGGIUNTO QUI ✅ ✅ ✅
+  '<div style="margin:0.5rem 0;padding:0.4rem 0.6rem;background:var(--warning-light);border-radius:6px;display:flex;align-items:center;gap:0.5rem">'+
+    '<input type="checkbox" id="mf-metallized" '+(mat && mat.isMetallized ? 'checked' : '')+' style="accent-color:var(--warning);width:16px;height:16px;">'+
+    '<label for="mf-metallized" style="font-size:0.75rem;color:#92400e;margin:0;cursor:pointer">'+
+      '<strong>Metallized/Coated film</strong> – Barrier independent of substrate thickness'+
+    '</label>'+
+  '</div>'+
+  '<div id="mf-rows">'+rowsHTML+'</div>'+
+  '<button class="btn btn-outline btn-full" onclick="addMatRow()" style="margin-top:0.4rem">+ Add Condition</button>',
+  
+  // ✅ FUNZIONE DI SALVATAGGIO (aggiornata per leggere il checkbox)
+  function(){
+    var name = document.getElementById('mf-name').value.trim();
+    var family = document.getElementById('mf-family').value;
     
-    function(){
-      var name = document.getElementById('mf-name').value.trim();
-      var family = document.getElementById('mf-family').value;
+    var testMethod = '';
+    var tmSelect = document.getElementById('mf-testmethod-select');
+    var tmCustom = document.getElementById('mf-testmethod-custom');
+    if(tmSelect && tmSelect.value && tmSelect.value !== '_custom') testMethod = tmSelect.value;
+    if(tmCustom && tmCustom.style && tmCustom.style.display !== 'none' && tmCustom.value && tmCustom.value.trim()) testMethod = tmCustom.value.trim();
+
+    // ✅ ✅ ✅ LETTURA FLAG METALLIZED ✅ ✅ ✅
+    var isMetallized = document.getElementById('mf-metallized') ? document.getElementById('mf-metallized').checked : false;
+    
+    if(!name) { alert('Enter material name'); return false; }
+    
+    var vals = document.querySelectorAll('.mf-val');
+    var thicks = document.querySelectorAll('.mf-thick');
+    var temps = document.querySelectorAll('.mf-temp');
+    var hums = document.querySelectorAll('.mf-hum');
+    
+    var valuesArray = [];
+    var conditionsArray = [];
+    
+    for(var i=0; i<vals.length; i++){
+      var val = parseFloat(vals[i].value);
+      var thick = parseFloat(thicks[i].value);
+      var temp = parseFloat(temps[i].value);
+      var hum = parseFloat(hums[i].value);
       
-      var testMethod = '';
-      var tmSelect = document.getElementById('mf-testmethod-select');
-      var tmCustom = document.getElementById('mf-testmethod-custom');
-      if(tmSelect && tmSelect.value && tmSelect.value !== '_custom') testMethod = tmSelect.value;
-      if(tmCustom && tmCustom.style && tmCustom.style.display !== 'none' && tmCustom.value && tmCustom.value.trim()) testMethod = tmCustom.value.trim();
+      if(isNaN(val) || val < 0) { alert(currentLabel+' value invalid row '+(i+1)); return false; }
+      if(isNaN(thick) || thick <= 0) { alert('Thickness must be > 0 row '+(i+1)); return false; }
+      if(isNaN(temp)) { alert('Temperature required row '+(i+1)); return false; }
+      if(isNaN(hum)) { alert('Humidity required row '+(i+1)); return false; }
       
-      if(!name) { alert('Enter material name'); return false; }
-      
-      var vals = document.querySelectorAll('.mf-val');
-      var thicks = document.querySelectorAll('.mf-thick');
-      var temps = document.querySelectorAll('.mf-temp');
-      var hums = document.querySelectorAll('.mf-hum');
-      
-      var valuesArray = [];
-      var conditionsArray = [];
-      
-      for(var i=0; i<vals.length; i++){
-        var val = parseFloat(vals[i].value);
-        var thick = parseFloat(thicks[i].value);
-        var temp = parseFloat(temps[i].value);
-        var hum = parseFloat(hums[i].value);
-        
-        if(isNaN(val) || val < 0) { alert(currentLabel+' value invalid row '+(i+1)); return false; }
-        if(isNaN(thick) || thick <= 0) { alert('Thickness must be > 0 row '+(i+1)); return false; }
-        if(isNaN(temp)) { alert('Temperature required row '+(i+1)); return false; }
-        if(isNaN(hum)) { alert('Humidity required row '+(i+1)); return false; }
-        
-        valuesArray.push({ value: val, thickness: thick });
-        conditionsArray.push({ temperature: temp, humidity: hum });
-      }
-      
-      var finalFamily = family || getFamily(name);
-      var matData = {
-        name: name,
-        family: finalFamily,
-        wvtrValues: currentMode === 'wvtr' ? valuesArray : (mat ? mat.wvtrValues : []),
-        otrValues: currentMode === 'otr' ? valuesArray : (mat ? mat.otrValues : []),
-        validConditions: conditionsArray
-      };
-      
-      if(testMethod) matData.testMethod = testMethod;
-      
-      if(editId) { DB.updateMat(editId, matData); } else { DB.addMat(matData); }
-      return true;
+      valuesArray.push({ value: val, thickness: thick });
+      conditionsArray.push({ temperature: temp, humidity: hum });
     }
-  );
-}
+    
+    var finalFamily = family || getFamily(name);
+    var matData = {
+      name: name,
+      family: finalFamily,
+      isMetallized: isMetallized,  // ← ✅ SALVATO QUI
+      wvtrValues: currentMode === 'wvtr' ? valuesArray : (mat ? mat.wvtrValues : []),
+      otrValues: currentMode === 'otr' ? valuesArray : (mat ? mat.otrValues : []),
+      validConditions: conditionsArray
+    };
+    
+    if(testMethod) matData.testMethod = testMethod;
+    
+    if(editId) { DB.updateMat(editId, matData); } else { DB.addMat(matData); }
+    return true;
+  }
+);
   
   // ✅ Handler: mostra/nascondi input custom per test method
 function onTestMethodSelectChange(select){
