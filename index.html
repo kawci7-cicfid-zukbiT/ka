@@ -244,7 +244,7 @@ window.saveToCommunity = async function(mat) {
       wvtrValues: mat.wvtrValues || [],
       otrValues: mat.otrValues || [],
       validConditions: mat.validConditions || [],
-      author: (typeof State !== 'undefined' && State.userName) ? State.userName : "Community",
+      author: "Community",
       updatedAt: new Date().toISOString()
     };
 
@@ -1853,10 +1853,12 @@ for(var t=0; t<vals.length; t++){
 var isComm = m.isCommunity || (m.id && String(m.id).startsWith('fb_'));
 var commBadge = '';
 if(isComm) {
-  var author = m.author || 'Community';
-  // Tronca l'autore se troppo lungo per non rompere il layout
-  var authorDisplay = author.length > 12 ? author.substring(0,12)+'...' : author;
- commBadge = '<span class="badge badge-purple" style="margin-left:0.5rem;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Shared by: '+author+'">🌍 '+authorDisplay+'</span>';
+  // ✅ FORZA "Community" invece di "anonymous" o nomi vuoti
+  var author = (m.author && m.author.toLowerCase() !== 'anonymous' && m.author.trim() !== '') 
+    ? m.author 
+    : 'Community';
+  var authorDisplay = 'Community';  // ← Mostra sempre "Community" nel badge
+  commBadge = '<span class="badge badge-purple" style="margin-left:0.5rem;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Shared by: '+author+'">🌍 '+authorDisplay+'</span>';
 }
       
       // ✅ ✅ ✅ SISTEMA AFFIDABILITÀ CON PERCENTUALE ✅ ✅ ✅
