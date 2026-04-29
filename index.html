@@ -943,7 +943,7 @@ async function submitToFirebaseById(matId) {
   var mat = DB.materials.find(function(m) { return m.id === matId; });
   
   if(!mat) {
-    alert("❌ MMaterial not found");
+    alert("❌ Material not found");
     return;
   }
   
@@ -1769,10 +1769,14 @@ function renderMaterials(){
       var vals = Engine.getValues(m);
       
       // ✅ TAGS CON VALORI E CONDIZIONI
-      var tags = '';
-      for(var t=0; t<vals.length; t++){
-        tags += '<span class="mat-tag">'+getLabel()+': <strong>'+vals[t].value+'</strong> '+currentUnit+' • '+vals[t].thickness+'µm • '+m.validConditions[t].temperature+'°C/'+m.validConditions[t].humidity+'%</span>';
-      }
+      // ✅ TAGS CON VALORI E CONDIZIONI + INFO METALLIZED
+var tags = '';
+if(m.isMetallized) {
+  tags += '<span class="mat-tag" style="background:var(--warning-light);color:var(--warning)">⚙️ Metallized</span> ';
+}
+for(var t=0; t<vals.length; t++){
+  tags += '<span class="mat-tag">'+getLabel()+': <strong>'+vals[t].value+'</strong> '+currentUnit+' • '+vals[t].thickness+'µm • '+m.validConditions[t].temperature+'°C/'+m.validConditions[t].humidity+'%</span>';
+}
       
       var escName = m.name.replace(/'/g, "\\'");
       
@@ -1792,14 +1796,7 @@ if(isComm) {
   var authorDisplay = author.length > 12 ? author.substring(0,12)+'...' : author;
   commBadge = '<span class="badge badge-purple" style="margin-left:0.5rem;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Shared by: '+author+'">🌍 '+authorDisplay+'</span>';
 }
-      // ✅ TAGS CON VALORI E CONDIZIONI + INFO METALLIZED
-var tags = '';
-if(m.isMetallized) {
-  tags += '<span class="mat-tag" style="background:var(--warning-light);color:var(--warning)">⚙️ Metallized</span> ';
-}
-for(var t=0; t<vals.length; t++){
-  tags += '<span class="mat-tag">'+getLabel()+': <strong>'+vals[t].value+'</strong> '+currentUnit+' • '+vals[t].thickness+'µm • '+m.validConditions[t].temperature+'°C/'+m.validConditions[t].humidity+'%</span>';
-}
+      
       // ✅ ✅ ✅ SISTEMA AFFIDABILITÀ CON PERCENTUALE ✅ ✅ ✅
       var relScore = getReliabilityScore(m);
       var relBadge = getReliabilityBadge(relScore);
@@ -1943,7 +1940,7 @@ var metallizedHTML =
       '<strong>Metallized/Coated film</strong> – Barrier independent of substrate thickness'+
     '</label>'+
   '</div>';
-  }
+  
   // ✅ GENERA LE RIGHE DINAMICHE
   var rowsHTML = '';
   for(var r=0; r<currentValues.length; r++){
