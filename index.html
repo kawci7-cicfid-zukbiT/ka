@@ -2086,14 +2086,6 @@ function importFile(input){
   reader.readAsText(file);
 }
 
-function exportDB(){
-  var json=DB.exportAll();
-  var blob=new Blob([json],{type:'application/json'});
-  var url=URL.createObjectURL(blob);
-  var a=document.createElement('a');a.href=url;a.download='wvtr-otr-backup-'+new Date().toISOString().split('T')[0]+'.json';
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
 
 // ✅ Avvio app corretto con Firebase
 // ✅ Avvio app con attesa per Firebase
