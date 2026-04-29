@@ -255,6 +255,7 @@ window.saveToCommunity = async function(mat) {
   // ✅ Funzione: Carica materiali dalla community
   // ✅ Funzione: Carica materiali dalla community
 // ✅ Funzione: Carica materiali dalla community (con testMethod)
+// ✅ Funzione: Carica materiali dalla community (CORRETTA)
 window.loadFromCommunity = async function() {
   try {
     console.log("🔍 Query Firestore in corso...");
@@ -269,13 +270,15 @@ window.loadFromCommunity = async function() {
     snapshot.forEach(doc => {
       const data = doc.data();
       console.log("📦 Documento caricato:", doc.id, data.name);
+      
+      // ✅ ✅ ✅ CORREZIONE PRINCIPALE: imposta isCommunity e prefisso ID ✅ ✅ ✅
       mats.push({ 
-        id: doc.id, 
+        id: 'fb_' + doc.id,           // ← Prefisso per identificare materiali community
         ...data,
-        // ✅ Assicurati che testMethod esista (fallback a stringa vuota)
         testMethod: data.testMethod || "",
-    author: data.author || "anonymous"  // ← ✅ AGGIUNTO: fallback per autore
-  });
+        author: data.author || "anonymous",
+        isCommunity: true             // ← ✅ FONDAMENTALE: marca come community!
+      });
     });
     
     console.log("✅ Totale materiali caricati:", mats.length);
@@ -886,7 +889,7 @@ function searchMaterialWeb(matName) {
   
 async function submitToFirebase(mat) {
   if(!window.communityDB) {
-    alert("⚠️ Database non connesso. Riprova più tardi.");
+    alert("⚠️ Database not connected. Please try again later.");
     return;
   }
   
@@ -901,20 +904,20 @@ async function submitToFirebase(mat) {
     const result = await window.saveToCommunity(mat);
     
     if(result.success) {
-      alert("✅ Pubblicato! Il materiale è ora visibile a tutti.");
-      location.reload();
+  alert("✅ Published! The material is now visible to everyone.\n\n🌍 Il badge 'Community' apparirà dopo il ricaricamento della pagina.");
+  location.reload();  // ← Ricarica per scaricare il materiale con isCommunity=true
     } else {
       alert("❌ Errore: " + result.error);
       if(btn) {
         btn.disabled = false;
-        btn.innerText = "🌍 Pubblica";
+        btn.innerText = "🌍 Publish";
       }
     }
   } catch(e) {
     alert("Errore imprevisto: " + e.message);
     if(btn) {
       btn.disabled = false;
-      btn.innerText = "🌍 Pubblica";
+      btn.innerText = "🌍 Publish";
     }
   }
 } 
@@ -924,7 +927,7 @@ async function submitToFirebaseById(matId) {
   var mat = DB.materials.find(function(m) { return m.id === matId; });
   
   if(!mat) {
-    alert("❌ Materiale non trovato");
+    alert("❌ MMaterial not found");
     return;
   }
   
