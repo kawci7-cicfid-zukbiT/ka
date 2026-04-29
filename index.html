@@ -281,6 +281,12 @@ window.loadFromCommunity = async function() {
     snapshot.forEach(doc => {
       const data = doc.data();
       console.log("📦 Documento caricato:", doc.id, data.name);
+
+       // ✅ MIGRAZIONE: se c'è il vecchio campo testMethod, copialo nei nuovi
+  if(data.testMethod && !data.testMethodWVTR && !data.testMethodOTR) {
+    data.testMethodWVTR = data.testMethod;
+    data.testMethodOTR = data.testMethod;
+  }
       
       mats.push({ 
         id: 'fb_' + doc.id,
@@ -959,21 +965,23 @@ async function submitToFirebaseById(matId) {
   const btn = event?.target;
   if(btn) { btn.disabled = true; btn.innerText = "⏳..."; }
   
-  const result = await window.saveToCommunity(mat);
-  if(result.success) {
-    // ✅ Salva l'ID Firebase per i prossimi aggiornamenti
-    mat.firebaseDocId = result.id;
-    mat.isCommunity = true;
-    DB.save(); // Salva in localStorage
-    alert("✅ Published/Updated successfully!");
-    render(); // Aggiorna UI
-  } else {
-    alert("❌ Error: " + result.error);
-    if(btn) { btn.disabled = false; btn.innerText = "🌍 Publish"; }
+  try {
+    const result = await window.saveToCommunity(mat);
+    if(result.success) {
+      mat.firebaseDocId = result.id;
+      mat.isCommunity = true;
+      mat.author = State.userName || "Community";  // ← Assicurati che l'autore sia salvato
+      DB.save();
+      alert("✅ Published/Updated successfully!");
+      render();
+    } else {
+      alert("❌ Error: " + result.error);
+    }
+  } catch(e) {
+    alert("❌ Unexpected error: " + e.message);
+  } finally {
+    if(btn) { btn.disabled = false; btn.innerText = m.firebaseDocId ? "🔄 Update" : "🌍 Publish"; }
   }
-
-  // Ora chiama la funzione originale con l'oggetto corretto
-  await submitToFirebase(mat);
 }
 function renderHome() {
   var totalMats = DB.materials.length;
@@ -1887,7 +1895,14 @@ if(isComm) {
         '<div class="mat-body">'+
           '<div class="mat-tags">'+tags+'</div>'+
           (function(){
-  var tm = State.mode === 'wvtr' ? (m.testMethodWVTR || '') : (m.testMethodOTR || '');
+  (function(){
+  // ✅ Legge il campo corretto in base alla modalità, con fallback al campo vecchio
+  var tm = '';
+  if(State.mode === 'wvtr') {
+    tm = m.testMethodWVTR || m.testMethod || '';
+  } else {
+    tm = m.testMethodOTR || m.testMethod || '';
+  }
   return tm ? '<div style="margin:0.4rem 0;font-size:0.75rem"><strong>Test Method:</strong> <span class="mat-testmethod">'+tm+'</span></div>' : '';
 })() +
         '<div class="search-tools">'+
