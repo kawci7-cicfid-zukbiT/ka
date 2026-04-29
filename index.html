@@ -1285,10 +1285,11 @@ for(var j=0; j<DB.materials.length; j++){
     resultHTML += '<div class="result-detail">'+detail+'</div>';
   }
 
-  return '<div class="grid grid-2">'+
+ return '<div class="grid grid-2">'+
   '<div><div class="card">'+cardHeader+
-  testMethodFilter+  // ← AGGIUNTO QUI
+  testMethodFilter+  // ← AGGIUNTO: filtro sopra i layer
   layersHTML+
+
     '<button class="btn btn-outline btn-full" onclick="addLayer()"'+(State.layers.length>0 && State.layers[State.layers.length-1].mid===null ? ' disabled' : '')+'>+ Add Layer</button></div>'+
     '<div class="card"><h2>Test Conditions</h2>'+condHTML+
     (selectedCond ? '<p style="font-size:.75rem;color:var(--text-light);margin-top:.5rem">Selected: <strong>'+selectedCond+'</strong></p>' : '')+
@@ -1896,20 +1897,26 @@ for(var tm=0; tm<commonTestMethods.length; tm++){
 }
 tmOpts += '<option value="_custom" style="font-weight:600">+ Enter custom method...</option>';
 
-// === HTML DROPDOWN + INPUT CUSTOM ===
-'<div class="form-group" id="mf-testmethod-group">'+
-  '<label>Test Method</label>'+
-  '<select class="form-input" id="mf-testmethod-select" onchange="onTestMethodSelectChange(this)">'+tmOpts+'</select>'+
-  '<input type="text" class="form-input" id="mf-testmethod-custom" value="'+(testMethod && commonTestMethods.indexOf(testMethod)<0 ? testMethod : '')+'" placeholder="Enter custom method..." style="display:'+(testMethod && commonTestMethods.indexOf(testMethod)<0 ? 'block' : 'none')+';margin-top:0.3rem">'+
-  '<span style="font-size:0.7rem;color:var(--text-light)">Standard or method used for testing (optional)</span>'+
-'</div>'+
   
   // ✅ Modal content con solo i campi necessari
   Modal.open(editId ? 'Edit Material' : 'Add Material',
     '<div class="form-group"><label>Name *</label><input type="text" class="form-input" id="mf-name" value="'+(mat?mat.name:'')+'"></div>'+
     '<div class="form-group"><label>Material Family</label><select class="form-input" id="mf-family">'+familyOpts+'</select><span style="font-size:0.7rem;color:var(--text-light)">Select the polymer family for categorization</span></div>'+
-    '<div class="form-group"><label>Test Method</label><input type="text" class="form-input" id="mf-testmethod" value="'+testMethod+'" placeholder="e.g., ASTM F1249, ISO 15106-3, MOCON..."><span style="font-size:0.7rem;color:var(--text-light)">Standard or method used for testing (optional)</span></div>'+
-    
+    '<div class="form-group" id="mf-testmethod-group">'+
+  '<label>Test Method</label>'+
+  '<select class="form-input" id="mf-testmethod-select" onchange="onTestMethodSelectChange(this)">'+
+    (function(){
+      var ctm=['','ASTM F1249','ASTM D3985','ISO 15106-3','ISO 15106-2','ASTM E96','JIS K7129','JIS K7126','MOCON PERMATRAN','MOCON OXTRAN','DIN 53122','TAPPI T464','Custom/Other'];
+      var o='<option value="">Select or enter method...</option>';
+      for(var t=0;t<ctm.length;t++){var s=(mat&&mat.testMethod===ctm[t])?' selected':'';o+='<option value="'+ctm[t]+'"'+s+'>'+(ctm[t]||'-- Select --')+'</option>';}
+      o+='<option value="_custom" style="font-weight:600">+ Enter custom method...</option>';
+      return o;
+    })()+
+  '</select>'+
+  '<input type="text" class="form-input" id="mf-testmethod-custom" value="'+(mat&&mat.testMethod&&["","ASTM F1249","ASTM D3985","ISO 15106-3","ISO 15106-2","ASTM E96","JIS K7129","JIS K7126","MOCON PERMATRAN","MOCON OXTRAN","DIN 53122","TAPPI T464","Custom/Other"].indexOf(mat.testMethod)<0?mat.testMethod:"")+'" placeholder="Enter custom method..." style="display:'+(mat&&mat.testMethod&&["","ASTM F1249","ASTM D3985","ISO 15106-3","ISO 15106-2","ASTM E96","JIS K7129","JIS K7126","MOCON PERMATRAN","MOCON OXTRAN","DIN 53122","TAPPI T464","Custom/Other"].indexOf(mat.testMethod)<0?"block":"none")+';margin-top:0.3rem">'+
+  '<span style="font-size:0.7rem;color:var(--text-light)">Standard or method used for testing (optional)</span>'+
+'</div>'+
+             
     // ✅ Badge che mostra la modalità corrente
     '<div style="margin:0.5rem 0;padding:0.4rem 0.6rem;background:var(--primary-light);border-radius:6px;display:flex;align-items:center;gap:0.4rem">'+
       '<span class="badge badge-blue">'+currentLabel+'</span>'+
@@ -1925,9 +1932,12 @@ tmOpts += '<option value="_custom" style="font-weight:600">+ Enter custom method
       var family = document.getElementById('mf-family').value;
       var tmSelect = document.getElementById('mf-testmethod-select');
 var tmCustom = document.getElementById('mf-testmethod-custom');
+// ✅ COSÌ (pulito):
 var testMethod = '';
-if(tmSelect && tmSelect.value) testMethod = tmSelect.value;
-if(tmCustom && tmCustom.style.display !== 'none' && tmCustom.value.trim()) testMethod = tmCustom.value.trim();
+var tmSelect = document.getElementById('mf-testmethod-select');
+var tmCustom = document.getElementById('mf-testmethod-custom');
+if(tmSelect && tmSelect.value && tmSelect.value !== '_custom') testMethod = tmSelect.value;
+if(tmCustom && tmCustom.style && tmCustom.style.display !== 'none' && tmCustom.value && tmCustom.value.trim()) testMethod = tmCustom.value.trim();Custom && tmCustom.style.display !== 'none' && tmCustom.value.trim()) testMethod = tmCustom.value.trim();
       
       if(!name) { alert('Enter material name'); return false; }
       
@@ -1976,7 +1986,8 @@ if(tmCustom && tmCustom.style.display !== 'none' && tmCustom.value.trim()) testM
     }
   );
 }
-// ✅ Handler dropdown test method
+
+  // ✅ Handler: mostra/nascondi input custom per test method
 function onTestMethodSelectChange(select){
   var customInput = document.getElementById('mf-testmethod-custom');
   if(!customInput) return;
