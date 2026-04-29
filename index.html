@@ -1870,8 +1870,7 @@ function showMatModal(editId) {
     }
   }
   
-  // ✅ Determina quali valori mostrare in base alla modalità corrente
-  var currentMode = State.mode; // 'wvtr' o 'otr'
+  var currentMode = State.mode;
   var currentLabel = currentMode === 'wvtr' ? 'WVTR' : 'OTR';
   var currentUnit = currentMode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
   var currentValues = currentMode === 'wvtr' 
@@ -1880,73 +1879,77 @@ function showMatModal(editId) {
   
   var conds = mat ? mat.validConditions : [{temperature:'',humidity:''}];
   
-  // ✅ Family dropdown options
   var familyOpts = '<option value="">Select family...</option>';
   for(var fam in POLYMER_FAMILIES){
     var selected = (mat && mat.family === fam) ? ' selected' : '';
     familyOpts += '<option value="'+fam+'"'+selected+'>'+fam+'</option>';
   }
   
- // === LISTA PREDEFINITA TEST METHOD ===
-var commonTestMethods = ['', 'ASTM F1249', 'ASTM D3985', 'ISO 15106-3', 'ISO 15106-2', 'ASTM E96', 'JIS K7129', 'JIS K7126', 'MOCON PERMATRAN', 'MOCON OXTRAN', 'DIN 53122', 'TAPPI T464', 'Custom/Other'];
-
-var tmOpts = '<option value="">Select or enter method...</option>';
-for(var tm=0; tm<commonTestMethods.length; tm++){
-  var sel = (mat && mat.testMethod === commonTestMethods[tm]) ? ' selected' : '';
-  tmOpts += '<option value="'+commonTestMethods[tm]+'"'+sel+'>'+(commonTestMethods[tm] || '-- Select --')+'</option>';
-}
-tmOpts += '<option value="_custom" style="font-weight:600">+ Enter custom method...</option>';
-
+  // ✅ GENERA LE RIGHE DINAMICHE
+  var rowsHTML = '';
+  for(var r=0; r<currentValues.length; r++){
+    var v = currentValues[r] || {value:'', thickness:''};
+    var c = conds[r] || {temperature:'', humidity:''};
+    rowsHTML += '<div class="wvtr-row-form" style="grid-template-columns:1fr 1fr">'+
+      '<div style="display:flex;gap:0.4rem">'+
+        '<div class="form-group" style="margin:0;flex:1">'+
+          '<label>'+currentLabel+' Value</label>'+
+          '<input type="number" step="any" class="form-input mf-val" value="'+(v.value||'')+'" placeholder="0">'+
+        '</div>'+
+        '<div class="form-group" style="margin:0;flex:1">'+
+          '<label>Thickness (µm)</label>'+
+          '<input type="number" step="any" class="form-input mf-thick" value="'+(v.thickness||'')+'" placeholder="0">'+
+        '</div>'+
+      '</div>'+
+      '<div style="display:flex;gap:0.4rem">'+
+        '<div class="form-group" style="margin:0;flex:1">'+
+          '<label>Temp (°C)</label>'+
+          '<input type="number" step="any" class="form-input mf-temp" value="'+(c.temperature||'')+'" placeholder="23">'+
+        '</div>'+
+        '<div class="form-group" style="margin:0;flex:1">'+
+          '<label>Humidity (%)</label>'+
+          '<input type="number" step="any" class="form-input mf-hum" value="'+(c.humidity||'')+'" placeholder="50">'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }
   
-  // ✅ Modal content con solo i campi necessari
   Modal.open(editId ? 'Edit Material' : 'Add Material',
     '<div class="form-group"><label>Name *</label><input type="text" class="form-input" id="mf-name" value="'+(mat?mat.name:'')+'"></div>'+
     '<div class="form-group"><label>Material Family</label><select class="form-input" id="mf-family">'+familyOpts+'</select><span style="font-size:0.7rem;color:var(--text-light)">Select the polymer family for categorization</span></div>'+
     '<div class="form-group" id="mf-testmethod-group">'+
-  '<label>Test Method</label>'+
-  '<select class="form-input" id="mf-testmethod-select" onchange="onTestMethodSelectChange(this)">'+
-    (function(){
-      var ctm=['','ASTM F1249','ASTM D3985','ISO 15106-3','ISO 15106-2','ASTM E96','JIS K7129','JIS K7126','MOCON PERMATRAN','MOCON OXTRAN','DIN 53122','TAPPI T464','Custom/Other'];
-      var o='<option value="">Select or enter method...</option>';
-      for(var t=0;t<ctm.length;t++){var s=(mat&&mat.testMethod===ctm[t])?' selected':'';o+='<option value="'+ctm[t]+'"'+s+'>'+(ctm[t]||'-- Select --')+'</option>';}
-      o+='<option value="_custom" style="font-weight:600">+ Enter custom method...</option>';
-      return o;
-    })()+
-  '</select>'+
-  '<input type="text" class="form-input" id="mf-testmethod-custom" value="'+(mat&&mat.testMethod&&["","ASTM F1249","ASTM D3985","ISO 15106-3","ISO 15106-2","ASTM E96","JIS K7129","JIS K7126","MOCON PERMATRAN","MOCON OXTRAN","DIN 53122","TAPPI T464","Custom/Other"].indexOf(mat.testMethod)<0?mat.testMethod:"")+'" placeholder="Enter custom method..." style="display:'+(mat&&mat.testMethod&&["","ASTM F1249","ASTM D3985","ISO 15106-3","ISO 15106-2","ASTM E96","JIS K7129","JIS K7126","MOCON PERMATRAN","MOCON OXTRAN","DIN 53122","TAPPI T464","Custom/Other"].indexOf(mat.testMethod)<0?"block":"none")+';margin-top:0.3rem">'+
-  '<span style="font-size:0.7rem;color:var(--text-light)">Standard or method used for testing (optional)</span>'+
-'</div>'+
-             
-    // ✅ Badge che mostra la modalità corrente
+      '<label>Test Method</label>'+
+      '<select class="form-input" id="mf-testmethod-select" onchange="onTestMethodSelectChange(this)">'+
+        (function(){
+          var ctm=['','ASTM F1249','ASTM D3985','ISO 15106-3','ISO 15106-2','ASTM E96','JIS K7129','JIS K7126','MOCON PERMATRAN','MOCON OXTRAN','DIN 53122','TAPPI T464','Custom/Other'];
+          var o='<option value="">Select or enter method...</option>';
+          for(var t=0;t<ctm.length;t++){var s=(mat&&mat.testMethod===ctm[t])?' selected':'';o+='<option value="'+ctm[t]+'"'+s+'>'+(ctm[t]||'-- Select --')+'</option>';}
+          o+='<option value="_custom" style="font-weight:600">+ Enter custom method...</option>';
+          return o;
+        })()+
+      '</select>'+
+      '<input type="text" class="form-input" id="mf-testmethod-custom" value="'+(mat&&mat.testMethod&&["","ASTM F1249","ASTM D3985","ISO 15106-3","ISO 15106-2","ASTM E96","JIS K7129","JIS K7126","MOCON PERMATRAN","MOCON OXTRAN","DIN 53122","TAPPI T464","Custom/Other"].indexOf(mat.testMethod)<0?mat.testMethod:"")+'" placeholder="Enter custom method..." style="display:'+(mat&&mat.testMethod&&["","ASTM F1249","ASTM D3985","ISO 15106-3","ISO 15106-2","ASTM E96","JIS K7129","JIS K7126","MOCON PERMATRAN","MOCON OXTRAN","DIN 53122","TAPPI T464","Custom/Other"].indexOf(mat.testMethod)<0?"block":"none")+';margin-top:0.3rem">'+
+      '<span style="font-size:0.7rem;color:var(--text-light)">Standard or method used for testing (optional)</span>'+
+    '</div>'+
     '<div style="margin:0.5rem 0;padding:0.4rem 0.6rem;background:var(--primary-light);border-radius:6px;display:flex;align-items:center;gap:0.4rem">'+
       '<span class="badge badge-blue">'+currentLabel+'</span>'+
       '<span style="font-size:0.75rem;color:var(--text-light)">Entering data for <strong>'+currentLabel+'</strong> • Unit: '+currentUnit+'</span>'+
     '</div>'+
-    
-    '<div id="mf-rows">'+rows+'</div>'+
+    '<div id="mf-rows">'+rowsHTML+'</div>'+
     '<button class="btn btn-outline btn-full" onclick="addMatRow()" style="margin-top:0.4rem">+ Add Condition</button>',
     
-    // ✅ Funzione di salvataggio
     function(){
       var name = document.getElementById('mf-name').value.trim();
       var family = document.getElementById('mf-family').value;
+      
+      var testMethod = '';
       var tmSelect = document.getElementById('mf-testmethod-select');
-var tmCustom = document.getElementById('mf-testmethod-custom');
-// ✅ COSÌ (pulito):
-// ✅ RECUPERO TEST METHOD (CODICE PULITO E FUNZIONANTE)
-var testMethod = '';
-var tmSelect = document.getElementById('mf-testmethod-select');
-var tmCustom = document.getElementById('mf-testmethod-custom');
-
-if(tmSelect && tmSelect.value && tmSelect.value !== '_custom'){
-  testMethod = tmSelect.value;
-}
-if(tmCustom && tmCustom.style && tmCustom.style.display !== 'none' && tmCustom.value && tmCustom.value.trim()){
-  testMethod = tmCustom.value.trim();
-}    
+      var tmCustom = document.getElementById('mf-testmethod-custom');
+      if(tmSelect && tmSelect.value && tmSelect.value !== '_custom') testMethod = tmSelect.value;
+      if(tmCustom && tmCustom.style && tmCustom.style.display !== 'none' && tmCustom.value && tmCustom.value.trim()) testMethod = tmCustom.value.trim();
+      
       if(!name) { alert('Enter material name'); return false; }
       
-      // ✅ Recupera solo i campi della modalità corrente
       var vals = document.querySelectorAll('.mf-val');
       var thicks = document.querySelectorAll('.mf-thick');
       var temps = document.querySelectorAll('.mf-temp');
@@ -1970,7 +1973,6 @@ if(tmCustom && tmCustom.style && tmCustom.style.display !== 'none' && tmCustom.v
         conditionsArray.push({ temperature: temp, humidity: hum });
       }
       
-      // ✅ Costruisci l'oggetto materiale con SOLO i dati della modalità corrente
       var finalFamily = family || getFamily(name);
       var matData = {
         name: name,
@@ -1982,16 +1984,12 @@ if(tmCustom && tmCustom.style && tmCustom.style.display !== 'none' && tmCustom.v
       
       if(testMethod) matData.testMethod = testMethod;
       
-      if(editId) {
-        DB.updateMat(editId, matData);
-      } else {
-        DB.addMat(matData);
-      }
+      if(editId) { DB.updateMat(editId, matData); } else { DB.addMat(matData); }
       return true;
     }
   );
 }
-
+  
   // ✅ Handler: mostra/nascondi input custom per test method
 function onTestMethodSelectChange(select){
   var customInput = document.getElementById('mf-testmethod-custom');
