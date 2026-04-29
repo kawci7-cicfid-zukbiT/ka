@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WVTR/OTR Calculator Pro</title>
+<title>WVTR/OTR Calculator </title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
 :root{--primary:#2563eb;--primary-dark:#1d4ed8;--primary-light:#dbeafe;--success:#16a34a;--success-light:#dcfce7;--warning:#d97706;--warning-light:#fef3c7;--danger:#dc2626;--danger-light:#fee2e2;--purple:#7c3aed;--purple-light:#ede9fe;--bg:#f1f5f9;--card:#fff;--text:#0f172a;--text-light:#64748b;--border:#e2e8f0;--radius:12px;--shadow:0 1px 3px rgba(0,0,0,0.08);--shadow-lg:0 10px 25px rgba(0,0,0,0.1)}
@@ -229,29 +229,32 @@ select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csv
   console.log("🔥 Firebase connesso!");
 
   // ✅ Funzione: Salva materiale nella community
-  window.saveToCommunity = async function(mat) {
-    try {
-      const docRef = await window.fbAddDoc(
-        window.fbCollection(window.communityDB, "materials"),
-        {
-          name: mat.name,
-          family: mat.family || "Other",
-          wvtrValues: mat.wvtrValues || [],
-          otrValues: mat.otrValues || [],
-          validConditions: mat.validConditions || [],
-          createdAt: new Date().toISOString(),
-          author: "anonymous"
-        }
-      );
-      return { success: true, id: docRef.id };
-    } catch(e) {
-      console.error("❌ Save error:", e);
-      return { success: false, error: e.message };
-    }
-  };
+  // ✅ Funzione: Salva materiale nella community (con testMethod)
+window.saveToCommunity = async function(mat) {
+  try {
+    const docRef = await window.fbAddDoc(
+      window.fbCollection(window.communityDB, "materials"),
+      {
+        name: mat.name,
+        family: mat.family || "Other",
+        testMethod: mat.testMethod || "",  // ← ✅ AGGIUNTO: salva testMethod
+        wvtrValues: mat.wvtrValues || [],
+        otrValues: mat.otrValues || [],
+        validConditions: mat.validConditions || [],
+        createdAt: new Date().toISOString(),
+        author: "anonymous"
+      }
+    );
+    return { success: true, id: docRef.id };
+  } catch(e) {
+    console.error("❌ Save error:", e);
+    return { success: false, error: e.message };
+  }
+};
 
   // ✅ Funzione: Carica materiali dalla community
   // ✅ Funzione: Carica materiali dalla community
+// ✅ Funzione: Carica materiali dalla community (con testMethod)
 window.loadFromCommunity = async function() {
   try {
     console.log("🔍 Query Firestore in corso...");
@@ -266,7 +269,12 @@ window.loadFromCommunity = async function() {
     snapshot.forEach(doc => {
       const data = doc.data();
       console.log("📦 Documento caricato:", doc.id, data.name);
-      mats.push({ id: doc.id, ...data });
+      mats.push({ 
+        id: doc.id, 
+        ...data,
+        // ✅ Assicurati che testMethod esista (fallback a stringa vuota)
+        testMethod: data.testMethod || ""
+      });
     });
     
     console.log("✅ Totale materiali caricati:", mats.length);
@@ -1704,7 +1712,6 @@ function renderMaterials(){
     '<span class="badge badge-purple" style="font-size:0.7rem">'+currentLabel+' mode • Unit: '+currentUnit+'</span>'+
     '<button class="btn btn-sm btn-primary" onclick="showMatModal()">+ Add</button>'+
     '<button class="btn btn-sm btn-outline" onclick="showBulkImport()">Import</button>'+
-    '<button class="btn btn-sm btn-outline" onclick="exportDB()">Export</button>'+
     '</div></div>'+
     '<div class="form-group search-input"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'+
     '<input type="text" class="form-input" id="material-search" placeholder="Search materials by name or family..." value="'+State.searchQuery+'" oninput="onMatSearch(this.value)" autocomplete="off"></div>';
@@ -2016,8 +2023,16 @@ function addMatRow(){
 
 function showBulkImport(){
   Modal.open('Bulk Import (CSV)',
-    '<p style="font-size:.78rem;color:var(--text-light);margin-bottom:.75rem">CSV format: Name, Family, WVTR, WVTR_Thickness, OTR, OTR_Thickness, Temp1, Hum1, Temp2, Hum2...</p>'+
-    '<div class="import-area"><textarea id="bulk-data" placeholder="PET,PET,1.0,500,150,500,23,50,38,50"></textarea></div>'+
+    '<p style="font-size:.78rem;color:var(--text-light);margin-bottom:.75rem">'+
+      '<strong>CSV format:</strong><br>'+
+      'Name,Family,TestMethod,WVTR_Value,WVTR_Thickness,OTR_Value,OTR_Thickness,Temp1,Hum1[,Temp2,Hum2,...]<br><br>'+
+      '<strong>Example:</strong><br>'+
+      'PET,PET,ASTM F1249,1.0,500,150,500,23,50,38,50<br><br>'+
+      '<em>• TestMethod: leave empty or use standard name (ASTM F1249, ISO 15106-3, etc.)</em><br>'+
+      '<em>• WVTR/OTR columns: use 0 if not applicable</em><br>'+
+      '<em>• Add more Temp/Hum pairs for Arrhenius analysis</em>'+
+    '</p>'+
+    '<div class="import-area"><textarea id="bulk-data" placeholder="PET,PET,ASTM F1249,1.0,500,150,500,23,50,38,50"></textarea></div>'+
     '<p style="font-size:.7rem;color:var(--text-light);margin-top:.5rem">Or <a href="#" onclick="document.getElementById(\'bulk-file\').click();return false">upload JSON</a><input type="file" id="bulk-file" accept=".json" style="display:none" onchange="importFile(this)"></p>',
     function(){
       var data=document.getElementById('bulk-data').value.trim();
@@ -2027,17 +2042,29 @@ function showBulkImport(){
         var count=0;
         for(var li=0;li<lines.length;li++){
           var cols=lines[li].split(/[,\\t]/).map(function(s){return s.trim();});
-          if(cols.length<7) continue;
+          if(cols.length<9) continue; // Min: Name,Family,TestM,WVTR_v,WVTR_t,OTR_v,OTR_t,Temp,Hum
+          
           var name=cols[0];
-          var wvtr=parseFloat(cols[2])||0;var wvtrT=parseFloat(cols[3])||0;
-          var otr=parseFloat(cols[4])||0;var otrT=parseFloat(cols[5])||0;
+          var family=cols[1] || getFamily(cols[0]);
+          var testMethod=cols[2] || '';
+          
+          var wvtr=parseFloat(cols[3])||0; var wvtrT=parseFloat(cols[4])||0;
+          var otr=parseFloat(cols[5])||0; var otrT=parseFloat(cols[6])||0;
+          
           var validConditions=[];
-          for(var i=6;i<cols.length;i+=2){
-            var te=parseFloat(cols[i]);var h=parseFloat(cols[i+1]);
+          for(var i=7;i<cols.length;i+=2){
+            var te=parseFloat(cols[i]); var h=parseFloat(cols[i+1]);
             if(!isNaN(te)&&!isNaN(h)) validConditions.push({temperature:te,humidity:h});
           }
-          if(name&&validConditions.length>0){
-            DB.addMat({name:name,family:getFamily(name),wvtrValues:[{value:wvtr,thickness:wvtrT}],otrValues:[{value:otr,thickness:otrT}],validConditions:validConditions});
+          if(name && validConditions.length>0){
+            DB.addMat({
+              name:name,
+              family:family,
+              testMethod:testMethod,
+              wvtrValues:[{value:wvtr,thickness:wvtrT}],
+              otrValues:[{value:otr,thickness:otrT}],
+              validConditions:validConditions
+            });
             count++;
           }
         }
