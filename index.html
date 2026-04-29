@@ -230,6 +230,7 @@ select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csv
 
   // ✅ Funzione: Salva materiale nella community
   // ✅ Funzione: Salva materiale nella community (con testMethod)
+// ✅ Funzione: Salva materiale nella community (con isMetallized)
 window.saveToCommunity = async function(mat) {
   try {
     const docRef = await window.fbAddDoc(
@@ -237,7 +238,8 @@ window.saveToCommunity = async function(mat) {
       {
         name: mat.name,
         family: mat.family || "Other",
-        testMethod: mat.testMethod || "",  // ← ✅ AGGIUNTO: salva testMethod
+        testMethod: mat.testMethod || "",
+        isMetallized: mat.isMetallized || false,  // ← ✅ AGGIUNTO: flag metallizzato
         wvtrValues: mat.wvtrValues || [],
         otrValues: mat.otrValues || [],
         validConditions: mat.validConditions || [],
@@ -252,10 +254,7 @@ window.saveToCommunity = async function(mat) {
   }
 };
 
-  // ✅ Funzione: Carica materiali dalla community
-  // ✅ Funzione: Carica materiali dalla community
-// ✅ Funzione: Carica materiali dalla community (con testMethod)
-// ✅ Funzione: Carica materiali dalla community (CORRETTA)
+// ✅ Funzione: Carica materiali dalla community (con isMetallized)
 window.loadFromCommunity = async function() {
   try {
     console.log("🔍 Query Firestore in corso...");
@@ -271,13 +270,13 @@ window.loadFromCommunity = async function() {
       const data = doc.data();
       console.log("📦 Documento caricato:", doc.id, data.name);
       
-      // ✅ ✅ ✅ CORREZIONE PRINCIPALE: imposta isCommunity e prefisso ID ✅ ✅ ✅
       mats.push({ 
-        id: 'fb_' + doc.id,           // ← Prefisso per identificare materiali community
+        id: 'fb_' + doc.id,
         ...data,
         testMethod: data.testMethod || "",
         author: data.author || "anonymous",
-        isCommunity: true             // ← ✅ FONDAMENTALE: marca come community!
+        isMetallized: data.isMetallized || false,  // ← ✅ AGGIUNTO: fallback a false
+        isCommunity: true
       });
     });
     
@@ -1842,7 +1841,7 @@ if(isComm) {
       // ✅ Pulsante Pubblica: SOLO per materiali utente NON ancora pubblicati
 if(isUserMat && !isComm) {
   // Materiale utente, non ancora pubblicato → mostra pulsante
-  html += '<button class="btn btn-sm btn-success" style="margin-left:.35rem" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">🌍 Pubblica</button>';
+  html += '<button class="btn btn-sm btn-success" style="margin-left:.35rem" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">🌍 Publish</button>';
 } else if(isComm) {
   // ✅ Materiale già nella community → mostra badge "Published" invece del pulsante
   html += '<span class="badge badge-green" style="margin-left:.35rem;cursor:help" title="Already shared with community">✓ Published</span>';
@@ -2102,14 +2101,16 @@ function showBulkImport(){
   Modal.open('Bulk Import (CSV)',
     '<p style="font-size:.78rem;color:var(--text-light);margin-bottom:.75rem">'+
       '<strong>CSV format:</strong><br>'+
-      'Name,Family,TestMethod,WVTR_Value,WVTR_Thickness,OTR_Value,OTR_Thickness,Temp1,Hum1[,Temp2,Hum2,...]<br><br>'+
+      'Name,Family,TestMethod,IsMetallized,WVTR_Value,WVTR_Thickness,OTR_Value,OTR_Thickness,Temp1,Hum1[,Temp2,Hum2,...]<br><br>'+
       '<strong>Example:</strong><br>'+
-      'PET,PET,ASTM F1249,1.0,500,150,500,23,50,38,50<br><br>'+
-      '<em>• TestMethod: leave empty or use standard name (ASTM F1249, ISO 15106-3, etc.)</em><br>'+
+      'PET,PET,ASTM F1249,false,1.0,500,150,500,23,50,38,50<br>'+
+      'Alu-PET,PET,,true,0.01,500,0.005,500,23,50<br><br>'+
+      '<em>• TestMethod: leave empty or use standard name</em><br>'+
+      '<em>• IsMetallized: true/false (barrier independent of thickness)</em><br>'+
       '<em>• WVTR/OTR columns: use 0 if not applicable</em><br>'+
       '<em>• Add more Temp/Hum pairs for Arrhenius analysis</em>'+
     '</p>'+
-    '<div class="import-area"><textarea id="bulk-data" placeholder="PET,PET,ASTM F1249,1.0,500,150,500,23,50,38,50"></textarea></div>'+
+    '<div class="import-area"><textarea id="bulk-data" placeholder="PET,PET,ASTM F1249,false,1.0,500,150,500,23,50,38,50"></textarea></div>'+
     '<p style="font-size:.7rem;color:var(--text-light);margin-top:.5rem">Or <a href="#" onclick="document.getElementById(\'bulk-file\').click();return false">upload JSON</a><input type="file" id="bulk-file" accept=".json" style="display:none" onchange="importFile(this)"></p>',
     function(){
       var data=document.getElementById('bulk-data').value.trim();
@@ -2119,17 +2120,18 @@ function showBulkImport(){
         var count=0;
         for(var li=0;li<lines.length;li++){
           var cols=lines[li].split(/[,\\t]/).map(function(s){return s.trim();});
-          if(cols.length<9) continue; // Min: Name,Family,TestM,WVTR_v,WVTR_t,OTR_v,OTR_t,Temp,Hum
+          if(cols.length<10) continue; // Min: Name,Family,TestM,IsMet,WVTR_v,WVTR_t,OTR_v,OTR_t,Temp,Hum
           
           var name=cols[0];
           var family=cols[1] || getFamily(cols[0]);
           var testMethod=cols[2] || '';
+          var isMetallized=(cols[3]||'').toLowerCase()==='true';  // ← ✅ LETTURA FLAG
           
-          var wvtr=parseFloat(cols[3])||0; var wvtrT=parseFloat(cols[4])||0;
-          var otr=parseFloat(cols[5])||0; var otrT=parseFloat(cols[6])||0;
+          var wvtr=parseFloat(cols[4])||0; var wvtrT=parseFloat(cols[5])||0;
+          var otr=parseFloat(cols[6])||0; var otrT=parseFloat(cols[7])||0;
           
           var validConditions=[];
-          for(var i=7;i<cols.length;i+=2){
+          for(var i=8;i<cols.length;i+=2){
             var te=parseFloat(cols[i]); var h=parseFloat(cols[i+1]);
             if(!isNaN(te)&&!isNaN(h)) validConditions.push({temperature:te,humidity:h});
           }
@@ -2138,6 +2140,7 @@ function showBulkImport(){
               name:name,
               family:family,
               testMethod:testMethod,
+              isMetallized:isMetallized,  // ← ✅ SALVATO
               wvtrValues:[{value:wvtr,thickness:wvtrT}],
               otrValues:[{value:otr,thickness:otrT}],
               validConditions:validConditions
