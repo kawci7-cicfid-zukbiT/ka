@@ -205,7 +205,9 @@ select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csv
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
+// ✅ AGGIUNGI QUESTE DUE RIGHE DOPO GLI ALTRI window.fb...:
+window.fbUpdateDoc = updateDoc;
+window.fbDoc = doc;
   const firebaseConfig = {
     apiKey: "AIzaSyA6qFSRGcknbBbjVzV4F3CoLkdBA_fqkvk",
     authDomain: "wvtr-community.firebaseapp.com",
@@ -233,20 +235,30 @@ select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csv
 // ✅ Funzione: Salva materiale nella community (con isMetallized)
 window.saveToCommunity = async function(mat) {
   try {
-    const docRef = await window.fbAddDoc(
-      window.fbCollection(window.communityDB, "materials"),
-      {
-        name: mat.name,
-        family: mat.family || "Other",
-        testMethod: mat.testMethod || "",
-        isMetallized: mat.isMetallized || false,  // ← ✅ AGGIUNTO: flag metallizzato
-        wvtrValues: mat.wvtrValues || [],
-        otrValues: mat.otrValues || [],
-        validConditions: mat.validConditions || [],
-        createdAt: new Date().toISOString(),
-        author: "Community"
-      }
-    );
+    const payload = {
+      name: mat.name,
+      family: mat.family || "Other",
+      testMethodWVTR: mat.testMethodWVTR || "",
+      testMethodOTR: mat.testMethodOTR || "",
+      isMetallized: mat.isMetallized || false,
+      wvtrValues: mat.wvtrValues || [],
+      otrValues: mat.otrValues || [],
+      validConditions: mat.validConditions || [],
+      author: State.userName || "Community",
+      updatedAt: new Date().toISOString()
+    };
+
+    let docRef;
+    if (mat.firebaseDocId) {
+      // ✅ AGGIORNAMENTO: modifica il documento esistente
+      const ref = window.fbDoc(window.communityDB, "materials", mat.firebaseDocId);
+      await window.fbUpdateDoc(ref, payload);
+      docRef = { id: mat.firebaseDocId };
+    } else {
+      // ✅ NUOVA PUBBLICAZIONE: crea un nuovo documento
+      payload.createdAt = new Date().toISOString();
+      docRef = await window.fbAddDoc(window.fbCollection(window.communityDB, "materials"), payload);
+    }
     return { success: true, id: docRef.id };
   } catch(e) {
     console.error("❌ Save error:", e);
@@ -272,6 +284,7 @@ window.loadFromCommunity = async function() {
       
       mats.push({ 
         id: 'fb_' + doc.id,
+        firebaseDocId: doc.id,
         ...data,
         testMethod: data.testMethod || "",
         author: data.author || "Community",
@@ -695,6 +708,7 @@ function setMode(mode) {
   State.mode = mode;
   Engine.mode = mode;
   
+  State.selectedTestMethod = ''; // ✅ Resetta il filtro quando cambi modalità
   // Aggiorna i radio button
   var radios = document.querySelectorAll('input[name="mode"]');
   for(var r = 0; r < radios.length; r++) {
@@ -939,14 +953,25 @@ async function submitToFirebase(mat) {
 } 
 // ✅ Nuova funzione: cerca il materiale per ID e poi pubblica
 async function submitToFirebaseById(matId) {
-  // Cerca il materiale nel database locale
-  var mat = DB.materials.find(function(m) { return m.id === matId; });
+  var mat = DB.materials.find(m => m.id === matId);
+  if(!mat) { alert("❌ Material not found"); return; }
   
-  if(!mat) {
-    alert("❌ Material not found");
-    return;
+  const btn = event?.target;
+  if(btn) { btn.disabled = true; btn.innerText = "⏳..."; }
+  
+  const result = await window.saveToCommunity(mat);
+  if(result.success) {
+    // ✅ Salva l'ID Firebase per i prossimi aggiornamenti
+    mat.firebaseDocId = result.id;
+    mat.isCommunity = true;
+    DB.save(); // Salva in localStorage
+    alert("✅ Published/Updated successfully!");
+    render(); // Aggiorna UI
+  } else {
+    alert("❌ Error: " + result.error);
+    if(btn) { btn.disabled = false; btn.innerText = "🌍 Publish"; }
   }
-  
+
   // Ora chiama la funzione originale con l'oggetto corretto
   await submitToFirebase(mat);
 }
@@ -1335,8 +1360,10 @@ function onCondSelect(){
   // ✅ Helper: controlla se un materiale passa il filtro test method
 function passesTestMethodFilter(mat) {
   if(!State.selectedTestMethod) return true; // Nessun filtro attivo
-  if(!mat.testMethod) return false; // Materiale senza test method → escluso se filtro attivo
-  return mat.testMethod.trim().toLowerCase() === State.selectedTestMethod.trim().toLowerCase();
+  // ✅ Legge il campo corretto in base alla modalità
+  var tm = State.mode === 'wvtr' ? (mat.testMethodWVTR || '') : (mat.testMethodOTR || '');
+  if(!tm) return false; // Materiale senza metodo → nascosto se filtro attivo
+  return tm.trim().toLowerCase() === State.selectedTestMethod.trim().toLowerCase();
 }
 
 // ✅ Handler: cambia filtro test method
@@ -1821,7 +1848,7 @@ if(isComm) {
   var author = m.author || 'Community';
   // Tronca l'autore se troppo lungo per non rompere il layout
   var authorDisplay = author.length > 12 ? author.substring(0,12)+'...' : author;
-  commBadge = '<span class="badge badge-purple" style="margin-left:0.5rem;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Shared by: '+author+'">🌍 '+authorDisplay+'</span>';
+ commBadge = '<span class="badge badge-purple" style="margin-left:0.5rem;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Shared by: '+author+'">🌍 '+authorDisplay+'</span>';
 }
       
       // ✅ ✅ ✅ SISTEMA AFFIDABILITÀ CON PERCENTUALE ✅ ✅ ✅
@@ -1859,20 +1886,23 @@ if(isComm) {
         '<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>'+
         '<div class="mat-body">'+
           '<div class="mat-tags">'+tags+'</div>'+
-          (m.testMethod ? '<div style="margin:0.4rem 0;font-size:0.75rem"><strong>Test Method:</strong> <span style="color:var(--text-light)">'+m.testMethod+'</span></div>' : '') +
-          '<div class="search-tools">'+
+          (function(){
+  var tm = State.mode === 'wvtr' ? (m.testMethodWVTR || '') : (m.testMethodOTR || '');
+  return tm ? '<div style="margin:0.4rem 0;font-size:0.75rem"><strong>Test Method:</strong> <span class="mat-testmethod">'+tm+'</span></div>' : '';
+})() +
+        '<div class="search-tools">'+
             '<button class="btn btn-sm btn-outline" onclick="event.stopPropagation();showMatModal('+m.id+')">Edit</button>'+
             '<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">Delete</button>'+
             '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Online</button>';
       
       // Pulsante Pubblica solo per materiali utente
       // ✅ Pulsante Pubblica: SOLO per materiali utente NON ancora pubblicati
-if(isUserMat && !isComm) {
-  // Materiale utente, non ancora pubblicato → mostra pulsante
-  html += '<button class="btn btn-sm btn-success" style="margin-left:.35rem" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">🌍 Publish</button>';
-} else if(isComm) {
-  // ✅ Materiale già nella community → mostra badge "Published" invece del pulsante
-  html += '<span class="badge badge-green" style="margin-left:.35rem;cursor:help" title="Already shared with community">✓ Published</span>';
+// ✅ NUOVO BLOCCO: mostra sempre un pulsante per pubblicare/aggiornare
+if(isUserMat || isComm) {
+  // Mostra pulsante per pubblicare o aggiornare
+  var btnText = m.firebaseDocId ? '🔄 Update' : '🌍 Publish';
+  var btnClass = m.firebaseDocId ? 'btn-success' : 'btn-primary';
+  html += '<button class="btn btn-sm '+btnClass+'" style="margin-left:.35rem" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">'+btnText+'</button>';
 }
 // Se è un materiale default → nessun pulsante, nessun badge extra
       
@@ -2272,20 +2302,12 @@ function importFile(input){
 let addedCount = 0;
 
 for(const fm of fbMats) {
-  // 1. Cerca se esiste già localmente (per nome, case-insensitive)
-  var localMat = DB.materials.find(function(m) { 
-    return m.name.toLowerCase() === fm.name.toLowerCase(); 
-  });
-
+  var localMat = DB.materials.find(m => m.name.toLowerCase() === fm.name.toLowerCase());
   if (localMat) {
-    // ✅ SE ESISTE GIÀ: Aggiorna il flag Community (così appare il badge!)
-    if(fm.isCommunity) {
-      localMat.isCommunity = true;
-      localMat.author = fm.author || localMat.author; // Aggiorna anche l'autore
-    }
-  } 
-  else if (fm.name) {
-    // ✅ SE NON ESISTE: Aggiungilo come nuovo dalla community
+    localMat.isCommunity = true;
+    localMat.author = fm.author || localMat.author;
+    if(fm.firebaseDocId) localMat.firebaseDocId = fm.firebaseDocId; // ← ✅ COLLEGA ID
+  } else if (fm.name) {
     fm.id = 'fb_' + fm.id;
     fm.isCommunity = true;
     DB.materials.push(fm);
