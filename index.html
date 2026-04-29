@@ -695,17 +695,18 @@ function setMode(mode) {
   State.mode = mode;
   Engine.mode = mode;
   
-  // Aggiorna lo stato dei radio button
+  // Aggiorna i radio button
   var radios = document.querySelectorAll('input[name="mode"]');
   for(var r = 0; r < radios.length; r++) {
     radios[r].checked = radios[r].value === mode;
   }
   
-  // Salva lo stato
   DB.saveState(State);
   
-  // ✅ CHIAMATA CORRETTA: render() include initHomeAnimations() via requestAnimationFrame
-  render();
+  // ✅ QUESTE RIGHE SONO ESSENZIALI:
+  renderNav();
+  renderContent();  // ← Ri-genera la pagina con la modalità corretta
+  postNavRender();
 }
 
 function postNavRender() {
@@ -1746,6 +1747,9 @@ function postCompareRender(){
 }
 
 function renderMaterials(){
+  // ✅ FORZA Engine a usare la modalità corrente
+  Engine.mode = State.mode;
+  
   var q = State.searchQuery.toLowerCase().trim();
   var filtered = [];
   
@@ -1793,8 +1797,12 @@ var tags = '';
 if(m.isMetallized) {
   tags += '<span class="mat-tag" style="background:var(--warning-light);color:var(--warning)"> Metallized</span> ';
 }
+// ✅ CODICE CORRETTO CON CONTROLLO:
 for(var t=0; t<vals.length; t++){
-  tags += '<span class="mat-tag">'+getLabel()+': <strong>'+vals[t].value+'</strong> '+currentUnit+' • '+vals[t].thickness+'µm • '+m.validConditions[t].temperature+'°C/'+m.validConditions[t].humidity+'%</span>';
+  var cond = m.validConditions && m.validConditions[t] ? m.validConditions[t] : {temperature: '?', humidity: '?'};
+  var val = vals[t] ? vals[t].value : '?';
+  var thick = vals[t] ? vals[t].thickness : '?';
+  tags += '<span class="mat-tag">'+getLabel()+': <strong>'+val+'</strong> '+currentUnit+' • '+thick+'µm • '+cond.temperature+'°C/'+cond.humidity+'%</span>';
 }
       
       var escName = m.name.replace(/'/g, "\\'");
