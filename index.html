@@ -1192,9 +1192,6 @@ for(var i=0; i<DB.materials.length; i++){
   // ✅ ✅ ✅ USA IL CAMPO CORRETTO IN BASE ALLA MODALITÀ ✅ ✅ ✅
   // ✅ Mostra SOLO il test method della modalità corrente
 var currentTM = State.mode === 'wvtr' ? (m.testMethodWVTR || '') : (m.testMethodOTR || '');
-if(currentTM) {
-  tags += '<span class="mat-tag" style="background:var(--primary-light);color:var(--primary)">📋 '+currentTM+'</span> ';
-}
 }
 var tmOpts = '<option value="">All test methods</option>';
 var tmList = Object.keys(testMethods).sort();
@@ -1268,7 +1265,7 @@ if(mat.isMetallized){
   label += ' <span style="color:var(--warning);font-size:0.7em">[⚙️ Metallized]</span>';
 }
 // ✅ ✅ ✅ MOSTRA SOLO IL TEST METHOD DELLA MODALITÀ CORRENTE ✅ ✅ ✅
-var currentTM = currentMode === 'wvtr' ? (mat.testMethodWVTR || '') : (mat.testMethodOTR || '');
+var currentTM = State.mode === 'wvtr' ? (mat.testMethodWVTR || '') : (mat.testMethodOTR || '');
 if(currentTM){
   label += ' <span style="color:var(--text-light);font-size:0.7em">['+currentTM+']</span>';
 }
@@ -2112,51 +2109,6 @@ function showMatModal(editId) {
       tmSelect.value = '';
     }
   }, 50);
-}
-    // ✅ ✅ ✅ LETTURA FLAG METALLIZED ✅ ✅ ✅
-    var isMetallized = document.getElementById('mf-metallized') ? document.getElementById('mf-metallized').checked : false;
-    
-    if(!name) { alert('Enter material name'); return false; }
-    
-    var vals = document.querySelectorAll('.mf-val');
-    var thicks = document.querySelectorAll('.mf-thick');
-    var temps = document.querySelectorAll('.mf-temp');
-    var hums = document.querySelectorAll('.mf-hum');
-    
-    var valuesArray = [];
-    var conditionsArray = [];
-    
-    for(var i=0; i<vals.length; i++){
-      var val = parseFloat(vals[i].value);
-      var thick = parseFloat(thicks[i].value);
-      var temp = parseFloat(temps[i].value);
-      var hum = parseFloat(hums[i].value);
-      
-      if(isNaN(val) || val < 0) { alert(currentLabel+' value invalid row '+(i+1)); return false; }
-      if(isNaN(thick) || thick <= 0) { alert('Thickness must be > 0 row '+(i+1)); return false; }
-      if(isNaN(temp)) { alert('Temperature required row '+(i+1)); return false; }
-      if(isNaN(hum)) { alert('Humidity required row '+(i+1)); return false; }
-      
-      valuesArray.push({ value: val, thickness: thick });
-      conditionsArray.push({ temperature: temp, humidity: hum });
-    }
-    
-    var finalFamily = family || getFamily(name);
-    var matData = {
-      name: name,
-      family: finalFamily,
-      isMetallized: isMetallized,  // ← ✅ SALVATO QUI
-      wvtrValues: currentMode === 'wvtr' ? valuesArray : (mat ? mat.wvtrValues : []),
-      otrValues: currentMode === 'otr' ? valuesArray : (mat ? mat.otrValues : []),
-      validConditions: conditionsArray
-    };
-    
-    if(testMethod) matData.testMethod = testMethod;
-    
-    if(editId) { DB.updateMat(editId, matData); } else { DB.addMat(matData); }
-    return true;
-  }
-);
 } 
   // ✅ Handler: mostra/nascondi input custom per test method
 function onTestMethodSelectChange(select){
