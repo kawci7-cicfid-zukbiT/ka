@@ -273,8 +273,9 @@ window.loadFromCommunity = async function() {
         id: doc.id, 
         ...data,
         // ✅ Assicurati che testMethod esista (fallback a stringa vuota)
-        testMethod: data.testMethod || ""
-      });
+        testMethod: data.testMethod || "",
+    author: data.author || "anonymous"  // ← ✅ AGGIUNTO: fallback per autore
+  });
     });
     
     console.log("✅ Totale materiali caricati:", mats.length);
@@ -1759,9 +1760,15 @@ function renderMaterials(){
       }
       
       // ✅ Badge per materiali community
-      var isComm = m.isCommunity || (m.id && String(m.id).startsWith('fb_'));
-      var commBadge = isComm ? '<span class="badge badge-purple" style="margin-left:0.5rem">🌍 Community</span>' : '';
-
+      // ✅ Badge per materiali community CON AUTORE
+var isComm = m.isCommunity || (m.id && String(m.id).startsWith('fb_'));
+var commBadge = '';
+if(isComm) {
+  var author = m.author || 'anonymous';
+  // Tronca l'autore se troppo lungo per non rompere il layout
+  var authorDisplay = author.length > 12 ? author.substring(0,12)+'...' : author;
+  commBadge = '<span class="badge badge-purple" style="margin-left:0.5rem;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Shared by: '+author+'">🌍 '+authorDisplay+'</span>';
+}
       // ✅ ✅ ✅ SISTEMA AFFIDABILITÀ CON PERCENTUALE ✅ ✅ ✅
       var relScore = getReliabilityScore(m);
       var relBadge = getReliabilityBadge(relScore);
