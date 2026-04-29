@@ -1884,37 +1884,23 @@ function showMatModal(editId) {
     familyOpts += '<option value="'+fam+'"'+selected+'>'+fam+'</option>';
   }
   
-  var testMethod = mat ? mat.testMethod || '' : '';
-  
-  // ✅ Genera righe SOLO per la modalità corrente + condizioni
-  var rows = '';
-  for(var i=0; i<currentValues.length; i++){
-    var v = currentValues[i] || {value:'',thickness:''};
-    var c = conds[i] || {temperature:'',humidity:''};
-    
-    rows += '<div class="wvtr-row-form" style="grid-template-columns:1fr 1fr">'+
-      '<div style="display:flex;gap:0.4rem">'+
-        '<div class="form-group" style="margin:0;flex:1">'+
-          '<label>'+currentLabel+' Value</label>'+
-          '<input type="number" step="any" class="form-input mf-val" value="'+(v.value||'')+'" placeholder="0">'+
-        '</div>'+
-        '<div class="form-group" style="margin:0;flex:1">'+
-          '<label>Thickness (µm)</label>'+
-          '<input type="number" step="any" class="form-input mf-thick" value="'+(v.thickness||'')+'" placeholder="0">'+
-        '</div>'+
-      '</div>'+
-      '<div style="display:flex;gap:0.4rem">'+
-        '<div class="form-group" style="margin:0;flex:1">'+
-          '<label>Temp (°C)</label>'+
-          '<input type="number" step="any" class="form-input mf-temp" value="'+(c.temperature||'')+'" placeholder="23">'+
-        '</div>'+
-        '<div class="form-group" style="margin:0;flex:1">'+
-          '<label>Humidity (%)</label>'+
-          '<input type="number" step="any" class="form-input mf-hum" value="'+(c.humidity||'')+'" placeholder="50">'+
-        '</div>'+
-      '</div>'+
-    '</div>';
-  }
+ // === LISTA PREDEFINITA TEST METHOD ===
+var commonTestMethods = ['', 'ASTM F1249', 'ASTM D3985', 'ISO 15106-3', 'ISO 15106-2', 'ASTM E96', 'JIS K7129', 'JIS K7126', 'MOCON PERMATRAN', 'MOCON OXTRAN', 'DIN 53122', 'TAPPI T464', 'Custom/Other'];
+
+var tmOpts = '<option value="">Select or enter method...</option>';
+for(var tm=0; tm<commonTestMethods.length; tm++){
+  var sel = (mat && mat.testMethod === commonTestMethods[tm]) ? ' selected' : '';
+  tmOpts += '<option value="'+commonTestMethods[tm]+'"'+sel+'>'+(commonTestMethods[tm] || '-- Select --')+'</option>';
+}
+tmOpts += '<option value="_custom" style="font-weight:600">+ Enter custom method...</option>';
+
+// === HTML DROPDOWN + INPUT CUSTOM ===
+'<div class="form-group" id="mf-testmethod-group">'+
+  '<label>Test Method</label>'+
+  '<select class="form-input" id="mf-testmethod-select" onchange="onTestMethodSelectChange(this)">'+tmOpts+'</select>'+
+  '<input type="text" class="form-input" id="mf-testmethod-custom" value="'+(testMethod && commonTestMethods.indexOf(testMethod)<0 ? testMethod : '')+'" placeholder="Enter custom method..." style="display:'+(testMethod && commonTestMethods.indexOf(testMethod)<0 ? 'block' : 'none')+';margin-top:0.3rem">'+
+  '<span style="font-size:0.7rem;color:var(--text-light)">Standard or method used for testing (optional)</span>'+
+'</div>'+
   
   // ✅ Modal content con solo i campi necessari
   Modal.open(editId ? 'Edit Material' : 'Add Material',
@@ -1935,7 +1921,11 @@ function showMatModal(editId) {
     function(){
       var name = document.getElementById('mf-name').value.trim();
       var family = document.getElementById('mf-family').value;
-      var testMethod = document.getElementById('mf-testmethod').value.trim();
+      var tmSelect = document.getElementById('mf-testmethod-select');
+var tmCustom = document.getElementById('mf-testmethod-custom');
+var testMethod = '';
+if(tmSelect && tmSelect.value) testMethod = tmSelect.value;
+if(tmCustom && tmCustom.style.display !== 'none' && tmCustom.value.trim()) testMethod = tmCustom.value.trim();
       
       if(!name) { alert('Enter material name'); return false; }
       
@@ -1984,7 +1974,18 @@ function showMatModal(editId) {
     }
   );
 }
-
+// ✅ Handler dropdown test method
+function onTestMethodSelectChange(select){
+  var customInput = document.getElementById('mf-testmethod-custom');
+  if(!customInput) return;
+  if(select.value === '_custom'){
+    customInput.style.display = 'block';
+    customInput.focus();
+    select.value = '';
+  } else {
+    customInput.style.display = 'none';
+  }
+}
 function addMatRow(){
   var currentMode = State.mode;
   var currentLabel = currentMode === 'wvtr' ? 'WVTR' : 'OTR';
