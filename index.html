@@ -532,8 +532,10 @@ select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csv
 <!-- 🔥 FIREBASE COMMUNITY SETUP -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, query, orderBy, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";// ✅ AGGIUNGI QUESTE DUE RIGHE DOPO GLI ALTRI window.fb...:
-window.fbUpdateDoc = updateDoc;
+ import { getFirestore, collection, addDoc, getDocs, getDoc, query, orderBy, updateDoc, doc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  window.fbGetDoc = getDoc;
+window.fbIncrement = increment;
+  window.fbUpdateDoc = updateDoc;
 window.fbDoc = doc;
   const firebaseConfig = {
     apiKey: "AIzaSyA6qFSRGcknbBbjVzV4F3CoLkdBA_fqkvk",
@@ -613,14 +615,17 @@ window.loadFromCommunity = async function() {
     data.testMethodOTR = data.testMethod;
   }
       
-      mats.push({ 
-        id: 'fb_' + doc.id,
-        firebaseDocId: doc.id,
-        ...data,
-        testMethod: data.testMethod || "",
-        author: data.author || "Community",
-        isMetallized: data.isMetallized || false,  // ← ✅ AGGIUNTO: fallback a false
-        isCommunity: true
+   mats.push({
+  id: 'fb_' + doc.id,
+  firebaseDocId: doc.id,
+  ...data,
+  testMethod: data.testMethod || "",
+  author: data.author || "Community",
+  isMetallized: data.isMetallized || false,
+  isCommunity: true,
+  // ✅ AGGIUNGI QUESTI DUE CAMPI
+  usageCount: data.usageCount || 0,
+  lastUsageMonth: data.lastUsageMonth || ''
       });
     });
     
@@ -1330,31 +1335,67 @@ function getMonthlyStats() {
   return stats;
 }
 
-function recordMaterialUsage(matId) {
+// ✅ SOSTITUISCI INTERAMENTE LA FUNZIONE ESISTENTE
+async function recordMaterialUsage(matId) {
   if (!matId) return;
+  
+  // 1. Fallback locale (per offline)
   let stats = getMonthlyStats();
+  const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
+  stats.month = currentMonth;
   stats.counts[String(matId)] = (stats.counts[String(matId)] || 0) + 1;
   localStorage.setItem('wvtr_monthly_stats', JSON.stringify(stats));
+
+  // 2. Sync Globale su Firebase
+  if (window.communityDB) {
+    const mat = DB.materials.find(m => String(m.id) === String(matId));
+    if (mat && mat.firebaseDocId) {
+      try {
+        const ref = window.fbDoc(window.communityDB, "materials", mat.firebaseDocId);
+        // Incrementa in modo sicuro su Firestore
+        await window.fbUpdateDoc(ref, {
+          usageCount: window.fbIncrement(1),
+          lastUsageMonth: currentMonth
+        });
+        // Aggiorna cache locale immediatamente per UI reattiva
+        mat.usageCount = (mat.usageCount || 0) + 1;
+        mat.lastUsageMonth = currentMonth;
+      } catch(e) { console.warn("⚠️ Usage sync failed:", e); }
+    }
+  }
 }
 
+// ✅ SOSTITUISCI INTERAMENTE LA FUNZIONE ESISTENTE
 function getTop3Materials() {
-  const stats = getMonthlyStats();
-  const counts = stats.counts || {};
+  const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
   
- return Object.entries(counts)
-    .sort((a,b) => b[1] - a[1])  // Ordina per conteggio decrescente
-    .slice(0,3)
-    .map(([id, count], index) => {  // ← ✅ AGGIUNGI 'index' QUI
-      const mat = DB.materials.find(m => String(m.id) === String(id));
-      return mat ? { 
-        name: mat.name, 
-        company: mat.company || null, 
-        count, 
-        // ✅ USA 'index' PER ASSEGNARE LA MEDAGLIA CORRETTA
-        icon: ['🥇','🥈','🥉'][index]
-      } : null;
-    })
-    .filter(Boolean);
+  // Filtra materiali usati globalmente questo mese
+  let candidates = DB.materials.filter(m => 
+    m.lastUsageMonth === currentMonth && (m.usageCount || 0) > 0
+  );
+
+  // Fallback a locale se non ci sono ancora dati globali
+  if (candidates.length === 0) {
+    const stats = getMonthlyStats();
+    const counts = stats.counts || {};
+    return Object.entries(counts)
+      .sort((a,b) => b[1] - a[1])
+      .slice(0,3)
+      .map(([id, count], idx) => {
+        const mat = DB.materials.find(m => String(m.id) === String(id));
+        return mat ? { name: mat.name, company: mat.company || null, count, icon: ['🥇','🥈','🥉'][idx] } : null;
+      }).filter(Boolean);
+  }
+
+  // Ordina per utilizzi globali
+  candidates.sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0));
+  
+  return candidates.slice(0, 3).map((mat, idx) => ({
+    name: mat.name,
+    company: mat.company || null,
+    count: mat.usageCount || 0,
+    icon: ['🥇','🥈','🥉'][idx]
+  }));
 }
 
 function getCommunityCount() {
