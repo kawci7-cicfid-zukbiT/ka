@@ -1167,40 +1167,6 @@ function initHomeAnimations() {
     // 1. Aggiorna Classifica Top 3
     if (window.communityDB) {
         updateTop3UI();
-    }
-
-    // 2. Animazione Fade-in Features
-    const featuresSection = document.getElementById('featuresSection');
-    if(featuresSection) {
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if(entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                    entry.target.querySelectorAll('.feature-card').forEach((c, i) =>
-                    setTimeout(() => c.classList.add('visible'), i * 100)
-                    );
-                    observer.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.1 });
-        observer.observe(featuresSection);
-    }
-
-    // 3. Inizializza Grafici e Contatori
-    initDemoCharts();
-    initCountUp();
-    document.querySelectorAll('.progress-fill').forEach(bar =>
-    bar.style.animation = 'progressGrow 1.2s ease-out forwards'
-    );
-    document.querySelectorAll('.bg-drop').forEach(drop => {
-        drop.addEventListener('mouseenter', () => {
-        drop.style.filter='blur(0.5px) brightness(1.3)';
-        drop.style.opacity='1';
-        });
-        drop.addEventListener('mouseleave', () => {
-        drop.style.filter='blur(1.5px) brightness(1)';
-        drop.style.opacity='0.7';
-        });
     });
 }
   async function updateTop3UI() {
@@ -1651,7 +1617,7 @@ function renderHome() {
           <h2 style="margin:0;font-size:0.95rem">📈 Top 3 This Month</h2>
           <span class="badge badge-blue" style="font-size:0.65rem">Resets on 1st</span>
         </div>
-        <div class="grid grid-3" style="gap:0.6rem;margin:0">
+        <div id="top3-ranking" class="grid grid-3" style="gap:0.6rem;margin:0">
           ${top3.length === 0 ? '<div style="grid-column:1/-1;text-align:center;padding:1rem;color:var(--text-light);font-size:0.78rem">Start calculating to see monthly rankings</div>' :
             top3.map(m => `
               <div style="background:#fff;border-radius:10px;padding:0.7rem 0.5rem;text-align:center;border:1px solid var(--border);transition:all 0.2s">
