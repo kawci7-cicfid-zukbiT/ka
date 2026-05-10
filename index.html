@@ -2309,17 +2309,18 @@ for(var i = 0; i < DB.materials.length; i++){
   var matchType = item.matchType || [];
   var highlight = item.highlight || '';
   
-  // ✅ Variabili necessarie (assicurati che siano definite)
+  // ✅ ✅ ✅ SPOSTA QUESTE RIGHE QUI, ALL'INIZIO ✅ ✅ ✅
   var v = Engine.validateArrhenius(m);
-  var vals = Engine.getValues(m);
-  var currentUnit = getUnit();
+  var vals = Engine.getValues(m);  // ← Ora è definito PRIMA di essere usato!
+  var currentUnit = getUnit();     // ← Ridondante ma innocuo (già definito sopra)
+  // ✅ ✅ ✅ FINE SPOSTAMENTO ✅ ✅ ✅
   
-  // ✅ TAGS CON VALORI E CONDIZIONI
+  // ✅ TAGS CON VALORI E CONDIZIONI (ora vals è definito!)
   var tags = '';
   if(m.isMetallized) {
     tags += '<span class="mat-tag" style="background:var(--warning-light);color:var(--warning)">⚙️ Metallized</span> ';
   }
-  for(var t=0; t<vals.length; t++){
+  for(var t=0; t<vals.length; t++){  // ← ✅ Ora funziona!
     var cond = m.validConditions && m.validConditions[t] ? m.validConditions[t] : {temperature: '?', humidity: '?'};
     var val = vals[t] ? vals[t].value : '?';
     var thick = vals[t] ? vals[t].thickness : '?';
