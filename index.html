@@ -1267,7 +1267,7 @@ async function submitToFirebase(mat) {
     const result = await window.saveToCommunity(mat);
     
     if(result.success) {
-  alert("✅ Published! The material is now visible to everyone.\n\n🌍 The 'Community' badge will appear after the page is reloaded.");
+alert(`✅ Published! The material is now visible to everyone.\n🌍 The 'Community' badge will appear after the page is reloaded.`);
   location.reload();  // ← Ricarica per scaricare il materiale con isCommunity=true
     } else {
       alert("❌ Errore: " + result.error);
@@ -1306,8 +1306,9 @@ async function submitToFirebaseById(matId) {
     }
   } catch(e) {
     alert("❌ Unexpected error: " + e.message);
-  } finally {
-    if(btn) { btn.disabled = false; btn.innerText = m.firebaseDocId ? "🔄 Update" : "🌍 Publish"; }
+  // ✅ CORRETTO
+} finally {
+  if(btn) { btn.disabled = false; btn.innerText = mat.firebaseDocId ? "🔄 Update" : "🌍 Publish"; }
   }
 }
 // 📊 TRACCIAMENTO UTILIZZO MATERIALI & RESET MENSILE
@@ -2340,13 +2341,6 @@ filtered.sort(function(a, b){
         var thick = vals[t] ? vals[t].thickness : '?';
         tags += '<span class="mat-tag">'+getLabel()+': <strong>'+val+'</strong> '+currentUnit+' • '+thick+'µm • '+cond.temperature+'°C/'+cond.humidity+'%</span>';
       }
-      
-  for(var t=0; t<vals.length; t++){  // ← ✅ Ora funziona!
-    var cond = m.validConditions && m.validConditions[t] ? m.validConditions[t] : {temperature: '?', humidity: '?'};
-    var val = vals[t] ? vals[t].value : '?';
-    var thick = vals[t] ? vals[t].thickness : '?';
-    tags += '<span class="mat-tag">'+getLabel()+': <strong>'+val+'</strong> '+currentUnit+' • '+thick+'µm • '+cond.temperature+'°C/'+cond.humidity+'%</span>';
-  }
   
   var escName = m.name.replace(/'/g, "\\'");
   
@@ -2778,7 +2772,8 @@ function showBulkImport(){
         var lines=data.split('\n').filter(function(l){return l.trim();});
         var count=0;
         for(var li=0;li<lines.length;li++){
-          var cols=lines[li].split(/[,\\t]/).map(function(s){return s.trim();});
+        // ✅ CORRETTO
+var cols=lines[li].split(/,\s*|\t/).map(function(s){return s.trim();});
           if(cols.length<10) continue; // Min: Name,Family,TestM,IsMet,WVTR_v,WVTR_t,OTR_v,OTR_t,Temp,Hum
           
           var name=cols[0];
