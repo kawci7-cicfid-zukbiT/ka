@@ -1505,53 +1505,58 @@ function getTop3Materials() {
   }));
 }
   
-// ✅ NUOVA FUNZIONE: Carica la classifica globale da Firebase
-// ✅ SOSTITUISCI INTERAMENTE LA FUNZIONE refreshGlobalRankings
-// ✅ FUNZIONE UNICA: classifica globale Firebase-first
-// ✅ FUNZIONE UNICA: classifica globale Firebase-first
 async function refreshGlobalRankings() {
-  const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
-  
-  // 1. PROVA FIREBASE
-  if (window.communityDB) {
-    try {
-      const q = window.fbQuery(
-        window.fbCollection(window.communityDB, "materials"),
-        window.fbOrderBy("usageCount", "desc")
-      );
-      const snapshot = await window.fbGetDocs(q);
-      const globalTop = [];
-      
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        if (data.lastUsageMonth === currentMonth && (data.usageCount || 0) > 0) {
-          globalTop.push({
-            name: data.name,
-            company: data.company || null,
-            count: data.usageCount || 0,
-            firebaseDocId: doc.id
-          });
+    const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
+    
+    // 1. PROVA FIREBASE
+    if (window.communityDB) {
+        try {
+            const q = window.fbQuery(
+                window.fbCollection(window.communityDB, "materials"),
+                window.fbOrderBy("usageCount", "desc")
+            );
+            const snapshot = await window.fbGetDocs(q);
+            const globalTop = [];
+            
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.lastUsageMonth === currentMonth && (data.usageCount || 0) > 0) {
+                    globalTop.push({
+                        name: data.name,
+                        company: data.company || null,
+                        count: data.usageCount || 0,
+                        firebaseDocId: doc.id
+                    });
+                }
+            });
+            
+            if (globalTop.length > 0) {
+                // Sync cache locale
+                globalTop.forEach(item => {
+                    const localMat = DB.materials.find(m => m.firebaseDocId === item.firebaseDocId);
+                    if (localMat) {
+                        localMat.usageCount = item.count;
+                        localMat.lastUsageMonth = currentMonth;
+                    }
+                });
+                return globalTop.slice(0, 3).map((m, idx) => ({
+                    ...m,
+                    icon: ['🥇','🥈','🥉'][idx]
+                }));
+            }
+            // ✅ Se Firebase è vuoto → FALLBACK a locale (DENTRO il try)
+            console.log("⚠️ Global ranking empty, falling back to local stats...");
+            return getTop3Materials();
+            
+        } catch(e) {
+            console.warn("⚠️ Firebase error, fallback to local stats:", e);
+            return getTop3Materials(); // ✅ FALLBACK in caso di errore
         }
-      });
-      
-      if (globalTop.length > 0) {
-        // Sync cache locale
-        globalTop.forEach(item => {
-          const localMat = DB.materials.find(m => m.firebaseDocId === item.firebaseDocId);
-          if (localMat) {
-            localMat.usageCount = item.count;
-            localMat.lastUsageMonth = currentMonth;
-          }
-        });
-        return globalTop.slice(0, 3).map((m, idx) => ({
-          ...m,
-          icon: ['🥇','🥈','🥉'][idx]
-        }));
-      }
-    } catch(e) {
-      console.warn("⚠️ Firebase ranking failed:", e);
     }
-  }
+    
+    // 2. FALLBACK LOCALE (se Firebase non disponibile)
+    return getTop3Materials();
+} // ← UNA SOLA CHIUSURA FINALE
   
   // 2. FALLBACK LOCALE (solo se Firebase è vuoto o offline)
   const stats = getMonthlyStats();
