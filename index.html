@@ -1160,22 +1160,32 @@ function render() {
   });
 }
   // === ANIMAZIONI POST-RENDER PER LA HOME ===
+// === ANIMAZIONI POST-RENDER PER LA HOME ===
 function initHomeAnimations() {
   if(State.tab !== 'home') return;
   
-  // ✅ CARICA CLASSIFICA GLOBALE DA FIREBASE
+  // ✅ CARICA CLASSIFICA GLOBALE DA FIREBASE E AGGIORNA UI
   if (window.communityDB) {
-    refreshGlobalRankings().then(() => {
-      // Ri-renderizza solo la sezione classifica se necessario
-      const top3El = document.querySelector('.grid.grid-3[style*="gap:0.6rem"]');
-      if (top3El) {
-        // Forza aggiornamento visivo
-        top3El.style.opacity = '0';
-        setTimeout(() => top3El.style.opacity = '1', 150);
+    refreshGlobalRankings().then(globalTop3 => {
+      // ✅ Selettore CORRETTO: corrisponde al template in renderHome()
+      const container = document.querySelector('.grid.grid-3[style*="gap:0.6rem"]');
+      if (container && globalTop3 && globalTop3.length > 0) {
+        container.innerHTML = globalTop3.map(m => `
+          <div style="background:#fff;border-radius:10px;padding:0.7rem 0.5rem;text-align:center;border:1px solid var(--border);transition:all 0.2s">
+            <div style="font-size:1.4rem;margin-bottom:0.2rem">${m.icon}</div>
+            <div style="font-weight:600;font-size:0.82rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${m.name}">${m.name}</div>
+            ${m.company ? `<div style="font-size:0.68rem;color:var(--text-light);margin-top:0.2rem">${m.company}</div>` : '<div style="height:1.1rem"></div>'}
+            <div style="font-size:0.65rem;color:var(--primary);font-weight:700;margin-top:0.3rem">${m.count} uses</div>
+          </div>
+        `).join('');
+        // Effetto visivo di aggiornamento
+        container.style.opacity = '0.6';
+        setTimeout(() => container.style.opacity = '1', 200);
       }
     });
   }
   
+  // === RESTO DELLE ANIMAZIONI (inalterato) ===
   // 1. Features fade-in
   const featuresSection = document.getElementById('featuresSection');
   if(featuresSection) {
@@ -1183,7 +1193,9 @@ function initHomeAnimations() {
       entries.forEach(entry => {
         if(entry.isIntersecting) {
           entry.target.classList.add('visible');
-          entry.target.querySelectorAll('.feature-card').forEach((c, i) => setTimeout(() => c.classList.add('visible'), i * 100));
+          entry.target.querySelectorAll('.feature-card').forEach((c, i) => 
+            setTimeout(() => c.classList.add('visible'), i * 100)
+          );
           observer.unobserve(entry.target);
         }
       });
@@ -1194,13 +1206,21 @@ function initHomeAnimations() {
   // 2. Grafici, contatori e animazioni
   initDemoCharts();
   initCountUp();
-  document.querySelectorAll('.progress-fill').forEach(bar => bar.style.animation = 'progressGrow 1.2s ease-out forwards');
+  document.querySelectorAll('.progress-fill').forEach(bar => 
+    bar.style.animation = 'progressGrow 1.2s ease-out forwards'
+  );
   document.querySelectorAll('.bg-drop').forEach(drop => {
-    drop.addEventListener('mouseenter', () => { drop.style.filter='blur(0.5px) brightness(1.3)'; drop.style.opacity='1'; });
-    drop.addEventListener('mouseleave', () => { drop.style.filter='blur(1.5px) brightness(1)'; drop.style.opacity='0.7'; });
+    drop.addEventListener('mouseenter', () => { 
+      drop.style.filter='blur(0.5px) brightness(1.3)'; 
+      drop.style.opacity='1'; 
+    });
+    drop.addEventListener('mouseleave', () => { 
+      drop.style.filter='blur(1.5px) brightness(1)'; 
+      drop.style.opacity='0.7'; 
+    });
   });
 }
-
+  
 function initDemoCharts() {
   if(typeof Chart === 'undefined') return;
   
@@ -1404,7 +1424,7 @@ function getMonthlyStats() {
 async function recordMaterialUsage(matId) {
   if (!matId) return;
   
-  // 1. Fallback locale (per offline)
+  // 1. Fallback locale
   let stats = getMonthlyStats();
   const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
   stats.month = currentMonth;
@@ -1425,39 +1445,88 @@ async function recordMaterialUsage(matId) {
         mat.usageCount = (mat.usageCount || 0) + 1;
         mat.lastUsageMonth = currentMonth;
         
-        // ✅ REFRESH IMMEDIATO DELLA CLASSIFICA GLOBALE
-        setTimeout(() => {
-          if (State.tab === 'home') {
-            refreshGlobalRankings().then(() => renderContent());
-          }
-        }, 300);
-        
+        // ✅ UN SOLO refresh globale
+        if (State.tab === 'home') {
+          setTimeout(() => {
+            refreshGlobalRankings().then(() => {
+              const top3El = document.querySelector('.grid.grid-3[style*="gap:0.6rem"]');
+              if (top3El) {
+                top3El.style.opacity = '0.6';
+                setTimeout(() => top3El.style.opacity = '1', 150);
+              }
+            });
+          }, 300);
+        }
       } catch(e) { console.warn("⚠️ Usage sync failed:", e); }
     }
   }
 }
-
-// ✅ SOSTITUISCI INTERAMENTE LA FUNZIONE ESISTENTE
-function getTop3Materials() {
+  async function getTop3Materials() {
   const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
   
-  // Filtra materiali usati globalmente questo mese
-  let candidates = DB.materials.filter(m => 
-    m.lastUsageMonth === currentMonth && (m.usageCount || 0) > 0
-  );
-
-  // Fallback a locale se non ci sono ancora dati globali
-  if (candidates.length === 0) {
-    const stats = getMonthlyStats();
-    const counts = stats.counts || {};
-    return Object.entries(counts)
-      .sort((a,b) => b[1] - a[1])
-      .slice(0,3)
-      .map(([id, count], idx) => {
-        const mat = DB.materials.find(m => String(m.id) === String(id));
-        return mat ? { name: mat.name, company: mat.company || null, count, icon: ['🥇','🥈','🥉'][idx] } : null;
-      }).filter(Boolean);
+  if (window.communityDB) {
+    try {
+      const q = window.fbQuery(
+        window.fbCollection(window.communityDB, "materials"),
+        window.fbOrderBy("usageCount", "desc")
+      );
+      const snapshot = await window.fbGetDocs(q);
+      const globalTop = [];
+      
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.lastUsageMonth === currentMonth && (data.usageCount || 0) > 0) {
+          globalTop.push({
+            name: data.name,
+            company: data.company || null,
+            count: data.usageCount || 0,
+            firebaseDocId: doc.id  // ← IMPORTANTE per matching
+          });
+        }
+      });
+      
+      if (globalTop.length > 0) {
+        // Sync cache locale con matching sicuro
+        globalTop.forEach(item => {
+          const localMat = DB.materials.find(m => m.firebaseDocId === item.firebaseDocId);
+          if (localMat) {
+            localMat.usageCount = item.count;
+            localMat.lastUsageMonth = currentMonth;
+          }
+        });
+        return globalTop.slice(0, 3).map((m, idx) => ({
+          ...m,
+          icon: ['🥇','🥈','🥉'][idx]
+        }));
+      }
+    } catch(e) {
+      console.warn("⚠️ Fallback a classifica locale:", e);
+    }
   }
+  
+  // Fallback locale sincrono
+  const stats = getMonthlyStats();
+  const counts = stats.counts || {};
+  return Object.entries(counts)
+    .sort((a,b) => b[1] - a[1])
+    .slice(0,3)
+    .map(([id, count], idx) => {
+      const mat = DB.materials.find(m => String(m.id) === String(id));
+      return mat ? { name: mat.name, company: mat.company || null, count, icon: ['🥇','🥈','🥉'][idx] } : null;
+    }).filter(Boolean);
+}
+  
+  // ✅ FALLBACK: classifica locale se Firebase non disponibile
+  const stats = getMonthlyStats();
+  const counts = stats.counts || {};
+  return Object.entries(counts)
+    .sort((a,b) => b[1] - a[1])
+    .slice(0,3)
+    .map(([id, count], idx) => {
+      const mat = DB.materials.find(m => String(m.id) === String(id));
+      return mat ? { name: mat.name, company: mat.company || null, count, icon: ['🥇','🥈','🥉'][idx] } : null;
+    }).filter(Boolean);
+}
 
   // Ordina per utilizzi globali
   candidates.sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0));
@@ -1532,7 +1601,7 @@ function renderHome() {
   }
   
   // Pre-calcola i dati per il template
-  const top3 = getTop3Materials();
+  const top3 = []; 
   const commCount = getCommunityCount();
 
   return `
