@@ -1497,14 +1497,15 @@ function getTop3Materials() {
 }
   
 // ✅ NUOVA FUNZIONE: Carica la classifica globale da Firebase
-// ✅ FUNZIONE ASINCRONA: carica classifica globale da Firebase
-// ✅ FUNZIONE ASINCRONA: carica classifica globale da Firebase
+// ✅ SOSTITUISCI INTERAMENTE LA FUNZIONE refreshGlobalRankings
 async function refreshGlobalRankings() {
+  // 1. Se non c'è connessione a Firebase, usa i dati locali
   if (!window.communityDB) return getTop3Materials();
   
   const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
   
   try {
+    // 2. Query Firebase per i materiali globali
     const q = window.fbQuery(
       window.fbCollection(window.communityDB, "materials"),
       window.fbOrderBy("usageCount", "desc")
@@ -1512,8 +1513,10 @@ async function refreshGlobalRankings() {
     const snapshot = await window.fbGetDocs(q);
     const globalTop = [];
     
+    // 3. Filtra i risultati
     snapshot.forEach(doc => {
       const data = doc.data();
+      // Prendi solo i materiali usati nel mese corrente
       if (data.lastUsageMonth === currentMonth && (data.usageCount || 0) > 0) {
         globalTop.push({
           name: data.name,
@@ -1524,21 +1527,28 @@ async function refreshGlobalRankings() {
       }
     });
     
-    // Sync cache locale
-    globalTop.forEach(item => {
-      const localMat = DB.materials.find(m => m.firebaseDocId === item.firebaseDocId);
-      if (localMat) {
-        localMat.usageCount = item.count;
-        localMat.lastUsageMonth = currentMonth;
-      }
-    });
+    // 4. Se ci sono dati globali, sincronizzali e restituiscili
+    if (globalTop.length > 0) {
+      globalTop.forEach(item => {
+        const localMat = DB.materials.find(m => m.firebaseDocId === item.firebaseDocId);
+        if (localMat) {
+          localMat.usageCount = item.count;
+          localMat.lastUsageMonth = currentMonth;
+        }
+      });
+      return globalTop.slice(0, 3).map((m, idx) => ({
+        ...m,
+        icon: ['🥇','🥈','🥉'][idx]
+      }));
+    } 
     
-    return globalTop.slice(0, 3).map((m, idx) => ({
-      ...m,
-      icon: ['🥇','🥈','🥉'][idx]
-    }));
+    // ✅ FIX: Se Firebase è vuoto o non trova dati, FAI FALLBACK alla classifica locale
+    // Questo permette di vedere i propri materiali locali se non ci sono dati globali
+    console.log("⚠️ Global ranking empty, falling back to local stats...");
+    return getTop3Materials();
+
   } catch(e) {
-    console.warn("⚠️ Fallback a classifica locale:", e);
+    console.warn("⚠️ Firebase error, fallback to local stats:", e);
     return getTop3Materials();
   }
 }
