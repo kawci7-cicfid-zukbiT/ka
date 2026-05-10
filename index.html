@@ -1163,20 +1163,20 @@ function render() {
 // === ANIMAZIONI POST-RENDER PER LA HOME ===
 function initHomeAnimations() {
     if(State.tab !== 'home') return;
-    
-    // ✅ Chiama la funzione GLOBALE updateTop3UI invece di ridefinirla qui
+
+    // 1. Aggiorna Classifica Top 3
     if (window.communityDB) {
         updateTop3UI();
     }
 
-    // === RESTO DELLE ANIMAZIONI (inalterato) ===
+    // 2. Animazione Fade-in Features
     const featuresSection = document.getElementById('featuresSection');
     if(featuresSection) {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if(entry.isIntersecting) {
                     entry.target.classList.add('visible');
-                    entry.target.querySelectorAll('.feature-card').forEach((c, i) => 
+                    entry.target.querySelectorAll('.feature-card').forEach((c, i) =>
                     setTimeout(() => c.classList.add('visible'), i * 100)
                     );
                     observer.unobserve(entry.target);
@@ -1186,19 +1186,20 @@ function initHomeAnimations() {
         observer.observe(featuresSection);
     }
 
+    // 3. Inizializza Grafici e Contatori
     initDemoCharts();
     initCountUp();
-    document.querySelectorAll('.progress-fill').forEach(bar => 
+    document.querySelectorAll('.progress-fill').forEach(bar =>
     bar.style.animation = 'progressGrow 1.2s ease-out forwards'
     );
     document.querySelectorAll('.bg-drop').forEach(drop => {
-        drop.addEventListener('mouseenter', () => { 
-        drop.style.filter='blur(0.5px) brightness(1.3)'; 
-        drop.style.opacity='1'; 
+        drop.addEventListener('mouseenter', () => {
+        drop.style.filter='blur(0.5px) brightness(1.3)';
+        drop.style.opacity='1';
         });
-        drop.addEventListener('mouseleave', () => { 
-        drop.style.filter='blur(1.5px) brightness(1)'; 
-        drop.style.opacity='0.7'; 
+        drop.addEventListener('mouseleave', () => {
+        drop.style.filter='blur(1.5px) brightness(1)';
+        drop.style.opacity='0.7';
         });
     });
 }
@@ -1593,7 +1594,8 @@ async function updateTop3UI() {
   
 
 function getCommunityCount() {
-  return DB.materials.filter(m => m.isCommunity || String(m.id).startsWith('fb_')).length;
+    // Rimossa la definizione errata di funzione interna
+    return DB.materials.filter(m => m.isCommunity || String(m.id).startsWith('fb_')).length;
 }
 function renderHome() {
   var totalMats = DB.materials.length;
@@ -1773,7 +1775,7 @@ function renderHome() {
 }
   // ✅ Vota affidabilità materiale
 async function voteReliability(matId, voteType) {
-    // ✅ Controlla se ha già votato
+    // Controlla se ha già votato
     if(hasUserVoted(matId)) {
         alert("⚠️ You have already voted for this material");
         return;
@@ -1782,51 +1784,23 @@ async function voteReliability(matId, voteType) {
     var mat = DB.materials.find(m => m.id === matId);
     if(!mat) return;
     
-    // ✅ Inizializza se non esiste
+    // Inizializza voti se non esistono
     if(!mat.reliabilityVotes) mat.reliabilityVotes = { up: 0, down: 0 };
     
-    // ✅ Registra il voto nell'oggetto in memoria PRIMA di salvare
+    // Registra il voto
     if(voteType === 'up') mat.reliabilityVotes.up++;
     else mat.reliabilityVotes.down++;
     
-    // ✅ Registra il voto dell'utente in localStorage
+    // Salva nel localStorage del browser (per bloccare nuovi voti)
     recordUserVote(matId, voteType);
     
-    // ✅ Salva SUBITO nel DB locale
+    // Salva il conteggio nel DB locale (Nota: per i materiali Default questo 
+    // salvataggio potrebbe non essere persistente al refresh, ma funziona nella sessione corrente)
     DB.save();
     
-    // ✅ Sync con Firebase (opzionale, per materiali community)
-    if(window.communityDB && mat.isCommunity) {
-        try {
-            await window.fbAddDoc(
-                window.fbCollection(window.communityDB, "votes"),
-                {
-                    materialId: mat.id,
-                    voteType: voteType,
-                    timestamp: new Date().toISOString(),
-                    userId: "community_" + Math.random().toString(36).substr(2,9)
-                }
-            );
-        } catch(e) { console.warn("Vote sync failed:", e); }
-    }
-    
-    // ✅ Forza il re-render con aggiornamento immediato
+    // Aggiorna l'interfaccia
     renderContent();
-    
-    // ✅ Se la scheda è espansa, forza l'aggiornamento del badge
-    setTimeout(() => {
-        const matItem = document.querySelector(`.material-item[onclick*="${matId}"]`);
-        if(matItem && matItem.classList.contains('expanded')) {
-            const badge = matItem.querySelector('.reliability-badge');
-            if(badge) {
-                const newScore = getReliabilityScore(mat);
-                badge.textContent = newScore + '%';
-                badge.className = 'reliability-badge ' + (newScore>=70?'high':newScore>=40?'medium':'low');
-            }
-        }
-    }, 100);
 }
-  
 
 // ✅ Calcola score affidabilità (0-100)
 function getReliabilityScore(mat) {
