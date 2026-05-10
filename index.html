@@ -1332,13 +1332,18 @@ function getTop3Materials() {
   const stats = getMonthlyStats();
   const counts = stats.counts || {};
   
-  return Object.entries(counts)
-    .sort((a,b) => b[1] - a[1])
+ return Object.entries(counts)
+    .sort((a,b) => b[1] - a[1])  // Ordina per conteggio decrescente
     .slice(0,3)
-    .map(([id, count]) => {
-      // Cerca il materiale nel DB (gestisce sia numeri che stringhe fb_xxx)
+    .map(([id, count], index) => {  // ← ✅ AGGIUNGI 'index' QUI
       const mat = DB.materials.find(m => String(m.id) === String(id));
-      return mat ? { name: mat.name, company: mat.company || null, count, icon: ['🥇','🥈','🥉'][Object.keys(counts).indexOf(id)%3] } : null;
+      return mat ? { 
+        name: mat.name, 
+        company: mat.company || null, 
+        count, 
+        // ✅ USA 'index' PER ASSEGNARE LA MEDAGLIA CORRETTA
+        icon: ['🥇','🥈','🥉'][index]
+      } : null;
     })
     .filter(Boolean);
 }
@@ -1406,7 +1411,7 @@ function renderHome() {
               <div style="background:#fff;border-radius:10px;padding:0.7rem 0.5rem;text-align:center;border:1px solid var(--border);transition:all 0.2s">
                 <div style="font-size:1.4rem;margin-bottom:0.2rem">${m.icon}</div>
                 <div style="font-weight:600;font-size:0.82rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${m.name}">${m.name}</div>
-                ${m.company ? `<div style="font-size:0.68rem;color:var(--text-light);margin-top:0.2rem">🏢 ${m.company}</div>` : '<div style="height:1.1rem"></div>'}
+                ${m.company ? `<div style="font-size:0.68rem;color:var(--text-light);margin-top:0.2rem">company ${m.company}</div>` : '<div style="height:1.1rem"></div>'}
                 <div style="font-size:0.65rem;color:var(--primary);font-weight:700;margin-top:0.3rem">${m.count} uses</div>
               </div>
             `).join('')
