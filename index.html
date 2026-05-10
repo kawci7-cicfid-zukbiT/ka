@@ -2279,8 +2279,13 @@ for(var i = 0; i < DB.materials.length; i++){
   }
 }
 
-  // ✅ ORDINAMENTO ALFABETICO
-  filtered.sort(function(a, b){ return a.name.localeCompare(b.name); });
+ // ✅ ✅ ✅ ORDINAMENTO ALFABETICO (CORRETTO PER SMART SEARCH) ✅ ✅ ✅
+filtered.sort(function(a, b){
+  // Se a/b sono oggetti {mat: ...}, usa a.mat.name, altrimenti usa a.name
+  var nameA = a.mat ? a.mat.name : a.name;
+  var nameB = b.mat ? b.mat.name : b.name;
+  return nameA.localeCompare(nameB);
+});
 
   var currentUnit = getUnit();
   var currentLabel = getLabel();
