@@ -2437,8 +2437,15 @@ for(var i = 0; i < DB.materials.length; i++){
       '</div>'+
     '</div>'+
   '</div>'; // ← ✅ FINE CARD
-}
-}     
+}  // ← ✅ Chiude il FOR
+  }  // ← ✅ Chiude l'if/else
+  
+  // ✅ ✅ ✅ QUESTE RIGHE MANCAVANO ✅ ✅ ✅
+  html += '</div></div>';  // ← Chiude grid + card (aperti all'inizio)
+  return html;             // ← Restituisce il risultato
+}  // ← ✅ Chiude renderMaterials()
+
+    
   
 function onMatSearch(val){
   State.searchQuery=val||'';
