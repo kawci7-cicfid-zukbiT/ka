@@ -883,7 +883,6 @@ function getFamily(name) {
 }
 
 var DEFAULT_MATERIALS = [
-  { name: "PET (multi-temp)", wvtrValues: [{ value: 1.0, thickness: 500 }, { value: 2.0, thickness: 500 }, { value: 4.0, thickness: 500 }], otrValues: [{ value: 150, thickness: 500 }, { value: 200, thickness: 500 }, { value: 350, thickness: 500 }], validConditions: [{ temperature: 23, humidity: 50 }, { temperature: 38, humidity: 50 }, { temperature: 50, humidity: 50 }] },
   { name: "Nylon 6 (multi-temp)", wvtrValues: [{ value: 10.0, thickness: 100 }, { value: 25.0, thickness: 100 }, { value: 50.0, thickness: 100 }], otrValues: [{ value: 30, thickness: 100 }, { value: 60, thickness: 100 }, { value: 120, thickness: 100 }], validConditions: [{ temperature: 23, humidity: 60 }, { temperature: 38, humidity: 60 }, { temperature: 50, humidity: 60 }] },
   { name: "LDPE (multi-temp)", wvtrValues: [{ value: 0.8, thickness: 100 }, { value: 1.5, thickness: 100 }, { value: 2.8, thickness: 100 }], otrValues: [{ value: 800, thickness: 100 }, { value: 1200, thickness: 100 }, { value: 2000, thickness: 100 }], validConditions: [{ temperature: 20, humidity: 50 }, { temperature: 30, humidity: 50 }, { temperature: 40, humidity: 50 }] },
   { name: "EVOH (multi-temp)", wvtrValues: [{ value: 0.05, thickness: 100 }, { value: 0.15, thickness: 100 }, { value: 0.40, thickness: 100 }], otrValues: [{ value: 0.5, thickness: 100 }, { value: 1.5, thickness: 100 }, { value: 4.0, thickness: 100 }], validConditions: [{ temperature: 23, humidity: 50 }, { temperature: 38, humidity: 50 }, { temperature: 50, humidity: 50 }] },
@@ -1303,7 +1302,51 @@ async function submitToFirebaseById(matId) {
     if(btn) { btn.disabled = false; btn.innerText = m.firebaseDocId ? "🔄 Update" : "🌍 Publish"; }
   }
 }
-function renderHome() {
+// 📊 TRACCIAMENTO UTILIZZO MATERIALI & RESET MENSILE
+function getMonthlyStats() {
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  let stats = JSON.parse(localStorage.getItem('wvtr_monthly_stats') || '{}');
+  
+  // ✅ Se è cambiato mese, archivia il top3 precedente e resetta i contatori
+  if (stats.month !== currentMonth && stats.counts) {
+    stats.prevTop3 = Object.entries(stats.counts)
+      .sort((a,b) => b[1] - a[1]).slice(0,3)
+      .map(([id, count]) => ({ id: String(id), count }));
+    stats.counts = {};
+  }
+  
+  stats.month = currentMonth;
+  stats.counts = stats.counts || {};
+  return stats;
+}
+
+function recordMaterialUsage(matId) {
+  if (!matId) return;
+  let stats = getMonthlyStats();
+  stats.counts[String(matId)] = (stats.counts[String(matId)] || 0) + 1;
+  localStorage.setItem('wvtr_monthly_stats', JSON.stringify(stats));
+}
+
+function getTop3Materials() {
+  const stats = getMonthlyStats();
+  const counts = stats.counts || {};
+  
+  return Object.entries(counts)
+    .sort((a,b) => b[1] - a[1])
+    .slice(0,3)
+    .map(([id, count]) => {
+      // Cerca il materiale nel DB (gestisce sia numeri che stringhe fb_xxx)
+      const mat = DB.materials.find(m => String(m.id) === String(id));
+      return mat ? { name: mat.name, company: mat.company || null, count, icon: ['🥇','🥈','🥉'][Object.keys(counts).indexOf(id)%3] } : null;
+    })
+    .filter(Boolean);
+}
+
+function getCommunityCount() {
+  return DB.materials.filter(m => m.isCommunity || String(m.id).startsWith('fb_')).length;
+}
+  function renderHome() {
   var totalMats = DB.materials.length;
   var totalLams = DB.laminates.length;
   var multiTempMats = 0;
@@ -1409,7 +1452,38 @@ function renderHome() {
         </div>
       </div>
     </div>
+  <!-- TOP MATERIALI & COMMUNITY -->
+  <div class="card" style="margin-bottom:1rem">
+    <h2 style="display:flex;align-items:center;gap:0.4rem">
+      <span>📈 Top Materials of the Month</span>
+      <span class="badge badge-blue" style="font-size:0.65rem">Auto-updates on 1st</span>
+    </h2>
+    <p style="font-size:0.72rem;color:var(--text-light);margin-bottom:0.75rem">Most selected materials for calculations this month. Resets automatically.</p>
+    <div class="grid grid-3">
+      ${function(){
+        const top3 = getTop3Materials();
+        if(top3.length === 0) return '<div class="empty-state" style="grid-column:1/-1;padding:1.5rem"><p style="font-size:0.8rem;color:var(--text-light)">Start using materials in the Calculator to see monthly rankings</p></div>';
+        
+        return top3.map((m, i) => `
+          <div style="background:var(--bg);border-radius:12px;padding:1rem;text-align:center;transition:all 0.2s;border:1px solid var(--border)">
+            <div style="font-size:1.6rem;margin-bottom:0.4rem">${m.icon}</div>
+            <div style="font-weight:600;font-size:0.85rem;color:var(--text);margin-bottom:0.2rem">${m.name}</div>
+            ${m.company ? `<div style="font-size:0.7rem;color:var(--text-light);margin-bottom:0.3rem">🏢 ${m.company}</div>` : '<div style="height:1.1rem"></div>'}
+            <div style="font-size:0.65rem;color:var(--primary);font-weight:600;background:var(--primary-light);display:inline-block;padding:0.15rem 0.4rem;border-radius:20px">${m.count} selections</div>
+          </div>
+        `).join('');
+      }()}
+    </div>
+  </div>
 
+  <!-- COMMUNITY COUNTER -->
+  <div style="text-align:center;margin-bottom:1.5rem">
+    <button class="btn btn-outline" style="padding:0.7rem 1.2rem;font-size:0.82rem;border:2px solid var(--purple);color:var(--purple);background:var(--purple-light)" 
+            onclick="document.getElementById('nav-tabs').querySelector('[data-tab=materials]').click()">
+      🌍 <strong>${getCommunityCount()}</strong> Materials Shared by Community
+    </button>
+    <div style="font-size:0.65rem;color:var(--text-light);margin-top:0.3rem">Click to explore community contributions</div>
+  </div>
     <!-- STATS CARDS -->
     <div class="grid grid-3" style="margin-bottom:1.5rem">
       <div class="card" style="text-align:center;padding:1rem;animation:statEntrance 0.4s ease forwards;opacity:0">
@@ -1693,6 +1767,7 @@ function onTestMethodFilterChange(value) {
   renderContent(); // Ri-renderizza per applicare il filtro
 }
 function onLayerChange(i,field,val){
+  if(field === 'mid' && val) recordMaterialUsage(val);
   if(field==='mid') State.layers[i].mid=val!==''?parseFloat(val):null;
   else State.layers[i].thick=parseFloat(val)||0;
   DB.saveState(State);
