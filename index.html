@@ -1163,6 +1163,19 @@ function render() {
 function initHomeAnimations() {
   if(State.tab !== 'home') return;
   
+  // ✅ CARICA CLASSIFICA GLOBALE DA FIREBASE
+  if (window.communityDB) {
+    refreshGlobalRankings().then(() => {
+      // Ri-renderizza solo la sezione classifica se necessario
+      const top3El = document.querySelector('.grid.grid-3[style*="gap:0.6rem"]');
+      if (top3El) {
+        // Forza aggiornamento visivo
+        top3El.style.opacity = '0';
+        setTimeout(() => top3El.style.opacity = '1', 150);
+      }
+    });
+  }
+  
   // 1. Features fade-in
   const featuresSection = document.getElementById('featuresSection');
   if(featuresSection) {
@@ -1404,14 +1417,21 @@ async function recordMaterialUsage(matId) {
     if (mat && mat.firebaseDocId) {
       try {
         const ref = window.fbDoc(window.communityDB, "materials", mat.firebaseDocId);
-        // Incrementa in modo sicuro su Firestore
         await window.fbUpdateDoc(ref, {
           usageCount: window.fbIncrement(1),
           lastUsageMonth: currentMonth
         });
-        // Aggiorna cache locale immediatamente per UI reattiva
+        // Aggiorna cache locale
         mat.usageCount = (mat.usageCount || 0) + 1;
         mat.lastUsageMonth = currentMonth;
+        
+        // ✅ REFRESH IMMEDIATO DELLA CLASSIFICA GLOBALE
+        setTimeout(() => {
+          if (State.tab === 'home') {
+            refreshGlobalRankings().then(() => renderContent());
+          }
+        }, 300);
+        
       } catch(e) { console.warn("⚠️ Usage sync failed:", e); }
     }
   }
@@ -1449,7 +1469,57 @@ function getTop3Materials() {
     icon: ['🥇','🥈','🥉'][idx]
   }));
 }
-
+// ✅ NUOVA FUNZIONE: Carica la classifica globale da Firebase
+async function refreshGlobalRankings() {
+  if (!window.communityDB) return getTop3Materials(); // Fallback locale
+  
+  const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
+  
+  try {
+    // Query: materiali con usageCount > 0 nel mese corrente, ordinati decrescente
+    const q = window.fbQuery(
+      window.fbCollection(window.communityDB, "materials"),
+      window.fbOrderBy("usageCount", "desc")
+    );
+    const snapshot = await window.fbGetDocs(q);
+    
+    const globalTop = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      // Filtra solo materiali del mese corrente
+      if (data.lastUsageMonth === currentMonth && (data.usageCount || 0) > 0) {
+        globalTop.push({
+          name: data.name,
+          company: data.company || null,
+          count: data.usageCount || 0,
+          firebaseDocId: doc.id
+        });
+      }
+    });
+    
+    // Aggiorna la cache locale con i conteggi globali
+    globalTop.forEach(item => {
+      const localMat = DB.materials.find(m => 
+        m.firebaseDocId === item.firebaseDocId || 
+        String(m.id) === 'fb_' + item.firebaseDocId
+      );
+      if (localMat) {
+        localMat.usageCount = item.count;
+        localMat.lastUsageMonth = currentMonth;
+      }
+    });
+    
+    // Restituisci top 3 con medaglie
+    return globalTop.slice(0, 3).map((m, idx) => ({
+      ...m,
+      icon: ['🥇','🥈','🥉'][idx]
+    }));
+    
+  } catch(e) {
+    console.warn("⚠️ Fallback a classifica locale:", e);
+    return getTop3Materials(); // Fallback sicuro
+  }
+}
 function getCommunityCount() {
   return DB.materials.filter(m => m.isCommunity || String(m.id).startsWith('fb_')).length;
 }
