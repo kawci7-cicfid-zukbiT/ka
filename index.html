@@ -2314,25 +2314,33 @@ filtered.sort(function(a, b){
   
   if(filtered.length===0) {
     html+='<div class="empty-state"><p>No materials found'+(q?' for "'+State.searchQuery+'"':'')+'</p></div>';
-  } else {
-  for(var i=0; i<filtered.length; i++){
-  // ✅ Gestisci sia oggetti vecchi che nuovi (smart search)
-  var item = filtered[i];
-  var m = item.mat || item;
-  var matchType = item.matchType || [];
-  var highlight = item.highlight || '';
-  
-  // ✅ ✅ ✅ SPOSTA QUESTE RIGHE QUI, ALL'INIZIO ✅ ✅ ✅
-  var v = Engine.validateArrhenius(m);
-  var vals = Engine.getValues(m);  // ← Ora è definito PRIMA di essere usato!
-  var currentUnit = getUnit();     // ← Ridondante ma innocuo (già definito sopra)
-  // ✅ ✅ ✅ FINE SPOSTAMENTO ✅ ✅ ✅
-  
-  // ✅ TAGS CON VALORI E CONDIZIONI (ora vals è definito!)
-  var tags = '';
-  if(m.isMetallized) {
-    tags += '<span class="mat-tag" style="background:var(--warning-light);color:var(--warning)">⚙️ Metallized</span> ';
-  }
+    } else {
+    for(var i=0; i<filtered.length; i++){
+      // ✅ Gestisci sia oggetti vecchi che nuovi (smart search)
+      var item = filtered[i];
+      var m = item.mat || item;
+      var matchType = item.matchType || [];
+      var highlight = item.highlight || '';
+      
+      // ✅ ✅ ✅ AGGIUNGI QUESTE RIGHE QUI ✅ ✅ ✅
+      var v = Engine.validateArrhenius(m);
+      var vals = Engine.getValues(m);
+      var currentUnit = getUnit();
+      // ✅ ✅ ✅ FINE AGGIUNTA ✅ ✅ ✅
+
+      // ✅ TAGS CON VALORI E CONDIZIONI
+      var tags = '';
+      if(m.isMetallized) {
+        tags += '<span class="mat-tag" style="background:var(--warning-light);color:var(--warning)">⚙️ Metallized</span> ';
+      }
+      // Ora 'vals' è definita, quindi questo ciclo funziona:
+      for(var t=0; t<vals.length; t++){
+        var cond = m.validConditions && m.validConditions[t] ? m.validConditions[t] : {temperature: '?', humidity: '?'};
+        var val = vals[t] ? vals[t].value : '?';
+        var thick = vals[t] ? vals[t].thickness : '?';
+        tags += '<span class="mat-tag">'+getLabel()+': <strong>'+val+'</strong> '+currentUnit+' • '+thick+'µm • '+cond.temperature+'°C/'+cond.humidity+'%</span>';
+      }
+      
   for(var t=0; t<vals.length; t++){  // ← ✅ Ora funziona!
     var cond = m.validConditions && m.validConditions[t] ? m.validConditions[t] : {temperature: '?', humidity: '?'};
     var val = vals[t] ? vals[t].value : '?';
