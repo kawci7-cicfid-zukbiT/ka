@@ -981,7 +981,7 @@ updateMat: function(id, m) {
       break;
     }
   }
-} // ← ✅ VIRGOLA, non chiude l'oggetto
+}, // ← ✅ VIRGOLA, non chiude l'oggetto
   
   deleteMat: function(id) { this.materials = this.materials.filter(function(x){return x.id!==id;}); this.save(); },
   addLam: function(l) { l.id=Date.now(); this.laminates.push(l); this.save(); return l.id; },
