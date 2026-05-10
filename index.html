@@ -1354,6 +1354,10 @@ function getCommunityCount() {
     if(Engine.validateArrhenius(DB.materials[i]).valid) multiTempMats++;
   }
   
+  // Pre-calcola i dati per evitare chiamate ripetute nel template
+  const top3 = getTop3Materials();
+  const commCount = getCommunityCount();
+
   return `
     <!-- HERO ENHANCED -->
     <div class="hero">
@@ -1376,7 +1380,40 @@ function getCommunityCount() {
         </div>
       </div>
     </div>
-    
+
+    <!-- ✅ COMMUNITY & TOP MATERIALI (IN PRIMA POSIZIONE, ALLINEATI ALLA GRIGLIA) -->
+    <div class="grid grid-2" style="margin-bottom:1.5rem">
+      <!-- Riquadro Community -->
+      <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:1.5rem;background:linear-gradient(135deg, var(--purple-light), #faf5ff)">
+        <div style="font-size:2.5rem;margin-bottom:0.4rem">🌍</div>
+        <div style="font-size:2.2rem;font-weight:800;color:var(--purple)">${commCount}</div>
+        <div style="font-size:0.9rem;font-weight:600;color:var(--text);margin-bottom:0.8rem">Materials Shared by Community</div>
+        <button class="btn btn-primary" style="width:100%;background:var(--purple);border:none" 
+                onclick="document.getElementById('nav-tabs').querySelector('[data-tab=materials]').click()">
+          Explore Community Database →
+        </button>
+      </div>
+
+      <!-- Riquadro Top 3 Mensili -->
+      <div class="card" style="padding:1.25rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+          <h2 style="margin:0;font-size:0.95rem">📈 Top 3 This Month</h2>
+          <span class="badge badge-blue" style="font-size:0.65rem">Resets on 1st</span>
+        </div>
+        <div class="grid grid-3" style="gap:0.6rem;margin:0">
+          ${top3.length === 0 ? '<div style="grid-column:1/-1;text-align:center;padding:1rem;color:var(--text-light);font-size:0.78rem">Start calculating to see monthly rankings</div>' :
+            top3.map(m => `
+              <div style="background:#fff;border-radius:10px;padding:0.7rem 0.5rem;text-align:center;border:1px solid var(--border);transition:all 0.2s">
+                <div style="font-size:1.4rem;margin-bottom:0.2rem">${m.icon}</div>
+                <div style="font-weight:600;font-size:0.82rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${m.name}">${m.name}</div>
+                ${m.company ? `<div style="font-size:0.68rem;color:var(--text-light);margin-top:0.2rem">🏢 ${m.company}</div>` : '<div style="height:1.1rem"></div>'}
+                <div style="font-size:0.65rem;color:var(--primary);font-weight:700;margin-top:0.3rem">${m.count} uses</div>
+              </div>
+            `).join('')
+          }
+        </div>
+      </div>
+    </div>
 
     <!-- FEATURES SECTION -->
     <div class="features-section" id="featuresSection">
@@ -1452,38 +1489,7 @@ function getCommunityCount() {
         </div>
       </div>
     </div>
-  <!-- TOP MATERIALI & COMMUNITY -->
-  <div class="card" style="margin-bottom:1rem">
-    <h2 style="display:flex;align-items:center;gap:0.4rem">
-      <span>📈 Top Materials of the Month</span>
-      <span class="badge badge-blue" style="font-size:0.65rem">Auto-updates on 1st</span>
-    </h2>
-    <p style="font-size:0.72rem;color:var(--text-light);margin-bottom:0.75rem">Most selected materials for calculations this month. Resets automatically.</p>
-    <div class="grid grid-3">
-      ${function(){
-        const top3 = getTop3Materials();
-        if(top3.length === 0) return '<div class="empty-state" style="grid-column:1/-1;padding:1.5rem"><p style="font-size:0.8rem;color:var(--text-light)">Start using materials in the Calculator to see monthly rankings</p></div>';
-        
-        return top3.map((m, i) => `
-          <div style="background:var(--bg);border-radius:12px;padding:1rem;text-align:center;transition:all 0.2s;border:1px solid var(--border)">
-            <div style="font-size:1.6rem;margin-bottom:0.4rem">${m.icon}</div>
-            <div style="font-weight:600;font-size:0.85rem;color:var(--text);margin-bottom:0.2rem">${m.name}</div>
-            ${m.company ? `<div style="font-size:0.7rem;color:var(--text-light);margin-bottom:0.3rem">🏢 ${m.company}</div>` : '<div style="height:1.1rem"></div>'}
-            <div style="font-size:0.65rem;color:var(--primary);font-weight:600;background:var(--primary-light);display:inline-block;padding:0.15rem 0.4rem;border-radius:20px">${m.count} selections</div>
-          </div>
-        `).join('');
-      }()}
-    </div>
-  </div>
 
-  <!-- COMMUNITY COUNTER -->
-  <div style="text-align:center;margin-bottom:1.5rem">
-    <button class="btn btn-outline" style="padding:0.7rem 1.2rem;font-size:0.82rem;border:2px solid var(--purple);color:var(--purple);background:var(--purple-light)" 
-            onclick="document.getElementById('nav-tabs').querySelector('[data-tab=materials]').click()">
-      🌍 <strong>${getCommunityCount()}</strong> Materials Shared by Community
-    </button>
-    <div style="font-size:0.65rem;color:var(--text-light);margin-top:0.3rem">Click to explore community contributions</div>
-  </div>
     <!-- STATS CARDS -->
     <div class="grid grid-3" style="margin-bottom:1.5rem">
       <div class="card" style="text-align:center;padding:1rem;animation:statEntrance 0.4s ease forwards;opacity:0">
