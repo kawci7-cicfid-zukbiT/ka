@@ -197,6 +197,10 @@ select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csv
 
 /* === EXTRA UTILS === */
 .mat-testmethod{font-size:0.72rem;color:var(--text-light);padding:0.2rem 0.4rem;background:var(--primary-light);border-radius:4px;display:inline-block;margin:0.2rem 0}
+  
+   .mat-body { padding: 0.85rem; display: none; }
+    .material-item.expanded .mat-body { display: block; }
+    .mat-body-content { display: flex; flex-direction: column; gap: 0.6rem; }
 </style>
 </head>
 <body>
@@ -229,8 +233,6 @@ window.fbDoc = doc;
   window.fbDoc = doc;
   console.log("🔥 Firebase connesso!");
 
-  // ✅ Funzione: Salva materiale nella community
-  // ✅ Funzione: Salva materiale nella community (con testMethod)
 // ✅ Funzione: Salva materiale nella community (con isMetallized)
 window.saveToCommunity = async function(mat) {
   try {
@@ -281,7 +283,6 @@ window.loadFromCommunity = async function() {
       const data = doc.data();
       console.log("📦 Documento caricato:", doc.id, data.name);
 
-       // ✅ MIGRAZIONE: se c'è il vecchio campo testMethod, copialo nei nuovi
   if(data.testMethod && !data.testMethodWVTR && !data.testMethodOTR) {
     data.testMethodWVTR = data.testMethod;
     data.testMethodOTR = data.testMethod;
@@ -564,18 +565,7 @@ var DEFAULT_MATERIALS = [
   { name: "PP (multi-temp)", wvtrValues: [{ value: 0.5, thickness: 50 }, { value: 1.0, thickness: 50 }, { value: 2.0, thickness: 50 }], otrValues: [{ value: 500, thickness: 50 }, { value: 800, thickness: 50 }, { value: 1500, thickness: 50 }], validConditions: [{ temperature: 25, humidity: 60 }, { temperature: 38, humidity: 60 }, { temperature: 50, humidity: 60 }] },
   { name: "Low-Density Polyethylene (LDPE)", wvtrValues: [{ value: 1.2, thickness: 100 }], otrValues: [{ value: 7500, thickness: 100 }], validConditions: [{ temperature: 23, humidity: 50 }] },
   { name: "BOPP", wvtrValues: [{ value: 0.8, thickness: 50 }], otrValues: [{ value: 2000, thickness: 50 }], validConditions: [{ temperature: 30, humidity: 60 }] },
-  { name: "Rigid PVC", wvtrValues: [{ value: 1.5, thickness: 500 }], otrValues: [{ value: 130, thickness: 500 }], validConditions: [{ temperature: 25, humidity: 50 }] },
-  { name: "Polyester (PET)", wvtrValues: [{ value: 3.0, thickness: 500 }], otrValues: [{ value: 69, thickness: 500 }], validConditions: [{ temperature: 25, humidity: 50 }] },
-  { name: "Ethylene Vinyl Alcohol (EVOH)", wvtrValues: [{ value: 0.1, thickness: 100 }], otrValues: [{ value: 0.15, thickness: 100 }], validConditions: [{ temperature: 38, humidity: 90 }] },
-  { name: "Aluminum", wvtrValues: [{ value: 0.01, thickness: 20 }], otrValues: [{ value: 0.005, thickness: 20 }], validConditions: [{ temperature: 30, humidity: 60 }] },
-  { name: "Nylon 6", wvtrValues: [{ value: 25.0, thickness: 100 }], otrValues: [{ value: 35, thickness: 100 }], validConditions: [{ temperature: 35, humidity: 70 }] },
-  { name: "HDPE", wvtrValues: [{ value: 0.5, thickness: 1000 }], otrValues: [{ value: 2800, thickness: 1000 }], validConditions: [{ temperature: 38, humidity: 50 }] },
-  { name: "PVDC (Saran)", wvtrValues: [{ value: 0.4, thickness: 50 }], otrValues: [{ value: 6, thickness: 50 }], validConditions: [{ temperature: 38, humidity: 90 }] },
-  { name: "Silicone", wvtrValues: [{ value: 1500.0, thickness: 100 }], otrValues: [{ value: 15000, thickness: 100 }], validConditions: [{ temperature: 30, humidity: 60 }] },
-  { name: "Tyvek", wvtrValues: [{ value: 70.0, thickness: 500 }], otrValues: [{ value: 8000, thickness: 500 }], validConditions: [{ temperature: 38, humidity: 90 }] },
-  { name: "Kraft Paper", wvtrValues: [{ value: 500.0, thickness: 300 }], otrValues: [{ value: 50000, thickness: 300 }], validConditions: [{ temperature: 23, humidity: 50 }] },
-  { name: "PLA (Polylactic Acid)", wvtrValues: [{ value: 5.0, thickness: 300 }], otrValues: [{ value: 800, thickness: 300 }], validConditions: [{ temperature: 25, humidity: 50 }] },
-  { name: "Polyurethane", wvtrValues: [{ value: 0.3, thickness: 200 }], otrValues: [{ value: 100, thickness: 200 }], validConditions: [{ temperature: 30, humidity: 60 }] },
+{ name: "Polyurethane", wvtrValues: [{ value: 0.3, thickness: 200 }], otrValues: [{ value: 100, thickness: 200 }], validConditions: [{ temperature: 30, humidity: 60 }] },
   { name: "Stainless Steel", wvtrValues: [{ value: 0.0, thickness: 500 }], otrValues: [{ value: 0.0, thickness: 500 }], validConditions: [{ temperature: 30, humidity: 60 }] }
 ];
 
@@ -717,8 +707,11 @@ function setMode(mode) {
   State.mode = mode;
   Engine.mode = mode;
   
-  State.selectedTestMethod = ''; // ✅ Resetta il filtro quando cambi modalità
-  // Aggiorna i radio button
+  State.selectedTestMethod = ''; 
+  
+  State.calcResult = null;
+  State.calcError = null;
+  
   var radios = document.querySelectorAll('input[name="mode"]');
   for(var r = 0; r < radios.length; r++) {
     radios[r].checked = radios[r].value === mode;
@@ -726,9 +719,8 @@ function setMode(mode) {
   
   DB.saveState(State);
   
-  // ✅ QUESTE RIGHE SONO ESSENZIALI:
   renderNav();
-  renderContent();  // ← Ri-genera la pagina con la modalità corretta
+  renderContent();
   postNavRender();
 }
 
@@ -1209,16 +1201,19 @@ function renderCalc() {
       'Cancel'+
     '</button>'+
   '</div>';
-  // === RACCOGLI TUTTI I TEST METHOD DISPONIBILI (per il filtro) ===
-// === RACCOGLI TUTTI I TEST METHOD DISPONIBILI (per il filtro) ===
+
 var testMethods = {};
 for(var i=0; i<DB.materials.length; i++){
   var m = DB.materials[i];
   
-  // ✅ ✅ ✅ USA IL CAMPO CORRETTO IN BASE ALLA MODALITÀ ✅ ✅ ✅
-  // ✅ Mostra SOLO il test method della modalità corrente
-var currentTM = State.mode === 'wvtr' ? (m.testMethodWVTR || '') : (m.testMethodOTR || '');
+  var currentTM = State.mode === 'wvtr' ? (m.testMethodWVTR || '') : (m.testMethodOTR || '');
+  
+  if(currentTM && currentTM.trim() !== '') {
+    testMethods[currentTM.trim()] = true;
+  }
 }
+
+
 var tmOpts = '<option value="">All test methods</option>';
 var tmList = Object.keys(testMethods).sort();
 for(var t=0; t<tmList.length; t++){
@@ -1780,7 +1775,7 @@ function renderMaterials(){
   var q = State.searchQuery.toLowerCase().trim();
   var filtered = [];
   
-  // ✅ FILTRO SEMPLICE: mostra tutti i materiali (come codice vecchio funzionante)
+  // ✅ FILTRO SEMPLICE: mostra tutti i materiali
   for(var i = 0; i < DB.materials.length; i++){
     var m = DB.materials[i];
     if(!q || m.name.toLowerCase().indexOf(q) >= 0 || (m.family && m.family.toLowerCase().indexOf(q) >= 0)) {
@@ -1788,10 +1783,8 @@ function renderMaterials(){
     }
   }
 
-  // ✅ ✅ ✅ ORDINAMENTO ALFABETICO ✅ ✅ ✅
-  filtered.sort(function(a, b){
-    return a.name.localeCompare(b.name);
-  });
+  // ✅ ORDINAMENTO ALFABETICO
+  filtered.sort(function(a, b){ return a.name.localeCompare(b.name); });
 
   var currentUnit = getUnit();
   var currentLabel = getLabel();
@@ -1819,18 +1812,16 @@ function renderMaterials(){
       var vals = Engine.getValues(m);
       
       // ✅ TAGS CON VALORI E CONDIZIONI
-      // ✅ TAGS CON VALORI E CONDIZIONI + INFO METALLIZED
-var tags = '';
-if(m.isMetallized) {
-  tags += '<span class="mat-tag" style="background:var(--warning-light);color:var(--warning)"> Metallized</span> ';
-}
-// ✅ CODICE CORRETTO CON CONTROLLO:
-for(var t=0; t<vals.length; t++){
-  var cond = m.validConditions && m.validConditions[t] ? m.validConditions[t] : {temperature: '?', humidity: '?'};
-  var val = vals[t] ? vals[t].value : '?';
-  var thick = vals[t] ? vals[t].thickness : '?';
-  tags += '<span class="mat-tag">'+getLabel()+': <strong>'+val+'</strong> '+currentUnit+' • '+thick+'µm • '+cond.temperature+'°C/'+cond.humidity+'%</span>';
-}
+      var tags = '';
+      if(m.isMetallized) {
+        tags += '<span class="mat-tag" style="background:var(--warning-light);color:var(--warning)">⚙️ Metallized</span> ';
+      }
+      for(var t=0; t<vals.length; t++){
+        var cond = m.validConditions && m.validConditions[t] ? m.validConditions[t] : {temperature: '?', humidity: '?'};
+        var val = vals[t] ? vals[t].value : '?';
+        var thick = vals[t] ? vals[t].thickness : '?';
+        tags += '<span class="mat-tag">'+getLabel()+': <strong>'+val+'</strong> '+currentUnit+' • '+thick+'µm • '+cond.temperature+'°C/'+cond.humidity+'%</span>';
+      }
       
       var escName = m.name.replace(/'/g, "\\'");
       
@@ -1841,81 +1832,55 @@ for(var t=0; t<vals.length; t++){
       }
       
       // ✅ Badge per materiali community
-      // ✅ Badge per materiali community CON AUTORE
-var isComm = m.isCommunity || (m.id && String(m.id).startsWith('fb_'));
-var commBadge = '';
-if(isComm) {
-  // ✅ FORZA "Community" invece di "anonymous" o nomi vuoti
-  var author = (m.author && m.author.toLowerCase() !== 'anonymous' && m.author.trim() !== '') 
-    ? m.author 
-    : 'Community';
-  var authorDisplay = 'Community';  // ← Mostra sempre "Community" nel badge
-  commBadge = '<span class="badge badge-purple" style="margin-left:0.5rem;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Shared by: '+author+'">🌍 '+authorDisplay+'</span>';
-}
+      var isComm = m.isCommunity || (m.id && String(m.id).startsWith('fb_'));
+      var commBadge = '';
+      if(isComm) {
+        var author = (m.author && m.author.toLowerCase() !== 'anonymous' && m.author.trim() !== '') ? m.author : 'Community';
+        commBadge = '<span class="badge badge-purple" style="margin-left:0.5rem;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Shared by: '+author+'">🌍 Community</span>';
+      }
       
-      // ✅ ✅ ✅ SISTEMA AFFIDABILITÀ CON PERCENTUALE ✅ ✅ ✅
+      // ✅ SISTEMA AFFIDABILITÀ
       var relScore = getReliabilityScore(m);
       var relBadge = getReliabilityBadge(relScore);
-      
-      // Gestione voto utente
       var userVote = hasUserVoted(m.id);
       var voteDisabled = userVote ? 'disabled' : '';
       var voteOpacity = userVote ? 'opacity:0.5;cursor:not-allowed' : '';
       var upActive = userVote === 'up' ? 'style="background:var(--success-light);border-color:var(--success);color:var(--success)"' : '';
       var downActive = userVote === 'down' ? 'style="background:var(--danger-light);border-color:var(--danger);color:var(--danger)"' : '';
 
-      // Pulsanti di voto con percentuale di affidabilità
-      var voteButtons = `
-        <div style="display:flex;align-items:center;gap:0.3rem;margin-top:0.5rem;flex-wrap:wrap">
-          <span style="font-size:0.7rem;color:var(--text-light)">Reliability:</span>
-          ${relBadge}
-          <button class="btn btn-sm btn-outline" style="padding:0.2rem 0.5rem;font-size:0.7rem;${voteOpacity}"
-                  ${voteDisabled} onclick="event.stopPropagation();voteReliability(${m.id},'up')" 
-                  title="${userVote ? 'Already voted' : 'Mark as reliable'}" ${upActive}>
-            👍
-          </button>
-          <button class="btn btn-sm btn-outline" style="padding:0.2rem 0.5rem;font-size:0.7rem;${voteOpacity}"
-                  ${voteDisabled} onclick="event.stopPropagation();voteReliability(${m.id},'down')" 
-                  title="${userVote ? 'Already voted' : 'Mark as unreliable'}" ${downActive}>
-            👎
-          </button>
-        </div>
-      `;
-      
-      // ✅ CARD MATERIALE COMPLETA
+      // ✅ CARD MATERIALE CON LAYOUT MIGLIORATO (SOLO QUESTA, NESSUN ALTRO CODICE DOPO)
       html += '<div class="material-item" onclick="this.classList.toggle(\'expanded\')">'+
-        '<div class="mat-header"><h3>'+m.name+commBadge+' <span style="font-weight:400;color:var(--text-light);font-size:.7rem">['+(m.family||'?')+']</span>'+(v.valid?' <span class="badge badge-green">Arrhenius</span>':'')+'</h3>'+
-        '<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>'+
+        '<div class="mat-header">'+
+          '<h3>'+m.name+commBadge+' <span style="font-weight:400;color:var(--text-light);font-size:.7rem">['+(m.family||'?')+']</span>'+(v.valid?' <span class="badge badge-green">Arrhenius</span>':'')+'</h3>'+
+          '<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>'+
+        '</div>'+
         '<div class="mat-body">'+
-          '<div class="mat-tags">'+tags+'</div>'+
-          (function(){
-  // ✅ Legge il campo corretto in base alla modalità, con fallback al campo vecchio
-  var tm = '';
-  if(State.mode === 'wvtr') {
-    tm = m.testMethodWVTR || m.testMethod || '';
-  } else {
-    tm = m.testMethodOTR || m.testMethod || '';
-  }
-  return tm ? '<div style="margin:0.4rem 0;font-size:0.75rem"><strong>Test Method:</strong> <span class="mat-testmethod">'+tm+'</span></div>' : '';
-})() +
-        '<div class="search-tools">'+
-            '<button class="btn btn-sm btn-outline" onclick="event.stopPropagation();showMatModal('+m.id+')">Edit</button>'+
-            '<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">Delete</button>'+
-            '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Online</button>';
-      
-      // Pulsante Pubblica solo per materiali utente
-      // ✅ Pulsante Pubblica: SOLO per materiali utente NON ancora pubblicati
-// ✅ NUOVO BLOCCO: mostra sempre un pulsante per pubblicare/aggiornare
-if(isUserMat || isComm) {
-  // Mostra pulsante per pubblicare o aggiornare
-  var btnText = m.firebaseDocId ? '🔄 Update' : '🌍 Publish';
-  var btnClass = m.firebaseDocId ? 'btn-success' : 'btn-primary';
-  html += '<button class="btn btn-sm '+btnClass+'" style="margin-left:.35rem" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">'+btnText+'</button>';
-}
-// Se è un materiale default → nessun pulsante, nessun badge extra
-      
-      // ✅ Aggiungi i pulsanti di voto con percentuale
-      html += '</div>' + voteButtons + '</div></div>';
+          '<div class="mat-body-content">'+
+            '<div class="mat-tags">'+tags+'</div>'+
+            '<div class="mat-info">'+
+              (function(){
+                var tm = State.mode === 'wvtr' ? (m.testMethodWVTR || m.testMethod || '') : (m.testMethodOTR || m.testMethod || '');
+                return tm ? '<div class="mat-info-item"><strong>Test Method</strong><span class="mat-testmethod">'+tm+'</span></div>' : '';
+              })()+
+              (m.company ? '<div class="mat-info-item"><strong>Company</strong>'+m.company+'</div>' : '')+
+              (m.tdsLink ? '<div class="mat-info-item"><strong>TDS</strong><a href="'+m.tdsLink+'" target="_blank" style="color:var(--primary);text-decoration:none" onclick="event.stopPropagation()">View Sheet →</a></div>' : '')+
+            '</div>'+
+            '<div class="mat-actions">'+
+              '<button class="btn btn-sm btn-outline" onclick="event.stopPropagation();showMatModal('+m.id+')">✏️ Edit</button>'+
+              (!isUserMat ? '' : '<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">🗑️ Delete</button>')+
+              '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Online</button>'+
+              ((isUserMat || isComm) ? '<button class="btn btn-sm '+(m.firebaseDocId?'btn-success':'btn-primary')+'" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">'+(m.firebaseDocId?'🔄 Update':'🌍 Publish')+'</button>' : '')+
+            '</div>'+
+            '<div class="mat-voting">'+
+              '<span class="mat-voting-label">📊 Reliability: '+relBadge+'</span>'+
+              '<div style="display:flex;gap:0.3rem">'+
+                '<button class="btn btn-sm btn-outline" style="padding:0.2rem 0.5rem;font-size:0.7rem;'+voteOpacity+'" '+voteDisabled+' onclick="event.stopPropagation();voteReliability('+m.id+',"up")" title="'+(userVote?'Already voted':'Mark as reliable')+'" '+upActive+'>👍</button>'+
+                '<button class="btn btn-sm btn-outline" style="padding:0.2rem 0.5rem;font-size:0.7rem;'+voteOpacity+'" '+voteDisabled+' onclick="event.stopPropagation();voteReliability('+m.id+',"down")" title="'+(userVote?'Already voted':'Mark as unreliable')+'" '+downActive+'>👎</button>'+
+              '</div>'+
+            '</div>'+
+          '</div>'+
+        '</div>'+
+      '</div>'; // ← ✅ FINE CARD: nessun altro codice HTML dopo questa riga!
     }
   }
   
