@@ -1162,13 +1162,13 @@ function render() {
   // === ANIMAZIONI POST-RENDER PER LA HOME ===
 // === ANIMAZIONI POST-RENDER PER LA HOME ===
 function initHomeAnimations() {
-    if(State.tab !== 'home') return;
-
-    // 1. Aggiorna Classifica Top 3
-    if (window.communityDB) {
-        updateTop3UI();
-    });
-}
+  if(State.tab !== 'home') return;
+  
+  // 1. Aggiorna Classifica Top 3
+  if (window.communityDB) {
+    updateTop3UI(); // ✅ Chiamata corretta
+  } 
+  
   async function updateTop3UI() {
   const top3 = await refreshGlobalRankings();
   const container = document.getElementById('top3-ranking');
