@@ -1741,38 +1741,60 @@ function renderHome() {
 }
   // ✅ Vota affidabilità materiale
 async function voteReliability(matId, voteType) {
-  // ✅ Controlla se ha già votato
-  if(hasUserVoted(matId)) {
-    alert("⚠️ You have already voted for this material");
-    return;
-  }
-  
-  var mat = DB.materials.find(m => m.id === matId);
-  if(!mat) return;
-  if(!mat.reliabilityVotes) mat.reliabilityVotes = { up: 0, down: 0 };
-  if(voteType === 'up') mat.reliabilityVotes.up++;
-  else mat.reliabilityVotes.down++;
-  
-  // ✅ Registra il voto locale
-  recordUserVote(matId, voteType);
-  DB.save();
-  
-  // Sync con Firebase (opzionale)
-  if(window.communityDB && mat.isCommunity) {
-    try {
-      await window.fbAddDoc(
-        window.fbCollection(window.communityDB, "votes"),
-        {
-          materialId: mat.id,
-          voteType: voteType,
-          timestamp: new Date().toISOString(),
-          userId: "community_" + Math.random().toString(36).substr(2,9)
+    // ✅ Controlla se ha già votato
+    if(hasUserVoted(matId)) {
+        alert("⚠️ You have already voted for this material");
+        return;
+    }
+    
+    var mat = DB.materials.find(m => m.id === matId);
+    if(!mat) return;
+    
+    // ✅ Inizializza se non esiste
+    if(!mat.reliabilityVotes) mat.reliabilityVotes = { up: 0, down: 0 };
+    
+    // ✅ Registra il voto nell'oggetto in memoria PRIMA di salvare
+    if(voteType === 'up') mat.reliabilityVotes.up++;
+    else mat.reliabilityVotes.down++;
+    
+    // ✅ Registra il voto dell'utente in localStorage
+    recordUserVote(matId, voteType);
+    
+    // ✅ Salva SUBITO nel DB locale
+    DB.save();
+    
+    // ✅ Sync con Firebase (opzionale, per materiali community)
+    if(window.communityDB && mat.isCommunity) {
+        try {
+            await window.fbAddDoc(
+                window.fbCollection(window.communityDB, "votes"),
+                {
+                    materialId: mat.id,
+                    voteType: voteType,
+                    timestamp: new Date().toISOString(),
+                    userId: "community_" + Math.random().toString(36).substr(2,9)
+                }
+            );
+        } catch(e) { console.warn("Vote sync failed:", e); }
+    }
+    
+    // ✅ Forza il re-render con aggiornamento immediato
+    renderContent();
+    
+    // ✅ Se la scheda è espansa, forza l'aggiornamento del badge
+    setTimeout(() => {
+        const matItem = document.querySelector(`.material-item[onclick*="${matId}"]`);
+        if(matItem && matItem.classList.contains('expanded')) {
+            const badge = matItem.querySelector('.reliability-badge');
+            if(badge) {
+                const newScore = getReliabilityScore(mat);
+                badge.textContent = newScore + '%';
+                badge.className = 'reliability-badge ' + (newScore>=70?'high':newScore>=40?'medium':'low');
+            }
         }
-      );
-    } catch(e) { console.warn("Vote sync failed:", e); }
-  }
-  renderContent();
+    }, 100);
 }
+  
 
 // ✅ Calcola score affidabilità (0-100)
 function getReliabilityScore(mat) {
