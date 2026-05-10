@@ -960,20 +960,28 @@ var DB = {
     this.materials.push(m); this.save(); return m.id;
   },
   
-  updateMat: function(id, m) {  // ← VIRGOLA QUI, NON },
-    for(var i=0;i<this.materials.length;i++){
-      if(this.materials[i].id===id){
-        var existing = this.materials[i];
-        m.reliabilityVotes = m.reliabilityVotes || existing.reliabilityVotes || { up: 0, down: 0 };
-        m.family = m.family || getFamily(m.name);
-        m.company = m.company || existing.company || '';
-        m.tdsLink = m.tdsLink || existing.tdsLink || '';
-        this.materials[i]=Object.assign({},m,{id:id});
-        this.save();
-        break;
-      }
+updateMat: function(id, m) {
+  for(var i=0; i<this.materials.length; i++){
+    if(this.materials[i].id === id){
+      var existing = this.materials[i];
+      
+      // Mantieni i campi obbligatori
+      m.reliabilityVotes = m.reliabilityVotes !== undefined ? m.reliabilityVotes : (existing.reliabilityVotes || { up: 0, down: 0 });
+      m.family = m.family || getFamily(m.name);
+      
+      // ✅ CORREZIONE: Aggiorna i campi opzionali SOLO se sono undefined (non se sono vuoti!)
+      if(m.company === undefined) m.company = existing.company || '';
+      if(m.tdsLink === undefined) m.tdsLink = existing.tdsLink || '';
+      if(m.testMethodWVTR === undefined) m.testMethodWVTR = existing.testMethodWVTR || '';
+      if(m.testMethodOTR === undefined) m.testMethodOTR = existing.testMethodOTR || '';
+      
+      // ✅ Usa Object.assign per fondere i valori correttamente
+      this.materials[i] = Object.assign({}, existing, m, { id: id });
+      this.save();
+      break;
     }
-  },  // ← ✅ VIRGOLA, non chiude l'oggetto
+  }
+} // ← ✅ VIRGOLA, non chiude l'oggetto
   
   deleteMat: function(id) { this.materials = this.materials.filter(function(x){return x.id!==id;}); this.save(); },
   addLam: function(l) { l.id=Date.now(); this.laminates.push(l); this.save(); return l.id; },
