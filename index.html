@@ -1164,6 +1164,10 @@ function render() {
 function initHomeAnimations() {
   if(State.tab !== 'home') return;
   
+  // ✅ CARICA CLASSIFICA GLOBALE ALL'APERTURA
+  if (window.communityDB) {
+    updateTop3UI();
+  }
   // ✅ Carica classifica globale da Firebase
   if (window.communityDB) {
     refreshGlobalRankings().then(globalTop3 => {
@@ -1182,7 +1186,26 @@ function initHomeAnimations() {
       }
     });
   }
+  async function updateTop3UI() {
+  const top3 = await refreshGlobalRankings();
+  const container = document.getElementById('top3-ranking');
+  if (!container) return;
   
+  if (top3.length === 0) {
+    container.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem;color:var(--text-light);font-size:0.78rem">Start calculating to see monthly rankings</div>';
+  } else {
+    container.innerHTML = top3.map(m => `
+      <div style="background:#fff;border-radius:10px;padding:0.7rem 0.5rem;text-align:center;border:1px solid var(--border);transition:all 0.2s">
+        <div style="font-size:1.4rem;margin-bottom:0.2rem">${m.icon}</div>
+        <div style="font-weight:600;font-size:0.82rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${m.name}">${m.name}</div>
+        ${m.company ? `<div style="font-size:0.68rem;color:var(--text-light);margin-top:0.2rem">${m.company}</div>` : '<div style="height:1.1rem"></div>'}
+        <div style="font-size:0.65rem;color:var(--primary);font-weight:700;margin-top:0.3rem">${m.count} uses</div>
+      </div>
+    `).join('');
+    container.style.opacity = '0.6';
+    setTimeout(() => container.style.opacity = '1', 150);
+  }
+}
   // === RESTO DELLE ANIMAZIONI (inalterato) ===
   const featuresSection = document.getElementById('featuresSection');
   if(featuresSection) {
@@ -1417,51 +1440,37 @@ function getMonthlyStats() {
 }
 
 // ✅ SOSTITUISCI INTERAMENTE LA FUNZIONE ESISTENTE
+// ✅ TRACCIAMENTO + SYNC GLOBALE
 async function recordMaterialUsage(matId) {
   if (!matId) return;
-  
-  // 1. Fallback locale
-  let stats = getMonthlyStats();
   const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
+  
+  // 1. Aggiorna cache locale e localStorage
+  const mat = DB.materials.find(m => String(m.id) === String(matId));
+  if (mat) {
+    mat.usageCount = (mat.usageCount || 0) + 1;
+    mat.lastUsageMonth = currentMonth;
+  }
+  
+  let stats = getMonthlyStats();
   stats.month = currentMonth;
   stats.counts[String(matId)] = (stats.counts[String(matId)] || 0) + 1;
   localStorage.setItem('wvtr_monthly_stats', JSON.stringify(stats));
-
-  // 2. Sync Globale su Firebase
-  if (window.communityDB) {
-    const mat = DB.materials.find(m => String(m.id) === String(matId));
-    if (mat && mat.firebaseDocId) {
-      try {
-        const ref = window.fbDoc(window.communityDB, "materials", mat.firebaseDocId);
-        await window.fbUpdateDoc(ref, {
-          usageCount: window.fbIncrement(1),
-          lastUsageMonth: currentMonth
-        });
-        mat.usageCount = (mat.usageCount || 0) + 1;
-        mat.lastUsageMonth = currentMonth;
-        
-        // Refresh UI se siamo in Home
-        if (State.tab === 'home') {
-          setTimeout(() => {
-            refreshGlobalRankings().then(globalTop3 => {
-              const container = document.querySelector('.grid.grid-3[style*="gap:0.6rem"]');
-              if (container && globalTop3 && globalTop3.length > 0) {
-                container.innerHTML = globalTop3.map(m => `
-                  <div style="background:#fff;border-radius:10px;padding:0.7rem 0.5rem;text-align:center;border:1px solid var(--border);transition:all 0.2s">
-                    <div style="font-size:1.4rem;margin-bottom:0.2rem">${m.icon}</div>
-                    <div style="font-weight:600;font-size:0.82rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${m.name}">${m.name}</div>
-                    ${m.company ? `<div style="font-size:0.68rem;color:var(--text-light);margin-top:0.2rem">${m.company}</div>` : '<div style="height:1.1rem"></div>'}
-                    <div style="font-size:0.65rem;color:var(--primary);font-weight:700;margin-top:0.3rem">${m.count} uses</div>
-                  </div>
-                `).join('');
-                container.style.opacity = '0.6';
-                setTimeout(() => container.style.opacity = '1', 200);
-              }
-            });
-          }, 300);
-        }
-      } catch(e) { console.warn("⚠️ Usage sync failed:", e); }
-    }
+  
+  // 2. Sync Firebase (se il materiale è pubblicato)
+  if (window.communityDB && mat && mat.firebaseDocId) {
+    try {
+      const ref = window.fbDoc(window.communityDB, "materials", mat.firebaseDocId);
+      await window.fbUpdateDoc(ref, {
+        usageCount: window.fbIncrement(1),
+        lastUsageMonth: currentMonth
+      });
+    } catch(e) { console.warn("⚠️ Firebase sync failed:", e); }
+  }
+  
+  // 3. Refresh immediato della classifica se sei in Home
+  if (State.tab === 'home') {
+    setTimeout(() => updateTop3UI(), 200);
   }
 }
   // ✅ FUNZIONE ASINCRONA CORRETTA: classifica globale Firebase-first
@@ -1498,49 +1507,63 @@ function getTop3Materials() {
   
 // ✅ NUOVA FUNZIONE: Carica la classifica globale da Firebase
 // ✅ SOSTITUISCI INTERAMENTE LA FUNZIONE refreshGlobalRankings
+// ✅ FUNZIONE UNICA: classifica globale Firebase-first
+// ✅ FUNZIONE UNICA: classifica globale Firebase-first
 async function refreshGlobalRankings() {
-  // 1. Se non c'è connessione a Firebase, usa i dati locali
-  if (!window.communityDB) return getTop3Materials();
-  
   const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
   
-  try {
-    // 2. Query Firebase per i materiali globali
-    const q = window.fbQuery(
-      window.fbCollection(window.communityDB, "materials"),
-      window.fbOrderBy("usageCount", "desc")
-    );
-    const snapshot = await window.fbGetDocs(q);
-    const globalTop = [];
-    
-    // 3. Filtra i risultati
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      // Prendi solo i materiali usati nel mese corrente
-      if (data.lastUsageMonth === currentMonth && (data.usageCount || 0) > 0) {
-        globalTop.push({
-          name: data.name,
-          company: data.company || null,
-          count: data.usageCount || 0,
-          firebaseDocId: doc.id
-        });
-      }
-    });
-    
-    // 4. Se ci sono dati globali, sincronizzali e restituiscili
-    if (globalTop.length > 0) {
-      globalTop.forEach(item => {
-        const localMat = DB.materials.find(m => m.firebaseDocId === item.firebaseDocId);
-        if (localMat) {
-          localMat.usageCount = item.count;
-          localMat.lastUsageMonth = currentMonth;
+  // 1. PROVA FIREBASE
+  if (window.communityDB) {
+    try {
+      const q = window.fbQuery(
+        window.fbCollection(window.communityDB, "materials"),
+        window.fbOrderBy("usageCount", "desc")
+      );
+      const snapshot = await window.fbGetDocs(q);
+      const globalTop = [];
+      
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.lastUsageMonth === currentMonth && (data.usageCount || 0) > 0) {
+          globalTop.push({
+            name: data.name,
+            company: data.company || null,
+            count: data.usageCount || 0,
+            firebaseDocId: doc.id
+          });
         }
       });
-      return globalTop.slice(0, 3).map((m, idx) => ({
-        ...m,
-        icon: ['🥇','🥈','🥉'][idx]
-      }));
-    } 
+      
+      if (globalTop.length > 0) {
+        // Sync cache locale
+        globalTop.forEach(item => {
+          const localMat = DB.materials.find(m => m.firebaseDocId === item.firebaseDocId);
+          if (localMat) {
+            localMat.usageCount = item.count;
+            localMat.lastUsageMonth = currentMonth;
+          }
+        });
+        return globalTop.slice(0, 3).map((m, idx) => ({
+          ...m,
+          icon: ['🥇','🥈','🥉'][idx]
+        }));
+      }
+    } catch(e) {
+      console.warn("⚠️ Firebase ranking failed:", e);
+    }
+  }
+  
+  // 2. FALLBACK LOCALE (solo se Firebase è vuoto o offline)
+  const stats = getMonthlyStats();
+  const counts = stats.counts || {};
+  return Object.entries(counts)
+    .sort((a,b) => b[1] - a[1])
+    .slice(0,3)
+    .map(([id, count], idx) => {
+      const mat = DB.materials.find(m => String(m.id) === String(id));
+      return mat ? { name: mat.name, company: mat.company || null, count, icon: ['🥇','🥈','🥉'][idx] } : null;
+    }).filter(Boolean);
+}
     
     // ✅ FIX: Se Firebase è vuoto o non trova dati, FAI FALLBACK alla classifica locale
     // Questo permette di vedere i propri materiali locali se non ci sono dati globali
