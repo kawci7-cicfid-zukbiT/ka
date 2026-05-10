@@ -970,7 +970,7 @@ updateMat: function(id, m) {
       m.family = m.family || getFamily(m.name);
       
       // ✅ CORREZIONE: Aggiorna i campi opzionali SOLO se sono undefined (non se sono vuoti!)
-      if(m.company === undefined) m.company = existing.company || '';
+     if(m.company === undefined) m.company = existing.company || '';
       if(m.tdsLink === undefined) m.tdsLink = existing.tdsLink || '';
       if(m.testMethodWVTR === undefined) m.testMethodWVTR = existing.testMethodWVTR || '';
       if(m.testMethodOTR === undefined) m.testMethodOTR = existing.testMethodOTR || '';
