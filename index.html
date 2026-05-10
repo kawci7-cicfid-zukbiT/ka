@@ -642,6 +642,8 @@ var DB = {
     m.id=maxId+1; 
     m.family = m.family || getFamily(m.name);
     if(!m.reliabilityVotes) m.reliabilityVotes = { up: 0, down: 0 };
+    m.company = m.company || '';
+    m.tdsLink = m.tdsLink || '';
     this.materials.push(m); this.save(); return m.id;
   },
   
@@ -651,6 +653,8 @@ var DB = {
         var existing = this.materials[i];
         m.reliabilityVotes = m.reliabilityVotes || existing.reliabilityVotes || { up: 0, down: 0 };
         m.family = m.family || getFamily(m.name);
+        m.company = m.company || existing.company || '';
+        m.tdsLink = m.tdsLink || existing.tdsLink || '';
         this.materials[i]=Object.assign({},m,{id:id});
         this.save();
         break;
@@ -2056,7 +2060,9 @@ function showMatModal(editId) {
   Modal.open(editId ? 'Edit Material' : 'Add Material',
     '<div class="form-group"><label>Name *</label><input type="text" class="form-input" id="mf-name" value="'+(mat?mat.name:'')+'"></div>'+
     '<div class="form-group"><label>Material Family</label><select class="form-input" id="mf-family">'+familyOpts+'</select><span style="font-size:0.7rem;color:var(--text-light)">Select the polymer family for categorization</span></div>'+
-    '<div class="form-group" id="mf-testmethod-group">'+
+    '<div class="form-group"><label>Company Name</label><input type="text" class="form-input" id="mf-company" value="'+(mat?mat.company||'':'')+'" placeholder="e.g. DuPont, 3M, ..."></div>'+
+  '<div class="form-group"><label>TDS Link (optional)</label><input type="url" class="form-input" id="mf-tdslink" value="'+(mat?mat.tdsLink||'':'')+'" placeholder="https://..."></div>'+
+  '<div class="form-group" id="mf-testmethod-group">'+
       '<label style="display:flex;align-items:center;gap:0.4rem">'+
         '<span class="badge badge-blue">'+currentLabel+'</span>'+
         '<span style="font-size:0.7rem;color:var(--text-light)">Test Method for '+currentLabel+'</span>'+
@@ -2112,7 +2118,16 @@ function showMatModal(editId) {
       var isMetallized = document.getElementById('mf-metallized') ? document.getElementById('mf-metallized').checked : false;
       
       if(!name) { alert('Enter material name'); return false; }
-      
+
+      // ✅ NUOVI CAMPI: Leggi i valori dai nuovi input
+var company = document.getElementById('mf-company').value.trim();
+var tdsLink = document.getElementById('mf-tdslink').value.trim();
+
+// ✅ VALIDAZIONE OPZIONALE PER IL LINK TDS:
+if(tdsLink && !tdsLink.startsWith('http')) {
+  alert('TDS Link must start with http:// or https://');
+  return false;
+}
       var vals = document.querySelectorAll('.mf-val');
       var thicks = document.querySelectorAll('.mf-thick');
       var temps = document.querySelectorAll('.mf-temp');
@@ -2138,15 +2153,17 @@ function showMatModal(editId) {
       
       var finalFamily = family || getFamily(name);
       var matData = {
-        name: name,
-        family: finalFamily,
-        isMetallized: isMetallized,
-        testMethodWVTR: testMethodWVTR,  // ← ✅ CAMPO SEPARATO
-        testMethodOTR: testMethodOTR,    // ← ✅ CAMPO SEPARATO
-        wvtrValues: currentMode === 'wvtr' ? valuesArray : (mat ? mat.wvtrValues : []),
-        otrValues: currentMode === 'otr' ? valuesArray : (mat ? mat.otrValues : []),
-        validConditions: conditionsArray
-      };
+  name: name,
+  family: finalFamily,
+  company: company,              // ← ✅ AGGIUNTO
+  tdsLink: tdsLink,              // ← ✅ AGGIUNTO
+  isMetallized: isMetallized,
+  testMethodWVTR: testMethodWVTR,
+  testMethodOTR: testMethodOTR,
+  wvtrValues: currentMode === 'wvtr' ? valuesArray : (mat ? mat.wvtrValues : []),
+  otrValues: currentMode === 'otr' ? valuesArray : (mat ? mat.otrValues : []),
+  validConditions: conditionsArray
+};
       
       if(editId) { DB.updateMat(editId, matData); } else { DB.addMat(matData); }
       return true;
