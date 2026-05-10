@@ -1505,10 +1505,11 @@ function getTop3Materials() {
   }));
 }
   
+// ✅ FUNZIONE UNICA: classifica globale Firebase-first con fallback locale
 async function refreshGlobalRankings() {
     const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
     
-    // 1. PROVA FIREBASE
+    // 1. PROVA FIREBASE (se disponibile)
     if (window.communityDB) {
         try {
             const q = window.fbQuery(
@@ -1530,8 +1531,8 @@ async function refreshGlobalRankings() {
                 }
             });
             
+            // Se ci sono risultati globali → sync cache locale e ritorna
             if (globalTop.length > 0) {
-                // Sync cache locale
                 globalTop.forEach(item => {
                     const localMat = DB.materials.find(m => m.firebaseDocId === item.firebaseDocId);
                     if (localMat) {
@@ -1544,41 +1545,20 @@ async function refreshGlobalRankings() {
                     icon: ['🥇','🥈','🥉'][idx]
                 }));
             }
-            // ✅ Se Firebase è vuoto → FALLBACK a locale (DENTRO il try)
+            
+            // Firebase disponibile ma vuoto → fallback a locale
             console.log("⚠️ Global ranking empty, falling back to local stats...");
             return getTop3Materials();
             
         } catch(e) {
+            // Errore Firebase → fallback a locale
             console.warn("⚠️ Firebase error, fallback to local stats:", e);
-            return getTop3Materials(); // ✅ FALLBACK in caso di errore
+            return getTop3Materials();
         }
     }
     
-    // 2. FALLBACK LOCALE (se Firebase non disponibile)
+    // 2. FALLBACK LOCALE (se Firebase non è disponibile)
     return getTop3Materials();
-} // ← UNA SOLA CHIUSURA FINALE
-  
-  // 2. FALLBACK LOCALE (solo se Firebase è vuoto o offline)
-  const stats = getMonthlyStats();
-  const counts = stats.counts || {};
-  return Object.entries(counts)
-    .sort((a,b) => b[1] - a[1])
-    .slice(0,3)
-    .map(([id, count], idx) => {
-      const mat = DB.materials.find(m => String(m.id) === String(id));
-      return mat ? { name: mat.name, company: mat.company || null, count, icon: ['🥇','🥈','🥉'][idx] } : null;
-    }).filter(Boolean);
-}
-    
-    // ✅ FIX: Se Firebase è vuoto o non trova dati, FAI FALLBACK alla classifica locale
-    // Questo permette di vedere i propri materiali locali se non ci sono dati globali
-    console.log("⚠️ Global ranking empty, falling back to local stats...");
-    return getTop3Materials();
-
-  } catch(e) {
-    console.warn("⚠️ Firebase error, fallback to local stats:", e);
-    return getTop3Materials();
-  }
 }
 function getCommunityCount() {
   return DB.materials.filter(m => m.isCommunity || String(m.id).startsWith('fb_')).length;
