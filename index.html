@@ -201,6 +201,331 @@ select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csv
    .mat-body { padding: 0.85rem; display: none; }
     .material-item.expanded .mat-body { display: block; }
     .mat-body-content { display: flex; flex-direction: column; gap: 0.6rem; }
+  /* === 🎨 PROFESSIONAL MATERIAL CARD DESIGN === */
+
+/* Card container */
+.material-item {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 0.75rem;
+}
+.material-item:hover {
+  border-color: var(--primary);
+  box-shadow: 0 8px 25px rgba(37, 99, 235, 0.12);
+  transform: translateY(-2px);
+}
+.material-item.expanded {
+  border-color: var(--primary);
+  box-shadow: 0 12px 40px rgba(37, 99, 235, 0.15);
+}
+
+/* Header */
+.mat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #fff 100%);
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+}
+.mat-header h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  line-height: 1.4;
+}
+.mat-header .chevron {
+  width: 18px;
+  height: 18px;
+  color: var(--text-light);
+  transition: transform 0.25s ease, color 0.2s;
+  flex-shrink: 0;
+}
+.material-item.expanded .mat-header .chevron {
+  transform: rotate(180deg);
+  color: var(--primary);
+}
+.material-item:hover .mat-header .chevron {
+  color: var(--primary);
+}
+
+/* Badges */
+.mat-comm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: linear-gradient(135deg, var(--purple), #6d28d9);
+  color: #fff;
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 6px rgba(124, 58, 237, 0.25);
+}
+.mat-header .badge {
+  font-size: 0.65rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+/* Body */
+.mat-body {
+  display: none;
+  padding: 1.25rem;
+  background: #fff;
+}
+.material-item.expanded .mat-body {
+  display: block;
+  animation: slideDown 0.25s ease;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Content sections */
+.mat-body-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Tags row */
+.mat-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0.25rem 0;
+}
+.mat-tag {
+  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+  color: var(--text);
+  padding: 0.25rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.mat-tag:hover {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary-dark);
+}
+.mat-tag strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Info grid */
+.mat-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem 1rem;
+  padding: 0.75rem 0;
+  border-top: 1px dashed var(--border);
+  border-bottom: 1px dashed var(--border);
+}
+.mat-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.mat-info-item strong {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.mat-info-item span,
+.mat-info-item a {
+  font-size: 0.82rem;
+  color: var(--text);
+  font-weight: 500;
+}
+.mat-info-item a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.mat-info-item a:hover {
+  color: var(--primary-dark);
+  text-decoration: underline;
+}
+.mat-testmethod {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--primary-light);
+  color: var(--primary-dark);
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.mat-testmethod::before {
+  content: "📋";
+  font-size: 0.7em;
+}
+
+/* Actions bar */
+.mat-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+.mat-actions .btn {
+  font-size: 0.75rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.mat-actions .btn:hover {
+  transform: translateY(-1px);
+}
+.online-search-btn {
+  background: linear-gradient(135deg, #4285f4, #34a853);
+  color: #fff;
+  border: none;
+  padding: 0.4rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.online-search-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);
+}
+
+/* Voting section */
+.mat-voting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0 0.25rem;
+  border-top: 1px solid var(--border);
+}
+.mat-voting-label {
+  font-size: 0.72rem;
+  color: var(--text-light);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 500;
+}
+.mat-voting-buttons {
+  display: flex;
+  gap: 0.35rem;
+}
+.mat-voting-buttons .btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.15s;
+}
+.mat-voting-buttons .btn:hover:not(:disabled) {
+  transform: scale(1.08);
+}
+.mat-voting-buttons .btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Reliability badge styles */
+.reliability-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.reliability-badge.high {
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  color: #166534;
+  border: 1px solid #86efac;
+}
+.reliability-badge.medium {
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+.reliability-badge.low {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .mat-header {
+    padding: 0.85rem 1rem;
+  }
+  .mat-header h3 {
+    font-size: 0.9rem;
+    max-width: 75%;
+  }
+  .mat-body {
+    padding: 1rem;
+  }
+  .mat-info {
+    grid-template-columns: 1fr;
+  }
+  .mat-actions {
+    flex-direction: column;
+  }
+  .mat-actions .btn,
+  .online-search-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .mat-voting {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+}
+
+/* Subtle animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.mat-body-content > * {
+  animation: fadeIn 0.2s ease forwards;
+}
+.mat-body-content > *:nth-child(1) { animation-delay: 0.05s; }
+.mat-body-content > *:nth-child(2) { animation-delay: 0.1s; }
+.mat-body-content > *:nth-child(3) { animation-delay: 0.15s; }
+.mat-body-content > *:nth-child(4) { animation-delay: 0.2s; }
 </style>
 </head>
 <body>
@@ -1849,38 +2174,60 @@ function renderMaterials(){
       var downActive = userVote === 'down' ? 'style="background:var(--danger-light);border-color:var(--danger);color:var(--danger)"' : '';
 
       // ✅ CARD MATERIALE CON LAYOUT MIGLIORATO (SOLO QUESTA, NESSUN ALTRO CODICE DOPO)
-      html += '<div class="material-item" onclick="this.classList.toggle(\'expanded\')">'+
-        '<div class="mat-header">'+
-          '<h3>'+m.name+commBadge+' <span style="font-weight:400;color:var(--text-light);font-size:.7rem">['+(m.family||'?')+']</span>'+(v.valid?' <span class="badge badge-green">Arrhenius</span>':'')+'</h3>'+
-          '<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>'+
+// ✅ PROFESSIONAL MATERIAL CARD
+html += '<div class="material-item" onclick="this.classList.toggle(\'expanded\')">'+
+  
+  // === HEADER ===
+  '<div class="mat-header">'+
+    '<h3>'+
+      '<span style="color:var(--text)">'+m.name+'</span>'+
+      (isComm ? '<span class="mat-comm-badge">🌍 Community</span>' : '')+
+      '<span style="font-weight:400;color:var(--text-light);font-size:0.75rem">['+(m.family||'?')+']</span>'+
+      (v.valid ? '<span class="badge badge-green">✓ Arrhenius</span>' : '')+
+    '</h3>'+
+    '<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>'+
+  '</div>'+
+  
+  // === EXPANDABLE BODY ===
+  '<div class="mat-body">'+
+    '<div class="mat-body-content">'+
+      
+      // 1. DATA TAGS (clean chips)
+      '<div class="mat-tags">'+tags+'</div>'+
+      
+      // 2. META INFO (grid layout)
+      '<div class="mat-info">'+
+        (function(){
+          var tm = State.mode === 'wvtr' ? (m.testMethodWVTR || m.testMethod || '') : (m.testMethodOTR || m.testMethod || '');
+          return tm ? '<div class="mat-info-item"><strong>Test Standard</strong><span class="mat-testmethod">'+tm+'</span></div>' : '';
+        })()+
+        (m.company ? '<div class="mat-info-item"><strong>Supplier</strong><span>'+m.company+'</span></div>' : '')+
+        (m.tdsLink ? '<div class="mat-info-item"><strong>Documentation</strong><a href="'+m.tdsLink+'" target="_blank" onclick="event.stopPropagation()">View TDS →</a></div>' : '')+
+      '</div>'+
+      
+      // 3. ACTION BUTTONS
+      '<div class="mat-actions">'+
+        '<button class="btn btn-outline" onclick="event.stopPropagation();showMatModal('+m.id+')">✏️ Edit</button>'+
+        (isUserMat ? '<button class="btn btn-danger" onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">🗑️ Delete</button>' : '')+
+        '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Datasheet</button>'+
+        ((isUserMat || isComm) ? '<button class="btn '+(m.firebaseDocId?'btn-success':'btn-primary')+'" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">'+(m.firebaseDocId?'🔄 Update':'🌍 Publish')+'</button>' : '')+
+      '</div>'+
+      
+      // 4. RELIABILITY VOTING
+      '<div class="mat-voting">'+
+        '<div class="mat-voting-label">'+
+          '<span>Community Reliability</span>'+
+          '<span class="reliability-badge '+(relScore>=70?'high':relScore>=40?'medium':'low')+'">'+relScore+'%</span>'+
         '</div>'+
-        '<div class="mat-body">'+
-          '<div class="mat-body-content">'+
-            '<div class="mat-tags">'+tags+'</div>'+
-            '<div class="mat-info">'+
-              (function(){
-                var tm = State.mode === 'wvtr' ? (m.testMethodWVTR || m.testMethod || '') : (m.testMethodOTR || m.testMethod || '');
-                return tm ? '<div class="mat-info-item"><strong>Test Method</strong><span class="mat-testmethod">'+tm+'</span></div>' : '';
-              })()+
-              (m.company ? '<div class="mat-info-item"><strong>Company</strong>'+m.company+'</div>' : '')+
-              (m.tdsLink ? '<div class="mat-info-item"><strong>TDS</strong><a href="'+m.tdsLink+'" target="_blank" style="color:var(--primary);text-decoration:none" onclick="event.stopPropagation()">View Sheet →</a></div>' : '')+
-            '</div>'+
-            '<div class="mat-actions">'+
-              '<button class="btn btn-sm btn-outline" onclick="event.stopPropagation();showMatModal('+m.id+')">✏️ Edit</button>'+
-              (!isUserMat ? '' : '<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">🗑️ Delete</button>')+
-              '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Online</button>'+
-              ((isUserMat || isComm) ? '<button class="btn btn-sm '+(m.firebaseDocId?'btn-success':'btn-primary')+'" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">'+(m.firebaseDocId?'🔄 Update':'🌍 Publish')+'</button>' : '')+
-            '</div>'+
-            '<div class="mat-voting">'+
-              '<span class="mat-voting-label">📊 Reliability: '+relBadge+'</span>'+
-              '<div style="display:flex;gap:0.3rem">'+
-                '<button class="btn btn-sm btn-outline" style="padding:0.2rem 0.5rem;font-size:0.7rem;'+voteOpacity+'" '+voteDisabled+' onclick="event.stopPropagation();voteReliability('+m.id+',"up")" title="'+(userVote?'Already voted':'Mark as reliable')+'" '+upActive+'>👍</button>'+
-                '<button class="btn btn-sm btn-outline" style="padding:0.2rem 0.5rem;font-size:0.7rem;'+voteOpacity+'" '+voteDisabled+' onclick="event.stopPropagation();voteReliability('+m.id+',"down")" title="'+(userVote?'Already voted':'Mark as unreliable')+'" '+downActive+'>👎</button>'+
-              '</div>'+
-            '</div>'+
-          '</div>'+
+        '<div class="mat-voting-buttons">'+
+          '<button class="btn btn-outline" '+voteDisabled+' onclick="event.stopPropagation();voteReliability('+m.id+',"up")" title="Mark as reliable" '+upActive+'>👍</button>'+
+          '<button class="btn btn-outline" '+voteDisabled+' onclick="event.stopPropagation();voteReliability('+m.id+',"down")" title="Mark as unreliable" '+downActive+'>👎</button>'+
         '</div>'+
-      '</div>'; // ← ✅ FINE CARD: nessun altro codice HTML dopo questa riga!
+      '</div>'+
+      
+    '</div>'+
+  '</div>'+
+'</div>'; // ← ✅ FINE CARD: nessun altro codice HTML dopo questa riga!
     }
   }
   
