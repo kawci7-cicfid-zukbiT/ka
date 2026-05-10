@@ -1465,7 +1465,6 @@ async function recordMaterialUsage(matId) {
   }
 }
   // ✅ FUNZIONE ASINCRONA CORRETTA: classifica globale Firebase-first
-// ✅ FUNZIONE SINCRONA: classifica locale (Firebase viene gestito separatamente)
 function getTop3Materials() {
   const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
   
@@ -1497,29 +1496,8 @@ function getTop3Materials() {
   }));
 }
   
-  // ✅ FALLBACK: classifica locale se Firebase non disponibile
-  const stats = getMonthlyStats();
-  const counts = stats.counts || {};
-  return Object.entries(counts)
-    .sort((a,b) => b[1] - a[1])
-    .slice(0,3)
-    .map(([id, count], idx) => {
-      const mat = DB.materials.find(m => String(m.id) === String(id));
-      return mat ? { name: mat.name, company: mat.company || null, count, icon: ['🥇','🥈','🥉'][idx] } : null;
-    }).filter(Boolean);
-}
-
-  // Ordina per utilizzi globali
-  candidates.sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0));
-  
-  return candidates.slice(0, 3).map((mat, idx) => ({
-    name: mat.name,
-    company: mat.company || null,
-    count: mat.usageCount || 0,
-    icon: ['🥇','🥈','🥉'][idx]
-  }));
-}
 // ✅ NUOVA FUNZIONE: Carica la classifica globale da Firebase
+// ✅ FUNZIONE ASINCRONA: carica classifica globale da Firebase
 // ✅ FUNZIONE ASINCRONA: carica classifica globale da Firebase
 async function refreshGlobalRankings() {
   if (!window.communityDB) return getTop3Materials();
