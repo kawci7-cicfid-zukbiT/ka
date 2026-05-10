@@ -1461,9 +1461,11 @@ async function recordMaterialUsage(matId) {
     }
   }
 }
-  async function getTop3Materials() {
+  // ✅ FUNZIONE ASINCRONA CORRETTA: classifica globale Firebase-first
+async function getTop3Materials() {
   const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
   
+  // ✅ PRIORITÀ: Prova a leggere da Firebase se disponibile
   if (window.communityDB) {
     try {
       const q = window.fbQuery(
@@ -1480,7 +1482,7 @@ async function recordMaterialUsage(matId) {
             name: data.name,
             company: data.company || null,
             count: data.usageCount || 0,
-            firebaseDocId: doc.id  // ← IMPORTANTE per matching
+            firebaseDocId: doc.id
           });
         }
       });
@@ -1504,7 +1506,7 @@ async function recordMaterialUsage(matId) {
     }
   }
   
-  // Fallback locale sincrono
+  // ✅ FALLBACK: classifica locale se Firebase non disponibile o vuoto
   const stats = getMonthlyStats();
   const counts = stats.counts || {};
   return Object.entries(counts)
