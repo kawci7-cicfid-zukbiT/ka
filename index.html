@@ -2208,12 +2208,76 @@ function renderMaterials(){
   var filtered = [];
   
   // ✅ FILTRO SEMPLICE: mostra tutti i materiali
-  for(var i = 0; i < DB.materials.length; i++){
-    var m = DB.materials[i];
-    if(!q || m.name.toLowerCase().indexOf(q) >= 0 || (m.family && m.family.toLowerCase().indexOf(q) >= 0)) {
-      filtered.push(m);
+// ✅ ✅ ✅ RICERCA SMART AVANZATA ✅ ✅ ✅
+for(var i = 0; i < DB.materials.length; i++){
+  var m = DB.materials[i];
+  if(!q) {
+    filtered.push(m);
+    continue;
+  }
+  
+  var qLower = q.toLowerCase();
+  var found = false;
+  var matchType = [];
+  
+  // 1. Cerca nel NOME
+  if(m.name.toLowerCase().indexOf(qLower) >= 0) {
+    found = true;
+    matchType.push('name');
+  }
+  
+  // 2. Cerca nella FAMIGLIA
+  if(m.family && m.family.toLowerCase().indexOf(qLower) >= 0) {
+    found = true;
+    matchType.push('family');
+  }
+  
+  // 3. Cerca nell'AZIENDA (company)
+  if(m.company && m.company.toLowerCase().indexOf(qLower) >= 0) {
+    found = true;
+    matchType.push('company');
+  }
+  
+  // 4. Cerca nel TEST METHOD (WVTR o OTR in base alla modalità)
+  var tm = State.mode === 'wvtr' ? (m.testMethodWVTR || m.testMethod || '') : (m.testMethodOTR || m.testMethod || '');
+  if(tm && tm.toLowerCase().indexOf(qLower) >= 0) {
+    found = true;
+    matchType.push('testmethod');
+  }
+  
+  // 5. Cerca nei VALORI WVTR/OTR (cerca il numero nel testo)
+  var vals = State.mode === 'wvtr' ? m.wvtrValues : m.otrValues;
+  if(vals) {
+    for(var v = 0; v < vals.length; v++) {
+      var valStr = String(vals[v].value);
+      if(valStr.indexOf(q) >= 0 || valStr.toLowerCase().indexOf(qLower) >= 0) {
+        found = true;
+        matchType.push('value');
+        break;
+      }
     }
   }
+  
+  // 6. Cerca nelle CONDIZIONI (temperatura/umidità)
+  if(m.validConditions) {
+    for(var c = 0; c < m.validConditions.length; c++) {
+      var condStr = m.validConditions[c].temperature + '/' + m.validConditions[c].humidity;
+      if(condStr.indexOf(q) >= 0) {
+        found = true;
+        matchType.push('condition');
+        break;
+      }
+    }
+  }
+  
+  if(found) {
+    filtered.push({
+      mat: m,
+      matchType: matchType,  // Salva quali campi hanno matchato
+      highlight: q  // Salva la query per evidenziare
+    });
+  }
+}
 
   // ✅ ORDINAMENTO ALFABETICO
   filtered.sort(function(a, b){ return a.name.localeCompare(b.name); });
@@ -2238,108 +2302,140 @@ function renderMaterials(){
   if(filtered.length===0) {
     html+='<div class="empty-state"><p>No materials found'+(q?' for "'+State.searchQuery+'"':'')+'</p></div>';
   } else {
-    for(var i=0; i<filtered.length; i++){
-      var m = filtered[i];
-      var v = Engine.validateArrhenius(m);
-      var vals = Engine.getValues(m);
-      
-      // ✅ TAGS CON VALORI E CONDIZIONI
-      var tags = '';
-      if(m.isMetallized) {
-        tags += '<span class="mat-tag" style="background:var(--warning-light);color:var(--warning)">⚙️ Metallized</span> ';
-      }
-      for(var t=0; t<vals.length; t++){
-        var cond = m.validConditions && m.validConditions[t] ? m.validConditions[t] : {temperature: '?', humidity: '?'};
-        var val = vals[t] ? vals[t].value : '?';
-        var thick = vals[t] ? vals[t].thickness : '?';
-        tags += '<span class="mat-tag">'+getLabel()+': <strong>'+val+'</strong> '+currentUnit+' • '+thick+'µm • '+cond.temperature+'°C/'+cond.humidity+'%</span>';
-      }
-      
-      var escName = m.name.replace(/'/g, "\\'");
-      
-      // ✅ Controlla se è materiale utente (non default)
-      var isUserMat = true;
-      for(var di=0; di<DEFAULT_MATERIALS.length; di++) {
-        if(DEFAULT_MATERIALS[di].id === m.id) { isUserMat = false; break; }
-      }
-      
-      // ✅ Badge per materiali community
-      var isComm = m.isCommunity || (m.id && String(m.id).startsWith('fb_'));
-      var commBadge = '';
-      if(isComm) {
-        var author = (m.author && m.author.toLowerCase() !== 'anonymous' && m.author.trim() !== '') ? m.author : 'Community';
-        commBadge = '<span class="badge badge-purple" style="margin-left:0.5rem;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Shared by: '+author+'">🌍 Community</span>';
-      }
-      
-      // ✅ SISTEMA AFFIDABILITÀ
-      var relScore = getReliabilityScore(m);
-      var relBadge = getReliabilityBadge(relScore);
-      var userVote = hasUserVoted(m.id);
-      var voteDisabled = userVote ? 'disabled' : '';
-      var voteOpacity = userVote ? 'opacity:0.5;cursor:not-allowed' : '';
-      var upActive = userVote === 'up' ? 'style="background:var(--success-light);border-color:var(--success);color:var(--success)"' : '';
-      var downActive = userVote === 'down' ? 'style="background:var(--danger-light);border-color:var(--danger);color:var(--danger)"' : '';
-
-      // ✅ CARD MATERIALE CON LAYOUT MIGLIORATO (SOLO QUESTA, NESSUN ALTRO CODICE DOPO)
-// ✅ PROFESSIONAL MATERIAL CARD
-html += '<div class="material-item" onclick="this.classList.toggle(\'expanded\')">'+
+  for(var i=0; i<filtered.length; i++){
+  // ✅ Gestisci sia oggetti vecchi che nuovi (smart search)
+  var item = filtered[i];
+  var m = item.mat || item;
+  var matchType = item.matchType || [];
+  var highlight = item.highlight || '';
   
-  // === HEADER ===
-  '<div class="mat-header">'+
-    '<h3>'+
-      '<span style="color:var(--text)">'+m.name+'</span>'+
-      (isComm ? '<span class="mat-comm-badge">🌍 Community</span>' : '')+
-      '<span style="font-weight:400;color:var(--text-light);font-size:0.75rem">['+(m.family||'?')+']</span>'+
-      (v.valid ? '<span class="badge badge-green">✓ Arrhenius</span>' : '')+
-    '</h3>'+
-    '<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>'+
-  '</div>'+
+  // ✅ Variabili necessarie (assicurati che siano definite)
+  var v = Engine.validateArrhenius(m);
+  var vals = Engine.getValues(m);
+  var currentUnit = getUnit();
   
-  // === EXPANDABLE BODY ===
-  '<div class="mat-body">'+
-    '<div class="mat-body-content">'+
-      
-      // 1. DATA TAGS (clean chips)
-      '<div class="mat-tags">'+tags+'</div>'+
-      
-      // 2. META INFO (grid layout)
-      '<div class="mat-info">'+
-        (function(){
-          var tm = State.mode === 'wvtr' ? (m.testMethodWVTR || m.testMethod || '') : (m.testMethodOTR || m.testMethod || '');
-          return tm ? '<div class="mat-info-item"><strong>Test Standard</strong><span class="mat-testmethod">'+tm+'</span></div>' : '';
-        })()+
-        (m.company ? '<div class="mat-info-item"><strong>Supplier</strong><span>'+m.company+'</span></div>' : '')+
-        (m.tdsLink ? '<div class="mat-info-item"><strong>Documentation</strong><a href="'+m.tdsLink+'" target="_blank" onclick="event.stopPropagation()">View TDS →</a></div>' : '')+
-      '</div>'+
-      
-      // 3. ACTION BUTTONS
-      '<div class="mat-actions">'+
-        '<button class="btn btn-outline" onclick="event.stopPropagation();showMatModal('+m.id+')">✏️ Edit</button>'+
-        (isUserMat ? '<button class="btn btn-danger" onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">🗑️ Delete</button>' : '')+
-        '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Datasheet</button>'+
-        ((isUserMat || isComm) ? '<button class="btn '+(m.firebaseDocId?'btn-success':'btn-primary')+'" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">'+(m.firebaseDocId?'🔄 Update':'🌍 Publish')+'</button>' : '')+
-      '</div>'+
-      
-      // 4. RELIABILITY VOTING
-      '<div class="mat-voting">'+
-        '<div class="mat-voting-label">'+
-          '<span>Community Reliability</span>'+
-          '<span class="reliability-badge '+(relScore>=70?'high':relScore>=40?'medium':'low')+'">'+relScore+'%</span>'+
-        '</div>'+
-        '<div class="mat-voting-buttons">'+
-          '<button class="btn btn-outline" '+voteDisabled+' onclick="event.stopPropagation();voteReliability('+m.id+',"up")" title="Mark as reliable" '+upActive+'>👍</button>'+
-          '<button class="btn btn-outline" '+voteDisabled+' onclick="event.stopPropagation();voteReliability('+m.id+',"down")" title="Mark as unreliable" '+downActive+'>👎</button>'+
-        '</div>'+
-      '</div>'+
-      
-    '</div>'+
-  '</div>'+
-'</div>'; // ← ✅ FINE CARD: nessun altro codice HTML dopo questa riga!
-    }
+  // ✅ TAGS CON VALORI E CONDIZIONI
+  var tags = '';
+  if(m.isMetallized) {
+    tags += '<span class="mat-tag" style="background:var(--warning-light);color:var(--warning)">⚙️ Metallized</span> ';
+  }
+  for(var t=0; t<vals.length; t++){
+    var cond = m.validConditions && m.validConditions[t] ? m.validConditions[t] : {temperature: '?', humidity: '?'};
+    var val = vals[t] ? vals[t].value : '?';
+    var thick = vals[t] ? vals[t].thickness : '?';
+    tags += '<span class="mat-tag">'+getLabel()+': <strong>'+val+'</strong> '+currentUnit+' • '+thick+'µm • '+cond.temperature+'°C/'+cond.humidity+'%</span>';
   }
   
-  html += '</div></div>';
-  return html;
+  var escName = m.name.replace(/'/g, "\\'");
+  
+  // ✅ Controlla se è materiale utente (non default)
+  var isUserMat = true;
+  for(var di=0; di<DEFAULT_MATERIALS.length; di++) {
+    if(DEFAULT_MATERIALS[di].id === m.id) { isUserMat = false; break; }
+  }
+  
+  // ✅ Badge per materiali community
+  var isComm = m.isCommunity || (m.id && String(m.id).startsWith('fb_'));
+  var commBadge = '';
+  if(isComm) {
+    var author = (m.author && m.author.toLowerCase() !== 'anonymous' && m.author.trim() !== '') ? m.author : 'Community';
+    commBadge = '<span class="badge badge-purple" style="margin-left:0.5rem;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Shared by: '+author+'">🌍 Community</span>';
+  }
+  
+  // ✅ SISTEMA AFFIDABILITÀ
+  var relScore = getReliabilityScore(m);
+  var relBadge = getReliabilityBadge(relScore);
+  var userVote = hasUserVoted(m.id);
+  var voteDisabled = userVote ? 'disabled' : '';
+  var voteOpacity = userVote ? 'opacity:0.5;cursor:not-allowed' : '';
+  var upActive = userVote === 'up' ? 'style="background:var(--success-light);border-color:var(--success);color:var(--success)"' : '';
+  var downActive = userVote === 'down' ? 'style="background:var(--danger-light);border-color:var(--danger);color:var(--danger)"' : '';
+
+  // ✅ ✅ ✅ SMART SEARCH: BADGE E HIGHLIGHT ✅ ✅ ✅
+  
+  // 1. Genera badge che mostrano DOVE è stato trovato il match
+  var searchBadges = '';
+  if(State.searchQuery && matchType.length > 0) {
+    var badgeColors = {
+      'name': 'badge-blue', 'company': 'badge-purple', 'testmethod': 'badge-green',
+      'value': 'badge-yellow', 'family': 'badge-blue', 'condition': 'badge-purple'
+    };
+    var badgeLabels = {
+      'name': '📝 Name', 'company': '🏢 Supplier', 'testmethod': '📋 Method',
+      'value': '📊 Value', 'family': '🔖 Family', 'condition': '🌡️ Cond.'
+    };
+    searchBadges = '<div style="display:flex;gap:0.3rem;flex-wrap:wrap;margin-bottom:0.4rem">';
+    for(var bt=0; bt<matchType.length; bt++) {
+      var type = matchType[bt];
+      searchBadges += '<span class="badge '+(badgeColors[type]||'badge-blue')+'" style="font-size:0.65rem">'+badgeLabels[type]+'</span>';
+    }
+    searchBadges += '</div>';
+  }
+  
+  // 2. Evidenzia il testo cercato nel nome
+  var displayName = m.name;
+  if(highlight && m.name.toLowerCase().indexOf(highlight.toLowerCase()) >= 0) {
+    var regex = new RegExp('('+highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')+')', 'gi');
+    displayName = m.name.replace(regex, '<mark style="background:var(--warning-light);color:var(--warning);padding:0 0.2rem;border-radius:3px;font-weight:600">$1</mark>');
+  }
+
+  // ✅ PROFESSIONAL MATERIAL CARD (con displayName e searchBadges)
+  html += '<div class="material-item" onclick="this.classList.toggle(\'expanded\')">'+
+    
+    // === HEADER ===
+    '<div class="mat-header">'+
+      '<h3>'+
+        '<span style="color:var(--text)">'+displayName+'</span>'+  // ← USA displayName QUI
+        (isComm ? '<span class="mat-comm-badge">🌍 Community</span>' : '')+
+        '<span style="font-weight:400;color:var(--text-light);font-size:0.75rem">['+(m.family||'?')+']</span>'+
+        (v.valid ? '<span class="badge badge-green">✓ Arrhenius</span>' : '')+
+      '</h3>'+
+      '<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>'+
+    '</div>'+
+    
+    // === EXPANDABLE BODY ===
+    '<div class="mat-body">'+
+      '<div class="mat-body-content">'+
+        
+        // 0. SEARCH BADGES (solo se c'è una ricerca attiva)
+        (searchBadges ? searchBadges : '')+
+        
+        // 1. DATA TAGS
+        '<div class="mat-tags">'+tags+'</div>'+
+        
+        // 2. META INFO
+        '<div class="mat-info">'+
+          (function(){
+            var tm = State.mode === 'wvtr' ? (m.testMethodWVTR || m.testMethod || '') : (m.testMethodOTR || m.testMethod || '');
+            return tm ? '<div class="mat-info-item"><strong>Test Standard</strong><span class="mat-testmethod">'+tm+'</span></div>' : '';
+          })()+
+          (m.company ? '<div class="mat-info-item"><strong>Supplier</strong><span>'+m.company+'</span></div>' : '')+
+          (m.tdsLink ? '<div class="mat-info-item"><strong>Documentation</strong><a href="'+m.tdsLink+'" target="_blank" onclick="event.stopPropagation()">View TDS →</a></div>' : '')+
+        '</div>'+
+        
+        // 3. ACTION BUTTONS
+        '<div class="mat-actions">'+
+          '<button class="btn btn-outline" onclick="event.stopPropagation();showMatModal('+m.id+')">✏️ Edit</button>'+
+          (isUserMat ? '<button class="btn btn-danger" onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">🗑️ Delete</button>' : '')+
+          '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Datasheet</button>'+
+          ((isUserMat || isComm) ? '<button class="btn '+(m.firebaseDocId?'btn-success':'btn-primary')+'" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">'+(m.firebaseDocId?'🔄 Update':'🌍 Publish')+'</button>' : '')+
+        '</div>'+
+        
+        // 4. RELIABILITY VOTING
+        '<div class="mat-voting">'+
+          '<div class="mat-voting-label">'+
+            '<span>Community Reliability</span>'+
+            '<span class="reliability-badge '+(relScore>=70?'high':relScore>=40?'medium':'low')+'">'+relScore+'%</span>'+
+          '</div>'+
+          '<div class="mat-voting-buttons">'+
+            '<button class="btn btn-outline" '+voteDisabled+' onclick="event.stopPropagation();voteReliability('+m.id+',"up")" title="Mark as reliable" '+upActive+'>👍</button>'+
+            '<button class="btn btn-outline" '+voteDisabled+' onclick="event.stopPropagation();voteReliability('+m.id+',"down")" title="Mark as unreliable" '+downActive+'>👎</button>'+
+          '</div>'+
+        '</div>'+
+        
+      '</div>'+
+    '</div>'+
+  '</div>'; // ← ✅ FINE CARD
 }
   
 function onMatSearch(val){
