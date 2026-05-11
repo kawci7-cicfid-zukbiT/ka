@@ -1744,7 +1744,7 @@ function renderHome() {
 async function voteReliability(matId, voteType) {
     var matIdStr = String(matId);
     
-    // ✅ Blocca se ha già votato in questo browser
+    // ✅ Blocca immediatamente se ha già votato
     if(hasUserVoted(matIdStr)) {
         alert("⚠️ You have already voted for this material");
         return;
@@ -1753,32 +1753,25 @@ async function voteReliability(matId, voteType) {
     var mat = DB.materials.find(m => String(m.id) === matIdStr);
     if(!mat) return;
     
-    // Inizializza contatori locali
+    // Inizializza voti se mancano
     if(!mat.reliabilityVotes) mat.reliabilityVotes = { up: 0, down: 0 };
     if(voteType === 'up') mat.reliabilityVotes.up++;
     else mat.reliabilityVotes.down++;
     
-    // Salva il blocco locale
+    // ✅ 1. Aggiorna subito localStorage e UI (nessun blocco async)
     recordUserVote(matIdStr, voteType);
-    
-    // ✅ SYNC CON FIREBASE (solo se il materiale è pubblicato)
+    DB.save();
+    renderContent(); // ← Rigenera immediatamente la tab Materiali
+     // ✅ 2. Sync Firebase in background (non blocca l'interfaccia)
     if(mat.firebaseDocId && window.communityDB) {
         try {
             const ref = window.fbDoc(window.communityDB, "materials", mat.firebaseDocId);
             const updateData = {};
-            // Firestore incrementa in modo sicuro anche con accessi simultanei
             if(voteType === 'up') updateData["reliabilityVotes.up"] = window.fbIncrement(1);
             else updateData["reliabilityVotes.down"] = window.fbIncrement(1);
-            
             await window.fbUpdateDoc(ref, updateData);
-        } catch(e) {
-            console.warn("⚠️ Firebase vote sync failed:", e);
-        }
+        } catch(e) { console.warn("⚠️ Firebase vote sync failed:", e); }
     }
-    
-    // Salva fallback locale e aggiorna UI
-    DB.save();
-    renderContent();
 }
 
 // ✅ Calcola score affidabilità (0-100)
@@ -1799,15 +1792,19 @@ function getReliabilityBadge(score) {
 }
   // ✅ Controlla se l'utente ha già votato questo materiale
 function hasUserVoted(matId) {
-    var votes = JSON.parse(localStorage.getItem('wvtr_user_votes') || '{}');
-    return votes[String(matId)] || null; // 'up', 'down' o null
+    try {
+        var votes = JSON.parse(localStorage.getItem('wvtr_user_votes') || '{}');
+        return votes[String(matId)] || null;
+    } catch(e) { return null; }
 }
 
 // ✅ Registra il voto dell'utente in localStorage
 function recordUserVote(matId, voteType) {
-    var votes = JSON.parse(localStorage.getItem('wvtr_user_votes') || '{}');
-    votes[String(matId)] = voteType;
-    localStorage.setItem('wvtr_user_votes', JSON.stringify(votes));
+    try {
+        var votes = JSON.parse(localStorage.getItem('wvtr_user_votes') || '{}');
+        votes[String(matId)] = voteType;
+        localStorage.setItem('wvtr_user_votes', JSON.stringify(votes));
+    } catch(e) { console.warn('LocalStorage error:', e); }
 }
 
 function renderCalc() {
@@ -2868,8 +2865,8 @@ filtered.sort(function(a, b){
             '<span class="reliability-badge '+(relScore>=70?'high':relScore>=40?'medium':'low')+'">'+relScore+'%</span>'+
           '</div>'+
          '<div class="mat-voting-buttons">'+
-'<button class="btn btn-outline" '+voteDisabled+' onclick="event.stopPropagation();voteReliability(\''+m.id+'\',"up")" title="Mark as reliable" '+upActive+'>👍</button>'+
-'<button class="btn btn-outline" '+voteDisabled+' onclick="event.stopPropagation();voteReliability(\''+m.id+'\',"down")" title="Mark as unreliable" '+downActive+'>👎</button>'+
+'<button class="btn btn-outline" '+voteDisabled+' onclick="event.stopPropagation();voteReliability(\''+String(m.id)+'\',\'up\')" title="Mark as reliable" '+upActive+'>👍</button>'+
+'<button class="btn btn-outline" '+voteDisabled+' onclick="event.stopPropagation();voteReliability(\''+String(m.id)+'\',\'down\')" title="Mark as unreliable" '+downActive+'>👎</button>'+
 '</div>'+
         '</div>'+
         
