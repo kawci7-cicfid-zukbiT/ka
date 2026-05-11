@@ -1159,66 +1159,69 @@ function render() {
 }
   // === ANIMAZIONI POST-RENDER PER LA HOME ===
 // === ANIMAZIONI POST-RENDER PER LA HOME ===
+// === ANIMAZIONI POST-RENDER PER LA HOME ===
 function initHomeAnimations() {
-  if(State.tab !== 'home') return;
-  
-  // 1. Aggiorna Classifica Top 3
-  if (window.communityDB) {
-    updateTop3UI(); // ✅ Chiamata corretta
-  } 
-  
-  async function updateTop3UI() {
-  const top3 = await refreshGlobalRankings();
-  const container = document.getElementById('top3-ranking');
-  if (!container) return;
-  
-  if (top3.length === 0) {
-    container.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem;color:var(--text-light);font-size:0.78rem">Start calculating to see monthly rankings</div>';
-  } else {
-    container.innerHTML = top3.map(m => `
-      <div style="background:#fff;border-radius:10px;padding:0.7rem 0.5rem;text-align:center;border:1px solid var(--border);transition:all 0.2s">
-        <div style="font-size:1.4rem;margin-bottom:0.2rem">${m.icon}</div>
-        <div style="font-weight:600;font-size:0.82rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${m.name}">${m.name}</div>
-        ${m.company ? `<div style="font-size:0.68rem;color:var(--text-light);margin-top:0.2rem">${m.company}</div>` : '<div style="height:1.1rem"></div>'}
-        <div style="font-size:0.65rem;color:var(--primary);font-weight:700;margin-top:0.3rem">${m.count} uses</div>
-      </div>
-    `).join('');
-    container.style.opacity = '0.6';
-    setTimeout(() => container.style.opacity = '1', 150);
-  }
-}
-  // === RESTO DELLE ANIMAZIONI (inalterato) ===
-  const featuresSection = document.getElementById('featuresSection');
-  if(featuresSection) {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if(entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          entry.target.querySelectorAll('.feature-card').forEach((c, i) => 
-            setTimeout(() => c.classList.add('visible'), i * 100)
-          );
-          observer.unobserve(entry.target);
+    if(State.tab !== 'home') return;
+    // 1. Aggiorna Classifica Top 3
+    if (window.communityDB) {
+        updateTop3UI();
+    }
+    
+    // Funzione interna aggiornata
+    async function updateTop3UI() {
+        const top3 = await refreshGlobalRankings();
+        const container = document.getElementById('top3-ranking');
+        if (!container) return;
+        
+        if (top3.length === 0) {
+            container.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--text-light);font-size:0.78rem">Start calculating to see monthly rankings</div>';
+        } else {
+            // ✅ NUOVO DESIGN: Lista verticale (3 righe) - NO contatore
+            container.innerHTML = top3.map(m => `
+            <div style="background:#fff;border-radius:10px;padding:0.7rem 0.5rem;display:flex;align-items:center;gap:0.7rem;border:1px solid var(--border);transition:all 0.2s">
+                <div style="font-size:1.4rem;flex-shrink:0;">${m.icon}</div>
+                <div style="text-align:left;overflow:hidden;">
+                    <div style="font-weight:600;font-size:0.82rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${m.name}">${m.name}</div>
+                    ${m.company ? `<div style="font-size:0.68rem;color:var(--text-light);margin-top:0.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.company}</div>` : '<div style="height:1rem;"></div>'}
+                </div>
+            </div>
+            `).join('');
+            container.style.opacity = '0.6';
+            setTimeout(() => container.style.opacity = '1', 150);
         }
-      });
-    }, { threshold: 0.1 });
-    observer.observe(featuresSection);
-  }
-  
-  initDemoCharts();
-  initCountUp();
-  document.querySelectorAll('.progress-fill').forEach(bar => 
-    bar.style.animation = 'progressGrow 1.2s ease-out forwards'
-  );
-  document.querySelectorAll('.bg-drop').forEach(drop => {
-    drop.addEventListener('mouseenter', () => { 
-      drop.style.filter='blur(0.5px) brightness(1.3)'; 
-      drop.style.opacity='1'; 
+    }
+    // Rendi accessibile globalmente per il refresh da recordMaterialUsage
+    window.updateTop3UI = updateTop3UI;
+
+    // === RESTO DELLE ANIMAZIONI ===
+    const featuresSection = document.getElementById('featuresSection');
+    if(featuresSection) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if(entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    entry.target.querySelectorAll('.feature-card').forEach((c, i) =>
+                        setTimeout(() => c.classList.add('visible'), i * 100)
+                    );
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+        observer.observe(featuresSection);
+    }
+    initDemoCharts();
+    initCountUp();
+    document.querySelectorAll('.progress-fill').forEach(bar =>
+        bar.style.animation = 'progressGrow 1.2s ease-out forwards'
+    );
+    document.querySelectorAll('.bg-drop').forEach(drop => {
+        drop.addEventListener('mouseenter', () => {
+            drop.style.filter='blur(0.5px) brightness(1.3)'; drop.style.opacity='1';
+        });
+        drop.addEventListener('mouseleave', () => {
+            drop.style.filter='blur(1.5px) brightness(1)'; drop.style.opacity='0.7';
+        });
     });
-    drop.addEventListener('mouseleave', () => { 
-      drop.style.filter='blur(1.5px) brightness(1)'; 
-      drop.style.opacity='0.7'; 
-    });
-  });
 }
   
 function initDemoCharts() {
@@ -1426,37 +1429,42 @@ function getMonthlyStats() {
 
 // ✅ FUNZIONE: Registra utilizzo e aggiorna UI
 // ✅ FUNZIONE: Registra utilizzo e aggiorna UI (Sincronizzato con Firebase)
+// ✅ FUNZIONE: Registra utilizzo e aggiorna UI (SOLO SINGLE LAYER)
 async function recordMaterialUsage(matId) {
     if (!matId) return;
+    
+    // ✅ CONTROLLA: Conta SOLO se il laminato ha esattamente 1 layer
+    var activeLayers = State.layers.filter(l => l.mid !== null);
+    if (activeLayers.length !== 1) return; // Ignora laminati multi-strato
+
     const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
     
-    // 1. Aggiorna locale (per reattività immediata)
+    // 1. Aggiorna locale
     const mat = DB.materials.find(m => String(m.id) === String(matId));
     if (mat) {
         mat.usageCount = (mat.usageCount || 0) + 1;
         mat.lastUsageMonth = currentMonth;
     }
     
-    // 2. ✅ SYNC CON FIREBASE (Incremento globale sicuro)
+    // 2. Sync Firebase (se pubblicato)
     if (window.communityDB && mat && mat.firebaseDocId) {
         try {
             const ref = window.fbDoc(window.communityDB, "materials", mat.firebaseDocId);
-            // ✅ Aggiorna il contatore e il mese corrente su Firebase
             await window.fbUpdateDoc(ref, {
                 usageCount: window.fbIncrement(1),
                 lastUsageMonth: currentMonth
             });
-        } catch(e) { console.warn("⚠️ Firebase usage sync failed:", e); }
+        } catch(e) { console.warn("⚠️ Firebase sync failed:", e); }
     }
     
-    // 3. Aggiorna classifica UI
+    // 3. Aggiorna classifica se siamo in Home
     if (State.tab === 'home') {
         setTimeout(() => {
             if (typeof updateTop3UI === 'function') updateTop3UI();
         }, 200);
     }
 }
-
+  
 // ✅ FUNZIONE: Calcola Top 3 (Locale)
 function getTop3Materials() {
   const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
@@ -1616,26 +1624,36 @@ function renderHome() {
         </button>
       </div>
 
-      <!-- Riquadro Top 3 Mensili -->
-      <div class="card" style="padding:1.25rem">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
-          <h2 style="margin:0;font-size:0.95rem">📈 Top 3 This Month</h2>
-          <span class="badge badge-blue" style="font-size:0.65rem">Resets on 1st</span>
+      <!-- Riquadro Top 3 Mensili (Lista Verticale) -->
+<div class="card" style="padding:1.25rem">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+    <h2 style="margin:0;font-size:0.95rem">📈 Top 3 This Month</h2>
+    <span class="badge badge-blue" style="font-size:0.65rem">Resets on 1st</span>
+  </div>
+  
+  <!-- CONTENITORE VERTICALE (Flex Column) -->
+  <div id="top3-ranking" style="display:flex;flex-direction:column;gap:0.6rem;margin:0">
+    ${top3.length === 0 ? '<div style="text-align:center;padding:1rem;color:var(--text-light);font-size:0.78rem">Start calculating to see monthly rankings</div>' :
+      top3.map(m => `
+        <div style="background:#fff;border-radius:10px;padding:0.8rem;border:1px solid var(--border);display:flex;align-items:center;gap:0.8rem;transition:all 0.2s">
+          <!-- Icona Medal -->
+          <div style="font-size:1.6rem;flex-shrink:0;text-align:center;width:35px">
+            ${m.icon}
+          </div>
+          
+          <!-- Dettagli Materiale -->
+          <div style="flex:1;overflow:hidden;text-align:left">
+            <div style="font-weight:600;font-size:0.85rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${m.name}">
+              ${m.name}
+            </div>
+            ${m.company ? `<div style="font-size:0.7rem;color:var(--text-light);margin-top:0.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">by ${m.company}</div>` : ''}
+          </div>
         </div>
-        <div id="top3-ranking" class="grid grid-3" style="gap:0.6rem;margin:0">
-          ${top3.length === 0 ? '<div style="grid-column:1/-1;text-align:center;padding:1rem;color:var(--text-light);font-size:0.78rem">Start calculating to see monthly rankings</div>' :
-            top3.map(m => `
-              <div style="background:#fff;border-radius:10px;padding:0.7rem 0.5rem;text-align:center;border:1px solid var(--border);transition:all 0.2s">
-                <div style="font-size:1.4rem;margin-bottom:0.2rem">${m.icon}</div>
-                <div style="font-weight:600;font-size:0.82rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${m.name}">${m.name}</div>
-                ${m.company ? `<div style="font-size:0.68rem;color:var(--text-light);margin-top:0.2rem">company ${m.company}</div>` : '<div style="height:1.1rem"></div>'}
-                <div style="font-size:0.65rem;color:var(--primary);font-weight:700;margin-top:0.3rem">${m.count} uses</div>
-              </div>
-            `).join('')
-          }
-        </div>
-      </div>
-    </div>
+      `).join('')
+    }
+  </div>
+</div>
+      
 
     <!-- ✅ STATS CARDS (SPOSTATE QUI, SUBITO DOPO LA CLASSIFICA) -->
     <div class="grid grid-3" style="margin-bottom:1.5rem">
