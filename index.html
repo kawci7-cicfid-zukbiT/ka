@@ -1682,22 +1682,24 @@ function renderHome() {
 </div>
       
 
-   '<!-- ✅ STATS CARDS COMPATTE -->'+
-<!-- ✅ STATS CARDS COMPATTE -->
-<div style="display:flex; gap:0.6rem; margin-bottom:1rem; overflow-x:auto; padding-bottom:4px; scrollbar-width:none">
-    <div class="card" style="flex:1; text-align:center; padding:0.5rem; margin:0; animation:statEntrance 0.4s ease forwards; opacity:0">
-        <div style="font-size:1.5rem; font-weight:700; color:var(--primary)" class="count-up" data-target="${totalMats}">${totalMats}</div>
-        <div style="font-size:0.7rem; color:var(--text-light)">Materials</div>
-    </div>
-    <div class="card" style="flex:1; text-align:center; padding:0.5rem; margin:0; animation:statEntrance 0.4s ease forwards 0.15s; opacity:0">
-        <div style="font-size:1.5rem; font-weight:700; color:var(--success)" class="count-up" data-target="${multiTempMats}">0</div>
-        <div style="font-size:0.7rem; color:var(--text-light)">Arrhenius</div>
-    </div>
-    <div class="card" style="flex:1; text-align:center; padding:0.5rem; margin:0; animation:statEntrance 0.4s ease forwards 0.3s; opacity:0">
-        <div style="font-size:1.5rem; font-weight:700; color:var(--purple)" class="count-up" data-target="${totalLams}">0</div>
-        <div style="font-size:0.7rem; color:var(--text-light)">Saved Lams</div>
-    </div>
-</div>
+  '<!-- ✅ STATS CARDS COMPATTE (Stile iOS Widget) -->'+
+'<div class="grid grid-3" style="margin-bottom:1.2rem">'+
+    '<div class="card" style="text-align:center;padding:0.6rem 0.3rem;margin:0;animation:statEntrance 0.4s ease forwards;opacity:0">'+
+        '<div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);font-weight:600;margin-bottom:0.2rem">Materials</div>'+
+        '<div style="font-size:1.6rem;font-weight:800;color:var(--primary);line-height:1" class="count-up" data-target="${totalMats}">${totalMats}</div>'+
+        '<div class="progress-bar" style="margin:0.4rem 0 0 0;height:4px"><div class="progress-fill" style="--progress: ${Math.min(totalMats/50*100,100)}%"></div></div>'+
+    '</div>'+
+    '<div class="card" style="text-align:center;padding:0.6rem 0.3rem;margin:0;animation:statEntrance 0.4s ease forwards 0.15s;opacity:0">'+
+        '<div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);font-weight:600;margin-bottom:0.2rem">Arrhenius</div>'+
+        '<div style="font-size:1.6rem;font-weight:800;color:var(--success);line-height:1" class="count-up" data-target="${multiTempMats}">0</div>'+
+        '<div class="progress-bar" style="margin:0.4rem 0 0 0;height:4px"><div class="progress-fill" style="--progress: ${Math.min(multiTempMats/20*100,100)}%;background:var(--success)"></div></div>'+
+    '</div>'+
+    '<div class="card" style="text-align:center;padding:0.6rem 0.3rem;margin:0;animation:statEntrance 0.4s ease forwards 0.3s;opacity:0">'+
+        '<div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);font-weight:600;margin-bottom:0.2rem">Saved Lams</div>'+
+        '<div style="font-size:1.6rem;font-weight:800;color:var(--purple);line-height:1" class="count-up" data-target="${totalLams}">0</div>'+
+        '<div class="progress-bar" style="margin:0.4rem 0 0 0;height:4px"><div class="progress-fill" style="--progress: ${Math.min(totalLams/30*100,100)}%;background:var(--purple)"></div></div>'+
+    '</div>'+
+'</div>'+
 
     <!-- FEATURES SECTION -->
     <div class="features-section" id="featuresSection">
