@@ -1697,24 +1697,29 @@ function renderHome() {
             </div>
         </div>
 
-        <!-- 3. STATISTICHE (3 Blocchi allineati) -->
-        <div class="section-row stats-grid">
-            <div class="stat-box">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/></svg>
-                <div class="stat-value count-up" style="color:var(--primary)" data-target="${totalMats}">${totalMats}</div>
-                <div class="stat-label">Materials</div>
-            </div>
-            <div class="stat-box">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                <div class="stat-value count-up" style="color:var(--success)" data-target="${multiTempMats}">0</div>
-                <div class="stat-label">Arrhenius Ready</div>
-            </div>
-            <div class="stat-box">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/></svg>
-                <div class="stat-value count-up" style="color:var(--purple)" data-target="${totalLams}">0</div>
-                <div class="stat-label">Saved Laminates</div>
-            </div>
-        </div>
+        <!-- ✅ STATS CARDS (PULITE, SENZA ICONE) -->
+<div class="grid grid-3" style="margin-bottom:1.5rem">
+    <!-- Materials Available -->
+    <div class="card" style="text-align:center;padding:1rem;animation:statEntrance 0.4s ease forwards;opacity:0">
+        <div style="font-size:1.8rem;font-weight:700;color:var(--primary)" class="count-up" data-target="${totalMats}">${totalMats}</div>
+        <div style="font-size:0.75rem;color:var(--text-light)">Materials Available</div>
+        <div class="progress-bar"><div class="progress-fill" style="--progress: ${Math.min(totalMats/50*100,100)}%"></div></div>
+    </div>
+    
+    <!-- Arrhenius Ready -->
+    <div class="card" style="text-align:center;padding:1rem;animation:statEntrance 0.4s ease forwards 0.15s;opacity:0">
+        <div style="font-size:1.8rem;font-weight:700;color:var(--success)" class="count-up" data-target="${multiTempMats}">0</div>
+        <div style="font-size:0.75rem;color:var(--text-light)">Arrhenius Ready</div>
+        <div class="progress-bar"><div class="progress-fill" style="--progress: ${Math.min(multiTempMats/20*100,100)}%;background:var(--success)"></div></div>
+    </div>
+    
+    <!-- Saved Laminates -->
+    <div class="card" style="text-align:center;padding:1rem;animation:statEntrance 0.4s ease forwards 0.3s;opacity:0">
+        <div style="font-size:1.8rem;font-weight:700;color:var(--purple)" class="count-up" data-target="${totalLams}">0</div>
+        <div style="font-size:0.75rem;color:var(--text-light)">Saved Laminates</div>
+        <div class="progress-bar"><div class="progress-fill" style="--progress: ${Math.min(totalLams/30*100,100)}%;background:var(--purple)"></div></div>
+    </div>
+</div>
 
         <!-- 4. FEATURES GRID -->
         <div class="section-row features-grid" id="featuresSection">
