@@ -605,6 +605,52 @@ canvas {
 /* Charts più alti */
 .chart-mini { height: 220px !important; }
 .demo-chart-card { background: #fafbfc; border-radius: 16px; padding: 0.8rem; border: 1px solid var(--border); }
+
+  /* === LAYOUT HOME ORDINATO === */
+.home-wrapper { max-width: 1100px; margin: 0 auto; }
+.section-row { margin-bottom: 1.5rem; }
+
+/* Riga superiore: Community + Top 3 */
+.top-row {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr; /* Community più stretto, Top 3 più largo */
+    gap: 1rem;
+    align-items: stretch;
+}
+
+/* Griglia Statistiche (3 blocchi) */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+/* Griglia Features (2x2) */
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+/* Stile coerente per le card statistiche */
+.stat-box {
+    background: var(--card);
+    border-radius: 18px;
+    padding: 1.2rem 0.5rem;
+    text-align: center;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.stat-box svg { width: 32px; height: 32px; margin-bottom: 0.5rem; color: var(--primary); }
+.stat-value { font-size: 1.8rem; font-weight: 800; line-height: 1.2; }
+.stat-label { font-size: 0.75rem; color: var(--text-light); font-weight: 600; margin-top: 0.3rem; }
+
+/* Responsive: Su mobile tutto diventa 1 colonna */
+@media (max-width: 768px) {
+    .top-row, .stats-grid, .features-grid { grid-template-columns: 1fr; }
+    .stat-box { padding: 1rem; }
+}
 </style>
 </head>
 <body>
@@ -1604,190 +1650,137 @@ function getCommunityCount() {
     return DB.materials.filter(m => m.isCommunity || String(m.id).startsWith('fb_')).length;
 }
 function renderHome() {
-  var totalMats = DB.materials.length;
-  var totalLams = DB.laminates.length;
-  var multiTempMats = 0;
-  for(var i = 0; i < DB.materials.length; i++) {
-    if(Engine.validateArrhenius(DB.materials[i]).valid) multiTempMats++;
-  }
-  
-  // Pre-calcola i dati per il template
-  const top3 = []; 
-  const commCount = getCommunityCount();
-
-  return `
-    <!-- HERO ENHANCED -->
-    <div class="hero">
-      <div class="hero-particles">
-        <div class="hero-particle"></div>
-        <div class="hero-particle"></div>
-        <div class="hero-particle"></div>
-        <div class="hero-particle"></div>
-        <div class="hero-particle"></div>
-      </div>
-      <div class="hero-content">
-        <h2 class="text-gradient">WVTR/OTR Calculator</h2>
-        <p style="font-size:0.8rem;opacity:0.95;margin-top:0.3rem">
-          Professional permeability analysis for multilayer packaging
-        </p>
-        <div style="display:flex;gap:0.5rem;justify-content:center;margin-top:0.6rem;flex-wrap:wrap">
-          <span class="badge badge-blue badge-pulse"> Resistance-Based</span>
-          <span class="badge badge-green"> Arrhenius Ready</span>
-          <span class="badge badge-purple"> Shelf life</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- ✅ COMMUNITY & TOP MATERIALI (IN PRIMA POSIZIONE) -->
-    <div class="grid grid-2" style="margin-bottom:1.5rem">
-      <!-- Riquadro Community -->
-      <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:1.5rem;background:linear-gradient(135deg, var(--purple-light), #faf5ff)">
-        <div style="font-size:2.5rem;margin-bottom:0.4rem">🌍</div>
-        <div style="font-size:2.2rem;font-weight:800;color:var(--purple)">${commCount}</div>
-        <div style="font-size:0.9rem;font-weight:600;color:var(--text);margin-bottom:0.8rem">Materials Shared by Community</div>
-        <button class="btn btn-primary" style="width:100%;background:var(--purple);border:none" 
-                onclick="document.getElementById('nav-tabs').querySelector('[data-tab=materials]').click()">
-          Explore Community Database →
-        </button>
-      </div>
-
-      <!-- Riquadro Top 3 Mensili (Lista Verticale) -->
-<div class="card" style="padding:1.25rem">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
-    <h2 style="margin:0;font-size:0.95rem">📈 Top 3 This Month</h2>
-    <span class="badge badge-blue" style="font-size:0.65rem">Resets on 1st</span>
-  </div>
-  
-  <!-- CONTENITORE VERTICALE (Flex Column) -->
-  <div id="top3-ranking" style="display:flex;flex-direction:column;gap:0.6rem;margin:0">
-    ${top3.length === 0 ? '<div style="text-align:center;padding:1rem;color:var(--text-light);font-size:0.78rem">Start calculating to see monthly rankings</div>' :
-      top3.map(m => `
-        <div style="background:#fff;border-radius:10px;padding:0.8rem;border:1px solid var(--border);display:flex;align-items:center;gap:0.8rem;transition:all 0.2s">
-          <!-- Icona Medal -->
-          <div style="font-size:1.6rem;flex-shrink:0;text-align:center;width:35px">
-            ${m.icon}
-          </div>
-          
-          <!-- Dettagli Materiale -->
-          <div style="flex:1;overflow:hidden;text-align:left">
-            <div style="font-weight:600;font-size:0.85rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${m.name}">
-              ${m.name}
-            </div>
-            ${m.company ? `<div style="font-size:0.7rem;color:var(--text-light);margin-top:0.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">by ${m.company}</div>` : ''}
-          </div>
-        </div>
-      `).join('')
+    var totalMats = DB.materials.length;
+    var totalLams = DB.laminates.length;
+    var multiTempMats = 0;
+    for(var i = 0; i < DB.materials.length; i++) {
+        if(Engine.validateArrhenius(DB.materials[i]).valid) multiTempMats++;
     }
-  </div>
-</div>
-      
+    
+    var commCount = getCommunityCount();
 
-  '<!-- ✅ STATS CARDS COMPATTE (Stile iOS Widget) -->'+
-'<div class="grid grid-3" style="margin-bottom:1.2rem">'+
-    '<div class="card" style="text-align:center;padding:0.6rem 0.3rem;margin:0;animation:statEntrance 0.4s ease forwards;opacity:0">'+
-        '<div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);font-weight:600;margin-bottom:0.2rem">Materials</div>'+
-        '<div style="font-size:1.6rem;font-weight:800;color:var(--primary);line-height:1" class="count-up" data-target="${totalMats}">${totalMats}</div>'+
-        '<div class="progress-bar" style="margin:0.4rem 0 0 0;height:4px"><div class="progress-fill" style="--progress: ${Math.min(totalMats/50*100,100)}%"></div></div>'+
-    '</div>'+
-    '<div class="card" style="text-align:center;padding:0.6rem 0.3rem;margin:0;animation:statEntrance 0.4s ease forwards 0.15s;opacity:0">'+
-        '<div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);font-weight:600;margin-bottom:0.2rem">Arrhenius</div>'+
-        '<div style="font-size:1.6rem;font-weight:800;color:var(--success);line-height:1" class="count-up" data-target="${multiTempMats}">0</div>'+
-        '<div class="progress-bar" style="margin:0.4rem 0 0 0;height:4px"><div class="progress-fill" style="--progress: ${Math.min(multiTempMats/20*100,100)}%;background:var(--success)"></div></div>'+
-    '</div>'+
-    '<div class="card" style="text-align:center;padding:0.6rem 0.3rem;margin:0;animation:statEntrance 0.4s ease forwards 0.3s;opacity:0">'+
-        '<div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-light);font-weight:600;margin-bottom:0.2rem">Saved Lams</div>'+
-        '<div style="font-size:1.6rem;font-weight:800;color:var(--purple);line-height:1" class="count-up" data-target="${totalLams}">0</div>'+
-        '<div class="progress-bar" style="margin:0.4rem 0 0 0;height:4px"><div class="progress-fill" style="--progress: ${Math.min(totalLams/30*100,100)}%;background:var(--purple)"></div></div>'+
-    '</div>'+
-'</div>'+
+    return `
+    <div class="home-wrapper">
+        <!-- 1. HERO SECTION -->
+        <div class="hero" style="margin-bottom:1.5rem">
+            <div class="hero-content">
+                <h2 class="text-gradient" style="font-size:1.4rem">WVTR/OTR Calculator</h2>
+                <p style="font-size:0.85rem;opacity:0.9;margin-top:0.4rem">
+                    Professional permeability analysis for multilayer packaging
+                </p>
+            </div>
+        </div>
 
-    <!-- FEATURES SECTION -->
-    <div class="features-section" id="featuresSection">
-      <div class="grid grid-2" style="margin-bottom:1.5rem">
-        <div class="feature-card">
-          <div class="feature-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
-            </svg>
-          </div>
-          <h3>Resistance-Based Calculation</h3>
-          <p>Advanced algorithm that sums layer resistances for accurate total permeability prediction.</p>
+        <!-- 2. RIGA SUPERIORE: Community & Top 3 -->
+        <div class="section-row top-row">
+            <!-- Box Community -->
+            <div class="card" style="margin:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; background:linear-gradient(135deg, var(--purple-light), #fff)">
+                <div style="font-size:2.5rem; margin-bottom:0.2rem">🌍</div>
+                <div style="font-size:2.5rem; font-weight:800; color:var(--purple)">${commCount}</div>
+                <div style="font-size:0.8rem; font-weight:600; color:var(--text); margin-bottom:0.8rem">Materials Shared</div>
+                <button class="btn btn-primary" style="width:100%;background:var(--purple)" onclick="document.getElementById('nav-tabs').querySelector('[data-tab=materials]').click()">
+                    Explore Database →
+                </button>
+            </div>
+
+            <!-- Box Top 3 -->
+            <div class="card" style="margin:0; padding:1rem">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.8rem">
+                    <h2 style="margin:0; font-size:1rem; display:flex; align-items:center; gap:0.4rem">
+                        <span>📈</span> Top 3 Materials
+                    </h2>
+                    <span class="badge badge-blue">This Month</span>
+                </div>
+                <div id="top3-ranking" style="display:flex; flex-direction:column; gap:0.5rem">
+                    <div style="text-align:center; padding:1rem; color:var(--text-light); font-size:0.8rem">Start calculating...</div>
+                </div>
+            </div>
         </div>
-        <div class="feature-card">
-          <div class="feature-icon" style="background:var(--success-light);color:var(--success)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-            </svg>
-          </div>
-          <h3>Arrhenius Analysis</h3>
-          <p>Predict permeability at untested temperatures using Arrhenius equation with automatic R² validation.</p>
+
+        <!-- 3. STATISTICHE (3 Blocchi allineati) -->
+        <div class="section-row stats-grid">
+            <div class="stat-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/></svg>
+                <div class="stat-value count-up" style="color:var(--primary)" data-target="${totalMats}">${totalMats}</div>
+                <div class="stat-label">Materials</div>
+            </div>
+            <div class="stat-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                <div class="stat-value count-up" style="color:var(--success)" data-target="${multiTempMats}">0</div>
+                <div class="stat-label">Arrhenius Ready</div>
+            </div>
+            <div class="stat-box">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/></svg>
+                <div class="stat-value count-up" style="color:var(--purple)" data-target="${totalLams}">0</div>
+                <div class="stat-label">Saved Laminates</div>
+            </div>
         </div>
-        <div class="feature-card">
-          <div class="feature-icon" style="background:var(--warning-light);color:var(--warning)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M2 12h4l3-9 4 18 3-9h4"/>
-            </svg>
-          </div>
-          <h3>Sensitivity Analysis</h3>
-          <p>Visualize how permeability changes when varying a single layer thickness to optimize costs.</p>
+
+        <!-- 4. FEATURES GRID -->
+        <div class="section-row features-grid" id="featuresSection">
+            <div class="card feature-card" style="margin:0; display:flex; align-items:start; gap:0.8rem">
+                <div style="background:var(--primary-light); padding:0.5rem; border-radius:12px; flex-shrink:0">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" style="width:24px;height:24px"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg>
+                </div>
+                <div>
+                    <h3 style="font-size:0.9rem; margin:0 0 0.2rem 0">Resistance Model</h3>
+                    <p style="font-size:0.75rem; color:var(--text-light); margin:0; line-height:1.4">Advanced algorithm based on layer resistances for accurate permeability prediction.</p>
+                </div>
+            </div>
+            
+            <div class="card feature-card" style="margin:0; display:flex; align-items:start; gap:0.8rem">
+                <div style="background:var(--success-light); padding:0.5rem; border-radius:12px; flex-shrink:0">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" style="width:24px;height:24px"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                </div>
+                <div>
+                    <h3 style="font-size:0.9rem; margin:0 0 0.2rem 0">Arrhenius Fit</h3>
+                    <p style="font-size:0.75rem; color:var(--text-light); margin:0; line-height:1.4">Automatic R² validation to predict barrier performance at untested temperatures.</p>
+                </div>
+            </div>
+
+            <div class="card feature-card" style="margin:0; display:flex; align-items:start; gap:0.8rem">
+                <div style="background:var(--warning-light); padding:0.5rem; border-radius:12px; flex-shrink:0">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2" style="width:24px;height:24px"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-6"/></svg>
+                </div>
+                <div>
+                    <h3 style="font-size:0.9rem; margin:0 0 0.2rem 0">Sensitivity</h3>
+                    <p style="font-size:0.75rem; color:var(--text-light); margin:0; line-height:1.4">Analyze how changing layer thickness affects total barrier to optimize costs.</p>
+                </div>
+            </div>
+
+            <div class="card feature-card" style="margin:0; display:flex; align-items:start; gap:0.8rem">
+                <div style="background:var(--purple-light); padding:0.5rem; border-radius:12px; flex-shrink:0">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" style="width:24px;height:24px"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                </div>
+                <div>
+                    <h3 style="font-size:0.9rem; margin:0 0 0.2rem 0">Community Cloud</h3>
+                    <p style="font-size:0.75rem; color:var(--text-light); margin:0; line-height:1.4">Share your materials with the community and access real-time global data.</p>
+                </div>
+            </div>
         </div>
-        <div class="feature-card">
-          <div class="feature-icon" style="background:var(--purple-light);color:var(--purple)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
-            </svg>
-          </div>
-          <h3>Community Database</h3>
-          <p>Access materials shared by the community or contribute your data to help other professionals.</p>
+
+        <!-- 5. GRAFICI -->
+        <div class="section-row">
+            <div class="card">
+                <h2 style="margin-bottom:1rem; font-size:1rem">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px; vertical-align:middle; margin-right:0.4rem"><path d="M3 3v18h18"/></svg>
+                    Live Preview
+                </h2>
+                <div class="demo-charts">
+                    <div class="demo-chart-card">
+                        <h4>WVTR vs Temperature</h4>
+                        <div class="chart-mini"><canvas id="demoChart1"></canvas></div>
+                    </div>
+                    <div class="demo-chart-card">
+                        <h4>Layer Resistance</h4>
+                        <div class="chart-mini"><canvas id="demoChart2"></canvas></div>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
+
     </div>
-
-    <!-- DEMO CHARTS ANIMATI -->
-    <div class="card" style="margin-bottom:1rem">
-      <h2 style="margin-bottom:1rem">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px">
-          <path d="M3 3v18h18"/>
-          <path d="M18 17V9"/>
-          <path d="M13 17V5"/>
-          <path d="M8 17v-3"/>
-        </svg>
-        Live Chart Preview
-      </h2>
-      <div class="demo-charts">
-        <div class="demo-chart-card">
-          <h4>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-6"/>
-            </svg>
-            WVTR vs Temperature
-          </h4>
-          <div class="chart-mini"><canvas id="demoChart1"></canvas></div>
-        </div>
-        <div class="demo-chart-card">
-          <h4>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>
-            </svg>
-            Layer Resistance Contribution
-          </h4>
-          <div class="chart-mini"><canvas id="demoChart2"></canvas></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- FOOTER INFO -->
-    <div style="margin-top:2rem;text-align:center;font-size:0.72rem;color:var(--text-light);padding:1rem;border-top:1px solid var(--border)">
-      <p style="margin-bottom:0.3rem">
-        Mode: <strong style="color:var(--primary)">${State.mode.toUpperCase()}</strong> • 
-        Unit: <strong>${getUnit()}</strong> • 
-        Precision: <strong>6 decimals</strong>
-      </p>
-      <p style="opacity:0.8">
-        💡 Tip: Use materials with multi-temperature data to enable advanced Arrhenius analysis
-      </p>
-    </div>
-  `;
+    `;
 }
   // ✅ Vota affidabilità materiale
 // ✅ Vota affidabilità (con controllo connessione Cloud)
