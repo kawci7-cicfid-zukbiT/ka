@@ -1751,35 +1751,33 @@ async function voteReliability(matId, voteType) {
     var mat = DB.materials.find(m => String(m.id) === matIdStr);
     if(!mat) return;
     
-    // Aggiornamento Locale (immediato)
+    console.log("🗳️ Voting:", mat.name, "| firebaseDocId:", mat.firebaseDocId, "| hasCloudDB:", !!window.communityDB);
+    
     if(!mat.reliabilityVotes) mat.reliabilityVotes = { up: 0, down: 0 };
     if(voteType === 'up') mat.reliabilityVotes.up++;
     else mat.reliabilityVotes.down++;
     
     recordUserVote(matIdStr, voteType);
     DB.save();
-    renderContent(); // Aggiorna UI subito
-
+    renderContent();
+    
     // ✅ SYNC CON FIREBASE
     if(mat.firebaseDocId && window.communityDB) {
         try {
-            console.log("🔥 Syncing vote to Firebase...");
+            console.log("🔥 Sending vote to Firebase...");
             const ref = window.fbDoc(window.communityDB, "materials", mat.firebaseDocId);
             const updateData = {};
             if(voteType === 'up') updateData["reliabilityVotes.up"] = window.fbIncrement(1);
             else updateData["reliabilityVotes.down"] = window.fbIncrement(1);
             
             await window.fbUpdateDoc(ref, updateData);
-            console.log("✅ Cloud updated!");
+            console.log("✅ Firebase vote synced!");
         } catch(e) {
             console.error("❌ FIREBASE ERROR:", e.code, e.message);
-            // Se le regole sono sbagliate, appare qui l'errore
-            alert("⚠️ Cloud Error: " + e.message); 
+            alert("⚠️ Vote recorded locally, but cloud error: " + e.message);
         }
     } else {
-        // ✅ AVVISO IMPORTANTE PER L'UTENTE
-        console.warn("⚠️ Vote saved locally only. Missing firebaseDocId.");
-        alert("⚠️ Vote recorded LOCALLY only.\n\nTo sync votes across devices, you must first click the '🌍 Publish' button on this material card.");
+        console.warn("⚠️ Vote NOT synced to Firebase - missing firebaseDocId or DB");
     }
 }
   
