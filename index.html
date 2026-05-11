@@ -1425,39 +1425,36 @@ function getMonthlyStats() {
 }
 
 // ✅ FUNZIONE: Registra utilizzo e aggiorna UI
+// ✅ FUNZIONE: Registra utilizzo e aggiorna UI (Sincronizzato con Firebase)
 async function recordMaterialUsage(matId) {
-  if (!matId) return;
-  const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
-  
-  // 1. Aggiorna locale
-  const mat = DB.materials.find(m => String(m.id) === String(matId));
-  if (mat) {
-    mat.usageCount = (mat.usageCount || 0) + 1;
-    mat.lastUsageMonth = currentMonth;
-  }
-  
-  let stats = getMonthlyStats();
-  stats.month = currentMonth;
-  stats.counts[String(matId)] = (stats.counts[String(matId)] || 0) + 1;
-  localStorage.setItem('wvtr_monthly_stats', JSON.stringify(stats));
-  
-  // 2. Sync Firebase (se pubblicato)
-  if (window.communityDB && mat && mat.firebaseDocId) {
-    try {
-      const ref = window.fbDoc(window.communityDB, "materials", mat.firebaseDocId);
-      await window.fbUpdateDoc(ref, {
-        usageCount: window.fbIncrement(1),
-        lastUsageMonth: currentMonth
-      });
-    } catch(e) { console.warn("⚠️ Firebase sync failed:", e); }
-  }
-  
-  // 3. Aggiorna classifica se siamo in Home
-  if (State.tab === 'home') {
-    setTimeout(() => {
-      if (typeof updateTop3UI === 'function') updateTop3UI();
-    }, 200);
-  }
+    if (!matId) return;
+    const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
+    
+    // 1. Aggiorna locale (per reattività immediata)
+    const mat = DB.materials.find(m => String(m.id) === String(matId));
+    if (mat) {
+        mat.usageCount = (mat.usageCount || 0) + 1;
+        mat.lastUsageMonth = currentMonth;
+    }
+    
+    // 2. ✅ SYNC CON FIREBASE (Incremento globale sicuro)
+    if (window.communityDB && mat && mat.firebaseDocId) {
+        try {
+            const ref = window.fbDoc(window.communityDB, "materials", mat.firebaseDocId);
+            // ✅ Aggiorna il contatore e il mese corrente su Firebase
+            await window.fbUpdateDoc(ref, {
+                usageCount: window.fbIncrement(1),
+                lastUsageMonth: currentMonth
+            });
+        } catch(e) { console.warn("⚠️ Firebase usage sync failed:", e); }
+    }
+    
+    // 3. Aggiorna classifica UI
+    if (State.tab === 'home') {
+        setTimeout(() => {
+            if (typeof updateTop3UI === 'function') updateTop3UI();
+        }, 200);
+    }
 }
 
 // ✅ FUNZIONE: Calcola Top 3 (Locale)
@@ -1490,49 +1487,57 @@ function getTop3Materials() {
 }
 
 // ✅ FUNZIONE: Carica Top 3 (Globale/Firebase)
+// ✅ FUNZIONE: Carica Top 3 (Globale/Firebase)
 async function refreshGlobalRankings() {
-  const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
-  
-  if (window.communityDB) {
-    try {
-      const q = window.fbQuery(
-        window.fbCollection(window.communityDB, "materials"),
-        window.fbOrderBy("usageCount", "desc")
-      );
-      const snapshot = await window.fbGetDocs(q);
-      const globalTop = [];
-      
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        if (data.lastUsageMonth === currentMonth && (data.usageCount || 0) > 0) {
-          globalTop.push({
-            name: data.name,
-            company: data.company || null,
-            count: data.usageCount || 0,
-            firebaseDocId: doc.id
-          });
+    const currentMonth = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
+    
+    // ✅ Se siamo online, scarichiamo i dati dal server
+    if (window.communityDB) {
+        try {
+            // Ordina per usageCount in modo decrescente
+            const q = window.fbQuery(
+                window.fbCollection(window.communityDB, "materials"),
+                window.fbOrderBy("usageCount", "desc")
+            );
+            const snapshot = await window.fbGetDocs(q);
+            const globalTop = [];
+            
+            // Filtra solo i materiali di questo mese
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.lastUsageMonth === currentMonth && (data.usageCount || 0) > 0) {
+                    globalTop.push({
+                        name: data.name,
+                        company: data.company || null,
+                        count: data.usageCount || 0,
+                        firebaseDocId: doc.id
+                    });
+                }
+            });
+            
+            // ✅ Se ci sono dati dal cloud, usa quelli e aggiorna il locale per coerenza
+            if (globalTop.length > 0) {
+                globalTop.forEach(item => {
+                    // Sincronizza anche la memoria locale dell'utente
+                    const localMat = DB.materials.find(m => m.firebaseDocId === item.firebaseDocId);
+                    if (localMat) {
+                        localMat.usageCount = item.count;
+                        localMat.lastUsageMonth = currentMonth;
+                    }
+                });
+                
+                return globalTop.slice(0, 3).map((m, idx) => ({
+                    ...m,
+                    icon: ['🥇','🥈','🥉'][idx]
+                }));
+            }
+        } catch(e) {
+            console.warn("⚠️ Firebase ranking failed:", e);
         }
-      });
-      
-      if (globalTop.length > 0) {
-        globalTop.forEach(item => {
-          const localMat = DB.materials.find(m => m.firebaseDocId === item.firebaseDocId);
-          if (localMat) {
-            localMat.usageCount = item.count;
-            localMat.lastUsageMonth = currentMonth;
-          }
-        });
-        return globalTop.slice(0, 3).map((m, idx) => ({
-          ...m,
-          icon: ['🥇','🥈','🥉'][idx]
-        }));
-      }
-    } catch(e) {
-      console.warn("⚠️ Firebase ranking failed:", e);
     }
-  }
-  // Fallback a locale
-  return getTop3Materials();
+    
+    // Fallback a locale se il server non risponde
+    return getTop3Materials();
 }
 
 // ✅ FUNZIONE: Aggiorna l'HTML della classifica (Globale)
