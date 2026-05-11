@@ -1867,69 +1867,305 @@ function getReliabilityBadge(score) {
   if(score >= 40) return '<span class="badge badge-yellow">⚠ Mixed '+score+'%</span>';
   return '<span class="badge badge-red">✗ Unreliable '+score+'%</span>';
 }
-// ✅ FUNZIONE: Render tab Shelf Life
-// ✅ FUNZIONE: Render tab Shelf Life
-function renderShelfLife() {
-  var modeLabel = State.mode === 'wvtr' ? 'WVTR' : 'OTR';
-  var unit = State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
+// ====================================================================
+// 📚 SHELF LIFE METHODOLOGY EXPLAINER
+// ====================================================================
+function renderShelfLifeMethodology() {
+  const modeLabel = State.mode === 'wvtr' ? 'WVTR' : 'OTR';
+  const unit = State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
   
-  // Auto-fill with last calculator result if available
-  var currentRate = (State.calcResult && State.calcResult.total) ? State.calcResult.total.toFixed(6) : '';
-
   return `
-    <div class="grid grid-2">
-      <div class="card">
-        <h2>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px">
-            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-          </svg>
-          Shelf Life Estimator
-        </h2>
-        <p style="font-size:.78rem;color:var(--text-light);margin-bottom:.75rem">
-          Estimate storage life based on ${modeLabel} transmission through the packaging.
+  <div class="card" style="margin-top:1rem">
+    <h2 style="display:flex;align-items:center;gap:0.4rem">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px">
+        <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
+      </svg>
+      📚 Calculation Methodology & Formulas
+    </h2>
+    
+    <div style="font-size:0.78rem;color:var(--text-light);line-height:1.6">
+      
+      <!-- === SECTION 1: MOISTURE GAIN MODEL === -->
+      <div style="margin:1rem 0;padding:0.75rem;background:var(--primary-light);border-radius:8px">
+        <h3 style="font-size:0.85rem;font-weight:600;color:var(--primary);margin:0 0 0.5rem 0">
+          🔹 Moisture Gain Model (WVTR Mode)
+        </h3>
+        <p style="margin:0 0 0.5rem 0">
+          The shelf life is calculated as the time required for the product to absorb enough moisture 
+          to reach a critical threshold, based on Fick's law of diffusion and the resistance model.
         </p>
         
-        <div class="form-group">
-          <label>Package ${modeLabel} (${unit})</label>
-          <input type="number" step="any" class="form-input" id="sl-rate" value="${currentRate}" placeholder="e.g. 0.5">
-          <span style="font-size:.65rem;color:var(--text-light)">Pre-filled if available from Calculator</span>
+        <div style="background:#fff;padding:0.6rem;border-radius:6px;font-family:monospace;font-size:0.72rem;overflow-x:auto">
+          <strong>Core Formula:</strong><br>
+          t = [ W · (M_crit - M_init)/100 ] / [ A · WVTR · (ΔP / ΔP_ref) ]
         </div>
         
-        <div class="form-group">
-          <label>Package Surface Area (m²)</label>
-          <input type="number" step="any" class="form-input" id="sl-area" value="0.1" placeholder="e.g. 0.1">
-        </div>
+        <table style="width:100%;font-size:0.72rem;margin-top:0.5rem;border-collapse:collapse">
+          <thead>
+            <tr style="background:var(--bg);text-align:left">
+              <th style="padding:0.3rem 0.5rem">Symbol</th>
+              <th style="padding:0.3rem 0.5rem">Meaning</th>
+              <th style="padding:0.3rem 0.5rem">Unit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>t</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Shelf life (time)</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">days</td></tr>
+            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>W</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Product weight</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">g</td></tr>
+            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>M_crit - M_init</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Allowable moisture increase</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">%</td></tr>
+            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>A</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Package surface area</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">m²</td></tr>
+            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>WVTR</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Water vapor transmission rate</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">${unit}</td></tr>
+            <tr><td style="padding:0.3rem 0.5rem"><strong>ΔP / ΔP_ref</strong></td><td style="padding:0.3rem 0.5rem">Pressure gradient scaling factor</td><td style="padding:0.3rem 0.5rem">dimensionless</td></tr>
+          </tbody>
+        </table>
         
-        <div class="form-group">
-          <label>Product Weight / Volume (g or mL)</label>
-          <input type="number" step="any" class="form-input" id="sl-mass" value="100" placeholder="e.g. 100">
-        </div>
-        
-        <div class="grid grid-2" style="margin-top:.5rem">
-          <div class="form-group">
-            <label>Initial ${modeLabel} Level (%)</label>
-            <input type="number" step="any" class="form-input" id="sl-initial" value="3" placeholder="e.g. 3">
-          </div>
-          <div class="form-group">
-            <label>Critical Limit (%)</label>
-            <input type="number" step="any" class="form-input" id="sl-critical" value="8" placeholder="e.g. 8">
-          </div>
-        </div>
-        
-        <button class="btn btn-primary btn-full" onclick="calculateShelfLife()" style="margin-top:.75rem">
-          Calculate Shelf Life
-        </button>
+        <p style="margin:0.5rem 0 0 0;font-size:0.7rem;color:var(--text-light)">
+          <strong>Note:</strong> ΔP = P_sat(T) × (RH_out - RH_in)/100, where P_sat is calculated via the 
+          Magnus formula. The driving force is dynamically updated as product a_w changes.
+        </p>
       </div>
       
-      <div class="card" id="sl-result-card" style="display:flex;align-items:center;justify-content:center;text-align:center;min-height:250px">
-        <div style="color:var(--text-light)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:48px;height:48px;margin-bottom:.5rem;opacity:.3">
-            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-          </svg>
-          <p>Enter parameters to estimate shelf life</p>
+      <!-- === SECTION 2: SORPTION ISOTHERMS === -->
+      <div style="margin:1rem 0;padding:0.75rem;background:var(--success-light);border-radius:8px">
+        <h3 style="font-size:0.85rem;font-weight:600;color:var(--success);margin:0 0 0.5rem 0">
+          🔹 Water Activity & Sorption Isotherms (GAB Model)
+        </h3>
+        <p style="margin:0 0 0.5rem 0">
+          Instead of assuming linear moisture uptake, we use the <strong>GAB (Guggenheim-Anderson-de Boer)</strong> 
+          equation to model how absorbed water affects water activity (a_w), the true microbiological stability parameter.
+        </p>
+        
+        <div style="background:#fff;padding:0.6rem;border-radius:6px;font-family:monospace;font-size:0.7rem;overflow-x:auto">
+          <strong>GAB Equation:</strong><br>
+          M = (M_m · C · K · a_w) / [(1 - K·a_w) · (1 - K·a_w + C·K·a_w)]
+        </div>
+        
+        <table style="width:100%;font-size:0.72rem;margin-top:0.5rem;border-collapse:collapse">
+          <thead>
+            <tr style="background:var(--bg);text-align:left">
+              <th style="padding:0.3rem 0.5rem">Parameter</th>
+              <th style="padding:0.3rem 0.5rem">Description</th>
+              <th style="padding:0.3rem 0.5rem">Typical Range</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>M_m</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Monolayer moisture content</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">0.02–0.08 g/g</td></tr>
+            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>C</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Energy constant (monolayer)</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">5–25</td></tr>
+            <tr><td style="padding:0.3rem 0.5rem"><strong>K</strong></td><td style="padding:0.3rem 0.5rem">Energy constant (multilayer)</td><td style="padding:0.3rem 0.5rem">0.7–0.95</td></tr>
+          </tbody>
+        </table>
+        
+        <p style="margin:0.5rem 0 0 0;font-size:0.7rem;color:var(--text-light)">
+          <strong>Implementation:</strong> We numerically invert the GAB equation (bisection method) at each time step 
+          to compute a_w from current moisture M, then update RH_in = a_w × 100 for the next ΔP calculation.
+          This creates a non-linear, self-limiting moisture uptake curve.
+        </p>
+        <p style="margin:0.3rem 0 0 0;font-size:0.7rem;color:var(--text-light)">
+          <strong>References:</strong> ISO 18787:2020, ASTM D4634, Van den Berg & Bruin (1981).
+        </p>
+      </div>
+      
+      <!-- === SECTION 3: THERMAL ACCELERATION === -->
+      <div style="margin:1rem 0;padding:0.75rem;background:var(--warning-light);border-radius:8px">
+        <h3 style="font-size:0.85rem;font-weight:600;color:var(--warning);margin:0 0 0.5rem 0">
+          🔹 Thermal Acceleration: Arrhenius & Q₁₀ Models
+        </h3>
+        <p style="margin:0 0 0.5rem 0">
+          To predict shelf life at different storage temperatures, we apply kinetic acceleration models.
+        </p>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin:0.5rem 0">
+          <div style="background:#fff;padding:0.5rem;border-radius:6px">
+            <strong>Arrhenius Equation:</strong><br>
+            <span style="font-family:monospace;font-size:0.7rem">
+              k(T) = A · exp(-Eₐ / (R · T))<br>
+              AF = exp[ -(Eₐ/R) · (1/T_target - 1/T_ref) ]
+            </span>
+          </div>
+          <div style="background:#fff;padding:0.5rem;border-radius:6px">
+            <strong>Q₁₀ Model:</strong><br>
+            <span style="font-family:monospace;font-size:0.7rem">
+              AF = Q₁₀^((T_target - T_ref)/10)
+            </span>
+          </div>
+        </div>
+        
+        <table style="width:100%;font-size:0.72rem;margin-top:0.5rem;border-collapse:collapse">
+          <thead>
+            <tr style="background:var(--bg);text-align:left">
+              <th style="padding:0.3rem 0.5rem">Symbol</th>
+              <th style="padding:0.3rem 0.5rem">Meaning</th>
+              <th style="padding:0.3rem 0.5rem">Typical Values</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>Eₐ</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Activation energy</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">30–120 kJ/mol (foods)</td></tr>
+            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>R</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Gas constant</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">8.314 J/(mol·K)</td></tr>
+            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>Q₁₀</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Rate increase per 10°C</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">1.5–3.0 (most foods)</td></tr>
+            <tr><td style="padding:0.3rem 0.5rem"><strong>T</strong></td><td style="padding:0.3rem 0.5rem">Absolute temperature</td><td style="padding:0.3rem 0.5rem">Kelvin (K = °C + 273.15)</td></tr>
+          </tbody>
+        </table>
+        
+        <p style="margin:0.5rem 0 0 0;font-size:0.7rem;color:var(--text-light)">
+          <strong>Usage:</strong> Enter Eₐ (kJ/mol) for Arrhenius, or Q₁₀ as alternative. The calculator converts 
+          Eₐ to J/mol internally. The "What-If" chart shows shelf life vs. temperature from 15°C to 50°C.
+        </p>
+        <p style="margin:0.3rem 0 0 0;font-size:0.7rem;color:var(--text-light)">
+          <strong>References:</strong> ICH Q1A(R2), ASTM F1980, Labuza (1984).
+        </p>
+      </div>
+      
+      <!-- === SECTION 4: LIPID OXIDATION (OTR) === -->
+      ${State.mode === 'otr' ? `
+      <div style="margin:1rem 0;padding:0.75rem;background:var(--purple-light);border-radius:8px">
+        <h3 style="font-size:0.85rem;font-weight:600;color:var(--purple);margin:0 0 0.5rem 0">
+          🔹 Lipid Oxidation Model (OTR Mode)
+        </h3>
+        <p style="margin:0 0 0.5rem 0">
+          For oxygen-sensitive products (oils, nuts, fried snacks), shelf life is limited by the cumulative 
+          oxygen ingress that causes rancidity. We use a critical oxygen dose model.
+        </p>
+        
+        <div style="background:#fff;padding:0.6rem;border-radius:6px;font-family:monospace;font-size:0.72rem;overflow-x:auto">
+          <strong>Core Formula:</strong><br>
+          t = ( O₂_crit · m_fat ) / ( A · OTR · AF )
+        </div>
+        
+        <table style="width:100%;font-size:0.72rem;margin-top:0.5rem;border-collapse:collapse">
+          <thead>
+            <tr style="background:var(--bg);text-align:left">
+              <th style="padding:0.3rem 0.5rem">Symbol</th>
+              <th style="padding:0.3rem 0.5rem">Meaning</th>
+              <th style="padding:0.3rem 0.5rem">Unit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>O₂_crit</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Critical oxygen dose for rancidity</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">ml O₂ / kg fat</td></tr>
+            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>m_fat</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Fat mass in product</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">kg</td></tr>
+            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>OTR</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Oxygen transmission rate</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">${unit}</td></tr>
+            <tr><td style="padding:0.3rem 0.5rem"><strong>AF</strong></td><td style="padding:0.3rem 0.5rem">Thermal acceleration factor</td><td style="padding:0.3rem 0.5rem">dimensionless</td></tr>
+          </tbody>
+        </table>
+        
+        <p style="margin:0.5rem 0 0 0;font-size:0.7rem;color:var(--text-light)">
+          <strong>Typical O₂_crit values:</strong> Potato chips: 300–500 ml/kg fat; Nuts: 400–700 ml/kg; 
+          Cooking oils: 600–1000 ml/kg. Values depend on fatty acid composition and antioxidants.
+        </p>
+        <p style="margin:0.3rem 0 0 0;font-size:0.7rem;color:var(--text-light)">
+          <strong>References:</strong> Frankel (2005) "Lipid Oxidation", ISO 12207, ASTM F1307.
+        </p>
+      </div>
+      ` : ''}
+      
+      <!-- === SECTION 5: LIMITATIONS & BEST PRACTICES === -->
+      <div style="margin:1rem 0;padding:0.75rem;background:var(--bg);border-radius:8px;border-left:4px solid var(--primary)">
+        <h3 style="font-size:0.85rem;font-weight:600;margin:0 0 0.5rem 0">⚠️ Model Limitations & Best Practices</h3>
+        <ul style="margin:0;padding-left:1.2rem;font-size:0.75rem;line-height:1.7">
+          <li><strong>Constant conditions:</strong> Assumes constant T and RH. Real-world fluctuations require safety margins.</li>
+          <li><strong>Homogeneous product:</strong> Model assumes uniform moisture distribution. Layered products may need FEM.</li>
+          <li><strong>GAB parameters:</strong> Use product-specific isotherms when available. Default values are estimates.</li>
+          <li><strong>Oxidation kinetics:</strong> Linear O₂ uptake is a simplification. Auto-catalytic oxidation may accelerate near end-of-life.</li>
+          <li><strong>Validation:</strong> Always confirm predictions with real-time or accelerated shelf-life studies.</li>
+          <li><strong>Regulatory:</strong> This tool supports R&D; final shelf-life claims require compliance with local regulations (EU 1169/2011, FDA 21 CFR 101).</li>
+        </ul>
+      </div>
+      
+    </div>
+  </div>
+  `;
+}
+  // ✅ FUNZIONE: Render tab Shelf Life
+
+// ✅ FUNZIONE PRINCIPALE renderShelfLife() - CORRETTA E COMPLETA
+function renderShelfLife() {
+  const modeLabel = State.mode === 'wvtr' ? 'WVTR' : 'OTR';
+  const unit = State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
+  const currentRate = (State.calcResult && State.calcResult.total) ? State.calcResult.total.toFixed(6) : '';
+  
+  // Dropdown prodotti
+  let prodOpts = '';
+  for(let k in PRODUCTS_DB) prodOpts += `<option value="${k}">${PRODUCTS_DB[k].name}</option>`;
+
+  return `
+  <div class="grid grid-2">
+    <!-- === FORM DI INPUT === -->
+    <div class="card">
+      <h2 style="display:flex;align-items:center;gap:0.4rem">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+        Advanced Shelf Life Engine
+      </h2>
+      
+      <div class="form-group">
+        <label>Product Template</label>
+        <select class="form-input" id="sl-product" onchange="fillProductDefaults(this.value)">${prodOpts}</select>
+      </div>
+      
+      <div class="grid grid-2">
+        <div class="form-group"><label>Weight (g or mL)</label><input type="number" step="any" class="form-input" id="sl-weight" value="100"></div>
+        <div class="form-group"><label>Surface Area (m²)</label><input type="number" step="any" class="form-input" id="sl-area" value="0.1"></div>
+      </div>
+      
+      <div class="grid grid-2">
+        <div class="form-group"><label>Storage Temp (°C)</label><input type="number" step="any" class="form-input" id="sl-temp" value="25"></div>
+        <div class="form-group"><label>Ext. RH (%)</label><input type="number" step="any" class="form-input" id="sl-rh-ext" value="65"></div>
+      </div>
+      
+      <div class="form-group">
+        <label>Package ${modeLabel} (${unit})</label>
+        <input type="number" step="any" class="form-input" id="sl-rate" value="${currentRate}" placeholder="e.g. 0.5">
+      </div>
+      
+      <!-- Campi specifici per Moisture -->
+      <div id="moisture-fields" class="grid grid-2" style="margin-top:0.5rem">
+        <div class="form-group"><label>Initial Moisture (%)</label><input type="number" step="any" class="form-input" id="sl-minit" value="3"></div>
+        <div class="form-group"><label>Critical Moisture (%)</label><input type="number" step="any" class="form-input" id="sl-mcrit" value="8"></div>
+      </div>
+      
+      <!-- Campi specifici per OTR/Oxidation -->
+      <div id="otx-fields" class="grid grid-2" style="margin-top:0.5rem;display:none">
+        <div class="form-group"><label>Fat Content (kg)</label><input type="number" step="any" class="form-input" id="sl-fat" value="0.3"></div>
+        <div class="form-group"><label>O₂ Critical Limit (ml/kg fat)</label><input type="number" step="any" class="form-input" id="sl-o2crit" value="400"></div>
+      </div>
+
+      <!-- Accelerazione termica -->
+      <div style="margin:0.8rem 0;padding:0.6rem;background:var(--primary-light);border-radius:8px">
+        <label style="display:flex;align-items:center;gap:0.4rem;margin:0">
+          <input type="checkbox" id="sl-use-arr" checked> <strong>Apply Thermal Acceleration</strong>
+        </label>
+        <div class="grid grid-2" style="margin-top:0.4rem">
+          <div class="form-group"><label>Eₐ (kJ/mol)</label><input type="number" step="any" class="form-input" id="sl-ea" value="60"></div>
+          <div class="form-group"><label>Q₁₀ (alt. to Eₐ)</label><input type="number" step="any" class="form-input" id="sl-q10" value="2.0"></div>
         </div>
       </div>
+
+      <button class="btn btn-primary btn-full" onclick="calculateAdvancedShelfLife()" style="margin-top:0.5rem">
+        🚀 Calculate Shelf Life & Simulate
+      </button>
     </div>
+
+    <!-- === PANNELLO RISULTATI === -->
+    <div class="card" id="sl-result-panel">
+      <div style="text-align:center;padding:2rem;color:var(--text-light)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:48px;height:48px;margin-bottom:0.5rem;opacity:0.3">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+        <p>Select parameters and calculate to see predictions</p>
+      </div>
+    </div>
+  </div>
+  
+  <!-- === GRAFICI (nascosti fino al calcolo) === -->
+  <div class="card" id="sl-chart-card" style="display:none;margin-top:1rem">
+    <h2>Quality Decay & Temperature What-If</h2>
+    <div class="grid grid-2">
+      <div class="chart-mini"><canvas id="slDecayChart"></canvas></div>
+      <div class="chart-mini"><canvas id="slTempChart"></canvas></div>
+    </div>
+  </div>
+  
+  <!-- === SEZIONE METODOLOGIA (espandibile) === -->
+  ${renderShelfLifeMethodology()}
   `;
 }
 
