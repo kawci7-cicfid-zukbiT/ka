@@ -1744,51 +1744,51 @@ function renderHome() {
 // ✅ Vota affidabilità (VERSIONE DEBUG)
 async function voteReliability(matId, voteType) {
     var matIdStr = String(matId);
-    console.log("🗳️ Voto avviato:", matIdStr, "| Tipo:", voteType);
+    console.log("🗳️ Vote started:", matIdStr, "| Type:", voteType);
     
     if(hasUserVoted(matIdStr)) {
-        console.warn("⛔ Bloccato: utente ha già votato");
+        console.warn("⛔ Blocked: user has already voted");
         alert("⚠️ You have already voted for this material");
         return;
     }
     
     var mat = DB.materials.find(m => String(m.id) === matIdStr);
-    if(!mat) { console.error("❌ Materiale NON trovato in DB!"); return; }
-    console.log("📦 Materiale trovato:", mat.name, "| firebaseDocId:", mat.firebaseDocId);
+    if(!mat) { console.error("❌ Material NOT found in DB!"); return; }
+    console.log("📦 Material found:", mat.name, "| firebaseDocId:", mat.firebaseDocId);
     
     if(!mat.reliabilityVotes) mat.reliabilityVotes = { up: 0, down: 0 };
     if(voteType === 'up') mat.reliabilityVotes.up++;
     else mat.reliabilityVotes.down++;
-    console.log("📊 Nuovo conteggio locale:", mat.reliabilityVotes);
+    console.log("📊 New local count:", mat.reliabilityVotes);
     
     recordUserVote(matIdStr, voteType);
-    console.log("💾 Voto salvato in localStorage");
+    console.log("💾 Vote saved to localStorage");
     
-    // Aggiorna UI subito
+    // Update UI immediately
     DB.save();
     renderContent();
-    console.log("🎨 UI aggiornata");
+    console.log("🎨 UI updated");
     
     // Sync Firebase
     if(mat.firebaseDocId && window.communityDB) {
         try {
-            console.log("🔥 Tentativo sync Firebase...");
+            console.log("🔥 Attempting Firebase sync...");
             const ref = window.fbDoc(window.communityDB, "materials", mat.firebaseDocId);
             const updateData = {};
             if(voteType === 'up') updateData["reliabilityVotes.up"] = window.fbIncrement(1);
             else updateData["reliabilityVotes.down"] = window.fbIncrement(1);
             
             await window.fbUpdateDoc(ref, updateData);
-            console.log("✅ Firebase aggiornato con successo!");
+            console.log("✅ Firebase updated successfully!");
         } catch(e) {
-            console.error("❌ ERRORE FIREBASE:", e.code, e.message);
-            alert("⚠️ Voto registrato localmente, ma errore cloud: " + e.message);
+            console.error("❌ FIREBASE ERROR:", e.code, e.message);
+            alert("⚠️ Vote recorded locally, but cloud error: " + e.message);
         }
     } else {
-        console.log("ℹ️ Nessun firebaseDocId o DB offline. Voto solo locale.");
+        console.log("ℹ️ No firebaseDocId or DB offline. Vote local only.");
     }
 }
-
+  
 // ✅ Controlla se l'utente ha già votato
 function hasUserVoted(matId) {
     try {
