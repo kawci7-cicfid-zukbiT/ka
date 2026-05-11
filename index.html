@@ -1741,37 +1741,72 @@ function renderHome() {
   `;
 }
   // ✅ Vota affidabilità materiale
+// ✅ Vota affidabilità (VERSIONE DEBUG)
 async function voteReliability(matId, voteType) {
     var matIdStr = String(matId);
+    console.log("🗳️ Voto avviato:", matIdStr, "| Tipo:", voteType);
     
-    // ✅ Blocca immediatamente se ha già votato
     if(hasUserVoted(matIdStr)) {
+        console.warn("⛔ Bloccato: utente ha già votato");
         alert("⚠️ You have already voted for this material");
         return;
     }
     
     var mat = DB.materials.find(m => String(m.id) === matIdStr);
-    if(!mat) return;
+    if(!mat) { console.error("❌ Materiale NON trovato in DB!"); return; }
+    console.log("📦 Materiale trovato:", mat.name, "| firebaseDocId:", mat.firebaseDocId);
     
-    // Inizializza voti se mancano
     if(!mat.reliabilityVotes) mat.reliabilityVotes = { up: 0, down: 0 };
     if(voteType === 'up') mat.reliabilityVotes.up++;
     else mat.reliabilityVotes.down++;
+    console.log("📊 Nuovo conteggio locale:", mat.reliabilityVotes);
     
-    // ✅ 1. Aggiorna subito localStorage e UI (nessun blocco async)
     recordUserVote(matIdStr, voteType);
+    console.log("💾 Voto salvato in localStorage");
+    
+    // Aggiorna UI subito
     DB.save();
-    renderContent(); // ← Rigenera immediatamente la tab Materiali
-     // ✅ 2. Sync Firebase in background (non blocca l'interfaccia)
+    renderContent();
+    console.log("🎨 UI aggiornata");
+    
+    // Sync Firebase
     if(mat.firebaseDocId && window.communityDB) {
         try {
+            console.log("🔥 Tentativo sync Firebase...");
             const ref = window.fbDoc(window.communityDB, "materials", mat.firebaseDocId);
             const updateData = {};
             if(voteType === 'up') updateData["reliabilityVotes.up"] = window.fbIncrement(1);
             else updateData["reliabilityVotes.down"] = window.fbIncrement(1);
+            
             await window.fbUpdateDoc(ref, updateData);
-        } catch(e) { console.warn("⚠️ Firebase vote sync failed:", e); }
+            console.log("✅ Firebase aggiornato con successo!");
+        } catch(e) {
+            console.error("❌ ERRORE FIREBASE:", e.code, e.message);
+            alert("⚠️ Voto registrato localmente, ma errore cloud: " + e.message);
+        }
+    } else {
+        console.log("ℹ️ Nessun firebaseDocId o DB offline. Voto solo locale.");
     }
+}
+
+// ✅ Controlla se l'utente ha già votato
+function hasUserVoted(matId) {
+    try {
+        var votes = JSON.parse(localStorage.getItem('wvtr_user_votes') || '{}');
+        var res = votes[String(matId)] || null;
+        console.log("🔍 hasUserVoted(", matId, ") →", res);
+        return res;
+    } catch(e) { console.error("❌ Errore localStorage:", e); return null; }
+}
+
+// ✅ Registra il voto in localStorage
+function recordUserVote(matId, voteType) {
+    try {
+        var votes = JSON.parse(localStorage.getItem('wvtr_user_votes') || '{}');
+        votes[String(matId)] = voteType;
+        localStorage.setItem('wvtr_user_votes', JSON.stringify(votes));
+        console.log("📝 Salvato in localStorage:", votes);
+    } catch(e) { console.error("❌ Errore save localStorage:", e); }
 }
 
 // ✅ Calcola score affidabilità (0-100)
@@ -1789,22 +1824,6 @@ function getReliabilityBadge(score) {
   if(score >= 70) return '<span class="badge badge-green">✓ Reliable '+score+'%</span>';
   if(score >= 40) return '<span class="badge badge-yellow">⚠ Mixed '+score+'%</span>';
   return '<span class="badge badge-red">✗ Unreliable '+score+'%</span>';
-}
-  // ✅ Controlla se l'utente ha già votato questo materiale
-function hasUserVoted(matId) {
-    try {
-        var votes = JSON.parse(localStorage.getItem('wvtr_user_votes') || '{}');
-        return votes[String(matId)] || null;
-    } catch(e) { return null; }
-}
-
-// ✅ Registra il voto dell'utente in localStorage
-function recordUserVote(matId, voteType) {
-    try {
-        var votes = JSON.parse(localStorage.getItem('wvtr_user_votes') || '{}');
-        votes[String(matId)] = voteType;
-        localStorage.setItem('wvtr_user_votes', JSON.stringify(votes));
-    } catch(e) { console.warn('LocalStorage error:', e); }
 }
 
 function renderCalc() {
