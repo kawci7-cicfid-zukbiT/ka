@@ -2284,69 +2284,6 @@ function fillProductDefaults(key) {
   }
 }
 
-// 4. RENDER TAB SHELF LIFE
-function renderShelfLife() {
-  const currentMode = State.mode;
-  const unit = currentMode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
-  let prodOpts = '';
-  for(let k in PRODUCTS_DB) prodOpts += `<option value="${k}">${PRODUCTS_DB[k].name}</option>`;
-  
-  const defaultRate = State.calcResult ? State.calcResult.total.toFixed(6) : '';
-
-  return `
-  <div class="grid grid-2">
-    <div class="card">
-      <h2 style="display:flex;align-items:center;gap:0.4rem">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        Advanced Shelf Life Engine
-      </h2>
-      <div class="form-group"><label>Product Template</label><select class="form-input" id="sl-product" onchange="fillProductDefaults(this.value)">${prodOpts}</select></div>
-      <div class="grid grid-2">
-        <div class="form-group"><label>Weight (g or mL)</label><input type="number" step="any" class="form-input" id="sl-weight" value="100"></div>
-        <div class="form-group"><label>Surface Area (m²)</label><input type="number" step="any" class="form-input" id="sl-area" value="0.1"></div>
-      </div>
-      <div class="grid grid-2">
-        <div class="form-group"><label>Storage Temp (°C)</label><input type="number" step="any" class="form-input" id="sl-temp" value="25"></div>
-        <div class="form-group"><label>Ext. RH (%)</label><input type="number" step="any" class="form-input" id="sl-rh-ext" value="65"></div>
-      </div>
-      <div class="form-group"><label>Package ${currentMode.toUpperCase()} (${unit})</label><input type="number" step="any" class="form-input" id="sl-rate" value="${defaultRate}" placeholder="e.g. 0.5"></div>
-      
-      <div id="moisture-fields" class="grid grid-2" style="margin-top:0.5rem">
-        <div class="form-group"><label>Initial Moisture (%)</label><input type="number" step="any" class="form-input" id="sl-minit" value="3"></div>
-        <div class="form-group"><label>Critical Moisture (%)</label><input type="number" step="any" class="form-input" id="sl-mcrit" value="8"></div>
-      </div>
-      <div id="otx-fields" class="grid grid-2" style="margin-top:0.5rem;display:none">
-        <div class="form-group"><label>Fat Content (kg)</label><input type="number" step="any" class="form-input" id="sl-fat" value="0.3"></div>
-        <div class="form-group"><label>O2 Critical Limit (ml/kg)</label><input type="number" step="any" class="form-input" id="sl-o2crit" value="400"></div>
-      </div>
-
-      <div style="margin:0.8rem 0;padding:0.6rem;background:var(--primary-light);border-radius:8px">
-        <label style="display:flex;align-items:center;gap:0.4rem;margin:0"><input type="checkbox" id="sl-use-arr" checked> <strong>Apply Thermal Acceleration</strong></label>
-        <div class="grid grid-2" style="margin-top:0.4rem">
-          <div class="form-group"><label>Ea (kJ/mol)</label><input type="number" step="any" class="form-input" id="sl-ea" value="60"></div>
-          <div class="form-group"><label>Q10 (alt. to Ea)</label><input type="number" step="any" class="form-input" id="sl-q10" value="2.0"></div>
-        </div>
-      </div>
-
-      <button class="btn btn-primary btn-full" onclick="calculateAdvancedShelfLife()" style="margin-top:0.5rem">🚀 Calculate Shelf Life & Simulate</button>
-    </div>
-
-    <div class="card" id="sl-result-panel">
-      <div style="text-align:center;padding:2rem;color:var(--text-light)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:48px;height:48px;margin-bottom:0.5rem;opacity:0.3"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        <p>Select parameters and calculate to see predictions</p>
-      </div>
-    </div>
-  </div>
-  <div class="card" id="sl-chart-card" style="display:none;margin-top:1rem">
-    <h2>Quality Decay & Temperature What-If</h2>
-    <div class="grid grid-2">
-      <div class="chart-mini"><canvas id="slDecayChart"></canvas></div>
-      <div class="chart-mini"><canvas id="slTempChart"></canvas></div>
-    </div>
-  </div>`;
-}
-
 // 5. CALCOLATORE PRINCIPALE
 function calculateAdvancedShelfLife() {
   const prodId = document.getElementById('sl-product').value;
