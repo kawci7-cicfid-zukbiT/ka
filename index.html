@@ -3302,27 +3302,29 @@ function importFile(input){
       const existingNames = new Set(DB.materials.map(m => m.name.toLowerCase()));
      
 // ✅ Merge corretto: Firebase è la fonte di verità per i materiali Community
+// ✅ Merge corretto: Firebase è la fonte di verità per i materiali Community
 let addedCount = 0;
 for(const fm of fbMats) {
-  var localMat = DB.materials.find(m => m.name.toLowerCase() === fm.name.toLowerCase());
-  if (localMat) {
-    // ✅ SALVA ID ORIGINALE (per non rompere i laminati salvati)
-    var oldId = localMat.id;
-    
-    // ✅ SOVRASCRIVI TUTTI I DATI con quelli aggiornati da Firebase
-    Object.assign(localMat, fm);
-    
-    // ✅ RIPRISTINA ID ORIGINALE
-    localMat.id = oldId;
-    localMat.isCommunity = true;
-    if(fm.firebaseDocId) localMat.firebaseDocId = fm.firebaseDocId;
-  } else if (fm.name) {
-    // Nuovo materiale: usa ID Firebase
-    fm.id = 'fb_' + fm.id;
-    fm.isCommunity = true;
-    DB.materials.push(fm);
-    addedCount++;
-  }
+    var localMat = DB.materials.find(m => m.name.toLowerCase() === fm.name.toLowerCase());
+    if (localMat) {
+        // 1. Salva l'ID locale originale (per non rompere i laminati salvati)
+        var oldId = localMat.id;
+        
+        // 2. SOVRASCRIVE i dati locali con quelli freschi da Firebase
+        // (Aggiorna voti, condizioni, valori, ecc.)
+        Object.assign(localMat, fm);
+        
+        // 3. Ripristina l'ID originale
+        localMat.id = oldId;
+        localMat.isCommunity = true;
+        if(fm.firebaseDocId) localMat.firebaseDocId = fm.firebaseDocId;
+    } else if (fm.name) {
+        // Nuovo materiale: aggiungi alla lista
+        fm.id = 'fb_' + fm.id;
+        fm.isCommunity = true;
+        DB.materials.push(fm);
+        addedCount++;
+    }
 }
       
       console.log("✅ Materiali community aggiunti:", addedCount);
