@@ -1804,7 +1804,7 @@ function hasUserVoted(matId) {
 }
 
 // ✅ Registra il voto dell'utente in localStorage
-unction recordUserVote(matId, voteType) {
+function recordUserVote(matId, voteType) {
     var votes = JSON.parse(localStorage.getItem('wvtr_user_votes') || '{}');
     votes[String(matId)] = voteType;
     localStorage.setItem('wvtr_user_votes', JSON.stringify(votes));
