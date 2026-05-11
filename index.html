@@ -1208,8 +1208,8 @@ function renderContent() {
       case 'arrhenius': c.innerHTML=renderArrhenius(); break;
       case 'sensitivity': c.innerHTML=renderSensitivity(); break;
       case 'compare': c.innerHTML=renderCompare(); break;
-      case 'materials': c.innerHTML=renderMaterials(); break;
-      case 'shelflife': c.innerHTML=renderShelfLife(); break;  
+      case 'shelflife': c.innerHTML=renderShelfLife(); break; 
+      case 'materials': c.innerHTML=renderMaterials(); break; 
       case 'laminates': c.innerHTML=renderLaminates(); break;
       default: c.innerHTML=renderHome();
     }
@@ -1868,52 +1868,65 @@ function getReliabilityBadge(score) {
   return '<span class="badge badge-red">✗ Unreliable '+score+'%</span>';
 }
 // ✅ FUNZIONE: Render tab Shelf Life
+// ✅ FUNZIONE: Render tab Shelf Life
 function renderShelfLife() {
   var modeLabel = State.mode === 'wvtr' ? 'WVTR' : 'OTR';
   var unit = State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
-  // Auto-compila con l'ultimo risultato del calcolatore se disponibile
+  
+  // Auto-fill with last calculator result if available
   var currentRate = (State.calcResult && State.calcResult.total) ? State.calcResult.total.toFixed(6) : '';
 
   return `
     <div class="grid grid-2">
       <div class="card">
         <h2>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
           Shelf Life Estimator
         </h2>
         <p style="font-size:.78rem;color:var(--text-light);margin-bottom:.75rem">
-          Stima la durata di conservazione basata sulla trasmissione ${modeLabel} attraverso il packaging.
+          Estimate storage life based on ${modeLabel} transmission through the packaging.
         </p>
+        
         <div class="form-group">
-          <label>${modeLabel} del Package (${unit})</label>
+          <label>Package ${modeLabel} (${unit})</label>
           <input type="number" step="any" class="form-input" id="sl-rate" value="${currentRate}" placeholder="e.g. 0.5">
-          <span style="font-size:.65rem;color:var(--text-light)">Auto-compilato dall'ultimo calcolo</span>
+          <span style="font-size:.65rem;color:var(--text-light)">Pre-filled if available from Calculator</span>
         </div>
+        
         <div class="form-group">
-          <label>Superficie Package (m²)</label>
+          <label>Package Surface Area (m²)</label>
           <input type="number" step="any" class="form-input" id="sl-area" value="0.1" placeholder="e.g. 0.1">
         </div>
+        
         <div class="form-group">
-          <label>Peso/Volume Prodotto (g o mL)</label>
+          <label>Product Weight / Volume (g or mL)</label>
           <input type="number" step="any" class="form-input" id="sl-mass" value="100" placeholder="e.g. 100">
         </div>
+        
         <div class="grid grid-2" style="margin-top:.5rem">
           <div class="form-group">
-            <label>Livello Iniziale ${modeLabel} (%)</label>
+            <label>Initial ${modeLabel} Level (%)</label>
             <input type="number" step="any" class="form-input" id="sl-initial" value="3" placeholder="e.g. 3">
           </div>
           <div class="form-group">
-            <label>Limite Critico ${modeLabel} (%)</label>
+            <label>Critical Limit (%)</label>
             <input type="number" step="any" class="form-input" id="sl-critical" value="8" placeholder="e.g. 8">
           </div>
         </div>
-        <button class="btn btn-primary btn-full" onclick="calculateShelfLife()" style="margin-top:.75rem">Calculate Shelf Life</button>
+        
+        <button class="btn btn-primary btn-full" onclick="calculateShelfLife()" style="margin-top:.75rem">
+          Calculate Shelf Life
+        </button>
       </div>
       
       <div class="card" id="sl-result-card" style="display:flex;align-items:center;justify-content:center;text-align:center;min-height:250px">
         <div style="color:var(--text-light)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:48px;height:48px;margin-bottom:.5rem;opacity:.3"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          <p>Inserisci i parametri per stimare la shelf life</p>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:48px;height:48px;margin-bottom:.5rem;opacity:.3">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <p>Enter parameters to estimate shelf life</p>
         </div>
       </div>
     </div>
@@ -1921,6 +1934,7 @@ function renderShelfLife() {
 }
 
 // ✅ FUNZIONE: Calcolo Shelf Life (Modello lineare ASTM/ISO)
+// ✅ FUNZIONE: Calcolo Shelf Life (Modello lineare)
 function calculateShelfLife() {
   var rate = parseFloat(document.getElementById('sl-rate').value);
   var area = parseFloat(document.getElementById('sl-area').value);
@@ -1930,12 +1944,11 @@ function calculateShelfLife() {
   var unit = State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
 
   if (!rate || rate <= 0 || !area || area <= 0 || !mass || mass <= 0 || isNaN(initial) || isNaN(critical) || critical <= initial) {
-    alert('Verifica i dati: il limite critico deve essere superiore a quello iniziale e tutti i valori > 0.');
+    alert('⚠️ Please check the inputs:\nCritical Limit must be higher than Initial Level, and all values must be greater than 0.');
     return;
   }
 
   // Formula: t = (W · ΔC) / (A · P)
-  // ΔC = (Critical - Initial) / 100 (frazione di massa)
   var delta = (critical - initial) / 100;
   var totalAllowedChange = mass * delta;
   var dailyTransmission = area * rate;
@@ -1944,19 +1957,34 @@ function calculateShelfLife() {
   var months = days / 30.44;
   var years = days / 365.25;
 
+  var modeLabel = State.mode === 'wvtr' ? 'WVTR' : 'OTR';
+
   var resultHTML = `
     <div style="width:100%;animation:fadeIn 0.3s ease">
-      <div style="font-size:2.8rem;font-weight:800;color:var(--primary);line-height:1.1">${Math.round(days)} days</div>
-      <div style="font-size:0.9rem;color:var(--text-light);margin-top:.5rem;font-weight:500">
-        ≈ ${months.toFixed(1)} months | ≈ ${years.toFixed(2)} years
+      <div style="font-size:2.8rem;font-weight:800;color:var(--primary);line-height:1.1">
+        ${Math.round(days)} Days
       </div>
+      <div style="font-size:0.9rem;color:var(--text-light);margin-top:.5rem;font-weight:500">
+        ≈ ${months.toFixed(1)} Months | ≈ ${years.toFixed(2)} Years
+      </div>
+      
       <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border);text-align:left;font-size:.75rem;color:var(--text-light)">
-        <div style="display:flex;justify-content:space-between;margin-bottom:.4rem"><span>Package ${State.mode.toUpperCase()}:</span><strong style="color:var(--text)">${rate} ${unit}</strong></div>
-        <div style="display:flex;justify-content:space-between;margin-bottom:.4rem"><span>Trasmissione giornaliera:</span><strong style="color:var(--text)">${dailyTransmission.toFixed(4)} ${State.mode==='wvtr'?'g/day':'cc/day'}</strong></div>
-        <div style="display:flex;justify-content:space-between"><span>Variazione massima ammessa:</span><strong style="color:var(--text)">${totalAllowedChange.toFixed(2)} ${State.mode==='wvtr'?'g':'cc'}</strong></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:.4rem">
+          <span>Package ${modeLabel}:</span>
+          <strong style="color:var(--text)">${rate} ${unit}</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:.4rem">
+          <span>Daily Transmission:</span>
+          <strong style="color:var(--text)">${dailyTransmission.toFixed(4)} ${State.mode==='wvtr'?'g/day':'cc/day'}</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span>Max Allowed Change:</span>
+          <strong style="color:var(--text)">${totalAllowedChange.toFixed(2)} ${State.mode==='wvtr'?'g':'cc'}</strong>
+        </div>
       </div>
     </div>
   `;
+  
   document.getElementById('sl-result-card').innerHTML = resultHTML;
 }
 function renderCalc() {
