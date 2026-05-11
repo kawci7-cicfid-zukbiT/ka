@@ -1655,24 +1655,24 @@ function renderHome() {
 </div>
       
 
-    <!-- ✅ STATS CARDS (SPOSTATE QUI, SUBITO DOPO LA CLASSIFICA) -->
-    <div class="grid grid-3" style="margin-bottom:1.5rem">
-      <div class="card" style="text-align:center;padding:1rem;animation:statEntrance 0.4s ease forwards;opacity:0">
-       <div style="font-size:1.8rem;font-weight:700;color:var(--primary)" class="count-up" data-target="${totalMats}">${totalMats}</div>
-       <div style="font-size:0.75rem;color:var(--text-light)">Materials Available</div>
-        <div class="progress-bar"><div class="progress-fill" style="--progress: ${Math.min(totalMats/50*100,100)}%"></div></div>
-      </div>
-      <div class="card" style="text-align:center;padding:1rem;animation:statEntrance 0.4s ease forwards 0.15s;opacity:0">
-        <div style="font-size:1.8rem;font-weight:700;color:var(--success)" class="count-up" data-target="${multiTempMats}">0</div>
-        <div style="font-size:0.75rem;color:var(--text-light)">Arrhenius-Ready</div>
-        <div class="progress-bar"><div class="progress-fill" style="--progress: ${Math.min(multiTempMats/20*100,100)}%;background:linear-gradient(90deg,var(--success),#22c55e)"></div></div>
-      </div>
-      <div class="card" style="text-align:center;padding:1rem;animation:statEntrance 0.4s ease forwards 0.3s;opacity:0">
-        <div style="font-size:1.8rem;font-weight:700;color:var(--purple)" class="count-up" data-target="${totalLams}">0</div>
-        <div style="font-size:0.75rem;color:var(--text-light)">Saved Laminates</div>
-        <div class="progress-bar"><div class="progress-fill" style="--progress: ${Math.min(totalLams/30*100,100)}%;background:linear-gradient(90deg,var(--purple),#a78bfa)"></div></div>
-      </div>
-    </div>
+   '<!-- ✅ STATS CARDS COMPATTE -->'+
+'<div class="grid grid-3" style="margin-bottom:1rem">'+
+    '<div class="card" style="text-align:center;padding:0.5rem 0.3rem;animation:statEntrance 0.4s ease forwards;opacity:0">'+
+        '<div style="font-size:1.5rem;font-weight:700;color:var(--primary)" class="count-up" data-target="${totalMats}">${totalMats}</div>'+
+        '<div style="font-size:0.7rem;color:var(--text-light);margin-top:0.1rem">Materials Available</div>'+
+        '<div class="progress-bar" style="margin:0.3rem 0"><div class="progress-fill" style="--progress: ${Math.min(totalMats/50*100,100)}%"></div></div>'+
+    '</div>'+
+    '<div class="card" style="text-align:center;padding:0.5rem 0.3rem;animation:statEntrance 0.4s ease forwards 0.15s;opacity:0">'+
+        '<div style="font-size:1.5rem;font-weight:700;color:var(--success)" class="count-up" data-target="${multiTempMats}">0</div>'+
+        '<div style="font-size:0.7rem;color:var(--text-light);margin-top:0.1rem">Arrhenius-Ready</div>'+
+        '<div class="progress-bar" style="margin:0.3rem 0"><div class="progress-fill" style="--progress: ${Math.min(multiTempMats/20*100,100)}%;background:linear-gradient(90deg,var(--success),#22c55e)"></div></div>'+
+    '</div>'+
+    '<div class="card" style="text-align:center;padding:0.5rem 0.3rem;animation:statEntrance 0.4s ease forwards 0.3s;opacity:0">'+
+        '<div style="font-size:1.5rem;font-weight:700;color:var(--purple)" class="count-up" data-target="${totalLams}">0</div>'+
+        '<div style="font-size:0.7rem;color:var(--text-light);margin-top:0.1rem">Saved Laminates</div>'+
+        '<div class="progress-bar" style="margin:0.3rem 0"><div class="progress-fill" style="--progress: ${Math.min(totalLams/30*100,100)}%;background:linear-gradient(90deg,var(--purple),#a78bfa)"></div></div>'+
+    '</div>'+
+'</div>'+
 
     <!-- FEATURES SECTION -->
     <div class="features-section" id="featuresSection">
