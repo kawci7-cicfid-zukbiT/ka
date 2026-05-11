@@ -3300,16 +3300,24 @@ function importFile(input){
       
       // Merge: aggiungi solo materiali nuovi (evita duplicati per nome)
       const existingNames = new Set(DB.materials.map(m => m.name.toLowerCase()));
-     // ✅ Merge: aggiungi materiali nuovi OPPURE aggiorna stato Community di quelli esistenti
+     
+// ✅ Merge corretto: Firebase è la fonte di verità per i materiali Community
 let addedCount = 0;
-
 for(const fm of fbMats) {
   var localMat = DB.materials.find(m => m.name.toLowerCase() === fm.name.toLowerCase());
   if (localMat) {
+    // ✅ SALVA ID ORIGINALE (per non rompere i laminati salvati)
+    var oldId = localMat.id;
+    
+    // ✅ SOVRASCRIVI TUTTI I DATI con quelli aggiornati da Firebase
+    Object.assign(localMat, fm);
+    
+    // ✅ RIPRISTINA ID ORIGINALE
+    localMat.id = oldId;
     localMat.isCommunity = true;
-    localMat.author = fm.author || localMat.author;
-    if(fm.firebaseDocId) localMat.firebaseDocId = fm.firebaseDocId; // ← ✅ COLLEGA ID
+    if(fm.firebaseDocId) localMat.firebaseDocId = fm.firebaseDocId;
   } else if (fm.name) {
+    // Nuovo materiale: usa ID Firebase
     fm.id = 'fb_' + fm.id;
     fm.isCommunity = true;
     DB.materials.push(fm);
