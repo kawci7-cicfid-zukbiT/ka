@@ -613,82 +613,79 @@ window.fbDoc = doc;
   console.log("🔥 Firebase connesso!");
 
 // ✅ Funzione: Salva materiale nella community (con isMetallized)
+// ✅ Funzione: Salva materiale nella community (CON TUTTI I CAMPI)
 window.saveToCommunity = async function(mat) {
-  try {
-    const payload = {
-      name: mat.name,
-      family: mat.family || "Other",
-      testMethodWVTR: mat.testMethodWVTR || "",
-      testMethodOTR: mat.testMethodOTR || "",
-      isMetallized: mat.isMetallized || false,
-      wvtrValues: mat.wvtrValues || [],
-      otrValues: mat.otrValues || [],
-      validConditions: mat.validConditions || [],
-      author: "Community",
-      updatedAt: new Date().toISOString()
-    };
-
-    let docRef;
-    if (mat.firebaseDocId) {
-      // ✅ AGGIORNAMENTO: modifica il documento esistente
-      const ref = window.fbDoc(window.communityDB, "materials", mat.firebaseDocId);
-      await window.fbUpdateDoc(ref, payload);
-      docRef = { id: mat.firebaseDocId };
-    } else {
-      // ✅ NUOVA PUBBLICAZIONE: crea un nuovo documento
-      payload.createdAt = new Date().toISOString();
-      docRef = await window.fbAddDoc(window.fbCollection(window.communityDB, "materials"), payload);
+    try {
+        const payload = {
+            name: mat.name,
+            family: mat.family || "Other",
+            testMethodWVTR: mat.testMethodWVTR || "",
+            testMethodOTR: mat.testMethodOTR || "",
+            isMetallized: mat.isMetallized || false,
+            wvtrValues: mat.wvtrValues || [],
+            otrValues: mat.otrValues || [],
+            validConditions: mat.validConditions || [],
+            author: mat.author || "Community",  // ✅ ORA USA L'AUTORE SALVATO
+            company: mat.company || "",         // ✅ AGGIUNTO
+            tdsLink: mat.tdsLink || "",         // ✅ AGGIUNTO
+            updatedAt: new Date().toISOString()
+        };
+        
+        let docRef;
+        if (mat.firebaseDocId) {
+            const ref = window.fbDoc(window.communityDB, "materials", mat.firebaseDocId);
+            await window.fbUpdateDoc(ref, payload);
+            docRef = { id: mat.firebaseDocId };
+        } else {
+            payload.createdAt = new Date().toISOString();
+            docRef = await window.fbAddDoc(window.fbCollection(window.communityDB, "materials"), payload);
+        }
+        return { success: true, id: docRef.id };
+    } catch(e) {
+        console.error("❌ Save error:", e);
+        return { success: false, error: e.message };
     }
-    return { success: true, id: docRef.id };
-  } catch(e) {
-    console.error("❌ Save error:", e);
-    return { success: false, error: e.message };
-  }
 };
 
 // ✅ Funzione: Carica materiali dalla community (con isMetallized)
+// ✅ Funzione: Carica materiali dalla community (CON TUTTI I CAMPI)
 window.loadFromCommunity = async function() {
-  try {
-    console.log("🔍 Query Firestore in corso...");
-    const q = window.fbQuery(
-      window.fbCollection(window.communityDB, "materials"),
-      window.fbOrderBy("createdAt", "desc")
-    );
-    const snapshot = await window.fbGetDocs(q);
-    console.log("📄 Documenti trovati:", snapshot.size);
-    
-    const mats = [];
-    snapshot.forEach(doc => {
-      const data = doc.data();
-      console.log("📦 Documento caricato:", doc.id, data.name);
-
-  if(data.testMethod && !data.testMethodWVTR && !data.testMethodOTR) {
-    data.testMethodWVTR = data.testMethod;
-    data.testMethodOTR = data.testMethod;
-  }
-      
-   mats.push({
-    id: 'fb_' + doc.id,
-    firebaseDocId: doc.id,
-    ...data,
-    testMethod: data.testMethod || "",
-    author: data.author || "Community",
-    isMetallized: data.isMetallized || false,
-    isCommunity: true,
-    usageCount: data.usageCount || 0,
-    lastUsageMonth: data.lastUsageMonth || '',
-    // ✅ AGGIUNGI QUESTA RIGA:
-    reliabilityVotes: data.reliabilityVotes || { up: 0, down: 0 }
-      });
-    });
-    
-    console.log("✅ Totale materiali caricati:", mats.length);
-    return mats;
-  } catch(e) {
-    console.error("❌ Load error:", e);
-    console.error("❌ Errore dettagliato:", e.code, e.message);
-    return [];
-  }
+    try {
+        console.log("🔍 Query Firestore in corso...");
+        const q = window.fbQuery(
+            window.fbCollection(window.communityDB, "materials"),
+            window.fbOrderBy("createdAt", "desc")
+        );
+        const snapshot = await window.fbGetDocs(q);
+        console.log("📄 Documenti trovati:", snapshot.size);
+        const mats = [];
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if(data.testMethod && !data.testMethodWVTR && !data.testMethodOTR) {
+                data.testMethodWVTR = data.testMethod;
+                data.testMethodOTR = data.testMethod;
+            }
+            mats.push({
+                id: 'fb_' + doc.id,
+                firebaseDocId: doc.id,
+                ...data,
+                testMethod: data.testMethod || "",
+                author: data.author || "Community",
+                company: data.company || "",           // ✅ AGGIUNTO
+                tdsLink: data.tdsLink || "",           // ✅ AGGIUNTO
+                isMetallized: data.isMetallized || false,
+                isCommunity: true,
+                usageCount: data.usageCount || 0,
+                lastUsageMonth: data.lastUsageMonth || '',
+                reliabilityVotes: data.reliabilityVotes || { up: 0, down: 0 }
+            });
+        });
+        console.log("✅ Totale materiali caricati:", mats.length);
+        return mats;
+    } catch(e) {
+        console.error("❌ Load error:", e);
+        return [];
+    }
 };
 </script>
 
@@ -1378,31 +1375,33 @@ alert(`✅ Published! The material is now visible to everyone.\n🌍 The 'Commun
   }
 } 
 // ✅ Nuova funzione: cerca il materiale per ID e poi pubblica
+// ✅ Nuova funzione: cerca il materiale per ID e poi pubblica
 async function submitToFirebaseById(matId) {
-  var mat = DB.materials.find(m => m.id === matId);
-  if(!mat) { alert("❌ Material not found"); return; }
-  
-  const btn = event?.target;
-  if(btn) { btn.disabled = true; btn.innerText = "⏳..."; }
-  
-  try {
-    const result = await window.saveToCommunity(mat);
-    if(result.success) {
-      mat.firebaseDocId = result.id;
-      mat.isCommunity = true;
-      mat.author = State.userName || "Community";  // ← Assicurati che l'autore sia salvato
-      DB.save();
-      alert("✅ Published/Updated successfully!");
-      render();
-    } else {
-      alert("❌ Error: " + result.error);
+    var mat = DB.materials.find(m => m.id === matId);
+    if(!mat) { alert("❌ Material not found"); return; }
+    
+    const btn = event?.target;
+    if(btn) { btn.disabled = true; btn.innerText = "⏳..."; }
+    
+    try {
+        // ✅ ASSICURATI CHE I CAMPI CI SIANO PRIMA DI SALVARE
+        mat.author = mat.author || State.userName || "Community";
+        
+        const result = await window.saveToCommunity(mat);
+        if(result.success) {
+            mat.firebaseDocId = result.id;
+            mat.isCommunity = true;
+            DB.save();
+            alert("✅ Published/Updated successfully!");
+            render();
+        } else {
+            alert("❌ Error: " + result.error);
+        }
+    } catch(e) {
+        alert("❌ Unexpected error: " + e.message);
+    } finally {
+        if(btn) { btn.disabled = false; btn.innerText = mat.firebaseDocId ? "🔄 Update" : "🌍 Publish"; }
     }
-  } catch(e) {
-    alert("❌ Unexpected error: " + e.message);
-  // ✅ CORRETTO
-} finally {
-  if(btn) { btn.disabled = false; btn.innerText = mat.firebaseDocId ? "🔄 Update" : "🌍 Publish"; }
-  }
 }
 // 📊 TRACCIAMENTO UTILIZZO MATERIALI & RESET MENSILE
 
