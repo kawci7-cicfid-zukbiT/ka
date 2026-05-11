@@ -1143,8 +1143,8 @@ var TABS = [
   { id: 'sensitivity', label: 'Sensitivity', svg: '<path d="M2 12h4l3-9 4 18 3-9h4"/>' },
   { id: 'compare', label: 'Compare', svg: '<rect x="2" y="2" width="9" height="9"/><rect x="13" y="2" width="9" height="9"/><rect x="2" y="13" width="9" height="9"/><rect x="13" y="13" width="9" height="9"/>' },
   { id: 'arrhenius', label: 'Arrhenius', svg: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>' },
-  { id: 'materials', label: 'Materials DB', svg: '<path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>' },
   { id: 'shelflife', label: 'Shelf Life', svg: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>' },
+  { id: 'materials', label: 'Materials DB', svg: '<path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>' },
   { id: 'laminates', label: 'Laminates DB', svg: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>' }
 ];
 
@@ -1987,11 +1987,11 @@ function calculateShelfLife() {
   
   document.getElementById('sl-result-card').innerHTML = resultHTML;
 }
-  // ====================================================================
-// 🧪 PROFESSIONAL SHELF LIFE MODULE (WVTR Moisture + OTR Oxidation)
+// ====================================================================
+// 🧪 PROFESSIONAL SHELF LIFE MODULE (FIXED & TESTED)
 // ====================================================================
 
-// 1. DATABASE PRODOTTI STANDARD (GAB Parameters & Thresholds)
+// 1. DATABASE PRODOTTI STANDARD
 const PRODUCTS_DB = {
   biscuits: { name: "Biscuits / Crackers", type: "moisture", M_init: 3, M_crit: 6, GAB: {M_m: 0.045, C: 12.5, K: 0.85}, Ea: 60000 },
   coffee: { name: "Ground Coffee", type: "moisture", M_init: 3, M_crit: 5, GAB: {M_m: 0.035, C: 15.0, K: 0.88}, Ea: 55000 },
@@ -2009,7 +2009,7 @@ function getPsat(T) {
   return 0.61094 * Math.exp((17.625 * T) / (T + 243.04));
 }
 
-// Risolve GAB inversa per trovare a_w dato M (metodo bisezione robusto)
+// Risolve GAB inversa per trovare a_w dato M
 function solveAwFromGAB(M, params) {
   let low = 0.01, high = 0.99;
   for (let i = 0; i < 50; i++) {
@@ -2021,116 +2021,51 @@ function solveAwFromGAB(M, params) {
   return (low + high) / 2;
 }
 
-// Fattore di accelerazione termica (Arrhenius o Q10)
-function getAccelFactor(Ea, Q10, T_ref, T_target) {
+// Fattore di accelerazione termica
+function getAccelFactor(Ea_J, Q10, T_ref, T_target) {
   if (Q10 && Q10 > 0) return Math.pow(Q10, (T_target - T_ref) / 10);
-  if (Ea && Ea > 0) {
+  if (Ea_J && Ea_J > 0) {
     const R = 8.314;
-    return Math.exp(-(Ea / R) * (1 / (T_target + 273.15) - 1 / (T_ref + 273.15)));
+    return Math.exp(-(Ea_J / R) * (1 / (T_target + 273.15) - 1 / (T_ref + 273.15)));
   }
   return 1;
 }
 
-// 3. MAIN CALCULATION ENGINE (Simulazione numerica per precisione GAB)
-function calculateAdvancedShelfLife() {
-  const prodId = document.getElementById('sl-product').value;
-  const prod = PRODUCTS_DB[prodId];
-  if (!prod) return alert("Select a product type first");
+// 3. AUTO-FILL & UI MANAGEMENT
+function fillProductDefaults(key) {
+  const p = PRODUCTS_DB[key];
+  if (!p) return;
+  
+  const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.value = val; };
+  const moistFields = document.getElementById('moisture-fields');
+  const otxFields = document.getElementById('otx-fields');
+  if(moistFields) moistFields.style.display = p.type === 'moisture' ? 'grid' : 'none';
+  if(otxFields) otxFields.style.display = p.type === 'otx' ? 'grid' : 'none';
 
-  // Inputs UI
-  const W = parseFloat(document.getElementById('sl-weight').value) || 0;
-  const A = parseFloat(document.getElementById('sl-area').value) || 0;
-  const T_store = parseFloat(document.getElementById('sl-temp').value) || 25;
-  const RH_out = parseFloat(document.getElementById('sl-rh-ext').value) || 65;
-  const rateInput = parseFloat(document.getElementById('sl-rate').value) || 0;
-  const useArr = document.getElementById('sl-use-arr').checked;
-  const Ea_input = parseFloat(document.getElementById('sl-ea').value) || prod.Ea || 50000;
-  const Q10_input = parseFloat(document.getElementById('sl-q10').value) || 2.0;
-  const mode = State.mode; // 'wvtr' or 'otr'
-
-  if (W <= 0 || A <= 0 || rateInput <= 0) return alert("Check weight, area and transmission rate");
-
-  // Fattore termico
-  const accel = getAccelFactor(Ea_input, Q10_input, 25, T_store);
-  const effectiveRate = rateInput * accel;
-
-  let result = { days: 0, history: [], mode: mode, type: prod.type };
-
-  if (prod.type === 'moisture') {
-    // === WVTR MOISTURE GAIN SIMULATOR ===
-    const M_crit = parseFloat(document.getElementById('sl-mcrit').value) || prod.M_crit;
-    const M_init = parseFloat(document.getElementById('sl-minit').value) || prod.M_init;
-    const Psat = getPsat(T_store) * 1000; // kPa -> Pa
-    const dP_std = Psat * 0.5; // Gradiente standard ~50% RH per scaling WVTR
-    const dM_max = (M_crit - M_init) / 100; // Differenza massima tollerata (frazione)
-    const maxSimDays = 5000;
-    let dt = 1; // step giornaliero
-    let M = M_init;
-    let t = 0;
-    let history = [{ t: 0, M: M, aw: 0.1, quality: 100 }];
-
-    while (M < M_crit && t < maxSimDays) {
-      const a_w = solveAwFromGAB(M / 100, prod.GAB);
-      const RH_in = a_w * 100;
-      const dP_current = Psat * (RH_out - RH_in) / 100;
-      const rate_scale = Math.max(dP_current / dP_std, 0.01); // Evita divisioni per 0
-      const dM_day = ((effectiveRate * rate_scale) * A) / (W / 100); // % moisture/day
-      M += dM_day;
-      t += dt;
-      const quality = Math.max(0, 100 - ((M - M_init) / (M_crit - M_init)) * 100);
-      history.push({ t: t, M: Math.min(M, M_crit), aw: a_w, quality: quality });
-    }
-    result.days = t;
-    result.history = history;
-    result.M_crit = M_crit;
-    result.M_init = M_init;
+  if (p.type === 'moisture') {
+    setVal('sl-minit', p.M_init); setVal('sl-mcrit', p.M_crit); setVal('sl-ea', p.Ea/1000);
   } else {
-    // === OTR LIPID OXIDATION (Linear + Arrhenius) ===
-    const fatKg = parseFloat(document.getElementById('sl-fat').value) || prod.fat_kg;
-    const O2_crit = parseFloat(document.getElementById('sl-o2crit').value) || prod.O2_crit;
-    const totalO2_allowed = O2_crit * fatKg; // ml O2
-    const dailyO2 = effectiveRate * A; // ml O2/day
-    const days = totalO2_allowed / dailyO2;
-    
-    // Genera storia lineare per il grafico
-    for (let d = 0; d <= Math.min(days * 1.2, 3650); d += 5) {
-      const consumed = dailyO2 * d;
-      const quality = Math.max(0, 100 - (consumed / totalO2_allowed) * 100);
-      result.history.push({ t: d, quality: quality });
-    }
-    result.days = Math.round(days);
-    result.type = 'otx';
+    setVal('sl-fat', p.fat_kg); setVal('sl-o2crit', p.O2_crit); setVal('sl-ea', p.Ea/1000);
   }
-
-  renderShelfLifeResult(result);
 }
 
-// 4. UI RENDER & CHART.JS
+// 4. RENDER TAB SHELF LIFE
 function renderShelfLife() {
   const currentMode = State.mode;
   const unit = currentMode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
-  
-  // Popola dropdown prodotti
   let prodOpts = '';
-  for(let k in PRODUCTS_DB) {
-    prodOpts += `<option value="${k}">${PRODUCTS_DB[k].name}</option>`;
-  }
+  for(let k in PRODUCTS_DB) prodOpts += `<option value="${k}">${PRODUCTS_DB[k].name}</option>`;
+  
+  const defaultRate = State.calcResult ? State.calcResult.total.toFixed(6) : '';
 
   return `
   <div class="grid grid-2">
     <div class="card">
       <h2 style="display:flex;align-items:center;gap:0.4rem">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px">
-          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         Advanced Shelf Life Engine
       </h2>
-      <div class="form-group">
-        <label>Product Template</label>
-        <select class="form-input" id="sl-product" onchange="fillProductDefaults(this.value)">
-          ${prodOpts}
-        </select>
-      </div>
+      <div class="form-group"><label>Product Template</label><select class="form-input" id="sl-product" onchange="fillProductDefaults(this.value)">${prodOpts}</select></div>
       <div class="grid grid-2">
         <div class="form-group"><label>Weight (g or mL)</label><input type="number" step="any" class="form-input" id="sl-weight" value="100"></div>
         <div class="form-group"><label>Surface Area (m²)</label><input type="number" step="any" class="form-input" id="sl-area" value="0.1"></div>
@@ -2139,24 +2074,26 @@ function renderShelfLife() {
         <div class="form-group"><label>Storage Temp (°C)</label><input type="number" step="any" class="form-input" id="sl-temp" value="25"></div>
         <div class="form-group"><label>Ext. RH (%)</label><input type="number" step="any" class="form-input" id="sl-rh-ext" value="65"></div>
       </div>
-      <div class="form-group">
-        <label>Package ${currentMode.toUpperCase()} (${unit})</label>
-        <input type="number" step="any" class="form-input" id="sl-rate" value="${State.calcResult ? State.calcResult.total.toFixed(6) : ''}" placeholder="e.g. 0.5">
-      </div>
+      <div class="form-group"><label>Package ${currentMode.toUpperCase()} (${unit})</label><input type="number" step="any" class="form-input" id="sl-rate" value="${defaultRate}" placeholder="e.g. 0.5"></div>
       
-      <div style="margin:0.5rem 0;padding:0.5rem;background:var(--primary-light);border-radius:8px">
-        <label style="display:flex;align-items:center;gap:0.4rem;margin:0">
-          <input type="checkbox" id="sl-use-arr" checked> <strong>Apply Thermal Acceleration</strong>
-        </label>
+      <div id="moisture-fields" class="grid grid-2" style="margin-top:0.5rem">
+        <div class="form-group"><label>Initial Moisture (%)</label><input type="number" step="any" class="form-input" id="sl-minit" value="3"></div>
+        <div class="form-group"><label>Critical Moisture (%)</label><input type="number" step="any" class="form-input" id="sl-mcrit" value="8"></div>
+      </div>
+      <div id="otx-fields" class="grid grid-2" style="margin-top:0.5rem;display:none">
+        <div class="form-group"><label>Fat Content (kg)</label><input type="number" step="any" class="form-input" id="sl-fat" value="0.3"></div>
+        <div class="form-group"><label>O2 Critical Limit (ml/kg)</label><input type="number" step="any" class="form-input" id="sl-o2crit" value="400"></div>
+      </div>
+
+      <div style="margin:0.8rem 0;padding:0.6rem;background:var(--primary-light);border-radius:8px">
+        <label style="display:flex;align-items:center;gap:0.4rem;margin:0"><input type="checkbox" id="sl-use-arr" checked> <strong>Apply Thermal Acceleration</strong></label>
         <div class="grid grid-2" style="margin-top:0.4rem">
           <div class="form-group"><label>Ea (kJ/mol)</label><input type="number" step="any" class="form-input" id="sl-ea" value="60"></div>
           <div class="form-group"><label>Q10 (alt. to Ea)</label><input type="number" step="any" class="form-input" id="sl-q10" value="2.0"></div>
         </div>
       </div>
 
-      <button class="btn btn-primary btn-full" onclick="calculateAdvancedShelfLife()" style="margin-top:0.5rem">
-        🚀 Calculate Shelf Life & Simulate
-      </button>
+      <button class="btn btn-primary btn-full" onclick="calculateAdvancedShelfLife()" style="margin-top:0.5rem">🚀 Calculate Shelf Life & Simulate</button>
     </div>
 
     <div class="card" id="sl-result-panel">
@@ -2172,26 +2109,71 @@ function renderShelfLife() {
       <div class="chart-mini"><canvas id="slDecayChart"></canvas></div>
       <div class="chart-mini"><canvas id="slTempChart"></canvas></div>
     </div>
-  </div>
-  `;
+  </div>`;
 }
 
-// Auto-fill defaults when product changes
-function fillProductDefaults(key) {
-  const p = PRODUCTS_DB[key];
-  if (!p) return;
-  if (p.type === 'moisture') {
-    document.getElementById('sl-minit') ? document.getElementById('sl-minit').value = p.M_init : null;
-    document.getElementById('sl-mcrit') ? document.getElementById('sl-mcrit').value = p.M_crit : null;
-    if(document.getElementById('sl-ea')) document.getElementById('sl-ea').value = (p.Ea/1000);
+// 5. CALCOLATORE PRINCIPALE
+function calculateAdvancedShelfLife() {
+  const prodId = document.getElementById('sl-product').value;
+  const prod = PRODUCTS_DB[prodId];
+  if (!prod) return alert("Select a product type first");
+
+  const getVal = (id, def) => parseFloat(document.getElementById(id)?.value) || def;
+
+  const W = getVal('sl-weight', 0);
+  const A = getVal('sl-area', 0);
+  const T_store = getVal('sl-temp', 25);
+  const RH_out = getVal('sl-rh-ext', 65);
+  const rateInput = getVal('sl-rate', 0);
+  const Ea_kJ = getVal('sl-ea', (prod.Ea||50000)/1000);
+  const Q10_input = getVal('sl-q10', 2.0);
+  const Ea_J = Ea_kJ * 1000; // Converti kJ -> J per Arrhenius
+
+  if (W <= 0 || A <= 0 || rateInput <= 0) return alert("Check weight, area and transmission rate");
+
+  const accel = getAccelFactor(Ea_J, Q10_input, 25, T_store);
+  const effectiveRate = rateInput * accel;
+  let result = { days: 0, history: [], mode: State.mode, type: prod.type };
+
+  if (prod.type === 'moisture') {
+    const M_crit = getVal('sl-mcrit', prod.M_crit);
+    const M_init = getVal('sl-minit', prod.M_init);
+    const Psat = getPsat(T_store) * 1000; // kPa -> Pa
+    const dP_std = Psat * 0.5; // Gradiente standard di riferimento (~50% RH)
+    
+    let M = M_init, t = 0, dt = 1;
+    let history = [{ t: 0, M: M, aw: solveAwFromGAB(M/100, prod.GAB), quality: 100 }];
+
+    while (M < M_crit && t < 5000) {
+      const a_w = solveAwFromGAB(M / 100, prod.GAB);
+      const RH_in = a_w * 100;
+      const dP_current = Psat * Math.max((RH_out - RH_in), 1) / 100;
+      const rate_scale = dP_current / dP_std;
+      const dM_day = (effectiveRate * rate_scale * A) / W * 100; // % moisture gain/day
+      
+      M += dM_day; t += dt;
+      const quality = Math.max(0, 100 - ((M - M_init) / (M_crit - M_init)) * 100);
+      history.push({ t: t, M: Math.min(M, M_crit), aw: a_w, quality: quality });
+    }
+    result.days = t; result.history = history; result.M_crit = M_crit; result.M_init = M_init;
   } else {
-    document.getElementById('sl-fat') ? document.getElementById('sl-fat').value = p.fat_kg : null;
-    document.getElementById('sl-o2crit') ? document.getElementById('sl-o2crit').value = p.O2_crit : null;
-    if(document.getElementById('sl-ea')) document.getElementById('sl-ea').value = (p.Ea/1000);
+    const fatKg = getVal('sl-fat', prod.fat_kg);
+    const O2_crit = getVal('sl-o2crit', prod.O2_crit);
+    const totalO2_allowed = O2_crit * fatKg;
+    const dailyO2 = effectiveRate * A;
+    const days = totalO2_allowed / dailyO2;
+    
+    for (let d = 0; d <= Math.min(days * 1.2, 3650); d += 5) {
+      const quality = Math.max(0, 100 - ((dailyO2 * d) / totalO2_allowed) * 100);
+      result.history.push({ t: d, quality: quality });
+    }
+    result.days = Math.round(days); result.type = 'otx';
   }
+
+  renderShelfLifeResult(result);
 }
 
-// Render Results
+// 6. RENDER RISULTATI & CHART.JS
 function renderShelfLifeResult(res) {
   const panel = document.getElementById('sl-result-panel');
   const chartCard = document.getElementById('sl-chart-card');
@@ -2200,7 +2182,10 @@ function renderShelfLifeResult(res) {
   const months = res.days / 30.44;
   const years = res.days / 365.25;
   const unit = res.mode === 'wvtr' ? 'Moisture Gain' : 'Lipid Oxidation';
-  
+  const Ea_kJ = (parseFloat(document.getElementById('sl-ea')?.value)||60);
+  const T_store = (parseFloat(document.getElementById('sl-temp')?.value)||25);
+  const accel = getAccelFactor(Ea_kJ*1000, parseFloat(document.getElementById('sl-q10')?.value)||2, 25, T_store);
+
   panel.innerHTML = `
     <div style="animation:fadeIn 0.3s ease">
       <div style="text-align:center;margin-bottom:1rem">
@@ -2209,20 +2194,17 @@ function renderShelfLifeResult(res) {
         <span class="badge badge-blue" style="margin-top:0.3rem">${unit}</span>
       </div>
       <div style="padding:0.75rem;background:var(--bg);border-radius:8px;font-size:0.78rem;color:var(--text-light);line-height:1.5">
-        <div style="display:flex;justify-content:space-between;margin-bottom:0.3rem"><span>Acceleration Factor:</span><strong style="color:var(--text)">x${getAccelFactor(parseFloat(document.getElementById('sl-ea').value)||60000, parseFloat(document.getElementById('sl-q10').value)||2, 25, parseFloat(document.getElementById('sl-temp').value)||25).toFixed(2)}</strong></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:0.3rem"><span>Acceleration Factor:</span><strong style="color:var(--text)">x${accel.toFixed(2)}</strong></div>
         <div style="display:flex;justify-content:space-between"><span>Critical Threshold:</span><strong style="color:var(--text)">${res.type==='moisture' ? res.M_crit+'%' : document.getElementById('sl-o2crit').value+' mlO₂/kg fat'}</strong></div>
       </div>
-    </div>
-  `;
+    </div>`;
   chartCard.style.display = 'block';
   setTimeout(() => drawShelfLifeCharts(res), 100);
 }
 
-// Chart.js Render
 function drawShelfLifeCharts(res) {
   destroyChart('slDecay'); destroyChart('slTemp');
   
-  // 1. Quality Decay Chart
   const ctx1 = document.getElementById('slDecayChart')?.getContext('2d');
   if(ctx1) {
     new Chart(ctx1, {
@@ -2232,9 +2214,7 @@ function drawShelfLifeCharts(res) {
         datasets: [{
           label: 'Product Quality (%)',
           data: res.history.map(h => h.quality),
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59,130,246,0.1)',
-          fill: true, tension: 0.4, pointRadius: 2
+          borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.4, pointRadius: 2
         }, {
           label: 'Critical Limit',
           data: new Array(res.history.length).fill(0),
@@ -2245,16 +2225,25 @@ function drawShelfLifeCharts(res) {
     });
   }
 
-  // 2. Temperature What-If Chart
   const ctx2 = document.getElementById('slTempChart')?.getContext('2d');
   if(ctx2) {
     const temps = Array.from({length: 36}, (_, i) => 15 + i);
+    const Ea_J = (parseFloat(document.getElementById('sl-ea')?.value)||60) * 1000;
+    const Q10 = parseFloat(document.getElementById('sl-q10')?.value)||2;
+    const W = parseFloat(document.getElementById('sl-weight')?.value)||100;
+    const A = parseFloat(document.getElementById('sl-area')?.value)||0.1;
+    const baseRate = parseFloat(document.getElementById('sl-rate')?.value)||0.5;
+    
     const daysArr = temps.map(T => {
-      const acc = getAccelFactor(parseFloat(document.getElementById('sl-ea').value)||60000, parseFloat(document.getElementById('sl-q10').value)||2, 25, T);
-      const rate = (parseFloat(document.getElementById('sl-rate').value)||0.5) * acc;
-      if(res.type === 'moisture') return ((res.M_crit - res.M_init)*100 * (parseFloat(document.getElementById('sl-weight').value)||100)) / (rate * (parseFloat(document.getElementById('sl-area').value)||0.1));
-      return (parseFloat(document.getElementById('sl-o2crit').value||400) * parseFloat(document.getElementById('sl-fat').value||0.3)) / (rate * (parseFloat(document.getElementById('sl-area').value)||0.1));
+      const acc = getAccelFactor(Ea_J, Q10, 25, T);
+      const rate = baseRate * acc;
+      if(res.type === 'moisture') {
+        const M_c = res.M_crit||8, M_i = res.M_init||3;
+        return ((M_c - M_i)/100 * W) / (rate * A);
+      }
+      return (parseFloat(document.getElementById('sl-o2crit')?.value||400) * parseFloat(document.getElementById('sl-fat')?.value||0.3)) / (rate * A);
     });
+
     new Chart(ctx2, {
       type: 'line',
       data: {
