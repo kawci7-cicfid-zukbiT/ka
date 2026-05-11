@@ -668,16 +668,17 @@ window.loadFromCommunity = async function() {
   }
       
    mats.push({
-  id: 'fb_' + doc.id,
-  firebaseDocId: doc.id,
-  ...data,
-  testMethod: data.testMethod || "",
-  author: data.author || "Community",
-  isMetallized: data.isMetallized || false,
-  isCommunity: true,
-  // ✅ AGGIUNGI QUESTI DUE CAMPI
-  usageCount: data.usageCount || 0,
-  lastUsageMonth: data.lastUsageMonth || ''
+    id: 'fb_' + doc.id,
+    firebaseDocId: doc.id,
+    ...data,
+    testMethod: data.testMethod || "",
+    author: data.author || "Community",
+    isMetallized: data.isMetallized || false,
+    isCommunity: true,
+    usageCount: data.usageCount || 0,
+    lastUsageMonth: data.lastUsageMonth || '',
+    // ✅ AGGIUNGI QUESTA RIGA:
+    reliabilityVotes: data.reliabilityVotes || { up: 0, down: 0 }
       });
     });
     
@@ -1741,30 +1742,42 @@ function renderHome() {
 }
   // ✅ Vota affidabilità materiale
 async function voteReliability(matId, voteType) {
-    // Controlla se ha già votato
-    if(hasUserVoted(matId)) {
+    var matIdStr = String(matId);
+    
+    // ✅ Blocca se ha già votato in questo browser
+    if(hasUserVoted(matIdStr)) {
         alert("⚠️ You have already voted for this material");
         return;
     }
     
-    var mat = DB.materials.find(m => m.id === matId);
+    var mat = DB.materials.find(m => String(m.id) === matIdStr);
     if(!mat) return;
     
-    // Inizializza voti se non esistono
+    // Inizializza contatori locali
     if(!mat.reliabilityVotes) mat.reliabilityVotes = { up: 0, down: 0 };
-    
-    // Registra il voto
     if(voteType === 'up') mat.reliabilityVotes.up++;
     else mat.reliabilityVotes.down++;
     
-    // Salva nel localStorage del browser (per bloccare nuovi voti)
-    recordUserVote(matId, voteType);
+    // Salva il blocco locale
+    recordUserVote(matIdStr, voteType);
     
-    // Salva il conteggio nel DB locale (Nota: per i materiali Default questo 
-    // salvataggio potrebbe non essere persistente al refresh, ma funziona nella sessione corrente)
+    // ✅ SYNC CON FIREBASE (solo se il materiale è pubblicato)
+    if(mat.firebaseDocId && window.communityDB) {
+        try {
+            const ref = window.fbDoc(window.communityDB, "materials", mat.firebaseDocId);
+            const updateData = {};
+            // Firestore incrementa in modo sicuro anche con accessi simultanei
+            if(voteType === 'up') updateData["reliabilityVotes.up"] = window.fbIncrement(1);
+            else updateData["reliabilityVotes.down"] = window.fbIncrement(1);
+            
+            await window.fbUpdateDoc(ref, updateData);
+        } catch(e) {
+            console.warn("⚠️ Firebase vote sync failed:", e);
+        }
+    }
+    
+    // Salva fallback locale e aggiorna UI
     DB.save();
-    
-    // Aggiorna l'interfaccia
     renderContent();
 }
 
@@ -1786,15 +1799,15 @@ function getReliabilityBadge(score) {
 }
   // ✅ Controlla se l'utente ha già votato questo materiale
 function hasUserVoted(matId) {
-  var votes = JSON.parse(localStorage.getItem('wvtr_user_votes') || '{}');
-  return votes[matId] || null; // restituisce 'up', 'down', o null
+    var votes = JSON.parse(localStorage.getItem('wvtr_user_votes') || '{}');
+    return votes[String(matId)] || null; // 'up', 'down' o null
 }
 
 // ✅ Registra il voto dell'utente in localStorage
-function recordUserVote(matId, voteType) {
-  var votes = JSON.parse(localStorage.getItem('wvtr_user_votes') || '{}');
-  votes[matId] = voteType;
-  localStorage.setItem('wvtr_user_votes', JSON.stringify(votes));
+unction recordUserVote(matId, voteType) {
+    var votes = JSON.parse(localStorage.getItem('wvtr_user_votes') || '{}');
+    votes[String(matId)] = voteType;
+    localStorage.setItem('wvtr_user_votes', JSON.stringify(votes));
 }
 
 function renderCalc() {
@@ -2854,10 +2867,10 @@ filtered.sort(function(a, b){
             '<span>Community Reliability</span>'+
             '<span class="reliability-badge '+(relScore>=70?'high':relScore>=40?'medium':'low')+'">'+relScore+'%</span>'+
           '</div>'+
-          '<div class="mat-voting-buttons">'+
-            '<button class="btn btn-outline" '+voteDisabled+' onclick="event.stopPropagation();voteReliability('+m.id+',"up")" title="Mark as reliable" '+upActive+'>👍</button>'+
-            '<button class="btn btn-outline" '+voteDisabled+' onclick="event.stopPropagation();voteReliability('+m.id+',"down")" title="Mark as unreliable" '+downActive+'>👎</button>'+
-          '</div>'+
+         '<div class="mat-voting-buttons">'+
+'<button class="btn btn-outline" '+voteDisabled+' onclick="event.stopPropagation();voteReliability(\''+m.id+'\',"up")" title="Mark as reliable" '+upActive+'>👍</button>'+
+'<button class="btn btn-outline" '+voteDisabled+' onclick="event.stopPropagation();voteReliability(\''+m.id+'\',"down")" title="Mark as unreliable" '+downActive+'>👎</button>'+
+'</div>'+
         '</div>'+
         
       '</div>'+
