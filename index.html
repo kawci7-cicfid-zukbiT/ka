@@ -3362,8 +3362,8 @@ function doOptimize(){
     resEl.innerHTML='<div class="alert alert-info">Configure and calculate first</div>';
     return;
   }
-
-  // ✅ ✅ ✅ CONTROLLO MATERIALI METALLIZZATI (Ora è DENTRO la funzione) ✅ ✅ ✅
+  
+  // ✅ ✅ ✅ CONTROLLO MATERIALI METALLIZZATI (ORA DENTRO LA FUNZIONE) ✅ ✅ ✅
   var barrierLayer=State.layers[barrierIdx];
   var barrierMat=DB.materials.find(function(m){return m.id===barrierLayer.mid;});
   
@@ -3374,8 +3374,8 @@ function doOptimize(){
     '</div>';
     return;
   }
-
-  // ✅ Comportamento standard
+  
+  // ✅ Comportamento standard per materiali NON metallizzati
   var result=Engine.optimizeForTarget(State.layers,DB.materials,condition,target,barrierIdx);
   if(result.error){resEl.innerHTML='<div class="alert alert-warning">'+result.error+'</div>';return;}
   
@@ -3387,8 +3387,8 @@ function doOptimize(){
   '<span><strong>'+((mat)?mat.name:'Layer '+(barrierIdx+1))+'</strong> min: <span style="color:var(--primary);font-weight:700">'+result.thickness.toFixed(1)+' um</span></span>'+
   '<span style="color:var(--text-light);font-size:0.7rem">('+current+'&rarr;'+result.thickness.toFixed(1)+'um, '+(result.thickness<current?'✓ Savings':'⚠ Increase needed')+')</span>'+
   '</div>';
-} // ← ✅ QUESTA È L'UNICA PARENTESI DI CHIUSURA CORRETTA (alla fine!)
-      
+}  // ← ✅ QUESTA È L'UNICA PARENTESI DI CHIUSURA (alla fine!)
+  
 function renderCompare(){
   var unit=getUnit();
   if(DB.laminates.length<2) return '<div class="card"><div class="empty-state"><p>Save 2+ laminates to compare</p></div></div>';
