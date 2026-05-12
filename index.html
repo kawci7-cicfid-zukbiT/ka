@@ -875,8 +875,7 @@ window.saveToCommunity = async function(mat) {
             validConditions: mat.validConditions || [],
             author: mat.author || "Community",  // ✅ ORA USA L'AUTORE SALVATO
             company: mat.company || "",         // ✅ AGGIUNTO
-            tdsLink: mat.tdsLink || "",  // ✅ AGGIUNTO
-            activationEnergy: mat.activationEnergy || 0, 
+            tdsLink: mat.tdsLink || "",         // ✅ AGGIUNTO
             updatedAt: new Date().toISOString()
         };
         
@@ -998,9 +997,7 @@ const Engine={
     }
     return errs;
   },
-  getValues:function(mat){
-    return this.mode==='wvtr' ? (mat.wvtrValues || []) : (mat.otrValues || []);
-},
+  getValues:function(mat){return this.mode==='wvtr'?mat.wvtrValues:mat.otrValues;},
   getUnits:function(){return this.mode==='wvtr'?{value:'g/m²·day',label:'WVTR'}:{value:'cc/m²·day',label:'OTR'};},
   findCommonConditions:function(layers,materials){
     var mats=layers.filter(function(l){return l.mid!==null;}).map(function(l){return materials.find(function(m){return m.id===l.mid;});}).filter(Boolean);
@@ -2686,7 +2683,7 @@ function drawShelfLifeCharts(res) {
           pointBorderColor: '#3b82f6',
           pointBorderWidth: 2
         }, {
-          label: 'Shelf Life End (0% Quality)',
+          label: 'Critical Limit',
           data: new Array(res.history.length).fill(0),
           borderColor: '#ef4444',
           borderDash: [6, 4],
@@ -3187,19 +3184,34 @@ function drawLaminateCurveChart(){
 }
 
 function renderArrhenius(){
-  var opts='<option value="">Select...</option>';
-  for(var i=0;i<DB.materials.length;i++){
-    var v=Engine.validateArrhenius(DB.materials[i]);
-    opts+='<option value="'+DB.materials[i].id+'"'+(v.valid?'':' disabled')+'>'+DB.materials[i].name+(v.valid?' ✓':' (single temp)')+'</option>';
-  }
-  return '<div class="card"><h2>Arrhenius Analysis</h2>'+
-    '<p style="font-size:.78rem;color:var(--text-light);margin-bottom:.75rem">Predict '+getLabel()+' at unmeasured temperatures. Requires 2+ data points at different temperatures.</p>'+
-    '<div class="grid grid-2"><div class="form-group"><label>Material</label><select class="form-input" id="arr-mat" onchange="onArrChange()">'+opts+'</select></div>'+
-    '<div class="form-group"><label>Target Temperature (deg C)</label><input type="number" step="any" class="form-input" id="arr-temp" value="25" oninput="onArrChange()"></div></div><div id="arr-result"></div></div>'+
-    '<div class="grid grid-2"><div class="card"><h2>'+getLabel()+' vs Temperature</h2><div class="chart-container"><canvas id="arrTempCanvas"></canvas></div></div>'+
-    '<div class="card"><h2>Arrhenius Plot (ln('+getLabel()+') vs 1/T)</h2><div class="chart-container"><canvas id="arrLinCanvas"></canvas></div></div></div>';
+var opts='<option value="">Select...</option>';
+for(var i=0;i<DB.materials.length;i++){
+var v=Engine.validateArrhenius(DB.materials[i]);
+opts+='<option value="'+DB.materials[i].id+'"'+(v.valid?'':' disabled')+'>'+DB.materials[i].name+(v.valid?' ✓ Arrhenius':' (single temp)')+'</option>';
 }
-
+return '<div class="card"><h2>Arrhenius Analysis</h2>'+
+'<p style="font-size:.78rem;color:var(--text-light);margin-bottom:.75rem">Predict '+getLabel()+' at unmeasured temperatures. Requires 2+ data points at different temperatures.</p>'+
+'<div class="grid grid-2">'+
+'<div class="form-group"><label>Material</label><select class="form-input" id="arr-mat" onchange="onArrChange()">'+opts+'</select></div>'+
+'<div class="form-group"><label>Target Temperature (°C)</label><input type="number" step="any" class="form-input" id="arr-temp" value="25" oninput="onArrChange()"></div>'+
+'</div>'+
+// ✅ NUOVO: Campo Ea modificabile manualmente
+'<div class="form-group" style="margin-top:0.5rem;padding:0.6rem;background:var(--primary-light);border-radius:8px">'+
+'<label style="display:flex;align-items:center;gap:0.3rem;font-weight:600">'+
+'<span>Eₐ Activation Energy (kJ/mol)</span>'+
+'<span class="badge badge-blue" style="font-size:0.6rem" title="Auto-filled from material data, editable">✏️ Editable</span>'+
+'</label>'+
+'<input type="number" step="any" class="form-input" id="arr-ea" value="" placeholder="Auto-calculated or enter custom value" oninput="onArrEaChange()">'+
+'<span style="font-size:0.65rem;color:var(--text-light);display:block;margin-top:0.25rem">Leave empty to auto-calculate from material data, or enter a custom value for "what-if" analysis</span>'+
+'</div>'+
+'<div id="arr-result"></div></div>'+
+'<div class="grid grid-2"><div class="card"><h2>'+getLabel()+' vs Temperature</h2><div class="chart-container"><canvas id="arrTempCanvas"></canvas></div></div>'+
+'<div class="card"><h2>Arrhenius Plot (ln('+getLabel()+') vs 1/T)</h2><div class="chart-container"><canvas id="arrLinCanvas"></canvas></div></div></div>';
+}
+// ✅ Handler: quando l'utente modifica Ea manualmente
+function onArrEaChange(){
+onArrChange(); // Ricalcola tutto con il nuovo valore Ea
+}
 function postArrheniusRender(){
   setTimeout(function(){
     var sel = document.getElementById('arr-mat');
@@ -3232,39 +3244,112 @@ function postArrheniusRender(){
 }
 
 function onArrChange(){
-  var selMat=document.getElementById('arr-mat');
-  var selTemp=document.getElementById('arr-temp');
-  var resEl=document.getElementById('arr-result');
-  if(!selMat||!selTemp) return;
-  var matId=parseFloat(selMat.value);
-  var targetTemp=parseFloat(selTemp.value)||25;
-  if(!matId){if(resEl) resEl.innerHTML='';clearArrCanvas('arrTempCanvas');clearArrCanvas('arrLinCanvas');return;}
-  var mat=null;for(var i=0;i<DB.materials.length;i++) if(DB.materials[i].id===matId){mat=DB.materials[i];break;}
-  if(!mat) return;
-  var v=Engine.validateArrhenius(mat);
-  if(!v.valid){
-  if(resEl) resEl.innerHTML='<div class="alert alert-error">'+v.error+'</div>';
-  clearArrCanvas('arrTempCanvas');
-  clearArrCanvas('arrLinCanvas');
-  return;
+var selMat=document.getElementById('arr-mat');
+var selTemp=document.getElementById('arr-temp');
+var selEa=document.getElementById('arr-ea'); // ✅ NUOVO: riferimento al campo Ea
+var resEl=document.getElementById('arr-result');
+if(!selMat||!selTemp) return;
+var matId=parseFloat(selMat.value);
+var targetTemp=parseFloat(selTemp.value)||25;
+
+// ✅ Leggi il valore Ea dal campo input (se presente)
+var customEaInput = selEa ? selEa.value.trim() : '';
+var customEa = customEaInput ? parseFloat(customEaInput) : NaN;
+
+if(!matId){
+if(resEl) resEl.innerHTML='';
+if(selEa) selEa.value='';
+clearArrCanvas('arrTempCanvas');
+clearArrCanvas('arrLinCanvas');
+return;
 }
-  var r=Engine.applyArrhenius(mat,targetTemp);
-  if(r.error){
-  if(resEl) resEl.innerHTML='<div class="alert alert-error">'+r.error+'</div>';
-  clearArrCanvas('arrTempCanvas');
-  clearArrCanvas('arrLinCanvas');
-  return;
+var mat=null;for(var i=0;i<DB.materials.length;i++) if(DB.materials[i].id===matId){mat=DB.materials[i];break;}
+if(!mat) return;
+
+// ✅ Se Ea non è stato inserito manualmente, calcolalo dai dati del materiale
+if(isNaN(customEa) || customEa <= 0){
+var v=Engine.validateArrhenius(mat);
+if(!v.valid){
+if(resEl) resEl.innerHTML='<div class="alert alert-error">'+v.error+'</div>';
+clearArrCanvas('arrTempCanvas');
+clearArrCanvas('arrLinCanvas');
+return;
 }
-  var warn='';if(r.isExtrapolation) warn='<div class="alert alert-warning">Extrapolation - target '+targetTemp+' is outside measured range ('+r.minTemp.toFixed(0)+'-'+r.maxTemp.toFixed(0)+')</div>';
-  var relClass=r.rSquared>0.95?'reliability-high':r.rSquared>0.8?'reliability-medium':'reliability-low';
-  if(resEl) resEl.innerHTML=warn+'<div class="reliability-meter '+relClass+'">R2='+r.rSquared.toFixed(4)+' Ea='+(r.Ea/1000).toFixed(2)+' kJ/mol</div>'+
-    '<div class="grid grid-3" style="margin-top:.4rem"><div><div style="font-size:.65rem;color:var(--text-light)">Activation Energy</div><div style="font-weight:700">'+(r.Ea/1000).toFixed(2)+' kJ/mol</div></div>'+
-    '<div><div style="font-size:.65rem;color:var(--text-light)">Pre-exponential A</div><div style="font-weight:700">'+r.A.toExponential(3)+'</div></div>'+
-    '<div><div style="font-size:.65rem;color:var(--text-light)">Predicted at '+r.targetTempC+' deg C</div><div style="font-size:1rem;font-weight:700;color:var(--primary)">'+r.predicted.toFixed(6)+'</div></div></div>';
-  drawArrTempChart(mat,r);
-  drawArrLinChart(mat,r);
+var r=Engine.calcArrheniusParams(mat);
+if(!r.valid){
+if(resEl) resEl.innerHTML='<div class="alert alert-error">'+r.error+'</div>';
+clearArrCanvas('arrTempCanvas');
+clearArrCanvas('arrLinCanvas');
+return;
+}
+// ✅ Auto-compila il campo Ea con il valore calcolato (in kJ/mol)
+if(selEa) selEa.value = (r.Ea/1000).toFixed(2);
+customEa = r.Ea; // Usa Ea calcolato per i grafici
 }
 
+// ✅ Ora procedi con i calcoli usando customEa
+var warn='';
+var relClass='reliability-medium';
+var rSquared=1; // Se Ea è manuale, R² non è calcolabile
+
+// Se Ea è manuale, calcola A usando i dati e Ea fisso
+var A, EaUsed;
+if(!isNaN(customEaInput) && customEaInput !== ''){
+// ✅ Ea manuale: ricalcola A con Ea fisso
+EaUsed = customEa * 1000; // Converti kJ → J
+var vals=Engine.getValues(mat);
+var R=Engine.R_GAS;
+var lnA_values=[];
+for(var i=0;i<mat.validConditions.length;i++){
+var tk=mat.validConditions[i].temperature+273.15;
+if(vals[i].value>0){
+var lnA = Math.log(vals[i].value) + EaUsed/(R*tk);
+lnA_values.push(lnA);
+}
+}
+if(lnA_values.length>0){
+var lnA_mean=0; for(var j=0;j<lnA_values.length;j++) lnA_mean+=lnA_values[j]; lnA_mean/=lnA_values.length;
+A=Math.exp(lnA_mean);
+warn='<div class="alert alert-warning">Using custom Eₐ = '+customEa.toFixed(2)+' kJ/mol</div>';
+relClass='reliability-low';
+} else {
+if(resEl) resEl.innerHTML='<div class="alert alert-error">Cannot calculate A with custom Eₐ</div>';
+return;
+}
+} else {
+// ✅ Ea auto-calcolato: usa i parametri originali
+var r=Engine.calcArrheniusParams(mat);
+EaUsed = r.Ea;
+A = r.A;
+rSquared = r.rSquared;
+relClass=rSquared>0.95?'reliability-high':rSquared>0.8?'reliability-medium':'reliability-low';
+}
+
+// Calcola la predizione
+var pred = Engine.predict(A, EaUsed, targetTemp);
+
+// Calcola range temperature per warning
+var minT=mat.validConditions[0].temperature, maxT=mat.validConditions[0].temperature;
+for(var i=0;i<mat.validConditions.length;i++){
+var t=mat.validConditions[i].temperature;
+if(t<minT) minT=t; if(t>maxT) maxT=t;
+}
+var isExtrapolation = targetTemp<minT-1 || targetTemp>maxT+1;
+if(isExtrapolation) warn+='<div class="alert alert-warning">Extrapolation - target '+targetTemp+'°C is outside measured range ('+minT.toFixed(0)+'-'+maxT.toFixed(0)+'°C)</div>';
+
+// ✅ Mostra i risultati
+if(resEl) resEl.innerHTML=warn+
+'<div class="reliability-meter '+relClass+'">'+(isNaN(customEaInput)?'R²='+(rSquared).toFixed(4)+' ':'')+'Eₐ='+(EaUsed/1000).toFixed(2)+' kJ/mol</div>'+
+'<div class="grid grid-3" style="margin-top:.4rem">'+
+'<div><div style="font-size:.65rem;color:var(--text-light)">Activation Energy</div><div style="font-weight:700">'+(EaUsed/1000).toFixed(2)+' kJ/mol</div></div>'+
+'<div><div style="font-size:.65rem;color:var(--text-light)">Pre-exponential A</div><div style="font-weight:700">'+A.toExponential(3)+'</div></div>'+
+'<div><div style="font-size:.65rem;color:var(--text-light)">Predicted at '+targetTemp+'°C</div><div style="font-size:1rem;font-weight:700;color:var(--primary)">'+pred.toFixed(6)+'</div></div>'+
+'</div>';
+
+// ✅ Disegna i grafici passando EaUsed e A
+drawArrTempChart(mat, {A:A, Ea:EaUsed, predicted:pred, targetTempC:targetTemp, minTemp:minT, maxTemp:maxT, isExtrapolation:isExtrapolation, dataPoints:Engine.getValues(mat).map((v,i)=>({T_K:mat.validConditions[i].temperature+273.15, trans:v.value}))}, customEaInput!=='');
+drawArrLinChart(mat, {A:A, Ea:EaUsed, dataPoints:Engine.getValues(mat).map((v,i)=>({T_K:mat.validConditions[i].temperature+273.15, trans:v.value}))}, customEaInput!=='');
+}
 function clearArrCanvas(id){
   var c = document.getElementById(id);
   if(!c) return;
@@ -3297,15 +3382,28 @@ function drawArrTempChart(mat, r){
   var canvas = document.getElementById('arrTempCanvas');
   if(!canvas) return;
   
+  // ✅ Verifica Chart.js
+  if(typeof Chart === 'undefined'){
+    console.warn('Chart.js not loaded');
+    return;
+  }
+  
   var ctx = canvas.getContext('2d');
   var vals = Engine.getValues(mat);
   var dataPoints = [];
   
-  for(var i = 0; i < mat.validConditions.length; i++){
-    dataPoints.push({
-      x: mat.validConditions[i].temperature,
-      y: vals[i].value
-    });
+  // ✅ Controlli di sicurezza sui dati
+  if(mat.validConditions && vals){
+    for(var i = 0; i < mat.validConditions.length; i++){
+      var cond = mat.validConditions[i];
+      var val = vals[i];
+      if(cond && cond.temperature != null && val && val.value != null && val.value > 0){
+        dataPoints.push({
+          x: cond.temperature,
+          y: val.value
+        });
+      }
+    }
   }
   
   var datasets = [{
@@ -3326,7 +3424,7 @@ function drawArrTempChart(mat, r){
     var tMax4 = r.maxTemp + 10;
     for(var t = tMin4; t <= tMax4; t += 0.5){
       var w = Engine.predict(r.A, r.Ea, t);
-      curveData.push({x: t, y: w});
+      if(w > 0) curveData.push({x: t, y: w});
     }
     datasets.push({
       label: 'Arrhenius fit',
@@ -3351,19 +3449,17 @@ function drawArrTempChart(mat, r){
     });
   }
   
-  // ✅ OPZIONI RESPONSIVE PER MOBILE
   var isMobile = window.innerWidth < 480;
-  var dpr = window.devicePixelRatio > 2 ? 2 : window.devicePixelRatio;
+  var dpr = Math.min(window.devicePixelRatio || 1, 2); // ✅ Limita DPR
   
   chartInstances.arrTemp = new Chart(ctx, {
     type: 'line',
     data: { datasets: datasets },
     options: {
       responsive: true,
-      maintainAspectRatio: false,  // ← ESSENZIALE
-      devicePixelRatio: dpr,       // ← Limita DPI su iPhone Pro
+      maintainAspectRatio: false,
+      devicePixelRatio: dpr,
       onResize: function(chart, size){
-        // Forza ridisegno su iOS dopo resize
         if(/iPhone|iPad|iPod/.test(navigator.userAgent)){
           setTimeout(function(){ chart.resize(); }, 100);
         }
@@ -3376,6 +3472,19 @@ function drawArrTempChart(mat, r){
             font: { size: isMobile ? 9 : 10 },
             padding: isMobile ? 8 : 12
           }
+        },
+        // ✅ Tooltip personalizzati
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              var label = context.dataset.label || '';
+              if(label) label += ': ';
+              if(context.parsed.y !== null){
+                label += context.parsed.y.toFixed(4) + ' ' + getUnit();
+              }
+              return label;
+            }
+          }
         }
       },
       scales: {
@@ -3387,7 +3496,7 @@ function drawArrTempChart(mat, r){
             font: { size: isMobile ? 10 : 11 }
           },
           ticks: { font: { size: isMobile ? 9 : 10 } },
-          grid: { display: !isMobile }  // ← Nascondi griglia su mobile
+          grid: { display: !isMobile }
         },
         y: {
           title: {
@@ -3396,7 +3505,10 @@ function drawArrTempChart(mat, r){
             font: { size: isMobile ? 10 : 11 }
           },
           beginAtZero: true,
-          ticks: { font: { size: isMobile ? 9 : 10 } },
+          ticks: { 
+            font: { size: isMobile ? 9 : 10 },
+            callback: function(value) { return value.toFixed(3); } // ✅ Formattazione valori
+          },
           grid: { display: !isMobile }
         }
       }
@@ -3880,7 +3992,7 @@ filtered.sort(function(a, b){
         
         // 3. ACTION BUTTONS
         '<div class="mat-actions">'+
-          '<button class="btn btn-outline" onclick="event.stopPropagation();showMatModal('+m.id+')"> Edit</button>'+
+          '<button class="btn btn-outline" onclick="event.stopPropagation();showMatModal('+m.id+')">✏️ Edit</button>'+
           (isUserMat ? '<button class="btn btn-danger" onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">🗑️ Delete</button>' : '')+
           '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Datasheet</button>'+
           ((isUserMat || isComm) ? '<button class="btn '+(m.firebaseDocId?'btn-success':'btn-primary')+'" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">'+(m.firebaseDocId?'🔄 Update':'🌍 Publish')+'</button>' : '')+
@@ -3974,8 +4086,8 @@ function showMatModal(editId) {
   var currentLabel = currentMode === 'wvtr' ? 'WVTR' : 'OTR';
   var currentUnit = currentMode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
   var currentValues = currentMode === 'wvtr' 
-        ? (mat ? (mat.wvtrValues || []) : [{value:'',thickness:''}]) 
-        : (mat ? (mat.otrValues || []) : [{value:'',thickness:''}]);
+    ? (mat ? mat.wvtrValues : [{value:'',thickness:''}])
+    : (mat ? mat.otrValues : [{value:'',thickness:''}]);
   
   var conds = mat ? mat.validConditions : [{temperature:'',humidity:''}];
   
@@ -4038,10 +4150,6 @@ function showMatModal(editId) {
     '<div class="form-group"><label>Material Family</label><select class="form-input" id="mf-family">'+familyOpts+'</select><span style="font-size:0.7rem;color:var(--text-light)">Select the polymer family for categorization</span></div>'+
     '<div class="form-group"><label>Company Name</label><input type="text" class="form-input" id="mf-company" value="'+(mat?mat.company||'':'')+'" placeholder="e.g. DuPont, 3M, ..."></div>'+
   '<div class="form-group"><label>TDS Link (optional)</label><input type="url" class="form-input" id="mf-tdslink" value="'+(mat?mat.tdsLink||'':'')+'" placeholder="https://..."></div>'+
-             '<div class="form-group">'+
-'<label>Activation Energy Ea (kJ/mol) <span style="color:var(--text-light);font-size:0.7em">(Optional)</span></label>'+
-'<input type="number" step="any" class="form-input" id="mf-ea" value="'+(mat.activationEnergy||'')+'" placeholder="e.g. 60">'+
-'</div>'+
   '<div class="form-group" id="mf-testmethod-group">'+
       '<label style="display:flex;align-items:center;gap:0.4rem">'+
         '<span class="badge badge-blue">'+currentLabel+'</span>'+
@@ -4102,7 +4210,6 @@ function showMatModal(editId) {
       // ✅ NUOVI CAMPI: Leggi i valori dai nuovi input
 var company = document.getElementById('mf-company').value.trim();
 var tdsLink = document.getElementById('mf-tdslink').value.trim();
-var eaInput = parseFloat(document.getElementById('mf-ea').value);
 
 // ✅ VALIDAZIONE OPZIONALE PER IL LINK TDS:
 if(tdsLink && !tdsLink.startsWith('http')) {
@@ -4139,7 +4246,6 @@ if(tdsLink && !tdsLink.startsWith('http')) {
   company: company,              
   tdsLink: tdsLink,              
   isMetallized: isMetallized,
-  Ea: (eaInput > 0) ? eaInput * 1000 : null, // Salva in Joule se > 0, altrimenti null
   testMethodWVTR: testMethodWVTR,
   testMethodOTR: testMethodOTR,
 wvtrValues: currentMode === 'wvtr' ? valuesArray : (mat && mat.wvtrValues ? mat.wvtrValues : []),
