@@ -734,6 +734,98 @@ body, main, .app, .card, .material-item, .modal {
 .chart-mini canvas {
     transition: opacity 0.2s ease;
 }
+  /* 🖥️ FIX DESKTOP: Scritte più grandi su PC, invariate su iPhone */
+@media (min-width: 1024px) {
+  /* 1. Aumenta la dimensione base del testo (da 16px a 18px) */
+  html { font-size: 18px; } 
+  
+  /* 2. Adegua i titoli delle Card */
+  .card h2 { font-size: 1.15rem; }
+  
+  /* 3. Rendi le Etichette (Label) dei form più visibili */
+  .form-group label { font-size: 0.95rem; font-weight: 700; }
+  
+  /* 4. Input più grandi e comodi da cliccare */
+  .form-input, select.form-input { 
+    font-size: 1rem; 
+    padding: 0.65rem 0.8rem; 
+  }
+  
+  /* 5. Pulsanti più leggibili */
+  .btn { font-size: 0.95rem; padding: 0.65rem 1.1rem; }
+  
+  /* 6. Testo nella sezione Metodologia */
+  .methodology-content { font-size: 1rem; }
+  .methodology-content h3 { font-size: 1.15rem; }
+  
+  /* 7. Schede Materiali */
+  .mat-header h3 { font-size: 1.05rem; }
+  .mat-tag { font-size: 0.8rem; }
+  
+  /* 8. Navigazione */
+  .nav-tab { font-size: 0.85rem; }
+  
+  /* 9. Tabelle e Avvisi */
+  table, td, th { font-size: 0.9rem; }
+  .alert { font-size: 0.9rem; }
+}
+  /* === 📚 TEXTBOOK METHODOLOGY STYLE === */
+.methodology-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.methodology-content {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  color: #334155;
+  line-height: 1.75;
+  font-size: 0.9rem;
+}
+
+.methodology-content p {
+  margin-bottom: 1rem;
+  text-align: justify;
+}
+
+.methodology-content h3 {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Stile per le formule */
+.methodology-content .formula-block {
+  background: #f8fafc;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  text-align: center;
+  font-family: 'Courier New', monospace;
+  font-size: 1.1rem;
+  color: var(--primary);
+  position: relative;
+}
+
+.methodology-content .formula-block::before {
+  content: "Eq.";
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  font-size: 0.7rem;
+  color: var(--text-light);
+  font-weight: bold;
+}
+
+/* Highlight per le variabili */
+.var {
+  font-style: italic;
+  color: var(--primary-dark);
+  font-weight: 500;
+}
 </style>
 </head>
 <body>
@@ -1994,7 +2086,7 @@ function renderShelfLifeMethodology() {
            <strong>Key Insight:</strong> Shelf life ends when the total accumulated oxygen reaches a known threshold that causes off-flavors or rancidity.
         </div>
 
-        <h4 style="margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">📐 The Core Formula (Simplified)</h4>
+        <h4 style="margin:1.2rem 0 0.5rem 0; font-family:sans-serif;"> The Core Formula (Simplified)</h4>
         <div style="background:#f8fafc; padding:0.9rem; border-radius:6px; font-family:monospace; font-size:0.95rem; text-align:center; border:1px dashed var(--border); margin-bottom:0.8rem;">
           Shelf Life = [Fat Content × Max Safe Oxygen] ÷ [Package Area × OTR × Temperature Factor]
         </div>
@@ -2015,7 +2107,7 @@ function renderShelfLifeMethodology() {
         </div>
 
         <!-- RIFERIMENTI -->
-        <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin-top:2rem; font-weight:700;">📚 Scientific Standards & References</h3>
+        <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin-top:2rem; font-weight:700;"> Scientific Standards & References</h3>
         <p>This calculator aligns with internationally recognized testing and modeling standards:</p>
         <ul style="padding-left:1.2rem; margin:0.5rem 0; color:var(--text-light); list-style-type:disc;">
           <li>ASTM F1249 & ISO 15106-3 → WVTR testing</li>
