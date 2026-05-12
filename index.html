@@ -875,7 +875,8 @@ window.saveToCommunity = async function(mat) {
             validConditions: mat.validConditions || [],
             author: mat.author || "Community",  // ✅ ORA USA L'AUTORE SALVATO
             company: mat.company || "",         // ✅ AGGIUNTO
-            tdsLink: mat.tdsLink || "",         // ✅ AGGIUNTO
+            tdsLink: mat.tdsLink || "",  // ✅ AGGIUNTO
+            activationEnergy: mat.activationEnergy || 0, 
             updatedAt: new Date().toISOString()
         };
         
@@ -3877,7 +3878,7 @@ filtered.sort(function(a, b){
         
         // 3. ACTION BUTTONS
         '<div class="mat-actions">'+
-          '<button class="btn btn-outline" onclick="event.stopPropagation();showMatModal('+m.id+')">✏️ Edit</button>'+
+          '<button class="btn btn-outline" onclick="event.stopPropagation();showMatModal('+m.id+')"> Edit</button>'+
           (isUserMat ? '<button class="btn btn-danger" onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">🗑️ Delete</button>' : '')+
           '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Datasheet</button>'+
           ((isUserMat || isComm) ? '<button class="btn '+(m.firebaseDocId?'btn-success':'btn-primary')+'" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">'+(m.firebaseDocId?'🔄 Update':'🌍 Publish')+'</button>' : '')+
@@ -4038,6 +4039,10 @@ function showMatModal(editId) {
 '<input type="number" step="any" class="form-input" id="mf-ea" value="'+(mat && mat.Ea ? (mat.Ea/1000).toFixed(1) : '')+'" placeholder="e.g. 60">'+
 '</div>'+
   '<div class="form-group"><label>TDS Link (optional)</label><input type="url" class="form-input" id="mf-tdslink" value="'+(mat?mat.tdsLink||'':'')+'" placeholder="https://..."></div>'+
+             '<div class="form-group">'+
+'<label>Activation Energy Ea (kJ/mol) <span style="color:var(--text-light);font-size:0.7em">(Optional)</span></label>'+
+'<input type="number" step="any" class="form-input" id="mf-ea" value="'+(mat.activationEnergy||'')+'" placeholder="e.g. 60">'+
+'</div>'+
   '<div class="form-group" id="mf-testmethod-group">'+
       '<label style="display:flex;align-items:center;gap:0.4rem">'+
         '<span class="badge badge-blue">'+currentLabel+'</span>'+
