@@ -2259,7 +2259,8 @@ var critical = parseFloat(document.getElementById('sl-mcrit').value);
   var unit = State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
 
  if (!rate || rate <= 0 || !area || area <= 0 || !mass || mass <= 0 || isNaN(initial) || isNaN(critical) || critical <= initial) {
- alert('⚠️ Please check the inputs:\nCritical Limit must be higher than Initial Level, and all values must be greater than 0.');
+ alert(`⚠️ Please check the inputs:
+Critical Limit must be higher than Initial Level, and all values must be greater than 0.`);
    return;
 }
 
