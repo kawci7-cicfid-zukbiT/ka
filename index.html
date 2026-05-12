@@ -2253,9 +2253,9 @@ function renderShelfLife() {
 function calculateShelfLife() {
   var rate = parseFloat(document.getElementById('sl-rate').value);
   var area = parseFloat(document.getElementById('sl-area').value);
-  var mass = parseFloat(document.getElementById('sl-mass').value);
-  var initial = parseFloat(document.getElementById('sl-initial').value);
-  var critical = parseFloat(document.getElementById('sl-critical').value);
+ var mass = parseFloat(document.getElementById('sl-weight').value);
+var initial = parseFloat(document.getElementById('sl-minit').value);
+var critical = parseFloat(document.getElementById('sl-mcrit').value);
   var unit = State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
 
  if (!rate || rate <= 0 || !area || area <= 0 || !mass || mass <= 0 || isNaN(initial) || isNaN(critical) || critical <= initial) {
@@ -2473,11 +2473,11 @@ function drawShelfLifeCharts(res) {
     if(ctx1 && res.history?.length > 0) {
         chartInstances.slDecay = new Chart(ctx1, {
             type: 'line',
-             {
+    data: {
                 labels: res.history.map(h => Math.round(h.t)),
                 datasets: [{
                     label: 'Product Quality (%)',
-                     res.history.map(h => h.quality),
+                    data: res.history.map(h => h.quality),
                     borderColor: '#3b82f6',
                     backgroundColor: 'rgba(59,130,246,0.15)',
                     borderWidth: 3,
