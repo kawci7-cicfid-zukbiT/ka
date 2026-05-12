@@ -2528,42 +2528,74 @@ function drawShelfLifeCharts(res) {
         });
         const currentDays = daysArr[currentTemp - 15] || 0;
         
-        chartInstances.slTemp = new Chart(ctx2, {
-            type: 'line',
-             {
-                type: 'line',
-data: {  
-labels: 'Shelf Life', data: daysArr,
-                    borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.15)',
-                    borderWidth: 3, fill: true, tension: 0.4, pointRadius: 2, pointHoverRadius: 5
-                }, {
-                    label: 'Current: '+currentTemp+'°C',
-                    data: temps.map(t => t === currentTemp ? currentDays : null),
-                    borderColor: '#ef4444', backgroundColor: '#ef4444',
-                    borderWidth: 0, pointRadius: 10, pointHoverRadius: 12,
-                    pointBackgroundColor: '#fff', pointBorderColor: '#ef4444', pointBorderWidth: 3
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: true, position: 'bottom', labels: { font: { size: 13, weight: '500' }, padding: 16, usePointStyle: true } },
-                    tooltip: {
-                        backgroundColor: 'rgba(15,23,42,0.95)', titleFont: { size: 14 }, bodyFont: { size: 13 },
-                        padding: 12, cornerRadius: 10,
-                        callbacks: {
-                            label: ctx => ctx.datasetIndex === 0 ? `Shelf Life: ${Math.round(ctx.parsed.y)} days` : `🔴 Selected: ${Math.round(ctx.parsed.y)} days`
-                        }
-                    }
-                },
-                scales: {
-                    x: { title: { display: true, text: 'Storage Temperature (°C)', font: { size: 14, weight: '600' } }, ticks: { font: { size: 12 } }, grid: { color: 'rgba(226,232,240,0.6)' } },
-                    y: { title: { display: true, text: 'Days', font: { size: 14, weight: '600' } }, beginAtZero: true, ticks: { font: { size: 12 } }, grid: { color: 'rgba(226,232,240,0.6)' } }
-                }
-            }
-        });
-    }
+        // ✅ CODICE CORRETTO per slTempChart
+chartInstances.slTemp = new Chart(ctx2, {
+type: 'line',
+data: {  // ← AGGIUNTO "data:"
+labels: temps,  // ← labels deve essere un array, non una stringa
+datasets: [
+{
+label: 'Shelf Life',
+data: daysArr,
+borderColor: '#8b5cf6',
+backgroundColor: 'rgba(139,92,246,0.15)',
+borderWidth: 3,
+fill: true,
+tension: 0.4,
+pointRadius: 2,
+pointHoverRadius: 5
+},
+{
+label: 'Current: '+currentTemp+'°C',
+data: temps.map(t => t === currentTemp ? currentDays : null),
+borderColor: '#ef4444',
+backgroundColor: '#ef4444',
+borderWidth: 0,
+pointRadius: 10,
+pointHoverRadius: 12,
+pointBackgroundColor: '#fff',
+pointBorderColor: '#ef4444',
+pointBorderWidth: 3
 }
+]
+},
+options: {
+responsive: true,
+maintainAspectRatio: false,
+plugins: {
+legend: {
+display: true,
+position: 'bottom',
+labels: { font: { size: 13, weight: '500' }, padding: 16, usePointStyle: true }
+},
+tooltip: {
+backgroundColor: 'rgba(15,23,42,0.95)',
+titleFont: { size: 14 },
+bodyFont: { size: 13 },
+padding: 12,
+cornerRadius: 10,
+callbacks: {
+label: ctx => ctx.datasetIndex === 0 
+? `Shelf Life: ${Math.round(ctx.parsed.y)} days` 
+: `🔴 Selected: ${Math.round(ctx.parsed.y)} days`
+}
+}
+},
+scales: {
+x: {
+title: { display: true, text: 'Storage Temperature (°C)', font: { size: 14, weight: '600' } },
+ticks: { font: { size: 12 } },
+grid: { color: 'rgba(226,232,240,0.6)' }
+},
+y: {
+title: { display: true, text: 'Days', font: { size: 14, weight: '600' } },
+beginAtZero: true,
+ticks: { font: { size: 12 } },
+grid: { color: 'rgba(226,232,240,0.6)' }
+}
+}
+}
+});
 function renderCalc() {
   var common = Engine.findCommonConditions(State.layers, DB.materials);
   var hasMats = State.layers.some(function(l){ return l.mid !== null; });
