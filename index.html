@@ -833,6 +833,28 @@ body, main, .app, .card, .material-item, .modal {
 .chart-mini .point-current {
     filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.6));
 }
+  /* === 📏 GRAFICI SHELF LIFE PIÙ GRANDI === */
+#sl-chart-card .grid.grid-2 {
+    gap: 1.5rem;
+}
+#sl-chart-card .chart-mini {
+    height: 400px !important; /* Aumenta altezza da default a 400px */
+    background: #fafbfc;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.03);
+}
+#sl-chart-card h2 {
+    font-size: 1.1rem;
+    margin-bottom: 0.8rem;
+    color: var(--text);
+}
+
+/* ✅ Su mobile riduci leggermente per non occupare troppo schermo */
+@media(max-width: 768px) {
+    #sl-chart-card .chart-mini { height: 300px !important; }
+    #sl-chart-card .grid.grid-2 { gap: 1rem; }
+}
 </style>
 </head>
 <body>
@@ -2071,7 +2093,7 @@ function renderShelfLifeMethodology() {
            <strong>Key Insight:</strong> As the product absorbs moisture, it becomes less "thirsty." This means the driving force weakens over time, so moisture enters quickly at first, then naturally slows down. Our calculator tracks this real-world curve instead of assuming a constant, linear rate.
         </div>
 
-        <h4 style="margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">📐 The Core Formula (Simplified)</h4>
+        <h4 style="margin:1.2rem 0 0.5rem 0; font-family:sans-serif;"> The Core Formula (Simplified)</h4>
         <div style="background:#f8fafc; padding:0.9rem; border-radius:6px; font-family:monospace; font-size:0.95rem; text-align:center; border:1px dashed var(--border); margin-bottom:0.8rem;">
           Shelf Life = [Product Weight × Allowed Moisture Increase] ÷ [Package Area × WVTR × Humidity Driving Force]
         </div>
@@ -2416,173 +2438,75 @@ function renderShelfLifeResult(res) {
     const T_store = (parseFloat(document.getElementById('sl-temp')?.value)||25);
     const accel = getAccelFactor(Ea_kJ*1000, parseFloat(document.getElementById('sl-q10')?.value)||2, 25, T_store);
     
-    // ✅ LAYOUT INTEGRATO: Risultato + Grafici nella stessa card
     panel.innerHTML = `
-    <div style="animation:fadeIn 0.4s ease">
-        <!-- RISULTATO PRINCIPALE -->
-        <div style="text-align:center;padding:1rem 1rem 1.5rem;border-bottom:2px dashed var(--border);margin-bottom:1rem">
-            <div style="font-size:2.8rem;font-weight:800;color:var(--primary);line-height:1.1;text-shadow:0 2px 10px rgba(37,99,235,0.1)">
-                ${Math.round(res.days)} Days
-            </div>
-            <div style="font-size:0.95rem;color:var(--text-light);margin-top:0.5rem;font-weight:500">
+    <div style="animation:fadeIn 0.3s ease">
+        <div style="text-align:center;margin-bottom:1.2rem">
+            <div style="font-size:3rem;font-weight:800;color:var(--primary)">${Math.round(res.days)} Days</div>
+            <div style="font-size:1.1rem;color:var(--text-light);margin-top:0.4rem">
                 ≈ ${months.toFixed(1)} Months | ≈ ${years.toFixed(2)} Years
             </div>
-            <span class="badge badge-blue" style="margin-top:0.5rem;display:inline-block">${unit}</span>
+            <span class="badge badge-blue" style="margin-top:0.5rem;font-size:0.9rem;padding:0.3rem 0.8rem">${unit}</span>
         </div>
-        
-        <!-- PARAMETRI CHIAVE -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.6rem;margin-bottom:1.2rem">
-            <div style="background:var(--primary-light);padding:0.6rem 0.8rem;border-radius:10px;text-align:center">
-                <div style="font-size:0.65rem;color:var(--text-light);text-transform:uppercase;font-weight:600">Acceleration</div>
-                <div style="font-size:1.1rem;font-weight:700;color:var(--primary)">x${accel.toFixed(2)}</div>
+        <div style="padding:0.8rem;background:var(--bg);border-radius:10px;font-size:0.85rem;color:var(--text-light);line-height:1.6;margin-bottom:1rem">
+            <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem">
+                <span>🌡️ Acceleration Factor:</span>
+                <strong style="color:var(--text)">x${accel.toFixed(2)}</strong>
             </div>
-            <div style="background:var(--success-light);padding:0.6rem 0.8rem;border-radius:10px;text-align:center">
-                <div style="font-size:0.65rem;color:var(--text-light);text-transform:uppercase;font-weight:600">Critical</div>
-                <div style="font-size:1.1rem;font-weight:700;color:var(--success)">${res.type==='moisture' ? res.M_crit+'%' : document.getElementById('sl-o2crit')?.value||'400'}</div>
+            <div style="display:flex;justify-content:space-between">
+                <span>🎯 Critical Threshold:</span>
+                <strong style="color:var(--text)">${res.type==='moisture' ? res.M_crit+'%' : document.getElementById('sl-o2crit')?.value||'400'+' mlO₂/kg fat'}</strong>
             </div>
-            <div style="background:var(--purple-light);padding:0.6rem 0.8rem;border-radius:10px;text-align:center">
-                <div style="font-size:0.65rem;color:var(--text-light);text-transform:uppercase;font-weight:600">Eₐ</div>
-                <div style="font-size:1.1rem;font-weight:700;color:var(--purple)">${Ea_kJ} kJ/mol</div>
-            </div>
-        </div>
-        
-        <!-- SEZIONE GRAFICI INTEGRATA -->
-        <div style="margin-top:1.5rem">
-            <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.8rem;display:flex;align-items:center;gap:0.4rem">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;color:var(--primary)">
-                    <path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>
-                </svg>
-                Visual Analysis
-            </h3>
-            <div class="grid grid-2" style="gap:0.8rem">
-                <div class="chart-mini" style="height:240px;background:#fafbfc;border-radius:12px;padding:0.5rem">
-                    <canvas id="slDecayChart"></canvas>
-                </div>
-                <div class="chart-mini" style="height:240px;background:#fafbfc;border-radius:12px;padding:0.5rem">
-                    <canvas id="slTempChart"></canvas>
-                </div>
-            </div>
-        </div>
-        
-        <!-- PULSANTE ESPORTAZIONE -->
-        <div style="margin-top:1rem;text-align:center">
-            <button class="btn btn-outline btn-sm" onclick="exportShelfLifeData()" style="gap:0.3rem">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
-                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
-                Export Data
-            </button>
         </div>
     </div>`;
     
-    // ✅ MOSTRA CARD GRAFICI E DISEGNA
-    chartCard.style.display = 'none'; // Nascondi la card separata, ora è integrata
-    setTimeout(() => drawShelfLifeCharts(res), 200);
+    // Mostra la card dei grafici
+    chartCard.style.display = 'block';
+    setTimeout(() => drawShelfLifeCharts(res), 150);
 }
+    
   
 function drawShelfLifeCharts(res) {
     destroyChart('slDecay'); destroyChart('slTemp');
     
-    // 🎨 COLORI E GRADIENTI PROFESSIONALI
-    const gradientBlue = (ctx) => {
-        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-        gradient.addColorStop(0, 'rgba(59, 130, 246, 0.3)');
-        gradient.addColorStop(1, 'rgba(59, 130, 246, 0.02)');
-        return gradient;
-    };
-    
-    const gradientPurple = (ctx) => {
-        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-        gradient.addColorStop(0, 'rgba(139, 92, 246, 0.3)');
-        gradient.addColorStop(1, 'rgba(139, 92, 246, 0.02)');
-        return gradient;
-    };
-    
-    // 📊 GRAFICO 1: Quality Decay
+    // ✅ GRAFICO 1: Quality Decay (PIÙ GRANDE)
     const ctx1 = document.getElementById('slDecayChart')?.getContext('2d');
     if(ctx1 && res.history?.length > 0) {
         chartInstances.slDecay = new Chart(ctx1, {
             type: 'line',
-            data: {
+             {
                 labels: res.history.map(h => Math.round(h.t)),
                 datasets: [{
-                    label: 'Product Quality',
-                    data: res.history.map(h => h.quality),
+                    label: 'Product Quality (%)',
+                     res.history.map(h => h.quality),
                     borderColor: '#3b82f6',
-                    backgroundColor: gradientBlue(ctx1),
-                    borderWidth: 2.5,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 2,
-                    pointHoverRadius: 5,
-                    pointBackgroundColor: '#fff',
-                    pointBorderColor: '#3b82f6',
-                    pointBorderWidth: 2
+                    backgroundColor: 'rgba(59,130,246,0.15)',
+                    borderWidth: 3,
+                    fill: true, tension: 0.4, pointRadius: 3, pointHoverRadius: 6
                 }, {
                     label: 'Critical Limit',
-                    data: new Array(res.history.length).fill(0),
-                    borderColor: '#ef4444',
-                    borderDash: [6, 4],
-                    borderWidth: 2,
-                    pointRadius: 0,
-                    type: 'line'
+                     new Array(res.history.length).fill(0),
+                    borderColor: '#ef4444', borderDash: [6,4], borderWidth: 2, pointRadius: 0
                 }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: { duration: 800, easing: 'easeOutQuart' },
+                responsive: true, maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        display: true,
-                        position: 'bottom',
-                        labels: { 
-                            boxWidth: 12, 
-                            font: { size: 10 },
-                            padding: 10,
-                            usePointStyle: true
-                        }
-                    },
+                    legend: { display: true, position: 'bottom', labels: { font: { size: 13, weight: '500' }, padding: 16, usePointStyle: true, pointStyleWidth: 16 } },
                     tooltip: {
-                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                        titleFont: { size: 12, weight: '600' },
-                        bodyFont: { size: 11 },
-                        padding: 10,
-                        cornerRadius: 8,
-                        displayColors: true,
-                        callbacks: {
-                            label: function(ctx) {
-                                if(ctx.datasetIndex === 0) {
-                                    return `Quality: ${ctx.parsed.y.toFixed(1)}%`;
-                                }
-                                return null;
-                            }
-                        }
+                        backgroundColor: 'rgba(15,23,42,0.95)', titleFont: { size: 14 }, bodyFont: { size: 13 },
+                        padding: 12, cornerRadius: 10, displayColors: true,
+                        callbacks: { label: ctx => ctx.datasetIndex === 0 ? `Quality: ${ctx.parsed.y.toFixed(1)}%` : null }
                     }
                 },
                 scales: {
-                    x: {
-                        title: { display: true, text: 'Days', font: { size: 10, weight: '500' } },
-                        grid: { color: 'rgba(226, 232, 240, 0.5)', drawBorder: false },
-                        ticks: { font: { size: 9 }, color: '#64748b' }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        max: 100,
-                        title: { display: true, text: 'Quality %', font: { size: 10, weight: '500' } },
-                        grid: { color: 'rgba(226, 232, 240, 0.5)', drawBorder: false },
-                        ticks: { 
-                            font: { size: 9 }, 
-                            color: '#64748b',
-                            callback: function(value) { return value + '%'; }
-                        }
-                    }
+                    x: { title: { display: true, text: 'Storage Days', font: { size: 14, weight: '600' } }, ticks: { font: { size: 12 } }, grid: { color: 'rgba(226,232,240,0.6)' } },
+                    y: { beginAtZero: true, max: 100, title: { display: true, text: 'Quality %', font: { size: 14, weight: '600' } }, ticks: { font: { size: 12 }, callback: v => v + '%' }, grid: { color: 'rgba(226,232,240,0.6)' } }
                 }
             }
         });
     }
     
-    // 📊 GRAFICO 2: Shelf Life vs Temperature
+    // ✅ GRAFICO 2: Temperature What-If (PIÙ GRANDE)
     const ctx2 = document.getElementById('slTempChart')?.getContext('2d');
     if(ctx2) {
         const temps = Array.from({length: 36}, (_, i) => 15 + i);
@@ -2591,6 +2515,7 @@ function drawShelfLifeCharts(res) {
         const W = parseFloat(document.getElementById('sl-weight')?.value)||100;
         const A = parseFloat(document.getElementById('sl-area')?.value)||0.1;
         const baseRate = parseFloat(document.getElementById('sl-rate')?.value)||0.5;
+        const currentTemp = parseFloat(document.getElementById('sl-temp')?.value)||25;
         
         const daysArr = temps.map(T => {
             const acc = getAccelFactor(Ea_J, Q10, 25, T);
@@ -2601,83 +2526,39 @@ function drawShelfLifeCharts(res) {
             }
             return (parseFloat(document.getElementById('sl-o2crit')?.value||400) * parseFloat(document.getElementById('sl-fat')?.value||0.3)) / (rate * A);
         });
-        
-        // ✅ EVIDENZIA TEMPERATURA ATTUALE
-        const currentTemp = parseFloat(document.getElementById('sl-temp')?.value)||25;
-        const currentDays = daysArr[currentTemp - 15];
+        const currentDays = daysArr[currentTemp - 15] || 0;
         
         chartInstances.slTemp = new Chart(ctx2, {
             type: 'line',
-            data: {
+             {
                 labels: temps,
                 datasets: [{
-                    label: 'Shelf Life',
-                    data: daysArr,
-                    borderColor: '#8b5cf6',
-                    backgroundColor: gradientPurple(ctx2),
-                    borderWidth: 2.5,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 0,
-                    pointHoverRadius: 4
+                    label: 'Shelf Life', data: daysArr,
+                    borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.15)',
+                    borderWidth: 3, fill: true, tension: 0.4, pointRadius: 2, pointHoverRadius: 5
                 }, {
-                    // ✅ PUNTO EVIDENZIATO: Temperatura corrente
-                    label: 'Current: ' + currentTemp + '°C',
-                    data: temps.map(t => t === currentTemp ? currentDays : null),
-                    borderColor: '#ef4444',
-                    backgroundColor: '#ef4444',
-                    borderWidth: 0,
-                    pointRadius: 6,
-                    pointHoverRadius: 8,
-                    pointBackgroundColor: '#fff',
-                    pointBorderColor: '#ef4444',
-                    pointBorderWidth: 2,
-                    type: 'scatter'
+                    label: 'Current: '+currentTemp+'°C',
+                     temps.map(t => t === currentTemp ? currentDays : null),
+                    borderColor: '#ef4444', backgroundColor: '#ef4444',
+                    borderWidth: 0, pointRadius: 10, pointHoverRadius: 12,
+                    pointBackgroundColor: '#fff', pointBorderColor: '#ef4444', pointBorderWidth: 3
                 }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: { duration: 800, easing: 'easeOutQuart' },
+                responsive: true, maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        display: true,
-                        position: 'bottom',
-                        labels: { 
-                            boxWidth: 12, 
-                            font: { size: 10 },
-                            padding: 10,
-                            usePointStyle: true
-                        }
-                    },
+                    legend: { display: true, position: 'bottom', labels: { font: { size: 13, weight: '500' }, padding: 16, usePointStyle: true } },
                     tooltip: {
-                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                        titleFont: { size: 12, weight: '600' },
-                        bodyFont: { size: 11 },
-                        padding: 10,
-                        cornerRadius: 8,
+                        backgroundColor: 'rgba(15,23,42,0.95)', titleFont: { size: 14 }, bodyFont: { size: 13 },
+                        padding: 12, cornerRadius: 10,
                         callbacks: {
-                            label: function(ctx) {
-                                if(ctx.datasetIndex === 0) {
-                                    return `Shelf Life: ${Math.round(ctx.parsed.y)} days`;
-                                }
-                                return `🎯 Selected: ${Math.round(ctx.parsed.y)} days`;
-                            }
+                            label: ctx => ctx.datasetIndex === 0 ? `Shelf Life: ${Math.round(ctx.parsed.y)} days` : `🔴 Selected: ${Math.round(ctx.parsed.y)} days`
                         }
                     }
                 },
                 scales: {
-                    x: {
-                        title: { display: true, text: 'Storage Temp (°C)', font: { size: 10, weight: '500' } },
-                        grid: { color: 'rgba(226, 232, 240, 0.5)', drawBorder: false },
-                        ticks: { font: { size: 9 }, color: '#64748b' }
-                    },
-                    y: {
-                        title: { display: true, text: 'Days', font: { size: 10, weight: '500' } },
-                        beginAtZero: true,
-                        grid: { color: 'rgba(226, 232, 240, 0.5)', drawBorder: false },
-                        ticks: { font: { size: 9 }, color: '#64748b' }
-                    }
+                    x: { title: { display: true, text: 'Storage Temperature (°C)', font: { size: 14, weight: '600' } }, ticks: { font: { size: 12 } }, grid: { color: 'rgba(226,232,240,0.6)' } },
+                    y: { title: { display: true, text: 'Days', font: { size: 14, weight: '600' } }, beginAtZero: true, ticks: { font: { size: 12 } }, grid: { color: 'rgba(226,232,240,0.6)' } }
                 }
             }
         });
