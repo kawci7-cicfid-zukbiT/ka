@@ -3183,54 +3183,177 @@ function drawLaminateCurveChart(){
   }
 }
 
-function renderArrhenius(){
-var opts='<option value="">Select...</option>';
-for(var i=0;i<DB.materials.length;i++){
-var v=Engine.validateArrhenius(DB.materials[i]);
-opts+='<option value="'+DB.materials[i].id+'"'+(v.valid?'':' disabled')+'>'+DB.materials[i].name+(v.valid?' ✓ Arrhenius':' (single temp)')+'</option>';
+// ====================================================================
+// 📚 ARRHENIUS METHODOLOGY EXPLAINER (SEMPLIFICATO)
+// ====================================================================
+function renderArrheniusMethodology() {
+  return `
+  <div class="card methodology-card" style="margin-top:1rem; border-left:4px solid var(--primary);">
+  <div style="padding:1.2rem 1.5rem;">
+  <h2 style="font-family:Georgia, 'Times New Roman', serif; font-size:1.2rem; color:var(--text); border-bottom:1px solid var(--border); padding-bottom:0.5rem; margin-bottom:1rem;">
+  🔬 Come Funziona l'Analisi Arrhenius
+  </h2>
+
+  <div style="font-size:0.92rem; line-height:1.75; color:#334155; font-family:Georgia, 'Times New Roman', serif;">
+
+  <!-- SEZIONE 1: COS'È -->
+  <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">1. Cos'è l'equazione di Arrhenius?</h3>
+  <p>L'equazione di Arrhenius descrive come la <strong>temperatura</strong> influisce sulla velocità con cui il vapore acqueo o l'ossigeno attraversano un materiale da imballaggio.</p>
+  <div style="background:var(--primary-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--primary); margin:0.8rem 0; font-family:sans-serif;">
+  <strong>In parole semplici:</strong> Più fa caldo, più velocemente le molecole si muovono e attraversano la barriera. Arrhenius ci permette di prevedere questo comportamento.
+  </div>
+
+  <!-- SEZIONE 2: COME SI OTTENGONO I DATI -->
+  <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">2. Come si raccolgono i dati?</h3>
+  <p>Per usare Arrhenius servono almeno <strong>2 misurazioni</strong> dello stesso materiale a <strong>temperature diverse</strong>, mantenendo costante l'umidità relativa:</p>
+
+  <div style="background:#f8fafc; padding:0.9rem; border-radius:8px; border:1px dashed var(--border); margin:0.8rem 0;">
+  <strong>Esempio di raccolta dati:</strong>
+  <table style="width:100%; font-size:0.85rem; margin-top:0.5rem; border-collapse:collapse;">
+  <thead>
+  <tr style="background:var(--bg); text-align:left;">
+  <th style="padding:0.4rem 0.6rem;">Temperatura</th>
+  <th style="padding:0.4rem 0.6rem;">Umidità</th>
+  <th style="padding:0.4rem 0.6rem;">WVTR misurato</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr><td style="padding:0.3rem 0.6rem; border-bottom:1px solid var(--border);">23°C</td><td style="padding:0.3rem 0.6rem; border-bottom:1px solid var(--border);">50% RH</td><td style="padding:0.3rem 0.6rem; border-bottom:1px solid var(--border);">0.8 g/m²·day</td></tr>
+  <tr><td style="padding:0.3rem 0.6rem; border-bottom:1px solid var(--border);">38°C</td><td style="padding:0.3rem 0.6rem; border-bottom:1px solid var(--border);">50% RH</td><td style="padding:0.3rem 0.6rem; border-bottom:1px solid var(--border);">1.5 g/m²·day</td></tr>
+  <tr><td style="padding:0.3rem 0.6rem;">50°C</td><td style="padding:0.3rem 0.6rem;">50% RH</td><td style="padding:0.3rem 0.6rem;">2.8 g/m²·day</td></tr>
+  </tbody>
+  </table>
+  </div>
+
+  <p style="font-size:0.85rem; color:var(--text-light); margin-top:0.5rem;">
+  <strong>Nota:</strong> L'umidità deve rimanere costante (±5%) perché influisce indipendentemente dalla temperatura.
+  </p>
+
+  <!-- SEZIONE 3: COME FUNZIONA IL CALCOLO -->
+  <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">3. Come il calculator usa questi dati</h3>
+  <ol style="padding-left:1.2rem; margin:0.5rem 0;">
+  <li><strong>Trasforma i dati:</strong> Converte temperatura in Kelvin (K = °C + 273.15) e calcola il logaritmo naturale del valore WVTR/OTR.</li>
+  <li><strong>Traccia la retta:</strong> Plotta ln(WVTR) contro 1/T. Se i punti sono allineati, il materiale segue Arrhenius.</li>
+  <li><strong>Calcola i parametri:</strong>
+  <ul style="padding-left:1rem; margin:0.3rem 0; font-size:0.9em;">
+  <li><strong>Eₐ (Energia di attivazione):</strong> Quanto il materiale è "sensibile" al calore (kJ/mol)</li>
+  <li><strong>A (Fattore pre-esponenziale):</strong> Il valore teorico a temperatura infinita</li>
+  <li><strong>R² (Coefficiente di determinazione):</strong> Quanto bene i dati seguono il modello (1.0 = perfetto)</li>
+  </ul>
+  </li>
+  <li><strong>Predice:</strong> Usa l'equazione per stimare il valore a qualsiasi temperatura intermedia o esterna al range misurato.</li>
+  </ol>
+
+  <div style="background:#f8fafc; padding:0.9rem; border-radius:6px; font-family:monospace; font-size:0.9rem; text-align:center; border:1px dashed var(--border); margin:0.8rem 0;">
+  <strong>Equazione:</strong><br>
+  WVTR(T) = A · exp( -Eₐ / (R · T) )
+  </div>
+
+  <!-- SEZIONE 4: INTERPRETARE I RISULTATI -->
+  <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">4. Come leggere i risultati</h3>
+  <div style="display:grid; grid-template-columns:1fr; gap:0.5rem; margin:0.8rem 0;">
+  <div style="background:var(--success-light); padding:0.6rem; border-radius:6px; border-left:3px solid var(--success);">
+  <strong style="color:var(--success);">✓ R² ≥ 0.95:</strong> Ottimo fit. Le previsioni sono molto affidabili.
+  </div>
+  <div style="background:var(--warning-light); padding:0.6rem; border-radius:6px; border-left:3px solid var(--warning);">
+  <strong style="color:var(--warning);">⚠ 0.80 ≤ R² < 0.95:</strong> Fit accettabile. Usare con cautela per estrapolazioni.
+  </div>
+  <div style="background:var(--danger-light); padding:0.6rem; border-radius:6px; border-left:3px solid var(--danger);">
+  <strong style="color:var(--danger);">✗ R² < 0.80:</strong> Fit scarso. I dati potrebbero non seguire Arrhenius o servirebbero più punti.
+  </div>
+  </div>
+
+  <!-- SEZIONE 5: BEST PRACTICES -->
+  <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">5. Best Practices per dati affidabili</h3>
+  <ul style="padding-left:1.2rem; margin:0.5rem 0; font-size:0.9rem;">
+  <li>Usa almeno <strong>3 temperature</strong> distribuite nell'intervallo di interesse.</li>
+  <li>Mantieni l'<strong>umidità costante</strong> durante tutte le misurazioni.</li>
+  <li>Assicurati che il materiale sia in <strong>equilibrio</strong> prima di misurare.</li>
+  <li>Per estrapolazioni (previsioni fuori dal range misurato), usa un margine di sicurezza del 20-30%.</li>
+  <li>Materiali con transizioni di fase (es. cristallizzazione) possono deviare da Arrhenius.</li>
+  </ul>
+
+  <!-- RIFERIMENTI -->
+  <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">📚 Riferimenti</h3>
+  <ul style="padding-left:1.2rem; margin:0.5rem 0; color:var(--text-light); font-size:0.85rem;">
+  <li>ASTM F1249 / ISO 15106-3 (WVTR)</li>
+  <li>ASTM D3985 / ISO 15106-2 (OTR)</li>
+  <li>Arrhenius, S. (1889). "Über die Reaktionsgeschwindigkeit..."</li>
+  <li>Robertson, G.L. (2016). <em>Food Packaging: Principles and Practice</em></li>
+  </ul>
+
+  <div style="margin-top:1.5rem; padding:0.9rem; background:var(--bg); border-radius:8px; font-size:0.88rem; color:var(--text-light); border-left:4px solid var(--primary); font-family:sans-serif;">
+  <strong>Nota operativa:</strong> Questa funzione supporta la ricerca e lo sviluppo. Per claim di shelf-life commerciali, validare sempre con test reali in condizioni di stoccaggio e rispettare le normative locali (EU 1169/2011, FDA 21 CFR).
+  </div>
+
+  </div>
+  </div>
+  </div>
+  `;
 }
-return '<div class="card"><h2>Arrhenius Analysis</h2>'+
-'<p style="font-size:.78rem;color:var(--text-light);margin-bottom:.75rem">Predict '+getLabel()+' at unmeasured temperatures. Requires 2+ data points at different temperatures.</p>'+
-'<div class="grid grid-2">'+
-'<div class="form-group"><label>Material</label><select class="form-input" id="arr-mat" onchange="onArrChange()">'+opts+'</select></div>'+
-'<div class="form-group"><label>Target Temperature (°C)</label><input type="number" step="any" class="form-input" id="arr-temp" value="25" oninput="onArrChange()"></div>'+
-'</div>'+
-// ✅ NUOVO: Campo Ea modificabile manualmente
-'<div class="form-group" style="margin-top:0.5rem;padding:0.6rem;background:var(--primary-light);border-radius:8px">'+
-'<label style="display:flex;align-items:center;gap:0.3rem;font-weight:600">'+
-'<span>Eₐ Activation Energy (kJ/mol)</span>'+
-'<span class="badge badge-blue" style="font-size:0.6rem" title="Auto-filled from material data, editable">✏️ Editable</span>'+
-'</label>'+
-'<input type="number" step="any" class="form-input" id="arr-ea" value="" placeholder="Auto-calculated or enter custom value" oninput="onArrEaChange()">'+
-'<span style="font-size:0.65rem;color:var(--text-light);display:block;margin-top:0.25rem">Leave empty to auto-calculate from material data, or enter a custom value for "what-if" analysis</span>'+
-'</div>'+
-'<div id="arr-result"></div></div>'+
-'<div class="grid grid-2"><div class="card"><h2>'+getLabel()+' vs Temperature</h2><div class="chart-container"><canvas id="arrTempCanvas"></canvas></div></div>'+
-'<div class="card"><h2>Arrhenius Plot (ln('+getLabel()+') vs 1/T)</h2><div class="chart-container"><canvas id="arrLinCanvas"></canvas></div></div></div>';
-renderArrheniusMethodology()+'</div>';
+
+// ====================================================================
+// 🧪 FUNZIONE PRINCIPALE: renderArrhenius()
+// ====================================================================
+function renderArrhenius() {
+  var opts = '<option value="">Select...</option>';
+  for (var i = 0; i < DB.materials.length; i++) {
+    var v = Engine.validateArrhenius(DB.materials[i]);
+    opts += '<option value="' + DB.materials[i].id + '"' + (v.valid ? '' : ' disabled') + '>' + 
+            DB.materials[i].name + (v.valid ? ' ✓ Arrhenius' : ' (single temp)') + '</option>';
+  }
+  
+  return '<div class="card"><h2>Arrhenius Analysis</h2>' +
+    '<p style="font-size:.78rem;color:var(--text-light);margin-bottom:.75rem">Predict ' + getLabel() + ' at unmeasured temperatures. Requires 2+ data points at different temperatures.</p>' +
+    '<div class="grid grid-2">' +
+      '<div class="form-group"><label>Material</label><select class="form-input" id="arr-mat" onchange="onArrChange()">' + opts + '</select></div>' +
+      '<div class="form-group"><label>Target Temperature (°C)</label><input type="number" step="any" class="form-input" id="arr-temp" value="25" oninput="onArrChange()"></div>' +
+    '</div>' +
+    // ✅ NUOVO: Campo Ea modificabile manualmente
+    '<div class="form-group" style="margin-top:0.5rem;padding:0.6rem;background:var(--primary-light);border-radius:8px">' +
+      '<label style="display:flex;align-items:center;gap:0.3rem;font-weight:600">' +
+        '<span>Eₐ Activation Energy (kJ/mol)</span>' +
+        '<span class="badge badge-blue" style="font-size:0.6rem" title="Auto-filled from material data, editable">✏️ Editable</span>' +
+      '</label>' +
+      '<input type="number" step="any" class="form-input" id="arr-ea" value="" placeholder="Auto-calculated or enter custom value" oninput="onArrEaChange()">' +
+      '<span style="font-size:0.65rem;color:var(--text-light);display:block;margin-top:0.25rem">Leave empty to auto-calculate from material data, or enter a custom value for "what-if" analysis</span>' +
+    '</div>' +
+    '<div id="arr-result"></div></div>' +
+    '<div class="grid grid-2">' +
+      '<div class="card"><h2>' + getLabel() + ' vs Temperature</h2><div class="chart-container"><canvas id="arrTempCanvas"></canvas></div></div>' +
+      '<div class="card"><h2>Arrhenius Plot (ln(' + getLabel() + ') vs 1/T)</h2><div class="chart-container"><canvas id="arrLinCanvas"></canvas></div></div>' +
+    '</div>' +
+  '</div>' + renderArrheniusMethodology();
 }
+
+// ====================================================================
+// 🎯 HANDLERS & FUNZIONI DI SUPPORTO
+// ====================================================================
+
 // ✅ Handler: quando l'utente modifica Ea manualmente
-function onArrEaChange(){
-onArrChange(); // Ricalcola tutto con il nuovo valore Ea
+function onArrEaChange() {
+  onArrChange(); // Ricalcola tutto con il nuovo valore Ea
 }
-function postArrheniusRender(){
-  setTimeout(function(){
+
+// ✅ Post-render: inizializza il tab Arrhenius
+function postArrheniusRender() {
+  setTimeout(function() {
     var sel = document.getElementById('arr-mat');
     var tempInput = document.getElementById('arr-temp');
     var resEl = document.getElementById('arr-result');
     
-    if(!sel) return;
+    if (!sel) return;
     
     // ✅ Mostra un messaggio di benvenuto invece di auto-calcolare
-    if(!sel.value) {
-      if(resEl) {
+    if (!sel.value) {
+      if (resEl) {
         resEl.innerHTML = 
-          '<div class="alert alert-info" style="display:flex;gap:0.5rem;align-items:flex-start">'+
-            '<svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0">'+
-              '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>'+
-            '</svg>'+
-            '<div><strong>Select a material to begin Arrhenius analysis</strong><br>'+
-            '<span style="font-size:0.75rem;color:var(--text-light)">Choose a material with ✓ Arrhenius badge (multi-temperature data required)</span></div>'+
+          '<div class="alert alert-info" style="display:flex;gap:0.5rem;align-items:flex-start">' +
+            '<svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;flex-shrink:0">' +
+              '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>' +
+            '</svg>' +
+            '<div><strong>Select a material to begin Arrhenius analysis</strong><br>' +
+            '<span style="font-size:0.75rem;color:var(--text-light)">Choose a material with ✓ Arrhenius badge (multi-temperature data required)</span></div>' +
           '</div>';
       }
       // ✅ Pulisci i canvas ma NON calcolare
@@ -3240,126 +3363,163 @@ function postArrheniusRender(){
     }
     
     // ✅ Calcola SOLO se l'utente ha selezionato esplicitamente
-    if(sel.value) onArrChange();
+    if (sel.value) onArrChange();
   }, 100);
 }
 
-function onArrChange(){
-var selMat=document.getElementById('arr-mat');
-var selTemp=document.getElementById('arr-temp');
-var selEa=document.getElementById('arr-ea'); // ✅ NUOVO: riferimento al campo Ea
-var resEl=document.getElementById('arr-result');
-if(!selMat||!selTemp) return;
-var matId=parseFloat(selMat.value);
-var targetTemp=parseFloat(selTemp.value)||25;
-
-// ✅ Leggi il valore Ea dal campo input (se presente)
-var customEaInput = selEa ? selEa.value.trim() : '';
-var customEa = customEaInput ? parseFloat(customEaInput) : NaN;
-
-if(!matId){
-if(resEl) resEl.innerHTML='';
-if(selEa) selEa.value='';
-clearArrCanvas('arrTempCanvas');
-clearArrCanvas('arrLinCanvas');
-return;
-}
-var mat=null;for(var i=0;i<DB.materials.length;i++) if(DB.materials[i].id===matId){mat=DB.materials[i];break;}
-if(!mat) return;
-
-// ✅ Se Ea non è stato inserito manualmente, calcolalo dai dati del materiale
-if(isNaN(customEa) || customEa <= 0){
-var v=Engine.validateArrhenius(mat);
-if(!v.valid){
-if(resEl) resEl.innerHTML='<div class="alert alert-error">'+v.error+'</div>';
-clearArrCanvas('arrTempCanvas');
-clearArrCanvas('arrLinCanvas');
-return;
-}
-var r=Engine.calcArrheniusParams(mat);
-if(!r.valid){
-if(resEl) resEl.innerHTML='<div class="alert alert-error">'+r.error+'</div>';
-clearArrCanvas('arrTempCanvas');
-clearArrCanvas('arrLinCanvas');
-return;
-}
-// ✅ Auto-compila il campo Ea con il valore calcolato (in kJ/mol)
-if(selEa) selEa.value = (r.Ea/1000).toFixed(2);
-customEa = r.Ea; // Usa Ea calcolato per i grafici
-}
-
-// ✅ Ora procedi con i calcoli usando customEa
-var warn='';
-var relClass='reliability-medium';
-var rSquared=1; // Se Ea è manuale, R² non è calcolabile
-
-// Se Ea è manuale, calcola A usando i dati e Ea fisso
-var A, EaUsed;
-if(!isNaN(customEaInput) && customEaInput !== ''){
-// ✅ Ea manuale: ricalcola A con Ea fisso
-EaUsed = customEa * 1000; // Converti kJ → J
-var vals=Engine.getValues(mat);
-var R=Engine.R_GAS;
-var lnA_values=[];
-for(var i=0;i<mat.validConditions.length;i++){
-var tk=mat.validConditions[i].temperature+273.15;
-if(vals[i].value>0){
-var lnA = Math.log(vals[i].value) + EaUsed/(R*tk);
-lnA_values.push(lnA);
-}
-}
-if(lnA_values.length>0){
-var lnA_mean=0; for(var j=0;j<lnA_values.length;j++) lnA_mean+=lnA_values[j]; lnA_mean/=lnA_values.length;
-A=Math.exp(lnA_mean);
-warn='<div class="alert alert-warning">Using custom Eₐ = '+customEa.toFixed(2)+' kJ/mol</div>';
-relClass='reliability-low';
-} else {
-if(resEl) resEl.innerHTML='<div class="alert alert-error">Cannot calculate A with custom Eₐ</div>';
-return;
-}
-} else {
-// ✅ Ea auto-calcolato: usa i parametri originali
-var r=Engine.calcArrheniusParams(mat);
-EaUsed = r.Ea;
-A = r.A;
-rSquared = r.rSquared;
-relClass=rSquared>0.95?'reliability-high':rSquared>0.8?'reliability-medium':'reliability-low';
-}
-
-// Calcola la predizione
-var pred = Engine.predict(A, EaUsed, targetTemp);
-
-// Calcola range temperature per warning
-var minT=mat.validConditions[0].temperature, maxT=mat.validConditions[0].temperature;
-for(var i=0;i<mat.validConditions.length;i++){
-var t=mat.validConditions[i].temperature;
-if(t<minT) minT=t; if(t>maxT) maxT=t;
-}
-var isExtrapolation = targetTemp<minT-1 || targetTemp>maxT+1;
-if(isExtrapolation) warn+='<div class="alert alert-warning">Extrapolation - target '+targetTemp+'°C is outside measured range ('+minT.toFixed(0)+'-'+maxT.toFixed(0)+'°C)</div>';
-
-// ✅ Mostra i risultati
-if(resEl) resEl.innerHTML=warn+
-'<div class="reliability-meter '+relClass+'">'+(isNaN(customEaInput)?'R²='+(rSquared).toFixed(4)+' ':'')+'Eₐ='+(EaUsed/1000).toFixed(2)+' kJ/mol</div>'+
-'<div class="grid grid-3" style="margin-top:.4rem">'+
-'<div><div style="font-size:.65rem;color:var(--text-light)">Activation Energy</div><div style="font-weight:700">'+(EaUsed/1000).toFixed(2)+' kJ/mol</div></div>'+
-'<div><div style="font-size:.65rem;color:var(--text-light)">Pre-exponential A</div><div style="font-weight:700">'+A.toExponential(3)+'</div></div>'+
-'<div><div style="font-size:.65rem;color:var(--text-light)">Predicted at '+targetTemp+'°C</div><div style="font-size:1rem;font-weight:700;color:var(--primary)">'+pred.toFixed(6)+'</div></div>'+
-'</div>';
-
-// ✅ Disegna i grafici passando EaUsed e A
-drawArrTempChart(mat, {A:A, Ea:EaUsed, predicted:pred, targetTempC:targetTemp, minTemp:minT, maxTemp:maxT, isExtrapolation:isExtrapolation, dataPoints:Engine.getValues(mat).map((v,i)=>({T_K:mat.validConditions[i].temperature+273.15, trans:v.value}))}, customEaInput!=='');
-drawArrLinChart(mat, {A:A, Ea:EaUsed, dataPoints:Engine.getValues(mat).map((v,i)=>({T_K:mat.validConditions[i].temperature+273.15, trans:v.value}))}, customEaInput!=='');
-}
-function clearArrCanvas(id){
-  var c = document.getElementById(id);
-  if(!c) return;
+// ✅ Funzione principale di calcolo Arrhenius
+function onArrChange() {
+  var selMat = document.getElementById('arr-mat');
+  var selTemp = document.getElementById('arr-temp');
+  var selEa = document.getElementById('arr-ea');
+  var resEl = document.getElementById('arr-result');
   
-  destroyChart(id.replace('Canvas',''));
+  if (!selMat || !selTemp) return;
+  
+  var matId = parseFloat(selMat.value);
+  var targetTemp = parseFloat(selTemp.value) || 25;
+  
+  // ✅ Leggi il valore Ea dal campo input (se presente)
+  var customEaInput = selEa ? selEa.value.trim() : '';
+  var customEa = customEaInput ? parseFloat(customEaInput) : NaN;
+  
+  if (!matId) {
+    if (resEl) resEl.innerHTML = '';
+    if (selEa) selEa.value = '';
+    clearArrCanvas('arrTempCanvas');
+    clearArrCanvas('arrLinCanvas');
+    return;
+  }
+  
+  var mat = null;
+  for (var i = 0; i < DB.materials.length; i++) {
+    if (DB.materials[i].id === matId) {
+      mat = DB.materials[i];
+      break;
+    }
+  }
+  if (!mat) return;
+  
+  var A, EaUsed, rSquared = 1, warn = '', relClass = 'reliability-medium';
+  
+  // ✅ Se Ea non è stato inserito manualmente, calcolalo dai dati del materiale
+  if (isNaN(customEa) || customEa <= 0) {
+    var v = Engine.validateArrhenius(mat);
+    if (!v.valid) {
+      if (resEl) resEl.innerHTML = '<div class="alert alert-error">' + v.error + '</div>';
+      clearArrCanvas('arrTempCanvas');
+      clearArrCanvas('arrLinCanvas');
+      return;
+    }
+    var r = Engine.calcArrheniusParams(mat);
+    if (!r.valid) {
+      if (resEl) resEl.innerHTML = '<div class="alert alert-error">' + r.error + '</div>';
+      clearArrCanvas('arrTempCanvas');
+      clearArrCanvas('arrLinCanvas');
+      return;
+    }
+    // ✅ Auto-compila il campo Ea con il valore calcolato (in kJ/mol)
+    if (selEa) selEa.value = (r.Ea / 1000).toFixed(2);
+    EaUsed = r.Ea;
+    A = r.A;
+    rSquared = r.rSquared;
+    relClass = rSquared > 0.95 ? 'reliability-high' : rSquared > 0.8 ? 'reliability-medium' : 'reliability-low';
+  } else {
+    // ✅ Ea manuale: ricalcola A con Ea fisso
+    EaUsed = customEa * 1000; // Converti kJ → J
+    var vals = Engine.getValues(mat);
+    var R = Engine.R_GAS;
+    var lnA_values = [];
+    for (var i = 0; i < mat.validConditions.length; i++) {
+      var tk = mat.validConditions[i].temperature + 273.15;
+      if (vals[i] && vals[i].value > 0) {
+        var lnA = Math.log(vals[i].value) + EaUsed / (R * tk);
+        lnA_values.push(lnA);
+      }
+    }
+    if (lnA_values.length > 0) {
+      var lnA_mean = 0;
+      for (var j = 0; j < lnA_values.length; j++) lnA_mean += lnA_values[j];
+      lnA_mean /= lnA_values.length;
+      A = Math.exp(lnA_mean);
+      warn = '<div class="alert alert-warning">Using custom Eₐ = ' + customEa.toFixed(2) + ' kJ/mol</div>';
+      relClass = 'reliability-low';
+    } else {
+      if (resEl) resEl.innerHTML = '<div class="alert alert-error">Cannot calculate A with custom Eₐ</div>';
+      return;
+    }
+  }
+  
+  // Calcola la predizione
+  var pred = Engine.predict(A, EaUsed, targetTemp);
+  
+  // Calcola range temperature per warning
+  var minT = mat.validConditions[0].temperature, maxT = mat.validConditions[0].temperature;
+  for (var i = 0; i < mat.validConditions.length; i++) {
+    var t = mat.validConditions[i].temperature;
+    if (t < minT) minT = t;
+    if (t > maxT) maxT = t;
+  }
+  var isExtrapolation = targetTemp < minT - 1 || targetTemp > maxT + 1;
+  if (isExtrapolation) {
+    warn += '<div class="alert alert-warning">Extrapolation - target ' + targetTemp + '°C is outside measured range (' + minT.toFixed(0) + '-' + maxT.toFixed(0) + '°C)</div>';
+  }
+  
+  // ✅ Mostra i risultati
+  if (resEl) {
+    resEl.innerHTML = warn +
+      '<div class="reliability-meter ' + relClass + '">' + 
+        (isNaN(customEaInput) || customEaInput === '' ? 'R²=' + (rSquared).toFixed(4) + ' ' : '') + 
+        'Eₐ=' + (EaUsed / 1000).toFixed(2) + ' kJ/mol' +
+      '</div>' +
+      '<div class="grid grid-3" style="margin-top:.4rem">' +
+        '<div><div style="font-size:.65rem;color:var(--text-light)">Activation Energy</div><div style="font-weight:700">' + (EaUsed / 1000).toFixed(2) + ' kJ/mol</div></div>' +
+        '<div><div style="font-size:.65rem;color:var(--text-light)">Pre-exponential A</div><div style="font-weight:700">' + A.toExponential(3) + '</div></div>' +
+        '<div><div style="font-size:.65rem;color:var(--text-light)">Predicted at ' + targetTemp + '°C</div><div style="font-size:1rem;font-weight:700;color:var(--primary)">' + pred.toFixed(6) + '</div></div>' +
+      '</div>';
+  }
+  
+  // ✅ Prepara i dataPoints per i grafici
+  var dataPoints = [];
+  var vals = Engine.getValues(mat);
+  for (var i = 0; i < mat.validConditions.length; i++) {
+    if (vals[i] && vals[i].value > 0 && mat.validConditions[i]) {
+      dataPoints.push({
+        T_K: mat.validConditions[i].temperature + 273.15,
+        trans: vals[i].value
+      });
+    }
+  }
+  
+  // ✅ Disegna i grafici
+  drawArrTempChart(mat, {
+    A: A,
+    Ea: EaUsed,
+    predicted: pred,
+    targetTempC: targetTemp,
+    minTemp: minT,
+    maxTemp: maxT,
+    isExtrapolation: isExtrapolation,
+    dataPoints: dataPoints,
+    rSquared: rSquared
+  }, customEaInput !== '');
+  
+  drawArrLinChart(mat, {
+    A: A,
+    Ea: EaUsed,
+    dataPoints: dataPoints,
+    rSquared: rSquared
+  }, customEaInput !== '');
+}
+
+// ✅ Pulisce un canvas Arrhenius
+function clearArrCanvas(id) {
+  var c = document.getElementById(id);
+  if (!c) return;
+  
+  destroyChart(id.replace('Canvas', ''));
   
   var ctx = c.getContext('2d');
-  
-  // ✅ Dimensioni responsive con limitazione DPI per iOS
   var dpr = window.devicePixelRatio > 2 ? 2 : window.devicePixelRatio;
   var width = c.clientWidth || 500;
   var height = c.clientHeight || 280;
@@ -3375,141 +3535,25 @@ function clearArrCanvas(id){
   ctx.fillStyle = '#94a3b8';
   ctx.font = window.innerWidth < 480 ? '11px sans-serif' : '13px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('Select a multi-temp material', width/2, height/2);
+  ctx.fillText('Select a multi-temp material', width / 2, height / 2);
 }
-// ====================================================================
-// 📚 ARRHENIUS METHODOLOGY EXPLAINER (SEMPLIFICATO)
-// ====================================================================
-function renderArrheniusMethodology() {
-return `
-<div class="card methodology-card" style="margin-top:1rem; border-left:4px solid var(--primary);">
-<div style="padding:1.2rem 1.5rem;">
-<h2 style="font-family:Georgia, 'Times New Roman', serif; font-size:1.2rem; color:var(--text); border-bottom:1px solid var(--border); padding-bottom:0.5rem; margin-bottom:1rem;">
-🔬 Come Funziona l'Analisi Arrhenius
-</h2>
 
-<div style="font-size:0.92rem; line-height:1.75; color:#334155; font-family:Georgia, 'Times New Roman', serif;">
-
-<!-- SEZIONE 1: COS'È -->
-<h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">1. Cos'è l'equazione di Arrhenius?</h3>
-<p>L'equazione di Arrhenius descrive come la <strong>temperatura</strong> influisce sulla velocità con cui il vapore acqueo o l'ossigeno attraversano un materiale da imballaggio.</p>
-<div style="background:var(--primary-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--primary); margin:0.8rem 0; font-family:sans-serif;">
-<strong>In parole semplici:</strong> Più fa caldo, più velocemente le molecole si muovono e attraversano la barriera. Arrhenius ci permette di prevedere questo comportamento.
-</div>
-
-<!-- SEZIONE 2: COME SI OTTENGONO I DATI -->
-<h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">2. Come si raccolgono i dati?</h3>
-<p>Per usare Arrhenius servono almeno <strong>2 misurazioni</strong> dello stesso materiale a <strong>temperature diverse</strong>, mantenendo costante l'umidità relativa:</p>
-
-<div style="background:#f8fafc; padding:0.9rem; border-radius:8px; border:1px dashed var(--border); margin:0.8rem 0;">
-<strong>Esempio di raccolta dati:</strong>
-<table style="width:100%; font-size:0.85rem; margin-top:0.5rem; border-collapse:collapse;">
-<thead>
-<tr style="background:var(--bg); text-align:left;">
-<th style="padding:0.4rem 0.6rem;">Temperatura</th>
-<th style="padding:0.4rem 0.6rem;">Umidità</th>
-<th style="padding:0.4rem 0.6rem;">WVTR misurato</th>
-</tr>
-</thead>
-<tbody>
-<tr><td style="padding:0.3rem 0.6rem; border-bottom:1px solid var(--border);">23°C</td><td style="padding:0.3rem 0.6rem; border-bottom:1px solid var(--border);">50% RH</td><td style="padding:0.3rem 0.6rem; border-bottom:1px solid var(--border);">0.8 g/m²·day</td></tr>
-<tr><td style="padding:0.3rem 0.6rem; border-bottom:1px solid var(--border);">38°C</td><td style="padding:0.3rem 0.6rem; border-bottom:1px solid var(--border);">50% RH</td><td style="padding:0.3rem 0.6rem; border-bottom:1px solid var(--border);">1.5 g/m²·day</td></tr>
-<tr><td style="padding:0.3rem 0.6rem;">50°C</td><td style="padding:0.3rem 0.6rem;">50% RH</td><td style="padding:0.3rem 0.6rem;">2.8 g/m²·day</td></tr>
-</tbody>
-</table>
-</div>
-
-<p style="font-size:0.85rem; color:var(--text-light); margin-top:0.5rem;">
-<strong>Nota:</strong> L'umidità deve rimanere costante (±5%) perché influisce indipendentemente dalla temperatura.
-</p>
-
-<!-- SEZIONE 3: COME FUNZIONA IL CALCOLO -->
-<h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">3. Come il calculator usa questi dati</h3>
-<ol style="padding-left:1.2rem; margin:0.5rem 0;">
-<li><strong>Trasforma i dati:</strong> Converte temperatura in Kelvin (K = °C + 273.15) e calcola il logaritmo naturale del valore WVTR/OTR.</li>
-<li><strong>Traccia la retta:</strong> Plotta ln(WVTR) contro 1/T. Se i punti sono allineati, il materiale segue Arrhenius.</li>
-<li><strong>Calcola i parametri:</strong>
-<ul style="padding-left:1rem; margin:0.3rem 0; font-size:0.9em;">
-<li><strong>Eₐ (Energia di attivazione):</strong> Quanto il materiale è "sensibile" al calore (kJ/mol)</li>
-<li><strong>A (Fattore pre-esponenziale):</strong> Il valore teorico a temperatura infinita</li>
-<li><strong>R² (Coefficiente di determinazione):</strong> Quanto bene i dati seguono il modello (1.0 = perfetto)</li>
-</ul>
-</li>
-<li><strong>Predice:</strong> Usa l'equazione per stimare il valore a qualsiasi temperatura intermedia o esterna al range misurato.</li>
-</ol>
-
-<div style="background:#f8fafc; padding:0.9rem; border-radius:6px; font-family:monospace; font-size:0.9rem; text-align:center; border:1px dashed var(--border); margin:0.8rem 0;">
-<strong>Equazione:</strong><br>
-WVTR(T) = A · exp( -Eₐ / (R · T) )
-</div>
-
-<!-- SEZIONE 4: INTERPRETARE I RISULTATI -->
-<h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">4. Come leggere i risultati</h3>
-<div style="display:grid; grid-template-columns:1fr; gap:0.5rem; margin:0.8rem 0;">
-<div style="background:var(--success-light); padding:0.6rem; border-radius:6px; border-left:3px solid var(--success);">
-<strong style="color:var(--success);">✓ R² ≥ 0.95:</strong> Ottimo fit. Le previsioni sono molto affidabili.
-</div>
-<div style="background:var(--warning-light); padding:0.6rem; border-radius:6px; border-left:3px solid var(--warning);">
-<strong style="color:var(--warning);">⚠ 0.80 ≤ R² < 0.95:</strong> Fit accettabile. Usare con cautela per estrapolazioni.
-</div>
-<div style="background:var(--danger-light); padding:0.6rem; border-radius:6px; border-left:3px solid var(--danger);">
-<strong style="color:var(--danger);">✗ R² < 0.80:</strong> Fit scarso. I dati potrebbero non seguire Arrhenius o servirebbero più punti.
-</div>
-</div>
-
-<!-- SEZIONE 5: BEST PRACTICES -->
-<h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">5. Best Practices per dati affidabili</h3>
-<ul style="padding-left:1.2rem; margin:0.5rem 0; font-size:0.9rem;">
-<li>Usa almeno <strong>3 temperature</strong> distribuite nell'intervallo di interesse.</li>
-<li>Mantieni l'<strong>umidità costante</strong> durante tutte le misurazioni.</li>
-<li>Assicurati che il materiale sia in <strong>equilibrio</strong> prima di misurare.</li>
-<li>Per estrapolazioni (previsioni fuori dal range misurato), usa un margine di sicurezza del 20-30%.</li>
-<li>Materiali con transizioni di fase (es. cristallizzazione) possono deviare da Arrhenius.</li>
-</ul>
-
-<!-- RIFERIMENTI -->
-<h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">📚 Riferimenti</h3>
-<ul style="padding-left:1.2rem; margin:0.5rem 0; color:var(--text-light); font-size:0.85rem;">
-<li>ASTM F1249 / ISO 15106-3 (WVTR)</li>
-<li>ASTM D3985 / ISO 15106-2 (OTR)</li>
-<li>Arrhenius, S. (1889). "Über die Reaktionsgeschwindigkeit..."</li>
-<li>Robertson, G.L. (2016). <em>Food Packaging: Principles and Practice</em></li>
-</ul>
-
-<div style="margin-top:1.5rem; padding:0.9rem; background:var(--bg); border-radius:8px; font-size:0.88rem; color:var(--text-light); border-left:4px solid var(--primary); font-family:sans-serif;">
-<strong>Nota operativa:</strong> Questa funzione supporta la ricerca e lo sviluppo. Per claim di shelf-life commerciali, validare sempre con test reali in condizioni di stoccaggio e rispettare le normative locali (EU 1169/2011, FDA 21 CFR).
-</div>
-
-</div>
-</div>
-</div>
-`;
-}
-function drawArrTempChart(mat, r){
+// ✅ Disegna il grafico WVTR/OTR vs Temperatura
+function drawArrTempChart(mat, r, isCustomEa) {
   destroyChart('arrTemp');
   var canvas = document.getElementById('arrTempCanvas');
-  if(!canvas) return;
-  
-  // ✅ Verifica Chart.js
-  if(typeof Chart === 'undefined'){
-    console.warn('Chart.js not loaded');
-    return;
-  }
+  if (!canvas || typeof Chart === 'undefined') return;
   
   var ctx = canvas.getContext('2d');
   var vals = Engine.getValues(mat);
   var dataPoints = [];
   
-  // ✅ Controlli di sicurezza sui dati
-  if(mat.validConditions && vals){
-    for(var i = 0; i < mat.validConditions.length; i++){
+  if (mat.validConditions && vals) {
+    for (var i = 0; i < mat.validConditions.length; i++) {
       var cond = mat.validConditions[i];
       var val = vals[i];
-      if(cond && cond.temperature != null && val && val.value != null && val.value > 0){
-        dataPoints.push({
-          x: cond.temperature,
-          y: val.value
-        });
+      if (cond && cond.temperature != null && val && val.value != null && val.value > 0) {
+        dataPoints.push({ x: cond.temperature, y: val.value });
       }
     }
   }
@@ -3526,13 +3570,13 @@ function drawArrTempChart(mat, r){
     order: 1
   }];
   
-  if(r && !r.error){
+  if (r && !r.error && r.A && r.Ea) {
     var curveData = [];
-    var tMin4 = r.minTemp - 10;
-    var tMax4 = r.maxTemp + 10;
-    for(var t = tMin4; t <= tMax4; t += 0.5){
+    var tMin4 = (r.minTemp || 20) - 10;
+    var tMax4 = (r.maxTemp || 50) + 10;
+    for (var t = tMin4; t <= tMax4; t += 0.5) {
       var w = Engine.predict(r.A, r.Ea, t);
-      if(w > 0) curveData.push({x: t, y: w});
+      if (w > 0 && isFinite(w)) curveData.push({ x: t, y: w });
     }
     datasets.push({
       label: 'Arrhenius fit',
@@ -3544,21 +3588,23 @@ function drawArrTempChart(mat, r){
       type: 'line',
       order: 0
     });
-    datasets.push({
-      label: 'Target: '+r.targetTempC+' → '+r.predicted.toFixed(4),
-      data: [{x: r.targetTempC, y: r.predicted}],
-      borderColor: '#22c55e',
-      backgroundColor: '#22c55e',
-      borderWidth: 0,
-      pointRadius: 8,
-      pointHoverRadius: 10,
-      type: 'scatter',
-      order: 0
-    });
+    if (r.targetTempC != null && r.predicted != null) {
+      datasets.push({
+        label: 'Target: ' + r.targetTempC + ' → ' + r.predicted.toFixed(4),
+        data: [{ x: r.targetTempC, y: r.predicted }],
+        borderColor: '#22c55e',
+        backgroundColor: '#22c55e',
+        borderWidth: 0,
+        pointRadius: 8,
+        pointHoverRadius: 10,
+        type: 'scatter',
+        order: 0
+      });
+    }
   }
   
   var isMobile = window.innerWidth < 480;
-  var dpr = Math.min(window.devicePixelRatio || 1, 2); // ✅ Limita DPR
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
   
   chartInstances.arrTemp = new Chart(ctx, {
     type: 'line',
@@ -3567,27 +3613,22 @@ function drawArrTempChart(mat, r){
       responsive: true,
       maintainAspectRatio: false,
       devicePixelRatio: dpr,
-      onResize: function(chart, size){
-        if(/iPhone|iPad|iPod/.test(navigator.userAgent)){
-          setTimeout(function(){ chart.resize(); }, 100);
+      onResize: function(chart) {
+        if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+          setTimeout(function() { chart.resize(); }, 100);
         }
       },
       plugins: {
         legend: {
           position: 'bottom',
-          labels: {
-            boxWidth: isMobile ? 10 : 12,
-            font: { size: isMobile ? 9 : 10 },
-            padding: isMobile ? 8 : 12
-          }
+          labels: { boxWidth: isMobile ? 10 : 12, font: { size: isMobile ? 9 : 10 }, padding: isMobile ? 8 : 12 }
         },
-        // ✅ Tooltip personalizzati
         tooltip: {
           callbacks: {
             label: function(context) {
               var label = context.dataset.label || '';
-              if(label) label += ': ';
-              if(context.parsed.y !== null){
+              if (label) label += ': ';
+              if (context.parsed.y !== null) {
                 label += context.parsed.y.toFixed(4) + ' ' + getUnit();
               }
               return label;
@@ -3598,65 +3639,60 @@ function drawArrTempChart(mat, r){
       scales: {
         x: {
           type: 'linear',
-          title: {
-            display: true,
-            text: 'Temperature (°C)',
-            font: { size: isMobile ? 10 : 11 }
-          },
+          title: { display: true, text: 'Temperature (°C)', font: { size: isMobile ? 10 : 11 } },
           ticks: { font: { size: isMobile ? 9 : 10 } },
           grid: { display: !isMobile }
         },
         y: {
-          title: {
-            display: true,
-            text: getLabel() + ' (' + getUnit() + ')',
-            font: { size: isMobile ? 10 : 11 }
-          },
+          title: { display: true, text: getLabel() + ' (' + getUnit() + ')', font: { size: isMobile ? 10 : 11 } },
           beginAtZero: true,
-          ticks: { 
-            font: { size: isMobile ? 9 : 10 },
-            callback: function(value) { return value.toFixed(3); } // ✅ Formattazione valori
-          },
+          ticks: { font: { size: isMobile ? 9 : 10 }, callback: function(value) { return value.toFixed(3); } },
           grid: { display: !isMobile }
         }
       }
     }
   });
 }
-  
-function drawArrLinChart(mat, r){
+
+// ✅ Disegna il grafico lineare Arrhenius (ln(WVTR) vs 1/T)
+function drawArrLinChart(mat, r, isCustomEa) {
   destroyChart('arrLin');
   var canvas = document.getElementById('arrLinCanvas');
-  if(!canvas) return;
+  if (!canvas || typeof Chart === 'undefined') return;
   
   var ctx = canvas.getContext('2d');
   
-  if(!r || !r.dataPoints || r.dataPoints.length < 2){
+  if (!r || !r.dataPoints || r.dataPoints.length < 2 || !r.A || !r.Ea) {
     var isMobile = window.innerWidth < 480;
     ctx.fillStyle = '#94a3b8';
     ctx.font = isMobile ? '11px sans-serif' : '13px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Need 2+ data points', canvas.clientWidth/2 || 250, 140);
+    ctx.fillText('Need 2+ valid data points', canvas.clientWidth / 2 || 250, 140);
     return;
   }
   
   var dps = r.dataPoints;
   var dataPoints = [];
-  for(var i = 0; i < dps.length; i++){
-    dataPoints.push({
-      x: 1/dps[i].T_K,
-      y: Math.log(dps[i].trans)
-    });
+  for (var i = 0; i < dps.length; i++) {
+    if (dps[i].T_K > 0 && dps[i].trans > 0) {
+      dataPoints.push({ x: 1 / dps[i].T_K, y: Math.log(dps[i].trans) });
+    }
   }
   
-  var slope = -r.Ea/Engine.R_GAS;
-  var intercept = Math.log(r.A);
-  var minX2 = dataPoints[0].x;
-  var maxX2 = dataPoints[0].x;
+  if (dataPoints.length < 2) {
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '13px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Need 2+ valid data points', canvas.clientWidth / 2, canvas.clientHeight / 2);
+    return;
+  }
   
-  for(var d = 0; d < dataPoints.length; d++){
-    if(dataPoints[d].x < minX2) minX2 = dataPoints[d].x;
-    if(dataPoints[d].x > maxX2) maxX2 = dataPoints[d].x;
+  var slope = -r.Ea / Engine.R_GAS;
+  var intercept = Math.log(r.A);
+  var minX2 = dataPoints[0].x, maxX2 = dataPoints[0].x;
+  for (var d = 0; d < dataPoints.length; d++) {
+    if (dataPoints[d].x < minX2) minX2 = dataPoints[d].x;
+    if (dataPoints[d].x > maxX2) maxX2 = dataPoints[d].x;
   }
   minX2 *= 0.98;
   maxX2 *= 1.02;
@@ -3674,10 +3710,10 @@ function drawArrLinChart(mat, r){
       order: 1
     },
     {
-      label: 'Linear fit',
+      label: 'Linear fit' + (isCustomEa ? ' (custom Eₐ)' : ''),
       data: [
-        {x: minX2, y: slope*minX2+intercept},
-        {x: maxX2, y: slope*maxX2+intercept}
+        { x: minX2, y: slope * minX2 + intercept },
+        { x: maxX2, y: slope * maxX2 + intercept }
       ],
       borderColor: '#3b82f6',
       backgroundColor: 'transparent',
@@ -3688,9 +3724,8 @@ function drawArrLinChart(mat, r){
     }
   ];
   
-  // ✅ OPZIONI RESPONSIVE (identiche a drawArrTempChart)
   var isMobile = window.innerWidth < 480;
-  var dpr = window.devicePixelRatio > 2 ? 2 : window.devicePixelRatio;
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
   
   chartInstances.arrLin = new Chart(ctx, {
     type: 'line',
@@ -3699,42 +3734,26 @@ function drawArrLinChart(mat, r){
       responsive: true,
       maintainAspectRatio: false,
       devicePixelRatio: dpr,
-      onResize: function(chart, size){
-        if(/iPhone|iPad|iPod/.test(navigator.userAgent)){
-          setTimeout(function(){ chart.resize(); }, 100);
+      onResize: function(chart) {
+        if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+          setTimeout(function() { chart.resize(); }, 100);
         }
       },
       plugins: {
         legend: {
           position: 'bottom',
-          labels: {
-            boxWidth: isMobile ? 10 : 12,
-            font: { size: isMobile ? 9 : 10 },
-            padding: isMobile ? 8 : 12
-          }
+          labels: { boxWidth: isMobile ? 10 : 12, font: { size: isMobile ? 9 : 10 }, padding: isMobile ? 8 : 12 }
         }
       },
       scales: {
         x: {
           type: 'linear',
-          title: {
-            display: true,
-            text: '1/T (K⁻¹)',
-            font: { size: isMobile ? 10 : 11 }
-          },
-          ticks: { 
-            font: { size: isMobile ? 9 : 10 },
-            maxRotation: isMobile ? 45 : 0,
-            minRotation: isMobile ? 45 : 0
-          },
+          title: { display: true, text: '1/T (K⁻¹)', font: { size: isMobile ? 10 : 11 } },
+          ticks: { font: { size: isMobile ? 9 : 10 }, maxRotation: isMobile ? 45 : 0, minRotation: isMobile ? 45 : 0 },
           grid: { display: !isMobile }
         },
         y: {
-          title: {
-            display: true,
-            text: 'ln(' + getLabel() + ')',
-            font: { size: isMobile ? 10 : 11 }
-          },
+          title: { display: true, text: 'ln(' + getLabel() + ')', font: { size: isMobile ? 10 : 11 } },
           ticks: { font: { size: isMobile ? 9 : 10 } },
           grid: { display: !isMobile }
         }
@@ -3742,7 +3761,6 @@ function drawArrLinChart(mat, r){
     }
   });
 }
-
 function renderSensitivity(){
   var hasMats=State.layers.some(function(l){return l.mid!==null;});
   var layerOpts='';
