@@ -723,6 +723,62 @@ body, main, .app, .card, .material-item, .modal {
     overflow-wrap: break-word;
     hyphens: auto;
   }
+}/* === 📚 TEXTBOOK METHODOLOGY STYLE === */
+.methodology-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.methodology-content {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  color: #334155;
+  line-height: 1.75;
+  font-size: 0.9rem;
+}
+
+.methodology-content p {
+  margin-bottom: 1rem;
+  text-align: justify;
+}
+
+.methodology-content h3 {
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Stile per le formule */
+.methodology-content .formula-block {
+  background: #f8fafc;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  text-align: center;
+  font-family: 'Courier New', monospace;
+  font-size: 1.1rem;
+  color: var(--primary);
+  position: relative;
+}
+
+.methodology-content .formula-block::before {
+  content: "Eq.";
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  font-size: 0.7rem;
+  color: var(--text-light);
+  font-weight: bold;
+}
+
+/* Highlight per le variabili */
+.var {
+  font-style: italic;
+  color: var(--primary-dark);
+  font-weight: 500;
 }
 </style>
 </head>
@@ -1941,207 +1997,83 @@ function getReliabilityBadge(score) {
   return '<span class="badge badge-red">✗ Unreliable '+score+'%</span>';
 }
 // ====================================================================
-// 📚 SHELF LIFE METHODOLOGY EXPLAINER
+// 📚 SHELF LIFE METHODOLOGY (TEXTBOOK STYLE)
 // ====================================================================
 function renderShelfLifeMethodology() {
-  const modeLabel = State.mode === 'wvtr' ? 'WVTR' : 'OTR';
-  const unit = State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
-  
   return `
-  <div class="card" style="margin-top:1rem">
-    <h2 style="display:flex;align-items:center;gap:0.4rem">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px">
-        <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
-      </svg>
-      📚 Calculation Methodology & Formulas
-    </h2>
-    
-    <div style="font-size:0.78rem;color:var(--text-light);line-height:1.6">
+  <div class="card methodology-card" style="margin-top:1rem; background:#fff; border-left:4px solid var(--text-light);">
+    <div style="padding:1rem 1.5rem;">
+      <h2 style="font-family:Georgia, serif; font-size:1.3rem; color:var(--text); border-bottom:1px solid var(--border); padding-bottom:0.5rem; margin-bottom:1rem">
+        📖 Calculation Methodology & Theoretical Framework
+      </h2>
       
-      <!-- === SECTION 1: MOISTURE GAIN MODEL === -->
-      <div style="margin:1rem 0;padding:0.75rem;background:var(--primary-light);border-radius:8px">
-        <h3 style="font-size:0.85rem;font-weight:600;color:var(--primary);margin:0 0 0.5rem 0">
-          🔹 Moisture Gain Model (WVTR Mode)
+      <div class="methodology-content" style="font-size:0.85rem; line-height:1.7; color:#334155; font-family:'Georgia', serif;">
+        
+        <!-- SEZIONE 1: WVTR -->
+        <h3 style="font-size:1.1rem; color:var(--primary-dark); margin-top:1.5rem; font-family:sans-serif; font-weight:700;">
+          §1. Moisture Gain & Mass Transfer Dynamics
         </h3>
-        <p style="margin:0 0 0.5rem 0">
-          The shelf life is calculated as the time required for the product to absorb enough moisture 
-          to reach a critical threshold, based on Fick's law of diffusion and the resistance model.
+        <p>
+          The shelf life estimation for hygroscopic products is based on the principles of <strong>Fickian diffusion</strong>. 
+          In this model, water vapor moves across the packaging film driven by a difference in <em>partial pressure</em> ($\Delta P$) between the external environment and the product headspace.
+        </p>
+        <p>
+          Unlike simplified linear models which assume a constant rate of ingress, our engine accounts for the fact that as the product absorbs moisture, its internal water activity ($a_w$) rises. 
+          This reduces the driving force ($\Delta P$) over time, resulting in a <strong>self-limiting, non-linear absorption curve</strong>.
         </p>
         
-        <div style="background:#fff;padding:0.6rem;border-radius:6px;font-family:monospace;font-size:0.72rem;overflow-x:auto">
-          <strong>Core Formula:</strong><br>
-          t = [ W · (M_crit - M_init)/100 ] / [ A · WVTR · (ΔP / ΔP_ref) ]
-        </div>
-        
-        <table style="width:100%;font-size:0.72rem;margin-top:0.5rem;border-collapse:collapse">
-          <thead>
-            <tr style="background:var(--bg);text-align:left">
-              <th style="padding:0.3rem 0.5rem">Symbol</th>
-              <th style="padding:0.3rem 0.5rem">Meaning</th>
-              <th style="padding:0.3rem 0.5rem">Unit</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>t</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Shelf life (time)</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">days</td></tr>
-            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>W</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Product weight</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">g</td></tr>
-            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>M_crit - M_init</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Allowable moisture increase</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">%</td></tr>
-            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>A</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Package surface area</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">m²</td></tr>
-            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>WVTR</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Water vapor transmission rate</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">${unit}</td></tr>
-            <tr><td style="padding:0.3rem 0.5rem"><strong>ΔP / ΔP_ref</strong></td><td style="padding:0.3rem 0.5rem">Pressure gradient scaling factor</td><td style="padding:0.3rem 0.5rem">dimensionless</td></tr>
-          </tbody>
-        </table>
-        
-        <p style="margin:0.5rem 0 0 0;font-size:0.7rem;color:var(--text-light)">
-          <strong>Note:</strong> ΔP = P_sat(T) × (RH_out - RH_in)/100, where P_sat is calculated via the 
-          Magnus formula. The driving force is dynamically updated as product a_w changes.
-        </p>
-      </div>
-      
-      <!-- === SECTION 2: SORPTION ISOTHERMS === -->
-      <div style="margin:1rem 0;padding:0.75rem;background:var(--success-light);border-radius:8px">
-        <h3 style="font-size:0.85rem;font-weight:600;color:var(--success);margin:0 0 0.5rem 0">
-          🔹 Water Activity & Sorption Isotherms (GAB Model)
-        </h3>
-        <p style="margin:0 0 0.5rem 0">
-          Instead of assuming linear moisture uptake, we use the <strong>GAB (Guggenheim-Anderson-de Boer)</strong> 
-          equation to model how absorbed water affects water activity (a_w), the true microbiological stability parameter.
-        </p>
-        
-        <div style="background:#fff;padding:0.6rem;border-radius:6px;font-family:monospace;font-size:0.7rem;overflow-x:auto">
-          <strong>GAB Equation:</strong><br>
-          M = (M_m · C · K · a_w) / [(1 - K·a_w) · (1 - K·a_w + C·K·a_w)]
-        </div>
-        
-        <table style="width:100%;font-size:0.72rem;margin-top:0.5rem;border-collapse:collapse">
-          <thead>
-            <tr style="background:var(--bg);text-align:left">
-              <th style="padding:0.3rem 0.5rem">Parameter</th>
-              <th style="padding:0.3rem 0.5rem">Description</th>
-              <th style="padding:0.3rem 0.5rem">Typical Range</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>M_m</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Monolayer moisture content</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">0.02–0.08 g/g</td></tr>
-            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>C</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Energy constant (monolayer)</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">5–25</td></tr>
-            <tr><td style="padding:0.3rem 0.5rem"><strong>K</strong></td><td style="padding:0.3rem 0.5rem">Energy constant (multilayer)</td><td style="padding:0.3rem 0.5rem">0.7–0.95</td></tr>
-          </tbody>
-        </table>
-        
-        <p style="margin:0.5rem 0 0 0;font-size:0.7rem;color:var(--text-light)">
-          <strong>Implementation:</strong> We numerically invert the GAB equation (bisection method) at each time step 
-          to compute a_w from current moisture M, then update RH_in = a_w × 100 for the next ΔP calculation.
-          This creates a non-linear, self-limiting moisture uptake curve.
-        </p>
-        <p style="margin:0.3rem 0 0 0;font-size:0.7rem;color:var(--text-light)">
-          <strong>References:</strong> ISO 18787:2020, ASTM D4634, Van den Berg & Bruin (1981).
-        </p>
-      </div>
-      
-      <!-- === SECTION 3: THERMAL ACCELERATION === -->
-      <div style="margin:1rem 0;padding:0.75rem;background:var(--warning-light);border-radius:8px">
-        <h3 style="font-size:0.85rem;font-weight:600;color:var(--warning);margin:0 0 0.5rem 0">
-          🔹 Thermal Acceleration: Arrhenius & Q₁₀ Models
-        </h3>
-        <p style="margin:0 0 0.5rem 0">
-          To predict shelf life at different storage temperatures, we apply kinetic acceleration models.
-        </p>
-        
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin:0.5rem 0">
-          <div style="background:#fff;padding:0.5rem;border-radius:6px">
-            <strong>Arrhenius Equation:</strong><br>
-            <span style="font-family:monospace;font-size:0.7rem">
-              k(T) = A · exp(-Eₐ / (R · T))<br>
-              AF = exp[ -(Eₐ/R) · (1/T_target - 1/T_ref) ]
-            </span>
+        <div style="background:#f8fafc; padding:1rem; margin:1.5rem 0; border-top:1px dashed var(--border); border-bottom:1px dashed var(--border); text-align:center;">
+          <p style="margin-bottom:0.5rem; font-style:italic; color:var(--text-light);">The Generalized Time-to-Failure Equation:</p>
+          <div style="font-family:'Courier New', monospace; font-size:1.1rem; color:var(--primary-dark);">
+            t = ( W / (A · WVTR) ) · ∫ [ (1 / ΔP(M)) ] dM
           </div>
-          <div style="background:#fff;padding:0.5rem;border-radius:6px">
-            <strong>Q₁₀ Model:</strong><br>
-            <span style="font-family:monospace;font-size:0.7rem">
-              AF = Q₁₀^((T_target - T_ref)/10)
-            </span>
+          <p style="margin-top:0.5rem; font-size:0.75rem; color:var(--text-light);">
+            Where the integral accounts for the changing driving force as Moisture (M) increases from $M_{init}$ to $M_{crit}$.
+          </p>
+        </div>
+
+        <h4 style="font-family:sans-serif; font-weight:600; margin-top:1rem;">The GAB Sorption Model</h4>
+        <p>
+          To calculate the internal partial pressure at any given moisture content, we utilize the 
+          <strong>Guggenheim-Anderson-de Boer (GAB) isotherm</strong>. This equation relates the product's moisture content to its water activity ($a_w$) using three semi-empirical parameters ($M_m$, $C$, $K$).
+        </p>
+        <p>
+          By numerically inverting the GAB equation at each simulation step, the calculator determines the instantaneous internal relative humidity, ensuring high precision for sensitive foods like biscuits, coffee, and milk powders.
+        </p>
+
+        <!-- SEZIONE 2: OTR -->
+        <h3 style="font-size:1.1rem; color:var(--primary-dark); margin-top:2rem; font-family:sans-serif; font-weight:700;">
+          §2. Lipid Oxidation & Oxygen Transmission
+        </h3>
+        <p>
+          For lipid-rich products, the primary failure mode is often oxidative rancidity rather than moisture uptake. 
+          Oxygen permeation is generally modeled as a linear accumulation process, assuming the internal partial pressure of oxygen is negligible (consumed by the product).
+        </p>
+        <p>
+          The shelf life is defined as the time required for the cumulative oxygen ingress to reach a critical threshold ($O_{2,crit}$), which varies depending on the fat composition and antioxidant levels of the product.
+        </p>
+
+        <div style="background:#f8fafc; padding:1rem; margin:1.5rem 0; border-top:1px dashed var(--border); border-bottom:1px dashed var(--border); text-align:center;">
+          <div style="font-family:'Courier New', monospace; font-size:1.1rem; color:var(--primary-dark);">
+            t = ( m_{fat} · O_{2,crit} ) / ( A · OTR · AF )
           </div>
         </div>
-        
-        <table style="width:100%;font-size:0.72rem;margin-top:0.5rem;border-collapse:collapse">
-          <thead>
-            <tr style="background:var(--bg);text-align:left">
-              <th style="padding:0.3rem 0.5rem">Symbol</th>
-              <th style="padding:0.3rem 0.5rem">Meaning</th>
-              <th style="padding:0.3rem 0.5rem">Typical Values</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>Eₐ</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Activation energy</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">30–120 kJ/mol (foods)</td></tr>
-            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>R</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Gas constant</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">8.314 J/(mol·K)</td></tr>
-            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>Q₁₀</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Rate increase per 10°C</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">1.5–3.0 (most foods)</td></tr>
-            <tr><td style="padding:0.3rem 0.5rem"><strong>T</strong></td><td style="padding:0.3rem 0.5rem">Absolute temperature</td><td style="padding:0.3rem 0.5rem">Kelvin (K = °C + 273.15)</td></tr>
-          </tbody>
-        </table>
-        
-        <p style="margin:0.5rem 0 0 0;font-size:0.7rem;color:var(--text-light)">
-          <strong>Usage:</strong> Enter Eₐ (kJ/mol) for Arrhenius, or Q₁₀ as alternative. The calculator converts 
-          Eₐ to J/mol internally. The "What-If" chart shows shelf life vs. temperature from 15°C to 50°C.
-        </p>
-        <p style="margin:0.3rem 0 0 0;font-size:0.7rem;color:var(--text-light)">
-          <strong>References:</strong> ICH Q1A(R2), ASTM F1980, Labuza (1984).
-        </p>
-      </div>
-      
-      <!-- === SECTION 4: LIPID OXIDATION (OTR) === -->
-      ${State.mode === 'otr' ? `
-      <div style="margin:1rem 0;padding:0.75rem;background:var(--purple-light);border-radius:8px">
-        <h3 style="font-size:0.85rem;font-weight:600;color:var(--purple);margin:0 0 0.5rem 0">
-          🔹 Lipid Oxidation Model (OTR Mode)
+
+        <!-- SEZIONE 3: TEMPERATURA -->
+        <h3 style="font-size:1.1rem; color:var(--primary-dark); margin-top:2rem; font-family:sans-serif; font-weight:700;">
+          §3. Thermal Acceleration Models
         </h3>
-        <p style="margin:0 0 0.5rem 0">
-          For oxygen-sensitive products (oils, nuts, fried snacks), shelf life is limited by the cumulative 
-          oxygen ingress that causes rancidity. We use a critical oxygen dose model.
+        <p>
+          Permeation rates and reaction kinetics are highly sensitive to temperature. To predict shelf life under varying storage conditions (e.g., "What-If" analysis), we apply kinetic acceleration models.
         </p>
-        
-        <div style="background:#fff;padding:0.6rem;border-radius:6px;font-family:monospace;font-size:0.72rem;overflow-x:auto">
-          <strong>Core Formula:</strong><br>
-          t = ( O₂_crit · m_fat ) / ( A · OTR · AF )
-        </div>
-        
-        <table style="width:100%;font-size:0.72rem;margin-top:0.5rem;border-collapse:collapse">
-          <thead>
-            <tr style="background:var(--bg);text-align:left">
-              <th style="padding:0.3rem 0.5rem">Symbol</th>
-              <th style="padding:0.3rem 0.5rem">Meaning</th>
-              <th style="padding:0.3rem 0.5rem">Unit</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>O₂_crit</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Critical oxygen dose for rancidity</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">ml O₂ / kg fat</td></tr>
-            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>m_fat</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Fat mass in product</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">kg</td></tr>
-            <tr><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)"><strong>OTR</strong></td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">Oxygen transmission rate</td><td style="padding:0.3rem 0.5rem;border-bottom:1px solid var(--border)">${unit}</td></tr>
-            <tr><td style="padding:0.3rem 0.5rem"><strong>AF</strong></td><td style="padding:0.3rem 0.5rem">Thermal acceleration factor</td><td style="padding:0.3rem 0.5rem">dimensionless</td></tr>
-          </tbody>
-        </table>
-        
-        <p style="margin:0.5rem 0 0 0;font-size:0.7rem;color:var(--text-light)">
-          <strong>Typical O₂_crit values:</strong> Potato chips: 300–500 ml/kg fat; Nuts: 400–700 ml/kg; 
-          Cooking oils: 600–1000 ml/kg. Values depend on fatty acid composition and antioxidants.
+        <p>
+          <strong>The Arrhenius Equation</strong> describes the exponential relationship between rate constants and absolute temperature, governed by the Activation Energy ($E_a$) of the permeation process. Alternatively, the <strong>$Q_{10}$ model</strong> provides a simplified approximation often used in food science, where the rate doubles or triples for every 10°C rise in temperature.
         </p>
-        <p style="margin:0.3rem 0 0 0;font-size:0.7rem;color:var(--text-light)">
-          <strong>References:</strong> Frankel (2005) "Lipid Oxidation", ISO 12207, ASTM F1307.
+        <p style="margin-top:1.5rem; font-size:0.75rem; color:var(--text-light); border-top:1px solid var(--border); padding-top:0.5rem;">
+          <strong>References:</strong> ASTM F1249 (WVTR), ASTM D3985 (OTR), ISO 18787 (Sorption), Van den Berg & Bruin (1981), Labuza (1984).
         </p>
+
       </div>
-      ` : ''}
-      
-      <!-- === SECTION 5: LIMITATIONS & BEST PRACTICES === -->
-      <div style="margin:1rem 0;padding:0.75rem;background:var(--bg);border-radius:8px;border-left:4px solid var(--primary)">
-        <h3 style="font-size:0.85rem;font-weight:600;margin:0 0 0.5rem 0">⚠️ Model Limitations & Best Practices</h3>
-        <ul style="margin:0;padding-left:1.2rem;font-size:0.75rem;line-height:1.7">
-          <li><strong>Constant conditions:</strong> Assumes constant T and RH. Real-world fluctuations require safety margins.</li>
-          <li><strong>Homogeneous product:</strong> Model assumes uniform moisture distribution. Layered products may need FEM.</li>
-          <li><strong>GAB parameters:</strong> Use product-specific isotherms when available. Default values are estimates.</li>
-          <li><strong>Oxidation kinetics:</strong> Linear O₂ uptake is a simplification. Auto-catalytic oxidation may accelerate near end-of-life.</li>
-          <li><strong>Validation:</strong> Always confirm predictions with real-time or accelerated shelf-life studies.</li>
-          <li><strong>Regulatory:</strong> This tool supports R&D; final shelf-life claims require compliance with local regulations (EU 1169/2011, FDA 21 CFR 101).</li>
-        </ul>
-      </div>
-      
     </div>
   </div>
   `;
