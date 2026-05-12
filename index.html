@@ -2531,14 +2531,14 @@ function drawShelfLifeCharts(res) {
         chartInstances.slTemp = new Chart(ctx2, {
             type: 'line',
              {
-                labels: temps,
-                datasets: [{
-                    label: 'Shelf Life', data: daysArr,
+                type: 'line',
+data: {  
+labels: 'Shelf Life', data: daysArr,
                     borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.15)',
                     borderWidth: 3, fill: true, tension: 0.4, pointRadius: 2, pointHoverRadius: 5
                 }, {
                     label: 'Current: '+currentTemp+'°C',
-                     temps.map(t => t === currentTemp ? currentDays : null),
+                    data: temps.map(t => t === currentTemp ? currentDays : null),
                     borderColor: '#ef4444', backgroundColor: '#ef4444',
                     borderWidth: 0, pointRadius: 10, pointHoverRadius: 12,
                     pointBackgroundColor: '#fff', pointBorderColor: '#ef4444', pointBorderWidth: 3
