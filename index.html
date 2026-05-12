@@ -4035,9 +4035,6 @@ function showMatModal(editId) {
     '<div class="form-group"><label>Name *</label><input type="text" class="form-input" id="mf-name" value="'+(mat?mat.name:'')+'"></div>'+
     '<div class="form-group"><label>Material Family</label><select class="form-input" id="mf-family">'+familyOpts+'</select><span style="font-size:0.7rem;color:var(--text-light)">Select the polymer family for categorization</span></div>'+
     '<div class="form-group"><label>Company Name</label><input type="text" class="form-input" id="mf-company" value="'+(mat?mat.company||'':'')+'" placeholder="e.g. DuPont, 3M, ..."></div>'+
-             '<div class="form-group"><label>Activation Energy Ea (kJ/mol) <span style="color:var(--text-light);font-size:0.7em">(Optional)</span></label>'+
-'<input type="number" step="any" class="form-input" id="mf-ea" value="'+(mat && mat.Ea ? (mat.Ea/1000).toFixed(1) : '')+'" placeholder="e.g. 60">'+
-'</div>'+
   '<div class="form-group"><label>TDS Link (optional)</label><input type="url" class="form-input" id="mf-tdslink" value="'+(mat?mat.tdsLink||'':'')+'" placeholder="https://..."></div>'+
              '<div class="form-group">'+
 '<label>Activation Energy Ea (kJ/mol) <span style="color:var(--text-light);font-size:0.7em">(Optional)</span></label>'+
