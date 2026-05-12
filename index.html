@@ -2258,10 +2258,10 @@ function calculateShelfLife() {
   var critical = parseFloat(document.getElementById('sl-critical').value);
   var unit = State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
 
-  if (!rate || rate <= 0 || !area || area <= 0 || !mass || mass <= 0 || isNaN(initial) || isNaN(critical) || critical <= initial) {
-    alert('⚠️ Please check the inputs:\nCritical Limit must be higher than Initial Level, and all values must be greater than 0.');
-    return;
-  }
+ if (!rate || rate <= 0 || !area || area <= 0 || !mass || mass <= 0 || isNaN(initial) || isNaN(critical) || critical <= initial) {
+  alert('⚠️ Please check the inputs:\nCritical Limit must be higher than Initial Level, and all values must be greater than 0.');
+  return;
+}
 
   // Formula: t = (W · ΔC) / (A · P)
   var delta = (critical - initial) / 100;
@@ -3947,7 +3947,7 @@ function showBulkImport(){
       var data=document.getElementById('bulk-data').value.trim();
       if(!data){alert('Paste data first');return false;}
       try{
-        var lines=data.split('\n').filter(function(l){return l.trim();});
+        var lines = data.split(/\r?\n/).filter(function(l){ return l.trim(); });
         var count=0;
         for(var li=0;li<lines.length;li++){
         // ✅ CORRETTO
