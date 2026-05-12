@@ -2663,78 +2663,185 @@ function drawShelfLifeCharts(res) {
   destroyChart('slDecay'); 
   destroyChart('slTemp');
   
+  function drawShelfLifeCharts(res) {
+  // Distruggi istanze precedenti per evitare memory leak
+  destroyChart('slDecay'); 
+  destroyChart('slTemp');
+  
   // === GRAFICO 1: Quality Decay over Time ===
   const ctx1 = document.getElementById('slDecayChart')?.getContext('2d');
-  if (ctx1 && res.history?.length > 1) {
+  if (ctx1 && res.history?.length > 1 && typeof Chart !== 'undefined') {
     const gradient1 = ctx1.createLinearGradient(0, 0, 0, 280);
     gradient1.addColorStop(0, 'rgba(59, 130, 246, 0.3)');
     gradient1.addColorStop(1, 'rgba(59, 130, 246, 0.05)');
     
-    if (typeof Chart !== 'undefined') {
-      chartInstances.slDecay = new Chart(ctx1, {
+    chartInstances.slDecay = new Chart(ctx1, {
+      type: 'line',
+      data: {
+        labels: res.history.map(h => Math.round(h.t)),
+        datasets: [{
+          label: 'Product Quality (%)',
+          data: res.history.map(h => h.quality),
+          borderColor: '#3b82f6',
+          backgroundColor: gradient1,
+          fill: true,
+          tension: 0.35,
+          pointRadius: 2,
+          pointHoverRadius: 5,
+          pointBackgroundColor: '#fff',
+          pointBorderColor: '#3b82f6',
+          pointBorderWidth: 2
+        }, {
+          label: 'Critical Limit',
+          data: new Array(res.history.length).fill(0),
+          borderColor: '#ef4444',
+          borderDash: [6, 4],
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top',
+            labels: { boxWidth: 12, font: { size: 10 }, padding: 15 }
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+            titleFont: { size: 11 },
+            bodyFont: { size: 10 },
+            padding: 10,
+            displayColors: true
+          }
+        },
+        scales: {
+          x: {
+            title: { display: true, text: 'Days', font: { size: 10, weight: '600' } },
+            grid: { color: 'rgba(0,0,0,0.04)' },
+            ticks: { font: { size: 9 } }
+          },
+          y: {
+            beginAtZero: true,
+            max: 100,
+            title: { display: true, text: 'Quality %', font: { size: 10, weight: '600' } },
+            grid: { color: 'rgba(0,0,0,0.04)' },
+            ticks: { font: { size: 9 }, callback: v => v + '%' }
+          }
+        },
+        interaction: { mode: 'nearest', axis: 'x', intersect: false }
+      }
+    });
+  }
+  
+  // === GRAFICO 2: Shelf Life vs Temperature (What-If) ===
+  const ctx2 = document.getElementById('slTempChart')?.getContext('2d');
+  if (ctx2 && typeof Chart !== 'undefined') {
+    try {
+      // Recupera parametri dagli input
+      const Ea_kJ = parseFloat(document.getElementById('sl-ea')?.value) || 60;
+      const Q10 = parseFloat(document.getElementById('sl-q10')?.value) || 2.0;
+      const W = parseFloat(document.getElementById('sl-weight')?.value) || 100;
+      const A = parseFloat(document.getElementById('sl-area')?.value) || 0.1;
+      const baseRate = parseFloat(document.getElementById('sl-rate')?.value) || 0.5;
+      
+      // Genera array temperature 15-50°C
+      const temps = Array.from({ length: 36 }, (_, i) => 15 + i);
+      const Ea_J = Ea_kJ * 1000; // Converti kJ → J
+      
+      // Calcola shelf life per ogni temperatura
+      const daysArr = temps.map(T => {
+        // Fattore di accelerazione termica
+        let accel = 1;
+        if (Q10 > 0) {
+          accel = Math.pow(Q10, (T - 25) / 10);
+        } else if (Ea_J > 0) {
+          const R = 8.314;
+          accel = Math.exp(-(Ea_J / R) * (1 / (T + 273.15) - 1 / (298.15)));
+        }
+        const rate = baseRate * accel;
+        
+        // Calcolo shelf life in base al tipo di degradazione
+        if (res.type === 'moisture') {
+          const M_c = res.M_crit || 8;
+          const M_i = res.M_init || 3;
+          return ((M_c - M_i) / 100 * W) / (rate * A);
+        } else {
+          const O2_crit = parseFloat(document.getElementById('sl-o2crit')?.value) || 400;
+          const fat_kg = parseFloat(document.getElementById('sl-fat')?.value) || 0.3;
+          return (O2_crit * fat_kg) / (rate * A);
+        }
+      });
+      
+      // Crea gradiente per il secondo grafico
+      const gradient2 = ctx2.createLinearGradient(0, 0, 0, 280);
+      gradient2.addColorStop(0, 'rgba(139, 92, 246, 0.3)');
+      gradient2.addColorStop(1, 'rgba(139, 92, 246, 0.05)');
+      
+      chartInstances.slTemp = new Chart(ctx2, {
         type: 'line',
         data: {
-          labels: res.history.map(h => Math.round(h.t)),
+          labels: temps,
           datasets: [{
-            label: 'Product Quality (%)',
-            data: res.history.map(h => h.quality),
-            borderColor: '#3b82f6',
-            backgroundColor: gradient1,
+            label: 'Shelf Life vs Temperature',
+            data: daysArr,
+            borderColor: '#8b5cf6',
+            backgroundColor: gradient2,
             fill: true,
-            tension: 0.35,
-            pointRadius: 2,
-            pointHoverRadius: 5,
+            tension: 0.4,
+            pointRadius: 3,
+            pointHoverRadius: 6,
             pointBackgroundColor: '#fff',
-            pointBorderColor: '#3b82f6',
+            pointBorderColor: '#8b5cf6',
             pointBorderWidth: 2
-          }, {
-            label: 'Critical Limit',
-            data: new Array(res.history.length).fill(0),
-            borderColor: '#ef4444',
-            borderDash: [6, 4],
-            borderWidth: 2,
-            pointRadius: 0,
-            fill: false
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: {
-              display: true,
-              position: 'top',
-              labels: { boxWidth: 12, font: { size: 10 }, padding: 15 }
-            },
+            legend: { display: false },
             tooltip: {
-              mode: 'index',
-              intersect: false,
               backgroundColor: 'rgba(15, 23, 42, 0.95)',
               titleFont: { size: 11 },
               bodyFont: { size: 10 },
               padding: 10,
-              displayColors: true
+              callbacks: {
+                label: ctx => `Shelf Life: ${Math.round(ctx.parsed.y)} days`
+              }
             }
           },
           scales: {
             x: {
-              title: { display: true, text: 'Days', font: { size: 10, weight: '600' } },
+              title: { display: true, text: 'Storage Temp (°C)', font: { size: 10, weight: '600' } },
               grid: { color: 'rgba(0,0,0,0.04)' },
               ticks: { font: { size: 9 } }
             },
             y: {
+              title: { display: true, text: 'Days', font: { size: 10, weight: '600' } },
               beginAtZero: true,
-              max: 100,
-              title: { display: true, text: 'Quality %', font: { size: 10, weight: '600' } },
               grid: { color: 'rgba(0,0,0,0.04)' },
-              ticks: { font: { size: 9 }, callback: v => v + '%' }
+              ticks: { font: { size: 9 } }
             }
           },
           interaction: { mode: 'nearest', axis: 'x', intersect: false }
         }
       });
+    } catch (e) {
+      console.warn('⚠️ Error drawing temperature chart:', e);
+      // Fallback: mostra messaggio nell'area del canvas
+      ctx2.fillStyle = '#94a3b8';
+      ctx2.font = '11px sans-serif';
+      ctx2.textAlign = 'center';
+      ctx2.fillText('Unable to generate temperature curve', ctx2.canvas.width / 2, ctx2.canvas.height / 2);
     }
   }
+}
   
   // === GRAFICO 2: Temperature What-If Analysis ===
   const ctx2 = document.getElementById('slTempChart')?.getContext('2d');
