@@ -780,6 +780,41 @@ body, main, .app, .card, .material-item, .modal {
   color: var(--primary-dark);
   font-weight: 500;
 }
+  /* 🖥️ FIX DESKTOP: Scritte più grandi su PC, invariate su iPhone */
+@media (min-width: 1024px) {
+  /* 1. Aumenta la dimensione base del testo (da 16px a 18px) */
+  html { font-size: 18px; } 
+  
+  /* 2. Adegua i titoli delle Card */
+  .card h2 { font-size: 1.15rem; }
+  
+  /* 3. Rendi le Etichette (Label) dei form più visibili */
+  .form-group label { font-size: 0.95rem; font-weight: 700; }
+  
+  /* 4. Input più grandi e comodi da cliccare */
+  .form-input, select.form-input { 
+    font-size: 1rem; 
+    padding: 0.65rem 0.8rem; 
+  }
+  
+  /* 5. Pulsanti più leggibili */
+  .btn { font-size: 0.95rem; padding: 0.65rem 1.1rem; }
+  
+  /* 6. Testo nella sezione Metodologia */
+  .methodology-content { font-size: 1rem; }
+  .methodology-content h3 { font-size: 1.15rem; }
+  
+  /* 7. Schede Materiali */
+  .mat-header h3 { font-size: 1.05rem; }
+  .mat-tag { font-size: 0.8rem; }
+  
+  /* 8. Navigazione */
+  .nav-tab { font-size: 0.85rem; }
+  
+  /* 9. Tabelle e Avvisi */
+  table, td, th { font-size: 0.9rem; }
+  .alert { font-size: 0.9rem; }
+}
 </style>
 </head>
 <body>
