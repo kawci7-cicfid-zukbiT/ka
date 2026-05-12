@@ -2469,22 +2469,22 @@ function drawShelfLifeCharts(res) {
     destroyChart('slDecay'); destroyChart('slTemp');
     
     // ✅ GRAFICO 1: Quality Decay (PIÙ GRANDE)
-    const ctx1 = document.getElementById('slDecayChart')?.getContext('2d');
+       const ctx1 = document.getElementById('slDecayChart')?.getContext('2d');
     if(ctx1 && res.history?.length > 0) {
         chartInstances.slDecay = new Chart(ctx1, {
             type: 'line',
-    data: {
+            data: {  // ✅ AGGIUNTO
                 labels: res.history.map(h => Math.round(h.t)),
                 datasets: [{
                     label: 'Product Quality (%)',
-                    data: res.history.map(h => h.quality),
+                    data: res.history.map(h => h.quality),  // ✅ AGGIUNTO
                     borderColor: '#3b82f6',
                     backgroundColor: 'rgba(59,130,246,0.15)',
                     borderWidth: 3,
                     fill: true, tension: 0.4, pointRadius: 3, pointHoverRadius: 6
                 }, {
                     label: 'Critical Limit',
-                     new Array(res.history.length).fill(0),
+                    data: new Array(res.history.length).fill(0),  // ✅ AGGIUNTO
                     borderColor: '#ef4444', borderDash: [6,4], borderWidth: 2, pointRadius: 0
                 }]
             },
