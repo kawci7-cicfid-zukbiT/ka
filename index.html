@@ -2802,8 +2802,8 @@ function drawLaminateCurveChart(){
       html+='<span style="display:inline-flex;align-items:center;gap:.3rem;font-size:.7rem;color:var(--text-light)"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+col+'"></span>'+datasets[d].label+'</span>';
     }
     legendEl.innerHTML=html;
-  }
-}
+  } // Chiusura scales y
+          
 function renderCalc() {
   var common = Engine.findCommonConditions(State.layers, DB.materials);
   var hasMats = State.layers.some(function(l){ return l.mid !== null; });
@@ -3362,32 +3362,33 @@ function doOptimize(){
     resEl.innerHTML='<div class="alert alert-info">Configure and calculate first</div>';
     return;
   }
-  }
-  // ✅ ✅ ✅ CONTROLLO MATERIALI METALLIZZATI ✅ ✅ ✅
+
+  // ✅ ✅ ✅ CONTROLLO MATERIALI METALLIZZATI (Ora è DENTRO la funzione) ✅ ✅ ✅
   var barrierLayer=State.layers[barrierIdx];
   var barrierMat=DB.materials.find(function(m){return m.id===barrierLayer.mid;});
   
   if(barrierMat && barrierMat.isMetallized){
-    // Per metallizzati: la barriera NON dipende dallo spessore → ottimizzazione non applicabile
     resEl.innerHTML = '<div class="alert alert-warning" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;font-size:0.76rem;line-height:1.2;padding:0.6rem 0.8rem">'+
-      '<svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'+
-      '<span><strong>Optimization not applicable:</strong> For metallized/coated films, barrier performance is independent of substrate thickness. The barrier is provided by the surface coating (nm scale), not the bulk material.</span>'+
+    '<svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'+
+    '<span><strong>Optimization not applicable:</strong> For metallized/coated films, barrier performance is independent of substrate thickness. The barrier is provided by the surface coating (nm scale), not the bulk material.</span>'+
     '</div>';
     return;
   }
-  
-  // ✅ Comportamento standard per materiali NON metallizzati
+
+  // ✅ Comportamento standard
   var result=Engine.optimizeForTarget(State.layers,DB.materials,condition,target,barrierIdx);
   if(result.error){resEl.innerHTML='<div class="alert alert-warning">'+result.error+'</div>';return;}
+  
   var mat=null;for(var m=0;m<DB.materials.length;m++) if(DB.materials[m].id===State.layers[barrierIdx].mid){mat=DB.materials[m];break;}
   var current=State.layers[barrierIdx].thick;
+  
   resEl.innerHTML = '<div class="alert alert-success" style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;font-size:0.76rem;line-height:1.2;padding:0.6rem 0.8rem">'+
-    '<span>To achieve <strong>target '+getLabel()+' &le; '+target+' '+getUnit()+'</strong> @ '+condition.temperature+'\u00b0C/'+condition.humidity+'%:</span>'+
-    '<span><strong>'+((mat)?mat.name:'Layer '+(barrierIdx+1))+'</strong> min: <span style="color:var(--primary);font-weight:700">'+result.thickness.toFixed(1)+' um</span></span>'+
-    '<span style="color:var(--text-light);font-size:0.7rem">('+current+'&rarr;'+result.thickness.toFixed(1)+'um, '+(result.thickness<current?'✓ Savings':'⚠ Increase needed')+')</span>'+
+  '<span>To achieve <strong>target '+getLabel()+' &le; '+target+' '+getUnit()+'</strong> @ '+condition.temperature+'\u00b0C/'+condition.humidity+'%:</span>'+
+  '<span><strong>'+((mat)?mat.name:'Layer '+(barrierIdx+1))+'</strong> min: <span style="color:var(--primary);font-weight:700">'+result.thickness.toFixed(1)+' um</span></span>'+
+  '<span style="color:var(--text-light);font-size:0.7rem">('+current+'&rarr;'+result.thickness.toFixed(1)+'um, '+(result.thickness<current?'✓ Savings':'⚠ Increase needed')+')</span>'+
   '</div>';
-}  // ← ✅ AGGIUNGI QUESTA PARENTESI GRAFFA!
-
+} // ← ✅ QUESTA È L'UNICA PARENTESI DI CHIUSURA CORRETTA (alla fine!)
+      
 function renderCompare(){
   var unit=getUnit();
   if(DB.laminates.length<2) return '<div class="card"><div class="empty-state"><p>Save 2+ laminates to compare</p></div></div>';
