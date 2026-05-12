@@ -2650,20 +2650,11 @@ function renderShelfLifeResult(res) {
   }
 }
 
-// ====================================================================
-// 6. RENDER GRAFICI (Chart.js)
-// ====================================================================
-
 /**
  * Disegna i grafici della shelf life
  * @param {object} res - Oggetto risultato con history array
  */
 function drawShelfLifeCharts(res) {
-  // Distruggi istanze precedenti per evitare memory leak
-  destroyChart('slDecay'); 
-  destroyChart('slTemp');
-  
-  function drawShelfLifeCharts(res) {
   // Distruggi istanze precedenti per evitare memory leak
   destroyChart('slDecay'); 
   destroyChart('slTemp');
@@ -2756,7 +2747,6 @@ function drawShelfLifeCharts(res) {
       
       // Calcola shelf life per ogni temperatura
       const daysArr = temps.map(T => {
-        // Fattore di accelerazione termica
         let accel = 1;
         if (Q10 > 0) {
           accel = Math.pow(Q10, (T - 25) / 10);
@@ -2766,7 +2756,6 @@ function drawShelfLifeCharts(res) {
         }
         const rate = baseRate * accel;
         
-        // Calcolo shelf life in base al tipo di degradazione
         if (res.type === 'moisture') {
           const M_c = res.M_crit || 8;
           const M_i = res.M_init || 3;
@@ -2778,7 +2767,6 @@ function drawShelfLifeCharts(res) {
         }
       });
       
-      // Crea gradiente per il secondo grafico
       const gradient2 = ctx2.createLinearGradient(0, 0, 0, 280);
       gradient2.addColorStop(0, 'rgba(139, 92, 246, 0.3)');
       gradient2.addColorStop(1, 'rgba(139, 92, 246, 0.05)');
@@ -2812,7 +2800,7 @@ function drawShelfLifeCharts(res) {
               bodyFont: { size: 10 },
               padding: 10,
               callbacks: {
-                label: ctx => `Shelf Life: ${Math.round(ctx.parsed.y)} days`
+                label: ctx => `🌡️ ${ctx.parsed.x}°C → ${Math.round(ctx.parsed.y)} days`
               }
             }
           },
@@ -2834,94 +2822,16 @@ function drawShelfLifeCharts(res) {
       });
     } catch (e) {
       console.warn('⚠️ Error drawing temperature chart:', e);
-      // Fallback: mostra messaggio nell'area del canvas
-      ctx2.fillStyle = '#94a3b8';
-      ctx2.font = '11px sans-serif';
-      ctx2.textAlign = 'center';
-      ctx2.fillText('Unable to generate temperature curve', ctx2.canvas.width / 2, ctx2.canvas.height / 2);
+      if (ctx2) {
+        ctx2.fillStyle = '#94a3b8';
+        ctx2.font = '11px sans-serif';
+        ctx2.textAlign = 'center';
+        ctx2.fillText('Unable to generate temperature curve', ctx2.canvas.width / 2, ctx2.canvas.height / 2);
+      }
     }
   }
 }
   
-  // === GRAFICO 2: Temperature What-If Analysis ===
-  const ctx2 = document.getElementById('slTempChart')?.getContext('2d');
-  if (ctx2 && typeof Chart !== 'undefined') {
-    const temps = Array.from({ length: 36 }, (_, i) => 15 + i);
-    const Ea_J = (parseFloat(document.getElementById('sl-ea')?.value) || 60) * 1000;
-    const Q10 = parseFloat(document.getElementById('sl-q10')?.value) || 2;
-    const W = parseFloat(document.getElementById('sl-weight')?.value) || 100;
-    const A = parseFloat(document.getElementById('sl-area')?.value) || 0.1;
-    const baseRate = parseFloat(document.getElementById('sl-rate')?.value) || 0.5;
-    
-    const daysArr = temps.map(T => {
-      const acc = getAccelFactor(Ea_J, Q10, 25, T);
-      const rate = baseRate * acc;
-      
-      if (res.type === 'moisture') {
-        const M_c = res.M_crit || 8;
-        const M_i = res.M_init || 3;
-        return ((M_c - M_i) / 100 * W) / (rate * A);
-      } else {
-        const O2_crit = parseFloat(document.getElementById('sl-o2crit')?.value) || 400;
-        const fat_kg = parseFloat(document.getElementById('sl-fat')?.value) || 0.3;
-        return (O2_crit * fat_kg) / (rate * A);
-      }
-    });
-    
-    const gradient2 = ctx2.createLinearGradient(0, 0, 0, 280);
-    gradient2.addColorStop(0, 'rgba(139, 92, 246, 0.3)');
-    gradient2.addColorStop(1, 'rgba(139, 92, 246, 0.05)');
-    
-    chartInstances.slTemp = new Chart(ctx2, {
-      type: 'line',
-      data: {
-        labels: temps,
-        datasets: [{
-          label: 'Shelf Life (Days)',
-          data: daysArr,
-          borderColor: '#8b5cf6',
-          backgroundColor: gradient2,
-          fill: true,
-          tension: 0.4,
-          pointRadius: 3,
-          pointHoverRadius: 6,
-          pointBackgroundColor: '#fff',
-          pointBorderColor: '#8b5cf6',
-          pointBorderWidth: 2
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            backgroundColor: 'rgba(15, 23, 42, 0.95)',
-            titleFont: { size: 11 },
-            bodyFont: { size: 10 },
-            padding: 10,
-            callbacks: {
-              label: ctx => `🌡️ ${ctx.parsed.x}°C → ${Math.round(ctx.parsed.y)} days`
-            }
-          }
-        },
-        scales: {
-          x: {
-            title: { display: true, text: 'Storage Temperature (°C)', font: { size: 10, weight: '600' } },
-            grid: { color: 'rgba(0,0,0,0.04)' },
-            ticks: { font: { size: 9 } }
-          },
-          y: {
-            title: { display: true, text: 'Shelf Life (Days)', font: { size: 10, weight: '600' } },
-            beginAtZero: true,
-            grid: { color: 'rgba(0,0,0,0.04)' },
-            ticks: { font: { size: 9 } }
-          }
-        }
-      }
-    });
-  }
-}
 function renderCalc() {
   var common = Engine.findCommonConditions(State.layers, DB.materials);
   var hasMats = State.layers.some(function(l){ return l.mid !== null; });
