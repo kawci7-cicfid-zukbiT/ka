@@ -2259,7 +2259,7 @@ var critical = parseFloat(document.getElementById('sl-mcrit').value);
   var unit = State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
 
  if (!rate || rate <= 0 || !area || area <= 0 || !mass || mass <= 0 || isNaN(initial) || isNaN(critical) || critical <= initial) {
-  alert('⚠️ Please check the inputs:\nCritical Limit must be higher than Initial Level, and all values must be greater than 0.');
+ alert('⚠️ Please check the inputs:\nCritical Limit must be higher than Initial Level, and all values must be greater than 0.');
   return;
 }
 
@@ -2530,72 +2530,85 @@ function drawShelfLifeCharts(res) {
         
         // ✅ CODICE CORRETTO per slTempChart
 chartInstances.slTemp = new Chart(ctx2, {
-type: 'line',
-data: {  // ← AGGIUNTO "data:"
-labels: temps,  // ← labels deve essere un array, non una stringa
-datasets: [
-{
-label: 'Shelf Life',
-data: daysArr,
-borderColor: '#8b5cf6',
-backgroundColor: 'rgba(139,92,246,0.15)',
-borderWidth: 3,
-fill: true,
-tension: 0.4,
-pointRadius: 2,
-pointHoverRadius: 5
-},
-{
-label: 'Current: '+currentTemp+'°C',
-data: temps.map(t => t === currentTemp ? currentDays : null),
-borderColor: '#ef4444',
-backgroundColor: '#ef4444',
-borderWidth: 0,
-pointRadius: 10,
-pointHoverRadius: 12,
-pointBackgroundColor: '#fff',
-pointBorderColor: '#ef4444',
-pointBorderWidth: 3
-}
-]
-},
-options: {
-responsive: true,
-maintainAspectRatio: false,
-plugins: {
-legend: {
-display: true,
-position: 'bottom',
-labels: { font: { size: 13, weight: '500' }, padding: 16, usePointStyle: true }
-},
-tooltip: {
-backgroundColor: 'rgba(15,23,42,0.95)',
-titleFont: { size: 14 },
-bodyFont: { size: 13 },
-padding: 12,
-cornerRadius: 10,
-callbacks: {
-label: ctx => ctx.datasetIndex === 0 
-? `Shelf Life: ${Math.round(ctx.parsed.y)} days` 
-: `🔴 Selected: ${Math.round(ctx.parsed.y)} days`
-}
-}
-},
-scales: {
-x: {
-title: { display: true, text: 'Storage Temperature (°C)', font: { size: 14, weight: '600' } },
-ticks: { font: { size: 12 } },
-grid: { color: 'rgba(226,232,240,0.6)' }
-},
-y: {
-title: { display: true, text: 'Days', font: { size: 14, weight: '600' } },
-beginAtZero: true,
-ticks: { font: { size: 12 } },
-grid: { color: 'rgba(226,232,240,0.6)' }
-}
-}
-}
-});
+  type: 'line',
+  data: {
+    labels: temps,
+    datasets: [
+      {
+        label: 'Shelf Life',
+        data: daysArr,
+        borderColor: '#8b5cf6',
+        backgroundColor: 'rgba(139,92,246,0.15)',
+        borderWidth: 3,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 2,
+        pointHoverRadius: 5
+      },
+      {
+        label: 'Current: '+currentTemp+'°C',
+        data: temps.map(t => t === currentTemp ? currentDays : null),
+        borderColor: '#ef4444',
+        backgroundColor: '#ef4444',
+        borderWidth: 0,
+        pointRadius: 10,
+        pointHoverRadius: 12,
+        pointBackgroundColor: '#fff',
+        pointBorderColor: '#ef4444',
+        pointBorderWidth: 3
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'bottom',
+        labels: { 
+          font: { size: 13, weight: '500' }, 
+          padding: 16, 
+          usePointStyle: true 
+        }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(15,23,42,0.95)',
+        titleFont: { size: 14 },
+        bodyFont: { size: 13 },
+        padding: 12,
+        cornerRadius: 10,
+        callbacks: {
+          label: ctx => ctx.datasetIndex === 0 
+            ? `Shelf Life: ${Math.round(ctx.parsed.y)} days` 
+            : `🔴 Selected: ${Math.round(ctx.parsed.y)} days`
+        }
+      }
+      // ← scales NON va qui!
+    },  // ← plugins chiude QUI
+    scales: {  // ← ✅ scales è OUTSIDE plugins
+      x: {
+        title: { 
+          display: true, 
+          text: 'Storage Temperature (°C)', 
+          font: { size: 14, weight: '600' } 
+        },
+        ticks: { font: { size: 12 } },
+        grid: { color: 'rgba(226,232,240,0.6)' }
+      },
+      y: {
+        title: { 
+          display: true, 
+          text: 'Days', 
+          font: { size: 14, weight: '600' } 
+        },
+        beginAtZero: true,
+        ticks: { font: { size: 12 } },
+        grid: { color: 'rgba(226,232,240,0.6)' }
+      }
+    }
+  }
+});  // ← Chiusura corretta: 3 parentesi graffe + parentesi tonda + punto e virgola
 function renderCalc() {
   var common = Engine.findCommonConditions(State.layers, DB.materials);
   var hasMats = State.layers.some(function(l){ return l.mid !== null; });
@@ -3983,7 +3996,7 @@ function showBulkImport(){
         var count=0;
         for(var li=0;li<lines.length;li++){
         // ✅ CORRETTO
-var cols=lines[li].split(/,\s*|\t/).map(function(s){return s.trim();});
+        var cols = lines[li].split(/[\t,]\s*/).map(s => s.trim()).filter(s => s !== '');
           if(cols.length<10) continue; // Min: Name,Family,TestM,IsMet,WVTR_v,WVTR_t,OTR_v,OTR_t,Temp,Hum
           
           var name=cols[0];
