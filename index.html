@@ -998,7 +998,9 @@ const Engine={
     }
     return errs;
   },
-  getValues:function(mat){return this.mode==='wvtr'?mat.wvtrValues:mat.otrValues;},
+  getValues:function(mat){
+    return this.mode==='wvtr' ? (mat.wvtrValues || []) : (mat.otrValues || []);
+},
   getUnits:function(){return this.mode==='wvtr'?{value:'g/m²·day',label:'WVTR'}:{value:'cc/m²·day',label:'OTR'};},
   findCommonConditions:function(layers,materials){
     var mats=layers.filter(function(l){return l.mid!==null;}).map(function(l){return materials.find(function(m){return m.id===l.mid;});}).filter(Boolean);
@@ -3972,8 +3974,8 @@ function showMatModal(editId) {
   var currentLabel = currentMode === 'wvtr' ? 'WVTR' : 'OTR';
   var currentUnit = currentMode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
   var currentValues = currentMode === 'wvtr' 
-    ? (mat ? mat.wvtrValues : [{value:'',thickness:''}])
-    : (mat ? mat.otrValues : [{value:'',thickness:''}]);
+        ? (mat ? (mat.wvtrValues || []) : [{value:'',thickness:''}]) 
+        : (mat ? (mat.otrValues || []) : [{value:'',thickness:''}]);
   
   var conds = mat ? mat.validConditions : [{temperature:'',humidity:''}];
   
