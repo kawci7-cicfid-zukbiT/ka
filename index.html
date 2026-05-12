@@ -2034,86 +2034,82 @@ function getReliabilityBadge(score) {
 // ====================================================================
 // 📚 SHELF LIFE METHODOLOGY (TEXTBOOK STYLE)
 // ====================================================================
+// ====================================================================
+// 📚 SHELF LIFE METHODOLOGY (TEXTBOOK STYLE - TESTO INTATTO)
+// ====================================================================
 function renderShelfLifeMethodology() {
   return `
-  <div class="methodology-card" style="margin-top:1rem; background:#fff; border:1px solid var(--border); border-left:4px solid var(--primary); border-radius:var(--radius); overflow:hidden;">
-    <div style="padding:1.25rem 1.5rem;">
-      <h2 style="font-family:Georgia, 'Times New Roman', serif; font-size:1.35rem; color:var(--text); border-bottom:1px solid var(--border); padding-bottom:0.6rem; margin:0 0 1rem 0; display:flex; align-items:center; gap:0.5rem;">
-         Calculation Methodology & Theoretical Framework
+  <div class="card" style="margin-top:1rem; border-left:4px solid var(--primary); background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+    <div style="padding:1.2rem 1.5rem;">
+      <h2 style="font-family:Georgia, 'Times New Roman', serif; font-size:1.25rem; color:var(--text); border-bottom:1px solid var(--border); padding-bottom:0.5rem; margin-bottom:1.2rem;">
+        📖 How Shelf Life is Calculated: A Clear Guide
       </h2>
-
-      <div class="methodology-content" style="font-size:0.88rem; line-height:1.8; color:#334155; font-family:Georgia, 'Times New Roman', serif;">
+      
+      <div style="font-size:0.92rem; line-height:1.8; color:#334155; font-family:Georgia, 'Times New Roman', serif;">
         
-        <h3 style="font-size:1.15rem; color:var(--primary); margin:1.8rem 0 0.8rem 0; font-family:-apple-system, sans-serif; font-weight:700; letter-spacing:-0.01em;">§1. Moisture Gain & Mass Transfer Dynamics</h3>
-        <p style="margin-bottom:1rem;">
-          The shelf life estimation for hygroscopic products is based on the principles of <strong>Fickian diffusion</strong>. 
-          Water vapor moves across the packaging film driven by a difference in partial pressure ($\Delta P$) between the external environment and the product headspace. 
-          Unlike simplified linear models that assume a constant ingress rate, our engine accounts for a crucial physical reality: as the product absorbs moisture, its internal water activity ($a_w$) rises. 
-          This naturally reduces the driving force over time, resulting in a <strong>self-limiting, non-linear absorption curve</strong> that closely matches real-world storage behavior.
-        </p>
-        <div class="formula-block">
-          <p style="margin-bottom:0.5rem; font-style:italic; color:var(--text-light); font-size:0.8rem;">The Generalized Time-to-Failure Equation:</p>
-          <div style="font-family:'Courier New', monospace; font-size:1.15rem; color:var(--primary); padding:0.5rem 0;">
-            t = ( W · $\Delta$M ) / ( A · WVTR · $\Delta$P<sub>scale</sub> )
-          </div>
-          <p style="margin-top:0.5rem; font-size:0.78rem; color:var(--text-light);">
-            Where $\Delta$M is the allowable moisture increase, and $\Delta$P<sub>scale</sub> dynamically adjusts as the product equilibrates.
-          </p>
+        <!-- SEZIONE 1 -->
+        <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin-top:1.5rem; font-weight:700;">1. Moisture Gain: Why It Slows Down Over Time</h3>
+        <p>Packaging is never completely airtight. Water vapor from the outside air slowly moves through the film into your product. The speed of this movement depends on the <strong>humidity difference</strong> between the outside environment and the inside of the package.</p>
+        
+        <div style="background:var(--primary-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--primary); margin:0.8rem 0; font-family:sans-serif;">
+          🔑 <strong>Key Insight:</strong> As the product absorbs moisture, it becomes less "thirsty." This means the driving force weakens over time, so moisture enters quickly at first, then naturally slows down. Our calculator tracks this real-world curve instead of assuming a constant, linear rate.
         </div>
 
-        <h3 style="font-size:1.15rem; color:var(--primary); margin:1.8rem 0 0.8rem 0; font-family:-apple-system, sans-serif; font-weight:700; letter-spacing:-0.01em;">§2. The GAB Sorption Model</h3>
-        <p style="margin-bottom:1rem;">
-          To accurately calculate the internal partial pressure at any given moisture content, we utilize the <strong>GAB (Guggenheim-Anderson-de Boer) isotherm</strong>. 
-          This widely accepted food-science model relates the product's moisture content to its water activity ($a_w$) using three empirically derived parameters ($M_m$, $C$, $K$). 
-          By numerically inverting the GAB equation at each simulation step, the calculator determines the instantaneous internal relative humidity. 
-          This ensures high precision for sensitive foods like biscuits, coffee, and milk powders, where texture and microbial stability are directly governed by $a_w$.
-        </p>
-        <div class="formula-block">
-          <p style="margin-bottom:0.5rem; font-style:italic; color:var(--text-light); font-size:0.8rem;">GAB Isotherm Equation:</p>
-          <div style="font-family:'Courier New', monospace; font-size:1.1rem; color:var(--primary); padding:0.5rem 0;">
-            M = (M<sub>m</sub> · C · K · a<sub>w</sub>) / [(1 - K·a<sub>w</sub>) · (1 - K·a<sub>w</sub> + C·K·a<sub>w</sub>)]
-          </div>
+        <h4 style="margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">📐 The Core Formula (Simplified)</h4>
+        <div style="background:#f8fafc; padding:0.9rem; border-radius:6px; font-family:monospace; font-size:0.95rem; text-align:center; border:1px dashed var(--border); margin-bottom:0.8rem;">
+          Shelf Life = [Product Weight × Allowed Moisture Increase] ÷ [Package Area × WVTR × Humidity Driving Force]
         </div>
-
-        <h3 style="font-size:1.15rem; color:var(--primary); margin:1.8rem 0 0.8rem 0; font-family:-apple-system, sans-serif; font-weight:700; letter-spacing:-0.01em;">§3. Lipid Oxidation & Oxygen Transmission</h3>
-        <p style="margin-bottom:1rem;">
-          For products high in unsaturated fats (oils, nuts, fried snacks), the primary degradation pathway is oxidative rancidity rather than moisture uptake. 
-          Oxygen permeation is modeled as a cumulative process: shelf life ends when the total oxygen ingress reaches a critical threshold ($O_{2,crit}$), which varies based on fat composition and antioxidant levels. 
-          The calculation assumes the internal oxygen partial pressure remains near zero due to rapid consumption by the product.
-        </p>
-        <div class="formula-block">
-          <div style="font-family:'Courier New', monospace; font-size:1.15rem; color:var(--primary); padding:0.5rem 0;">
-            Shelf Life = ( m<sub>fat</sub> · O<sub>2,crit</sub> ) / ( A · OTR · AF )
-          </div>
-        </div>
-
-        <h3 style="font-size:1.15rem; color:var(--primary); margin:1.8rem 0 0.8rem 0; font-family:-apple-system, sans-serif; font-weight:700; letter-spacing:-0.01em;">§4. Thermal Acceleration Models</h3>
-        <p style="margin-bottom:1rem;">
-          Permeation rates and chemical degradation are highly sensitive to temperature. To predict shelf life under varying storage conditions (e.g., "What-If" scenario analysis), we apply two established kinetic acceleration models:
-        </p>
-        <ul style="margin-bottom:1.2rem; padding-left:1.5rem; line-height:1.9;">
-          <li><strong>Arrhenius Equation:</strong> Describes the exponential relationship between reaction/permeation rates and absolute temperature, governed by the Activation Energy ($E_a$). Ideal for precise scientific modeling.</li>
-          <li><strong>$Q_{10}$ Model:</strong> A practical approximation widely used in food science, where the degradation rate typically doubles or triples for every 10°C rise in temperature.</li>
+        <ul style="padding-left:1.2rem; margin:0 0 1rem 0;">
+          <li><strong>WVTR:</strong> How much water vapor passes through 1 m² of film per day.</li>
+          <li><strong>Driving Force:</strong> The humidity gap between outside air and the product's interior.</li>
+          <li><strong>Allowed Increase:</strong> The safe moisture limit before texture, crispness, or safety drops.</li>
         </ul>
-        <p style="margin-bottom:1rem;">
-          The calculator automatically applies the selected model to adjust the base transmission rate, allowing you to safely extrapolate shelf life across different climate zones and storage environments.
-        </p>
+        <p>To make this accurate, we use the <strong>GAB Model</strong>, a food-science standard that converts raw moisture levels into <strong>Water Activity (a_w)</strong>. Water activity is the true predictor of mold growth, clumping, and texture loss in sensitive foods like biscuits, coffee, and milk powders.</p>
+        <p style="font-size:0.85rem; color:var(--text-light); font-style:italic; margin-top:0.5rem;">(The calculator automatically handles the complex integration behind the scenes, so you only need to input your product and packaging data.)</p>
 
-        <h3 style="font-size:1.15rem; color:var(--primary); margin:1.8rem 0 0.8rem 0; font-family:-apple-system, sans-serif; font-weight:700; letter-spacing:-0.01em;">§5. Model Limitations & Best Practices</h3>
-        <p style="margin-bottom:0.8rem;">
-          While this engine implements industry-standard mathematical models, users should consider the following:
-        </p>
-        <ul style="margin-bottom:1.5rem; padding-left:1.5rem; line-height:1.9;">
-          <li><strong>Constant Conditions Assumption:</strong> The model assumes stable temperature and humidity. Real-world fluctuations require safety margins (typically 10-15%).</li>
-          <li><strong>Product Homogeneity:</strong> Moisture and oxygen are assumed to distribute uniformly. Complex multi-phase products may require finite element analysis (FEM).</li>
-          <li><strong>Validation Requirement:</strong> Predictive calculations should always be validated with real-time or accelerated shelf-life studies before finalizing packaging specifications.</li>
+        <!-- SEZIONE 2 -->
+        <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin-top:2rem; font-weight:700;">2. Oxygen Ingress: When Fats Go Rancid</h3>
+        <p>For products high in fat (chips, nuts, cooking oils), oxygen is the main enemy. Unlike moisture, oxygen usually enters at a steady rate because the product quickly "uses up" what gets in through oxidation.</p>
+        
+        <div style="background:var(--warning-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--warning); margin:0.8rem 0; font-family:sans-serif;">
+          🔑 <strong>Key Insight:</strong> Shelf life ends when the total accumulated oxygen reaches a known threshold that causes off-flavors or rancidity.
+        </div>
+
+        <h4 style="margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">📐 The Core Formula (Simplified)</h4>
+        <div style="background:#f8fafc; padding:0.9rem; border-radius:6px; font-family:monospace; font-size:0.95rem; text-align:center; border:1px dashed var(--border); margin-bottom:0.8rem;">
+          Shelf Life = [Fat Content × Max Safe Oxygen] ÷ [Package Area × OTR × Temperature Factor]
+        </div>
+        <ul style="padding-left:1.2rem; margin:0 0 1rem 0;">
+          <li><strong>OTR:</strong> How much oxygen passes through 1 m² of film per day.</li>
+          <li><strong>Max Safe Oxygen:</strong> The limit before taste or nutritional quality degrades (varies by product).</li>
         </ul>
 
-        <div style="margin-top:2rem; padding-top:1rem; border-top:1px dashed var(--border); font-size:0.78rem; color:var(--text-light); line-height:1.7;">
-          <strong>References & Standards:</strong><br>
-          ASTM F1249 (WVTR) • ASTM D3985 (OTR) • ISO 18787 (Water Activity) • ISO 15106-2/3 (Permeability Testing) • 
-          Van den Berg & Bruin (1981) on GAB Isotherms • Labuza (1984) on Accelerated Shelf-Life Testing • ICH Q1A(R2) Guidelines.
+        <!-- SEZIONE 3 -->
+        <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin-top:2rem; font-weight:700;">3. Temperature: The Invisible Accelerator</h3>
+        <p>Heat dramatically speeds up both moisture absorption and oxidation. To predict real-world shelf life, we apply two proven kinetic models:</p>
+        <ul style="padding-left:1.2rem; margin:0.5rem 0;">
+          <li><strong>Q₁₀ Rule:</strong> A practical shortcut widely used in food science. For every 10°C (18°F) rise in storage temperature, degradation typically doubles or triples.</li>
+          <li><strong>Arrhenius Equation:</strong> A more precise scientific model that calculates exactly how sensitive your specific product is to heat based on its Activation Energy (Eₐ).</li>
+        </ul>
+        <div style="background:var(--success-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--success); margin:0.8rem 0; font-family:sans-serif;">
+          🔑 <strong>Key Insight:</strong> This allows you to run reliable "What-If" scenarios. <em>Example: "If my product lasts 12 months at 20°C, how long will it last in a 35°C warehouse?"</em>
         </div>
+
+        <!-- RIFERIMENTI -->
+        <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin-top:2rem; font-weight:700;">📚 Scientific Standards & References</h3>
+        <p>This calculator aligns with internationally recognized testing and modeling standards:</p>
+        <ul style="padding-left:1.2rem; margin:0.5rem 0; color:var(--text-light); list-style-type:disc;">
+          <li>ASTM F1249 & ISO 15106-3 → WVTR testing</li>
+          <li>ASTM D3985 & ISO 15106-2 → OTR testing</li>
+          <li>ISO 18787 → Moisture sorption & water activity</li>
+          <li>Van den Berg & Bruin (1981) → GAB isotherm modeling</li>
+          <li>Labuza (1984) & ICH Q1A(R2) → Thermal acceleration & shelf-life kinetics</li>
+        </ul>
+
+        <div style="margin-top:2rem; padding:0.9rem; background:var(--bg); border-radius:8px; font-size:0.88rem; color:var(--text-light); border-left:4px solid var(--primary); font-family:sans-serif;">
+          💡 <strong>Note:</strong> This tool supports R&D and predictive modeling. Final shelf-life claims should always be validated with real-time storage tests and comply with local food regulations (e.g., EU 1169/2011, FDA 21 CFR).
+        </div>
+
       </div>
     </div>
   </div>
