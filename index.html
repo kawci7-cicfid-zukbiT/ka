@@ -3207,6 +3207,7 @@ return '<div class="card"><h2>Arrhenius Analysis</h2>'+
 '<div id="arr-result"></div></div>'+
 '<div class="grid grid-2"><div class="card"><h2>'+getLabel()+' vs Temperature</h2><div class="chart-container"><canvas id="arrTempCanvas"></canvas></div></div>'+
 '<div class="card"><h2>Arrhenius Plot (ln('+getLabel()+') vs 1/T)</h2><div class="chart-container"><canvas id="arrLinCanvas"></canvas></div></div></div>';
+renderArrheniusMethodology()+'</div>';
 }
 // ✅ Handler: quando l'utente modifica Ea manualmente
 function onArrEaChange(){
@@ -3376,7 +3377,114 @@ function clearArrCanvas(id){
   ctx.textAlign = 'center';
   ctx.fillText('Select a multi-temp material', width/2, height/2);
 }
+// ====================================================================
+// 📚 ARRHENIUS METHODOLOGY EXPLAINER (SEMPLIFICATO)
+// ====================================================================
+function renderArrheniusMethodology() {
+return `
+<div class="card methodology-card" style="margin-top:1rem; border-left:4px solid var(--primary);">
+<div style="padding:1.2rem 1.5rem;">
+<h2 style="font-family:Georgia, 'Times New Roman', serif; font-size:1.2rem; color:var(--text); border-bottom:1px solid var(--border); padding-bottom:0.5rem; margin-bottom:1rem;">
+🔬 Come Funziona l'Analisi Arrhenius
+</h2>
 
+<div style="font-size:0.92rem; line-height:1.75; color:#334155; font-family:Georgia, 'Times New Roman', serif;">
+
+<!-- SEZIONE 1: COS'È -->
+<h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">1. Cos'è l'equazione di Arrhenius?</h3>
+<p>L'equazione di Arrhenius descrive come la <strong>temperatura</strong> influisce sulla velocità con cui il vapore acqueo o l'ossigeno attraversano un materiale da imballaggio.</p>
+<div style="background:var(--primary-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--primary); margin:0.8rem 0; font-family:sans-serif;">
+<strong>In parole semplici:</strong> Più fa caldo, più velocemente le molecole si muovono e attraversano la barriera. Arrhenius ci permette di prevedere questo comportamento.
+</div>
+
+<!-- SEZIONE 2: COME SI OTTENGONO I DATI -->
+<h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">2. Come si raccolgono i dati?</h3>
+<p>Per usare Arrhenius servono almeno <strong>2 misurazioni</strong> dello stesso materiale a <strong>temperature diverse</strong>, mantenendo costante l'umidità relativa:</p>
+
+<div style="background:#f8fafc; padding:0.9rem; border-radius:8px; border:1px dashed var(--border); margin:0.8rem 0;">
+<strong>Esempio di raccolta dati:</strong>
+<table style="width:100%; font-size:0.85rem; margin-top:0.5rem; border-collapse:collapse;">
+<thead>
+<tr style="background:var(--bg); text-align:left;">
+<th style="padding:0.4rem 0.6rem;">Temperatura</th>
+<th style="padding:0.4rem 0.6rem;">Umidità</th>
+<th style="padding:0.4rem 0.6rem;">WVTR misurato</th>
+</tr>
+</thead>
+<tbody>
+<tr><td style="padding:0.3rem 0.6rem; border-bottom:1px solid var(--border);">23°C</td><td style="padding:0.3rem 0.6rem; border-bottom:1px solid var(--border);">50% RH</td><td style="padding:0.3rem 0.6rem; border-bottom:1px solid var(--border);">0.8 g/m²·day</td></tr>
+<tr><td style="padding:0.3rem 0.6rem; border-bottom:1px solid var(--border);">38°C</td><td style="padding:0.3rem 0.6rem; border-bottom:1px solid var(--border);">50% RH</td><td style="padding:0.3rem 0.6rem; border-bottom:1px solid var(--border);">1.5 g/m²·day</td></tr>
+<tr><td style="padding:0.3rem 0.6rem;">50°C</td><td style="padding:0.3rem 0.6rem;">50% RH</td><td style="padding:0.3rem 0.6rem;">2.8 g/m²·day</td></tr>
+</tbody>
+</table>
+</div>
+
+<p style="font-size:0.85rem; color:var(--text-light); margin-top:0.5rem;">
+<strong>Nota:</strong> L'umidità deve rimanere costante (±5%) perché influisce indipendentemente dalla temperatura.
+</p>
+
+<!-- SEZIONE 3: COME FUNZIONA IL CALCOLO -->
+<h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">3. Come il calculator usa questi dati</h3>
+<ol style="padding-left:1.2rem; margin:0.5rem 0;">
+<li><strong>Trasforma i dati:</strong> Converte temperatura in Kelvin (K = °C + 273.15) e calcola il logaritmo naturale del valore WVTR/OTR.</li>
+<li><strong>Traccia la retta:</strong> Plotta ln(WVTR) contro 1/T. Se i punti sono allineati, il materiale segue Arrhenius.</li>
+<li><strong>Calcola i parametri:</strong>
+<ul style="padding-left:1rem; margin:0.3rem 0; font-size:0.9em;">
+<li><strong>Eₐ (Energia di attivazione):</strong> Quanto il materiale è "sensibile" al calore (kJ/mol)</li>
+<li><strong>A (Fattore pre-esponenziale):</strong> Il valore teorico a temperatura infinita</li>
+<li><strong>R² (Coefficiente di determinazione):</strong> Quanto bene i dati seguono il modello (1.0 = perfetto)</li>
+</ul>
+</li>
+<li><strong>Predice:</strong> Usa l'equazione per stimare il valore a qualsiasi temperatura intermedia o esterna al range misurato.</li>
+</ol>
+
+<div style="background:#f8fafc; padding:0.9rem; border-radius:6px; font-family:monospace; font-size:0.9rem; text-align:center; border:1px dashed var(--border); margin:0.8rem 0;">
+<strong>Equazione:</strong><br>
+WVTR(T) = A · exp( -Eₐ / (R · T) )
+</div>
+
+<!-- SEZIONE 4: INTERPRETARE I RISULTATI -->
+<h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">4. Come leggere i risultati</h3>
+<div style="display:grid; grid-template-columns:1fr; gap:0.5rem; margin:0.8rem 0;">
+<div style="background:var(--success-light); padding:0.6rem; border-radius:6px; border-left:3px solid var(--success);">
+<strong style="color:var(--success);">✓ R² ≥ 0.95:</strong> Ottimo fit. Le previsioni sono molto affidabili.
+</div>
+<div style="background:var(--warning-light); padding:0.6rem; border-radius:6px; border-left:3px solid var(--warning);">
+<strong style="color:var(--warning);">⚠ 0.80 ≤ R² < 0.95:</strong> Fit accettabile. Usare con cautela per estrapolazioni.
+</div>
+<div style="background:var(--danger-light); padding:0.6rem; border-radius:6px; border-left:3px solid var(--danger);">
+<strong style="color:var(--danger);">✗ R² < 0.80:</strong> Fit scarso. I dati potrebbero non seguire Arrhenius o servirebbero più punti.
+</div>
+</div>
+
+<!-- SEZIONE 5: BEST PRACTICES -->
+<h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">5. Best Practices per dati affidabili</h3>
+<ul style="padding-left:1.2rem; margin:0.5rem 0; font-size:0.9rem;">
+<li>Usa almeno <strong>3 temperature</strong> distribuite nell'intervallo di interesse.</li>
+<li>Mantieni l'<strong>umidità costante</strong> durante tutte le misurazioni.</li>
+<li>Assicurati che il materiale sia in <strong>equilibrio</strong> prima di misurare.</li>
+<li>Per estrapolazioni (previsioni fuori dal range misurato), usa un margine di sicurezza del 20-30%.</li>
+<li>Materiali con transizioni di fase (es. cristallizzazione) possono deviare da Arrhenius.</li>
+</ul>
+
+<!-- RIFERIMENTI -->
+<h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">📚 Riferimenti</h3>
+<ul style="padding-left:1.2rem; margin:0.5rem 0; color:var(--text-light); font-size:0.85rem;">
+<li>ASTM F1249 / ISO 15106-3 (WVTR)</li>
+<li>ASTM D3985 / ISO 15106-2 (OTR)</li>
+<li>Arrhenius, S. (1889). "Über die Reaktionsgeschwindigkeit..."</li>
+<li>Robertson, G.L. (2016). <em>Food Packaging: Principles and Practice</em></li>
+</ul>
+
+<div style="margin-top:1.5rem; padding:0.9rem; background:var(--bg); border-radius:8px; font-size:0.88rem; color:var(--text-light); border-left:4px solid var(--primary); font-family:sans-serif;">
+<strong>Nota operativa:</strong> Questa funzione supporta la ricerca e lo sviluppo. Per claim di shelf-life commerciali, validare sempre con test reali in condizioni di stoccaggio e rispettare le normative locali (EU 1169/2011, FDA 21 CFR).
+</div>
+
+</div>
+</div>
+</div>
+`;
+}
 function drawArrTempChart(mat, r){
   destroyChart('arrTemp');
   var canvas = document.getElementById('arrTempCanvas');
