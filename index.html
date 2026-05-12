@@ -3191,30 +3191,31 @@ function renderArrheniusMethodology() {
   <div class="card methodology-card" style="margin-top:1rem; border-left:4px solid var(--primary);">
   <div style="padding:1.2rem 1.5rem;">
   <h2 style="font-family:Georgia, 'Times New Roman', serif; font-size:1.2rem; color:var(--text); border-bottom:1px solid var(--border); padding-bottom:0.5rem; margin-bottom:1rem;">
-  🔬 Come Funziona l'Analisi Arrhenius
+   Understanding Arrhenius Analysis: A Practical Guide
   </h2>
 
   <div style="font-size:0.92rem; line-height:1.75; color:#334155; font-family:Georgia, 'Times New Roman', serif;">
 
-  <!-- SEZIONE 1: COS'È -->
-  <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">1. Cos'è l'equazione di Arrhenius?</h3>
-  <p>L'equazione di Arrhenius descrive come la <strong>temperatura</strong> influisce sulla velocità con cui il vapore acqueo o l'ossigeno attraversano un materiale da imballaggio.</p>
+  <!-- SECTION : WHAT IS IT -->
+  <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">1. What is the Arrhenius equation, really?</h3>
+  <p>At its heart, the Arrhenius equation helps us understand a simple but powerful idea: <strong>temperature changes how quickly molecules move through packaging materials</strong>. Whether you're measuring water vapor (WVTR) or oxygen (OTR), warmth gives molecules more energy to wiggle through tiny gaps in films and coatings.</p>
+  
   <div style="background:var(--primary-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--primary); margin:0.8rem 0; font-family:sans-serif;">
-  <strong>In parole semplici:</strong> Più fa caldo, più velocemente le molecole si muovono e attraversano la barriera. Arrhenius ci permette di prevedere questo comportamento.
+  <strong>Think of it this way:</strong> Imagine trying to walk through a crowded room. When it's cool, people move slowly and you make progress gradually. When it's warm and energetic, everyone's moving faster—and so do the molecules trying to pass through your packaging. Arrhenius gives us the math to predict exactly how much faster.
   </div>
 
-  <!-- SEZIONE 2: COME SI OTTENGONO I DATI -->
-  <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">2. Come si raccolgono i dati?</h3>
-  <p>Per usare Arrhenius servono almeno <strong>2 misurazioni</strong> dello stesso materiale a <strong>temperature diverse</strong>, mantenendo costante l'umidità relativa:</p>
+  <!-- SECTION : COLLECTING DATA -->
+  <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">2. How do we gather the data needed?</h3>
+  <p>To unlock Arrhenius predictions, you need at least <strong>two measurements</strong> of the same material taken at <strong>different temperatures</strong>, while keeping relative humidity steady. More points = more confidence.</p>
 
   <div style="background:#f8fafc; padding:0.9rem; border-radius:8px; border:1px dashed var(--border); margin:0.8rem 0;">
-  <strong>Esempio di raccolta dati:</strong>
+  <strong>Example: Building your dataset</strong>
   <table style="width:100%; font-size:0.85rem; margin-top:0.5rem; border-collapse:collapse;">
   <thead>
   <tr style="background:var(--bg); text-align:left;">
-  <th style="padding:0.4rem 0.6rem;">Temperatura</th>
-  <th style="padding:0.4rem 0.6rem;">Umidità</th>
-  <th style="padding:0.4rem 0.6rem;">WVTR misurato</th>
+  <th style="padding:0.4rem 0.6rem;">Temperature</th>
+  <th style="padding:0.4rem 0.6rem;">Humidity</th>
+  <th style="padding:0.4rem 0.6rem;">Measured WVTR</th>
   </tr>
   </thead>
   <tbody>
@@ -3226,64 +3227,71 @@ function renderArrheniusMethodology() {
   </div>
 
   <p style="font-size:0.85rem; color:var(--text-light); margin-top:0.5rem;">
-  <strong>Nota:</strong> L'umidità deve rimanere costante (±5%) perché influisce indipendentemente dalla temperatura.
+  <strong>Quick note:</strong> Keep humidity consistent (within ±5%) across all tests. Why? Because humidity affects permeability independently of temperature, and we want to isolate temperature's role.
   </p>
 
-  <!-- SEZIONE 3: COME FUNZIONA IL CALCOLO -->
-  <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">3. Come il calculator usa questi dati</h3>
+  <!-- SECTION : HOW THE CALCULATOR WORKS -->
+  <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">3. What happens behind the scenes?</h3>
+  <p>Once you've entered your multi-temperature data, here's how the calculator brings Arrhenius to life:</p>
+  
   <ol style="padding-left:1.2rem; margin:0.5rem 0;">
-  <li><strong>Trasforma i dati:</strong> Converte temperatura in Kelvin (K = °C + 273.15) e calcola il logaritmo naturale del valore WVTR/OTR.</li>
-  <li><strong>Traccia la retta:</strong> Plotta ln(WVTR) contro 1/T. Se i punti sono allineati, il materiale segue Arrhenius.</li>
-  <li><strong>Calcola i parametri:</strong>
+  <li><strong>Transform the numbers:</strong> Temperatures get converted to Kelvin (K = °C + 273.15), and we take the natural logarithm of each WVTR/OTR value. This linearizes the relationship.</li>
+  
+  <li><strong>Plot and check alignment:</strong> We graph ln(WVTR) versus 1/T. If your points fall roughly along a straight line, congratulations—your material follows Arrhenius behavior!</li>
+  
+  <li><strong>Extract the key parameters:</strong>
   <ul style="padding-left:1rem; margin:0.3rem 0; font-size:0.9em;">
-  <li><strong>Eₐ (Energia di attivazione):</strong> Quanto il materiale è "sensibile" al calore (kJ/mol)</li>
-  <li><strong>A (Fattore pre-esponenziale):</strong> Il valore teorico a temperatura infinita</li>
-  <li><strong>R² (Coefficiente di determinazione):</strong> Quanto bene i dati seguono il modello (1.0 = perfetto)</li>
+  <li><strong>Eₐ (Activation Energy):</strong> Measured in kJ/mol, this tells us how "temperature-sensitive" your material is. Higher Eₐ = bigger changes with temperature.</li>
+  <li><strong>A (Pre-exponential Factor):</strong> A theoretical baseline value—think of it as the permeability the material would have at infinite temperature.</li>
+  <li><strong>R² (Goodness of Fit):</strong> A score from 0 to 1 showing how well your data matches the Arrhenius model. Closer to 1.0 means more trustworthy predictions.</li>
   </ul>
   </li>
-  <li><strong>Predice:</strong> Usa l'equazione per stimare il valore a qualsiasi temperatura intermedia o esterna al range misurato.</li>
+  
+  <li><strong>Make predictions:</strong> With Eₐ and A in hand, the calculator can estimate WVTR/OTR at any temperature you specify—even ones you haven't tested yet.</li>
   </ol>
 
   <div style="background:#f8fafc; padding:0.9rem; border-radius:6px; font-family:monospace; font-size:0.9rem; text-align:center; border:1px dashed var(--border); margin:0.8rem 0;">
-  <strong>Equazione:</strong><br>
+  <strong>The Equation:</strong><br>
   WVTR(T) = A · exp( -Eₐ / (R · T) )
   </div>
 
-  <!-- SEZIONE 4: INTERPRETARE I RISULTATI -->
-  <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">4. Come leggere i risultati</h3>
+  <!-- SECTION : READING YOUR RESULTS -->
+  <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">4. Making sense of your output</h3>
+  <p>After running the analysis, you'll see an R² value. Here's how to interpret it:</p>
+  
   <div style="display:grid; grid-template-columns:1fr; gap:0.5rem; margin:0.8rem 0;">
   <div style="background:var(--success-light); padding:0.6rem; border-radius:6px; border-left:3px solid var(--success);">
-  <strong style="color:var(--success);">✓ R² ≥ 0.95:</strong> Ottimo fit. Le previsioni sono molto affidabili.
+  <strong style="color:var(--success);">✓ R² ≥ 0.95:</strong> Excellent fit. Your data aligns beautifully with Arrhenius—predictions are highly reliable for both interpolation and cautious extrapolation.
   </div>
   <div style="background:var(--warning-light); padding:0.6rem; border-radius:6px; border-left:3px solid var(--warning);">
-  <strong style="color:var(--warning);">⚠ 0.80 ≤ R² < 0.95:</strong> Fit accettabile. Usare con cautela per estrapolazioni.
+  <strong style="color:var(--warning);">⚠ 0.80 ≤ R² < 0.95:</strong> Reasonable fit. Predictions within your tested temperature range are generally trustworthy, but use extra caution when estimating values far outside that range.
   </div>
   <div style="background:var(--danger-light); padding:0.6rem; border-radius:6px; border-left:3px solid var(--danger);">
-  <strong style="color:var(--danger);">✗ R² < 0.80:</strong> Fit scarso. I dati potrebbero non seguire Arrhenius o servirebbero più punti.
+  <strong style="color:var(--danger);">✗ R² < 0.80:</strong> Weak fit. Your material may not follow Arrhenius behavior closely, or you may need more data points. Consider collecting additional measurements or investigating other influencing factors.
   </div>
   </div>
 
-  <!-- SEZIONE 5: BEST PRACTICES -->
-  <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">5. Best Practices per dati affidabili</h3>
+  <!-- SECTION: BEST PRACTICES -->
+  <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">5. Tips for reliable, publication-ready results</h3>
   <ul style="padding-left:1.2rem; margin:0.5rem 0; font-size:0.9rem;">
-  <li>Usa almeno <strong>3 temperature</strong> distribuite nell'intervallo di interesse.</li>
-  <li>Mantieni l'<strong>umidità costante</strong> durante tutte le misurazioni.</li>
-  <li>Assicurati che il materiale sia in <strong>equilibrio</strong> prima di misurare.</li>
-  <li>Per estrapolazioni (previsioni fuori dal range misurato), usa un margine di sicurezza del 20-30%.</li>
-  <li>Materiali con transizioni di fase (es. cristallizzazione) possono deviare da Arrhenius.</li>
+  <li><strong>Spread your temperatures:</strong> Aim for at least 3 distinct temperatures spanning your expected storage or use conditions. Wider ranges improve prediction confidence.</li>
+  <li><strong>Lock down humidity:</strong> Keep relative humidity consistent across all tests. Even small fluctuations can introduce noise that masks the true temperature effect.</li>
+  <li><strong>Let samples equilibrate:</strong> Before measuring, ensure your material has fully adjusted to the test environment. Rushed measurements lead to scattered data.</li>
+  <li><strong>Build in a safety margin:</strong> When extrapolating beyond your measured range (e.g., predicting performance at 5°C when you only tested 20–50°C), apply a 20–30% buffer to account for uncertainty.</li>
+  <li><strong>Watch for phase changes:</strong> Some materials undergo structural shifts (like crystallization or glass transitions) at certain temperatures. These can cause deviations from Arrhenius behavior—flag them if you notice sudden changes in your data trend.</li>
   </ul>
 
-  <!-- RIFERIMENTI -->
-  <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">📚 Riferimenti</h3>
+  <!-- REFERENCES -->
+  <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;"> Further Reading & Standards</h3>
   <ul style="padding-left:1.2rem; margin:0.5rem 0; color:var(--text-light); font-size:0.85rem;">
-  <li>ASTM F1249 / ISO 15106-3 (WVTR)</li>
-  <li>ASTM D3985 / ISO 15106-2 (OTR)</li>
-  <li>Arrhenius, S. (1889). "Über die Reaktionsgeschwindigkeit..."</li>
-  <li>Robertson, G.L. (2016). <em>Food Packaging: Principles and Practice</em></li>
+  <li>ASTM F1249 / ISO 15106-3: Standard test methods for water vapor transmission</li>
+  <li>ASTM D3985 / ISO 15106-2: Standard test methods for oxygen transmission</li>
+  <li>Arrhenius, S. (1889). "Über die Reaktionsgeschwindigkeit bei der Inversion von Rohrzucker durch Säuren" – the foundational paper</li>
+  <li>Robertson, G.L. (2016). <em>Food Packaging: Principles and Practice</em> – an excellent practical reference</li>
   </ul>
 
   <div style="margin-top:1.5rem; padding:0.9rem; background:var(--bg); border-radius:8px; font-size:0.88rem; color:var(--text-light); border-left:4px solid var(--primary); font-family:sans-serif;">
-  <strong>Nota operativa:</strong> Questa funzione supporta la ricerca e lo sviluppo. Per claim di shelf-life commerciali, validare sempre con test reali in condizioni di stoccaggio e rispettare le normative locali (EU 1169/2011, FDA 21 CFR).
+  <strong>Operational note:</strong> This Arrhenius tool is designed to support research, development, and informed decision-making. For commercial shelf-life claims or regulatory submissions, always validate predictions with real-time or accelerated aging studies under actual storage conditions, and ensure compliance with applicable regulations (e.g., EU Regulation 1169/2011, FDA 21 CFR Part 101).
   </div>
 
   </div>
@@ -3291,7 +3299,6 @@ function renderArrheniusMethodology() {
   </div>
   `;
 }
-
 // ====================================================================
 // 🧪 FUNZIONE PRINCIPALE: renderArrhenius()
 // ====================================================================
