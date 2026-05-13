@@ -937,7 +937,8 @@ main {
 </head>
 <body>
   // === 🎓 TOUR MANAGER ===
-const Tour = {
+<script>
+  const Tour = {
   currentStep: 0,
   steps: [
     { target: '.mode-toggle', title: '1. Modalità di Calcolo', text: 'Seleziona WVTR per barriera al vapore acqueo o OTR per barriera all\'ossigeno. Il database e le unità si adatteranno automaticamente.', pos: 'bottom' },
@@ -1040,6 +1041,7 @@ const Tour = {
     window.addEventListener('resize', () => this.render());
   }
 };
+</script>
 <!-- 🔥 FIREBASE COMMUNITY SETUP -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -5093,12 +5095,12 @@ for(const fm of fbMats) {
     // 4. Renderizza l'app
     console.log("🎨 Rendering app...");
     render();
+    Tour.init(); 
     
   } catch(e) {
     console.error("❌ Init error:", e);
     DB.materials = DEFAULT_MATERIALS.slice();
     render();
-    Tour.init();
   }
 })();
   
