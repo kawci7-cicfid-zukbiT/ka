@@ -38,7 +38,7 @@ header{background:linear-gradient(135deg,#0f172a,var(--primary),#38bdf8);color:#
 .nav-tab svg{width:13px;height:13px}
 
 /* === MAIN LAYOUT === */
-main{flex:1;padding:2.25rem;max-width:1400px;margin:0 auto;width:100%}
+main{flex:1;padding:1.5rem 2.25rem;max-width:1400px;margin:0 auto;width:100%;box-sizing:border-box}
 .card{background:var(--card);border-radius:var(--radius);padding:1.25rem;box-shadow:var(--shadow);margin-bottom:1rem;border:1px solid var(--border);position:relative;z-index:10}
 .card h2{font-size:0.95rem;font-weight:600;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.4rem}
 .card h2 svg{width:16px;height:16px;color:var(--primary)}
@@ -862,6 +862,26 @@ body, main, .app, .card, .material-item, .modal {
 }
 @media (max-width: 768px) {
   .ad-container { min-height: 40px; margin: 0.25rem 0; }
+}
+  /* ✅ DISTANZIA IL MENU DAL BORDO SINISTRO */
+.nav-tabs {
+  padding-left: 2rem !important; /* Aumenta lo spazio sinistro */
+  padding-right: 1rem !important; /* Mantiene il destro equilibrato */
+}
+
+/* ✅ Spaziatura extra specifica per il pulsante HOME */
+.nav-tab:first-child {
+  margin-left: 0.3rem;
+}
+
+/* ✅ Ottimizzazione Mobile (evita che esca dallo schermo) */
+@media (max-width: 600px) {
+  .nav-tabs {
+    padding-left: 1.2rem !important;
+  }
+  .nav-tab:first-child {
+    margin-left: 0;
+  }
 }
 </style>
   <!-- 📢 GOOGLE ADSENSE -->
@@ -1918,7 +1938,7 @@ function renderHome() {
             <div class="card" style="margin:0; padding:1rem">
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.8rem">
                     <h2 style="margin:0; font-size:1rem; display:flex; align-items:center; gap:0.4rem">
-                        <span>📈</span> Top 3 Materials
+                        <span></span> Most used materials of the month
                     </h2>
                     <span class="badge badge-blue">This Month</span>
                 </div>
