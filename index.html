@@ -826,6 +826,24 @@ body, main, .app, .card, .material-item, .modal {
   color: var(--primary-dark);
   font-weight: 500;
 }
+  /* === 📜 CUSTOM DROPDOWN CON INDICE A-Z === */
+.custom-dropdown { position: relative; width: 100%; font-family: inherit; }
+.dropdown-trigger { width: 100%; padding: 0.45rem 0.7rem; border: 1.5px solid var(--border); border-radius: 8px; background: #fff; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; transition: all 0.15s; }
+.dropdown-trigger:hover { border-color: var(--primary); }
+.dropdown-panel { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 1.5px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-lg); display: none; z-index: 1500; max-height: min(350px, 50vh); overflow: hidden; }
+.dropdown-panel.open { display: flex; }
+.dropdown-index { width: 26px; background: #f8fafc; border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; overflow-y: auto; padding: 8px 0; scrollbar-width: none; }
+.dropdown-index::-webkit-scrollbar { display: none; }
+.index-letter { font-size: 11px; font-weight: 600; padding: 3px 0; cursor: pointer; color: var(--text-light); transition: all 0.15s; }
+.index-letter:hover { color: var(--primary); transform: scale(1.15); }
+.dropdown-list { flex: 1; overflow-y: auto; padding: 4px 0; scroll-behavior: smooth; }
+.mat-group { padding: 2px 0; }
+.mat-group-title { font-size: 0.75rem; font-weight: 700; color: var(--primary-dark); background: var(--primary-light); padding: 3px 10px; margin: 6px 0 2px 0; position: sticky; top: 0; z-index: 2; backdrop-filter: blur(4px); }
+.mat-item { padding: 7px 12px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem; transition: background 0.1s; }
+.mat-item:hover { background: #f1f5f9; }
+.mat-item.selected { background: var(--primary); color: #fff; }
+.mat-item.selected .mat-meta { color: rgba(255,255,255,0.8) !important; }
+.mat-meta { font-size: 0.7rem; color: var(--text-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55%; text-align: right; margin-left: auto; padding-left: 8px; }
 </style>
 </head>
 <body>
@@ -2053,7 +2071,7 @@ function renderShelfLifeMethodology() {
   <div class="card" style="margin-top:1rem; border-left:4px solid var(--primary); background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
     <div style="padding:1.2rem 1.5rem;">
       <h2 style="font-family:Georgia, 'Times New Roman', serif; font-size:1.25rem; color:var(--text); border-bottom:1px solid var(--border); padding-bottom:0.5rem; margin-bottom:1.2rem;">
-         How Shelf Life is Calculated: A Clear Guide
+         How Shelf Life is Calculated
       </h2>
       
       <div style="font-size:0.92rem; line-height:1.8; color:#334155; font-family:Georgia, 'Times New Roman', serif;">
@@ -2947,7 +2965,7 @@ if(currentTM){
 }
     layersHTML += '<div class="layer-card"><span class="layer-badge">LAYER '+(i+1)+'</span>'+
       '<div class="layer-grid">'+
-      '<div class="form-group" style="margin:0"><label>Material</label><select class="form-input" onchange="onLayerChange('+i+',\'mid\',this.value)">'+matOpts+'</select></div>'+
+      '<div class="form-group" style="margin:0"><label>Material</label>'+getMaterialDropdownHTML(i)+'</div>'+
       '<div class="form-group" style="margin:0"><label>Thickness (µm)</label><input type="number" step="any" class="form-input" value="'+(l.thick||'')+'" placeholder="0" onchange="onLayerChange('+i+',\'thick\',this.value)"></div>'+
       '<div style="display:flex;align-items:center;gap:.3rem">'+(i>0 ? '<button class="btn btn-sm btn-danger" onclick="rmLayer('+i+')">X</button>' : '')+
       (res && res.transmissionAtThickness > 0 ? '<span class="badge badge-green">'+res.transmissionAtThickness.toFixed(3)+'</span>' : '')+
@@ -3191,14 +3209,14 @@ function renderArrheniusMethodology() {
   <div class="card methodology-card" style="margin-top:1rem; border-left:4px solid var(--primary);">
   <div style="padding:1.2rem 1.5rem;">
   <h2 style="font-family:Georgia, 'Times New Roman', serif; font-size:1.2rem; color:var(--text); border-bottom:1px solid var(--border); padding-bottom:0.5rem; margin-bottom:1rem;">
-   Understanding Arrhenius Analysis: A Practical Guide
+   Understanding Arrhenius Analysis
   </h2>
 
   <div style="font-size:0.92rem; line-height:1.75; color:#334155; font-family:Georgia, 'Times New Roman', serif;">
 
   <!-- SECTION : WHAT IS IT -->
   <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">What is the Arrhenius equation, really?</h3>
-  <p>At its heart, the Arrhenius equation helps us understand a simple but powerful idea: <strong>temperature changes how quickly molecules move through packaging materials</strong>. Whether you're measuring water vapor (WVTR) or oxygen (OTR), warmth gives molecules more energy to wiggle through tiny gaps in films and coatings.</p>
+  <p>At its heart, the Arrhenius equation helps us understand a simple but powerful idea: temperature changes how quickly molecules move through packaging materials. Whether you're measuring water vapor (WVTR) or oxygen (OTR), warmth gives molecules more energy to wiggle through tiny gaps in films and coatings.</p>
   
   <div style="background:var(--primary-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--primary); margin:0.8rem 0; font-family:sans-serif;">
   <strong>Think of it this way:</strong> Imagine trying to walk through a crowded room. When it's cool, people move slowly and you make progress gradually. When it's warm and energetic, everyone's moving faster—and so do the molecules trying to pass through your packaging. Arrhenius gives us the math to predict exactly how much faster.
@@ -3206,7 +3224,7 @@ function renderArrheniusMethodology() {
 
   <!-- SECTION : COLLECTING DATA -->
   <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;">How do we gather the data needed?</h3>
-  <p>To unlock Arrhenius predictions, you need at least <strong>two measurements</strong> of the same material taken at <strong>different temperatures</strong>, while keeping relative humidity steady. More points = more confidence.</p>
+  <p>To unlock Arrhenius predictions, you need at least two measurements of the same material taken at different temperatures, while keeping relative humidity steady. More points = more confidence.</p>
 
   <div style="background:#f8fafc; padding:0.9rem; border-radius:8px; border:1px dashed var(--border); margin:0.8rem 0;">
   <strong>Example: Building your dataset</strong>
@@ -3227,7 +3245,7 @@ function renderArrheniusMethodology() {
   </div>
 
   <p style="font-size:0.85rem; color:var(--text-light); margin-top:0.5rem;">
-  <strong>Quick note:</strong> Keep humidity consistent (within ±5%) across all tests. Why? Because humidity affects permeability independently of temperature, and we want to isolate temperature's role.
+  <strong>Quick note:</strong> Keep humidity consistent (within ±5%) across all tests. Because humidity affects permeability independently of temperature, and we want to isolate temperature's role.
   </p>
 
   <!-- SECTION : HOW THE CALCULATOR WORKS -->
@@ -3284,10 +3302,10 @@ function renderArrheniusMethodology() {
   <!-- REFERENCES -->
   <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin:1.2rem 0 0.5rem 0; font-weight:700;"> Further Reading & Standards</h3>
   <ul style="padding-left:1.2rem; margin:0.5rem 0; color:var(--text-light); font-size:0.85rem;">
-  <li>ASTM F1249 / ISO 15106-3: Standard test methods for water vapor transmission</li>
-  <li>ASTM D3985 / ISO 15106-2: Standard test methods for oxygen transmission</li>
-  <li>Arrhenius, S. (1889). "Über die Reaktionsgeschwindigkeit bei der Inversion von Rohrzucker durch Säuren" – the foundational paper</li>
-  <li>Robertson, G.L. (2016). <em>Food Packaging: Principles and Practice</em> – an excellent practical reference</li>
+  <li>ASTM F1249 / ISO 15106-3</li>
+  <li>ASTM D3985 / ISO 15106-2</li>
+  <li>Arrhenius, S. (1889). </li>
+  <li>Robertson, G.L. (2016). </li>
   </ul>
 
   <div style="margin-top:1.5rem; padding:0.9rem; background:var(--bg); border-radius:8px; font-size:0.88rem; color:var(--text-light); border-left:4px solid var(--primary); font-family:sans-serif;">
@@ -4514,7 +4532,96 @@ function importFile(input){
   reader.readAsText(file);
 }
 
+// === 📜 HANDLERS DROPDOWN PERSONALIZZATO ===
+function getMaterialDropdownHTML(layerIdx) {
+    var l = State.layers[layerIdx];
+    var mats = DB.materials.filter(m => passesTestMethodFilter(m));
+    mats.sort((a, b) => a.name.localeCompare(b.name));
+    
+    var groups = {};
+    mats.forEach(m => {
+        var first = m.name.charAt(0).toUpperCase();
+        if(!/[A-Z]/.test(first)) first = '#';
+        if(!groups[first]) groups[first] = [];
+        groups[first].push(m);
+    });
+    
+    var letters = Object.keys(groups).sort();
+    var indexHTML = letters.map(l => 
+        `<div class="index-letter" onclick="scrollToGroup('${l}', ${layerIdx})">${l}</div>`
+    ).join('');
+    
+    var listHTML = letters.map(l => {
+        var items = groups[l].map(m => {
+            var isSelected = l.mid === m.id;
+            var cls = isSelected ? 'mat-item selected' : 'mat-item';
+            var label = `<span>${m.name}</span>`;
+            if(m.isMetallized) label += ` <span style="color:var(--warning);font-size:0.7em">[⚙️]</span>`;
+            var tm = State.mode === 'wvtr' ? (m.testMethodWVTR || '') : (m.testMethodOTR || '');
+            if(tm) label += `<span class="mat-meta">[${tm}]</span>`;
+            return `<div class="${cls}" onclick="selectMaterial(${layerIdx}, ${m.id})">${label}</div>`;
+        }).join('');
+        return `<div class="mat-group"><div class="mat-group-title" id="group-${l}-${layerIdx}">${l}</div>${items}</div>`;
+    }).join('');
+    
+    var selectedName = 'Select material...';
+    if(l.mid !== null) {
+        var selMat = DB.materials.find(m => m.id === l.mid);
+        selectedName = selMat ? selMat.name : 'Unknown';
+    }
+    
+    return `<div class="custom-dropdown">
+        <div class="dropdown-trigger" onclick="toggleDropdown(${layerIdx}, event)">
+            <span>${selectedName}</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="dropdown-panel" id="dropdown-panel-${layerIdx}">
+            <div class="dropdown-index">${indexHTML}</div>
+            <div class="dropdown-list">${listHTML}</div>
+        </div>
+    </div>`;
+}
 
+function toggleDropdown(idx, e) {
+    e.stopPropagation();
+    var panel = document.getElementById('dropdown-panel-' + idx);
+    if(!panel) return;
+    var isOpen = panel.classList.contains('open');
+    document.querySelectorAll('.dropdown-panel.open').forEach(p => p.classList.remove('open'));
+    if(!isOpen) panel.classList.add('open');
+}
+
+function scrollToGroup(letter, layerIdx) {
+    var el = document.getElementById('group-' + letter + '-' + layerIdx);
+    if(el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function selectMaterial(layerIdx, matId) {
+    recordMaterialUsage(matId);
+    State.layers[layerIdx].mid = matId;
+    DB.saveState(State);
+    
+    var dropdown = document.getElementById('dropdown-panel-' + layerIdx);
+    if(dropdown) {
+        var trigger = dropdown.closest('.custom-dropdown').querySelector('.dropdown-trigger span');
+        var mat = DB.materials.find(m => m.id === matId);
+        trigger.textContent = mat ? mat.name : 'Select material...';
+        
+        dropdown.querySelectorAll('.mat-item').forEach(el => el.classList.remove('selected'));
+        var selItem = dropdown.querySelector(`.mat-item[onclick*="selectMaterial(${layerIdx}, ${matId})"]`);
+        if(selItem) selItem.classList.add('selected');
+    }
+    
+    document.querySelectorAll('.dropdown-panel.open').forEach(p => p.classList.remove('open'));
+    if(State.autoCalc) doCalcSilent(); else renderContent();
+}
+
+// Chiudi dropdown cliccando fuori
+document.addEventListener('click', function(e) {
+    if(!e.target.closest('.custom-dropdown')) {
+        document.querySelectorAll('.dropdown-panel.open').forEach(p => p.classList.remove('open'));
+    }
+});
 // ✅ Avvio app corretto con Firebase
 // ✅ Avvio app con attesa per Firebase
 (async function initApp() {
