@@ -1313,14 +1313,14 @@ var State = {
 
 var LAYER_COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899'];
 var TABS = [
-  { id: 'home', label: 'Home', svg: '<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>' },
-  { id: 'calc', label: 'Calculator', svg: '<rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/>' },
-  { id: 'sensitivity', label: 'Sensitivity', svg: '<path d="M2 12h4l3-9 4 18 3-9h4"/>' },
-  { id: 'compare', label: 'Compare laminates', svg: '<rect x="2" y="2" width="9" height="9"/><rect x="13" y="2" width="9" height="9"/><rect x="2" y="13" width="9" height="9"/><rect x="13" y="13" width="9" height="9"/>' },
-  { id: 'arrhenius', label: 'Arrhenius', svg: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>' },
-  { id: 'shelflife', label: 'Shelf Life', svg: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>' },
-  { id: 'materials', label: 'Materials DB', svg: '<path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>' },
-  { id: 'laminates', label: 'Laminates DB', svg: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>' }
+  { id: 'home', label: 'Home'},
+  { id: 'calc', label: 'Calculator'},
+  { id: 'sensitivity', label: 'Sensitivity' },
+  { id: 'arrhenius', label: 'Arrhenius' },
+  { id: 'shelflife', label: 'Shelf Life'},
+  { id: 'compare', label: 'Compare laminates' },
+  { id: 'materials', label: 'Materials DB' },
+  { id: 'laminates', label: 'Laminates DB' }
 ];
 
 var chartInstances = {};
@@ -1330,7 +1330,7 @@ function renderNav() {
   var html='';
   for(var t=0;t<TABS.length;t++){
     var cls = State.tab===TABS[t].id?'active':'';
-    html+='<button class="nav-tab '+cls+'" data-tab="'+TABS[t].id+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'+TABS[t].svg+'</svg>'+TABS[t].label+'</button>';
+   html+='<button class="nav-tab '+cls+'" data-tab="'+TABS[t].id+'">'+TABS[t].label+'</button>';
   }
   document.getElementById('nav-tabs').innerHTML=html;
   var btns=document.querySelectorAll('.nav-tab');
