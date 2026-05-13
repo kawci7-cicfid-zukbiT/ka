@@ -3273,7 +3273,7 @@ function drawLaminateCurveChart(){
     }
     
     if(laminateCurve.length > 0) datasets.push({
-        label: '🔴 LAMINATE TOTAL', 
+        label: ' LAMINATE TOTAL', 
         data: laminateCurve,
         borderColor: '#dc2626',
         backgroundColor: 'rgba(220,38,38,0.1)',
@@ -3287,7 +3287,7 @@ function drawLaminateCurveChart(){
     // ✅ Punto Calcolato Corrente (visibile sul grafico, nascosto da tooltip e legenda)
     if(State.selCond && State.calcResult && State.calcResult.total > 0 && !State.calcResult.isBarrier) {
         datasets.push({
-            label: '🔴 Calculated @ ' + State.selCond.temperature + '°C',
+            label: ' Calculated @ ' + State.selCond.temperature + '°C',
             data: [{x: State.selCond.temperature, y: State.calcResult.total}],
             borderColor: '#dc2626',
             backgroundColor: '#dc2626',
@@ -3322,7 +3322,7 @@ function drawLaminateCurveChart(){
                     callbacks: {
                         label: function(ctx){
                             var lbl = ctx.dataset.label || '';
-                            if(lbl.includes('LAMINATE TOTAL')) return '🔴 LAMINATE: '+ctx.parsed.y.toFixed(6)+' '+getUnit();
+                            if(lbl.includes('LAMINATE TOTAL')) return ' LAMINATE: '+ctx.parsed.y.toFixed(6)+' '+getUnit();
                             if(lbl.includes('(Fit)')) return lbl;
                             return lbl+': '+ctx.parsed.y.toFixed(6)+' '+getUnit();
                         }
