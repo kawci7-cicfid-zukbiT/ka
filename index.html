@@ -3157,124 +3157,138 @@ function drawBarChart(){
 }
 
 function drawLaminateCurveChart(){
-    var canvas=document.getElementById('lamCurveChart');
-    if(!canvas||!State.calcResult) return;
+    var canvas = document.getElementById('lamCurveChart');
+    if(!canvas || !State.calcResult) return;
     destroyChart('lamCurve');
     
-    var unit=getUnit();
-    var datasets=[];
-    var allTemps=[];var allVals=[];
+    var unit = getUnit();
+    var datasets = [];
+    var allTemps = []; var allVals = [];
     
     // 1. Genera dataset per ogni layer (Materiali)
-    for(var i=0;i<State.layers.length;i++){
-        var layer=State.layers[i];
-        if(layer.mid===null||layer.thick<=0) continue;
-        var mat=null;for(var m=0;m<DB.materials.length;m++) if(DB.materials[m].id===layer.mid){mat=DB.materials[m];break;}
+    for(var i = 0; i < State.layers.length; i++){
+        var layer = State.layers[i];
+        if(layer.mid === null || layer.thick <= 0) continue;
+        var mat = null;
+        for(var m = 0; m < DB.materials.length; m++) {
+            if(DB.materials[m].id === layer.mid){ mat = DB.materials[m]; break; }
+        }
         if(!mat) continue;
         
-        var color=LAYER_COLORS[i%LAYER_COLORS.length];
-        var vals=Engine.getValues(mat);
-        var dataPoints=[];
-        for(var j=0;j<vals.length;j++){
-            var cond=mat.validConditions[j];
+        var color = LAYER_COLORS[i % LAYER_COLORS.length];
+        var vals = Engine.getValues(mat);
+        var dataPoints = [];
+        for(var j = 0; j < vals.length; j++){
+            var cond = mat.validConditions[j];
             if(cond){
-                var product=vals[j].value*vals[j].thickness;
-                var resistance=layer.thick/product;
-                var trans=resistance>0?1/resistance:0;
-                dataPoints.push({x:cond.temperature,y:trans});
-                allTemps.push(cond.temperature);allVals.push(trans);
+                var product = vals[j].value * vals[j].thickness;
+                var resistance = layer.thick / product;
+                var trans = resistance > 0 ? 1/resistance : 0;
+                dataPoints.push({x: cond.temperature, y: trans});
+                allTemps.push(cond.temperature); allVals.push(trans);
             }
         }
-        // ✅ Aggiunto label esplicita per la legenda
         datasets.push({
             label: mat.name, 
-            data:dataPoints,
-            borderColor:color,
-            backgroundColor:color,
-            borderWidth:2,
-            showLine:true,
-            type:'scatter',
-            order:2,
-            pointRadius:5,
-            pointHoverRadius:7
+            data: dataPoints,  // ✅ CORRETTO: "data:" esplicito
+            borderColor: color,
+            backgroundColor: color,
+            borderWidth: 2,
+            showLine: true,
+            type: 'scatter',
+            order: 2,
+            pointRadius: 5,
+            pointHoverRadius: 7
         });
         
-        var p=Engine.calcArrheniusParams(mat);
+        var p = Engine.calcArrheniusParams(mat);
         if(p.valid){
-            var curveData=[];
-            var tMin2=mat.validConditions[0].temperature;var tMax2=mat.validConditions[0].temperature;
-            for(var cc=0;cc<mat.validConditions.length;cc++){var tt2=mat.validConditions[cc].temperature;if(tt2<tMin2) tMin2=tt2;if(tt2>tMax2) tMax2=tt2;}
-            tMin2-=10;tMax2+=10;
-            for(var t=tMin2;t<=tMax2;t+=0.5){
-                var transMat=Engine.predict(p.A,p.Ea,t);
-                var product2=transMat*Engine.getValues(mat)[0].thickness;
-                var resistance2=layer.thick/product2;
-                var trans2=resistance2>0?1/resistance2:0;
-                curveData.push({x:t,y:trans2});
-                allTemps.push(t);allVals.push(trans2);
+            var curveData = [];
+            var tMin2 = mat.validConditions[0].temperature;
+            var tMax2 = mat.validConditions[0].temperature;
+            for(var cc = 0; cc < mat.validConditions.length; cc++){
+                var tt2 = mat.validConditions[cc].temperature;
+                if(tt2 < tMin2) tMin2 = tt2;
+                if(tt2 > tMax2) tMax2 = tt2;
             }
-            // ✅ Label per la curva di fit
+            tMin2 -= 10; tMax2 += 10;
+            for(var t = tMin2; t <= tMax2; t += 0.5){
+                var transMat = Engine.predict(p.A, p.Ea, t);
+                var product2 = transMat * Engine.getValues(mat)[0].thickness;
+                var resistance2 = layer.thick / product2;
+                var trans2 = resistance2 > 0 ? 1/resistance2 : 0;
+                curveData.push({x: t, y: trans2});
+                allTemps.push(t); allVals.push(trans2);
+            }
             datasets.push({
-                label: mat.name+' (Fit)',
-                data:curveData,
-                borderColor:color,
-                backgroundColor:'transparent',
-                borderWidth:1.5,
-                borderDash:[5,3],
-                pointRadius:0,
-                type:'line',
-                order:1,
-                showLine:true
+                label: mat.name + ' (Fit)',
+                data: curveData,  // ✅ CORRETTO: "data:" esplicito
+                borderColor: color,
+                backgroundColor: 'transparent',
+                borderWidth: 1.5,
+                borderDash: [5, 3],
+                pointRadius: 0,
+                type: 'line',
+                order: 1,
+                showLine: true
             });
         }
     }
     
     // 2. Curva Laminato Totale
-    var laminateCurve=[];
-    if(allTemps.length>0){
-        var tMin3=Math.min.apply(null,allTemps)-5;var tMax3=Math.max.apply(null,allTemps)+5;
-        for(var t3=tMin3;t3<=tMax3;t3+=0.5){
-            var totalR=0;var valid=true;
-            for(var li=0;li<State.layers.length;li++){
-                var ly=State.layers[li];
-                if(ly.mid===null||ly.thick<=0){valid=false;break;}
-                var mt=null;for(var mi=0;mi<DB.materials.length;mi++) if(DB.materials[mi].id===ly.mid){mt=DB.materials[mi];break;}
-                if(!mt){valid=false;break;}
-                var condIdx=-1;
-                for(var ci=0;ci<mt.validConditions.length;ci++){if(Math.abs(mt.validConditions[ci].temperature-t3)<0.01){condIdx=ci;break;}}
-                if(condIdx>=0){
-                    var wv=Engine.getValues(mt)[condIdx];
-                    if(wv.value<=0.00001){valid=false;break;}
-                    var prod=wv.value*wv.thickness;totalR+=ly.thick/prod;
+    var laminateCurve = [];
+    if(allTemps.length > 0){
+        var tMin3 = Math.min.apply(null, allTemps) - 5;
+        var tMax3 = Math.max.apply(null, allTemps) + 5;
+        for(var t3 = tMin3; t3 <= tMax3; t3 += 0.5){
+            var totalR = 0; var valid = true;
+            for(var li = 0; li < State.layers.length; li++){
+                var ly = State.layers[li];
+                if(ly.mid === null || ly.thick <= 0){ valid = false; break; }
+                var mt = null;
+                for(var mi = 0; mi < DB.materials.length; mi++) {
+                    if(DB.materials[mi].id === ly.mid){ mt = DB.materials[mi]; break; }
+                }
+                if(!mt){ valid = false; break; }
+                var condIdx = -1;
+                for(var ci = 0; ci < mt.validConditions.length; ci++){
+                    if(Math.abs(mt.validConditions[ci].temperature - t3) < 0.01){ condIdx = ci; break; }
+                }
+                if(condIdx >= 0){
+                    var wv = Engine.getValues(mt)[condIdx];
+                    if(wv.value <= 0.00001){ valid = false; break; }
+                    var prod = wv.value * wv.thickness;
+                    totalR += ly.thick / prod;
                 } else {
-                    var pp=Engine.calcArrheniusParams(mt);
+                    var pp = Engine.calcArrheniusParams(mt);
                     if(pp.valid){
-                        var transMat2=Engine.predict(pp.A,pp.Ea,t3);
-                        var prod2=transMat2*Engine.getValues(mt)[0].thickness;totalR+=ly.thick/prod2;
-                    } else {valid=false;break;}
+                        var transMat2 = Engine.predict(pp.A, pp.Ea, t3);
+                        var prod2 = transMat2 * Engine.getValues(mt)[0].thickness;
+                        totalR += ly.thick / prod2;
+                    } else { valid = false; break; }
                 }
             }
-            if(valid&&totalR>0) laminateCurve.push({x:t3,y:1/totalR});
+            if(valid && totalR > 0) laminateCurve.push({x: t3, y: 1/totalR});
         }
     }
     
-    if(laminateCurve.length>0) datasets.push({
-        label:'🔴 LAMINATE TOTAL', 
-        laminateCurve,
-        borderColor:'#dc2626',
-        backgroundColor:'rgba(220,38,38,0.1)',
-        borderWidth:2.5,
-        pointRadius:0,
-        type:'line',
-        fill:false,
-        order:0
+    if(laminateCurve.length > 0) datasets.push({
+        label: '🔴 LAMINATE TOTAL', 
+        data: laminateCurve,  // ✅ CORRETTO: "data:" esplicito (qui mancava!)
+        borderColor: '#dc2626',
+        backgroundColor: 'rgba(220,38,38,0.1)',
+        borderWidth: 2.5,
+        pointRadius: 0,
+        type: 'line',
+        fill: false,
+        order: 0
     });
     
     // ✅ Punto Calcolato Corrente
     if(State.selCond && State.calcResult && State.calcResult.total > 0 && !State.calcResult.isBarrier) {
         datasets.push({
-            label: 'Calculated @ '+State.selCond.temperature+'°C',
-             [{x: State.selCond.temperature, y: State.calcResult.total}],
+            label: 'Calculated @ ' + State.selCond.temperature + '°C',
+            data: [{x: State.selCond.temperature, y: State.calcResult.total}],  // ✅ CORRETTO: "data:" esplicito (qui mancava!)
             borderColor: '#dc2626',
             backgroundColor: '#dc2626',
             borderWidth: 3,
@@ -3288,42 +3302,51 @@ function drawLaminateCurveChart(){
         });
     }
     
-    if(datasets.length===0) return;
+    if(datasets.length === 0) return;
     
-    var ctx=canvas.getContext('2d');
-    chartInstances.lamCurve=new Chart(ctx,{
-        type:'line',
-        {datasets:datasets},
-        options:{
-            responsive:true,
-            interaction:{mode:'nearest',axis:'x',intersect:false},
-            plugins:{
-                legend:{display:false} // Disabilito legenda Chart.js per usare quella HTML
+    var ctx = canvas.getContext('2d');
+    chartInstances.lamCurve = new Chart(ctx, {
+        type: 'line',
+        data: { datasets: datasets },  // ✅ CORRETTO: "data:" esplicito (qui mancava!)
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'nearest', axis: 'x', intersect: false },
+            plugins: {
+                legend: { display: false }
             },
-            scales:{
-                x:{type:'linear',title:{display:true,text:'Temperature (°C)'}},
-                y:{title:{display:true,text:getLabel()+' ('+unit+')'},beginAtZero:true}
+            scales: {
+                x: {
+                    type: 'linear',
+                    title: { display: true, text: 'Temperature (°C)', font: { size: 10, weight: '600' } },
+                    grid: { color: 'rgba(0,0,0,0.04)' },
+                    ticks: { font: { size: 9 } }
+                },
+                y: {
+                    title: { display: true, text: getLabel() + ' (' + unit + ')', font: { size: 10, weight: '600' } },
+                    beginAtZero: true,
+                    grid: { color: 'rgba(0,0,0,0.04)' },
+                    ticks: { 
+                        font: { size: 9 },
+                        callback: function(value) { return value < 0.01 ? value.toExponential(2) : value.toFixed(4); }
+                    }
+                }
             }
         }
     });
     
     // ✅ GENERAZIONE LEGENDA HTML CON PALLINI E DESCRIZIONE
     var legendEl = document.getElementById('lamCurveLegend');
-    if (legendEl) {
+    if(legendEl){
         var html = '<div style="display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center; margin-top:0.8rem;">';
-        for (var d = 0; d < datasets.length; d++) {
+        for(var d = 0; d < datasets.length; d++){
             var ds = datasets[d];
             var col = ds.borderColor || ds.backgroundColor;
             var txt = ds.label || '';
-            if (!txt) continue;
+            if(!txt) continue;
             
-            // Creazione box leggenda con sfondo bianco e bordo leggero per stacco visivo
             html += '<div style="display:flex; align-items:center; gap:0.4rem; background:#fff; padding:0.35rem 0.6rem; border-radius:6px; border:1px solid var(--border); font-size:0.75rem; font-weight:500; color:var(--text);">';
-            
-            // Pallino colorato
-            html += '<span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:'+col+'; flex-shrink:0;"></span>';
-            
-            // Testo descrizione
+            html += '<span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:' + col + '; flex-shrink:0;"></span>';
             html += '<span>' + txt + '</span>';
             html += '</div>';
         }
@@ -3331,7 +3354,6 @@ function drawLaminateCurveChart(){
         legendEl.innerHTML = html;
     }
 }
-    
     
 // ====================================================================
 // 📚 CALCULATOR METHODOLOGY EXPLAINER (TEXTBOOK STYLE)
