@@ -3190,7 +3190,7 @@ function drawLaminateCurveChart(){
         }
         datasets.push({
             label: mat.name, 
-            data: dataPoints,  // ✅ CORRETTO: "data:" esplicito
+            data: dataPoints,
             borderColor: color,
             backgroundColor: color,
             borderWidth: 2,
@@ -3222,7 +3222,7 @@ function drawLaminateCurveChart(){
             }
             datasets.push({
                 label: mat.name + ' (Fit)',
-                data: curveData,  // ✅ CORRETTO: "data:" esplicito
+                data: curveData,
                 borderColor: color,
                 backgroundColor: 'transparent',
                 borderWidth: 1.5,
@@ -3273,8 +3273,8 @@ function drawLaminateCurveChart(){
     }
     
     if(laminateCurve.length > 0) datasets.push({
-        label: ' LAMINATE TOTAL', 
-        data: laminateCurve,  // ✅ CORRETTO: "data:" esplicito (qui mancava!)
+        label: '🔴 LAMINATE TOTAL', 
+        data: laminateCurve,
         borderColor: '#dc2626',
         backgroundColor: 'rgba(220,38,38,0.1)',
         borderWidth: 2.5,
@@ -3284,11 +3284,11 @@ function drawLaminateCurveChart(){
         order: 0
     });
     
-    // ✅ Punto Calcolato Corrente
+    // ✅ Punto Calcolato Corrente (visibile sul grafico, nascosto da tooltip e legenda)
     if(State.selCond && State.calcResult && State.calcResult.total > 0 && !State.calcResult.isBarrier) {
         datasets.push({
-            label: 'Calculated @ ' + State.selCond.temperature + '°C',
-            data: [{x: State.selCond.temperature, y: State.calcResult.total}],  // ✅ CORRETTO: "data:" esplicito (qui mancava!)
+            label: '🔴 Calculated @ ' + State.selCond.temperature + '°C',
+            data: [{x: State.selCond.temperature, y: State.calcResult.total}],
             borderColor: '#dc2626',
             backgroundColor: '#dc2626',
             borderWidth: 3,
@@ -3307,13 +3307,27 @@ function drawLaminateCurveChart(){
     var ctx = canvas.getContext('2d');
     chartInstances.lamCurve = new Chart(ctx, {
         type: 'line',
-        data: { datasets: datasets },  // ✅ CORRETTO: "data:" esplicito (qui mancava!)
+        data: { datasets: datasets },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             interaction: { mode: 'nearest', axis: 'x', intersect: false },
             plugins: {
-                legend: { display: false }
+                legend: { display: false },
+                // ✅ ✅ ✅ FILTRO TOOLTIP: nasconde il punto calcolato ✅ ✅ ✅
+                tooltip: {
+                    filter: function(item){
+                        return !item.dataset.label.includes('Calculated');
+                    },
+                    callbacks: {
+                        label: function(ctx){
+                            var lbl = ctx.dataset.label || '';
+                            if(lbl.includes('LAMINATE TOTAL')) return '🔴 LAMINATE: '+ctx.parsed.y.toFixed(6)+' '+getUnit();
+                            if(lbl.includes('(Fit)')) return lbl;
+                            return lbl+': '+ctx.parsed.y.toFixed(6)+' '+getUnit();
+                        }
+                    }
+                }
             },
             scales: {
                 x: {
@@ -3335,33 +3349,31 @@ function drawLaminateCurveChart(){
         }
     });
     
-    // ✅ GENERAZIONE LEGENDA HTML CON PALLINI E DESCRIZIONE
+    // ✅ ✅ ✅ LEGENDA HTML: mostra solo materiali e laminato totale ✅ ✅ ✅
     var legendEl = document.getElementById('lamCurveLegend');
-if(legendEl){
-    var html = '<div style="display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center; margin-top:0.8rem;">';
-    for(var d = 0; d < datasets.length; d++){
-        var ds = datasets[d];
-        var col = ds.borderColor || ds.backgroundColor;
-        var txt = ds.label || '';
-        if(!txt) continue;
-        
-        // ✅ ✅ ✅ AGGIUNGI QUESTO CONTROLLO ✅ ✅ ✅
-        // Salta il punto rosso calcolato (non è un materiale)
-        if(txt.indexOf('Current:') >= 0 || txt.indexOf('Calculated') >= 0) {
-            continue;
+    if(legendEl){
+        var html = '<div style="display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center; margin-top:0.8rem;">';
+        for(var d = 0; d < datasets.length; d++){
+            var ds = datasets[d];
+            var txt = ds.label || '';
+            
+            // ✅ FILTRA: nasconde il punto calcolato e le curve di fit dalla legenda
+            if(txt.indexOf('Calculated') >= 0 || txt.indexOf('(Fit)') >= 0) {
+                continue;
+            }
+            
+            var col = ds.borderColor || ds.backgroundColor;
+            if(!txt || !col) continue;
+            
+            html += '<div style="display:flex; align-items:center; gap:0.4rem; background:#fff; padding:0.35rem 0.6rem; border-radius:6px; border:1px solid var(--border); font-size:0.75rem; font-weight:500; color:var(--text);">';
+            html += '<span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:'+col+'; flex-shrink:0;"></span>';
+            html += '<span>' + txt + '</span>';
+            html += '</div>';
         }
-        // ✅ ✅ ✅ FINE CONTROLLO ✅ ✅ ✅
-        
-        html += '<div style="display:flex; align-items:center; gap:0.4rem; background:#fff; padding:0.35rem 0.6rem; border-radius:6px; border:1px solid var(--border); font-size:0.75rem; font-weight:500; color:var(--text);">';
-        html += '<span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:' + col + '; flex-shrink:0;"></span>';
-        html += '<span>' + txt + '</span>';
         html += '</div>';
+        legendEl.innerHTML = html;
     }
-    html += '</div>';
-    legendEl.innerHTML = html;
 }
-}
-    
 // ====================================================================
 // 📚 CALCULATOR METHODOLOGY EXPLAINER (TEXTBOOK STYLE)
 // ====================================================================
