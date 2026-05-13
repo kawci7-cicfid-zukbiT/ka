@@ -900,127 +900,264 @@ main {
     padding-right: 1rem !important;
   }
 }
-  /* 🎓 TUTORIAL GUIDATO (Non invasivo) */
-.tutorial-backdrop {
-  position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4);
-  z-index: 9998; opacity: 0; transition: opacity 0.25s ease; pointer-events: none;
-}
-.tutorial-backdrop.active { opacity: 1; pointer-events: auto; }
-.tutorial-tooltip {
-  position: fixed; background: var(--card); border-radius: 12px;
-  padding: 1rem; box-shadow: var(--shadow-lg); border: 1px solid var(--border);
-  z-index: 10000; max-width: 300px; transition: all 0.25s ease;
-}
-.tutorial-tooltip h4 {
-  margin: 0 0 0.4rem; font-size: 0.9rem; color: var(--primary);
-  display: flex; align-items: center; gap: 0.3rem;
-}
-.tutorial-tooltip p {
-  margin: 0 0 0.7rem; font-size: 0.78rem; color: var(--text-light); line-height: 1.45;
-}
-.tutorial-controls { display: flex; justify-content: space-between; align-items: center; }
-.tutorial-progress { font-size: 0.68rem; color: var(--text-light); font-weight: 500; }
-.tutorial-btn {
-  padding: 0.3rem 0.65rem; border: none; border-radius: 6px;
-  font-size: 0.75rem; cursor: pointer; font-weight: 500; transition: all 0.15s;
-}
-.tutorial-btn.next { background: var(--primary); color: #fff; }
-.tutorial-btn.next:hover { background: var(--primary-dark); }
-.tutorial-btn.skip { background: transparent; color: var(--text-light); }
-.tutorial-btn.skip:hover { color: var(--text); }
-.tutorial-highlight {
-  outline: 3px solid var(--primary) !important;
-  outline-offset: 3px !important;
-  z-index: 150 !important;
-  position: relative !important;
-  box-shadow: 0 0 0 3px rgba(37,99,235,0.15) !important;
+/* 🎓 TUTORIAL GUIDATO - ENGLISH + PAGE-SPECIFIC */
+.tutorial-pulse {
+  animation: tutorialPulse 1.5s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(37,99,235,0.4);
   border-radius: var(--radius);
+  z-index: 100 !important;
+  position: relative !important;
 }
+@keyframes tutorialPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37,99,235,0.4); }
+  50% { box-shadow: 0 0 0 12px rgba(37,99,235,0); }
+}
+.tutorial-hint {
+  position: absolute;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.72rem;
+  color: var(--text);
+  box-shadow: var(--shadow-lg);
+  z-index: 9999;
+  max-width: 220px;
+  pointer-events: none;
+  animation: fadeIn 0.2s ease;
+}
+.tutorial-hint::before {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--card);
+}
+.tutorial-dismiss {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  background: var(--danger);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  z-index: 10000;
+}
+.tutorial-dismiss:hover { background: #b91c1c; }
 /* Pulsante replay discreto */
 .replay-tutorial {
-  font-size: 0.68rem; color: var(--text-light); text-decoration: underline;
-  cursor: pointer; opacity: 0.7; transition: opacity 0.2s;
+  font-size: 0.68rem;
+  color: var(--text-light);
+  text-decoration: underline;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s;
 }
 .replay-tutorial:hover { opacity: 1; }
-  
-</style>
-
-  .replay-tutorial:hover { opacity: 1; }
 </style>  <!-- ✅ CHIUDI PRIMA LO STYLE -->
 
 <!-- 🎓 TUTORIAL SYSTEM (JavaScript - FUORI dallo style) -->
 <script>
+/* 🎓 PAGE-SPECIFIC TUTORIAL SYSTEM - ENGLISH */
 const Tutorial = {
-  steps: [
-    { target: '.header-top h1', title: '👋 Benvenuto', content: 'Questo tool calcola la permeabilità di imballaggi multistrato (WVTR/OTR) usando un modello a resistenze in serie.', pos: 'bottom' },
-    { target: '.nav-tabs', title: '📑 Navigazione', content: 'Cambia sezione con i tab in alto. Il cuore dell\'app è il <strong>Calculator</strong>, dove configurerai i layer.', pos: 'bottom' },
-    { target: '.top-row', title: '🌍 Community & Classifica', content: 'Condividi materiali, vota l\'affidabilità e scopri i più usati del mese. I dati si sincronizzano in cloud.', pos: 'bottom' },
-    { target: '.features-grid', title: '⚙️ Funzionalità chiave', content: 'Modello a resistenze, analisi di sensitività, previsione Arrhenius e calcolo shelf-life avanzato.', pos: 'top' },
-    { target: '.hero', title: '🚀 Pronto a iniziare?', content: 'Clicca sul tab <strong>Calculator</strong> per aggiungere i layer, selezionare le condizioni e calcolare la permeabilità totale.', pos: 'top', action: () => { document.querySelector('[data-tab="calc"]').click(); } }
-  ],
-  current: 0,
-  overlay: null,
-  tooltip: null,
-  highlightEl: null,
-  
-  init() {
-    if(localStorage.getItem('wvtr_tutorial_v2') === 'true') return;
-    this.overlay = document.createElement('div'); this.overlay.className = 'tutorial-backdrop';
-    this.tooltip = document.createElement('div'); this.tooltip.className = 'tutorial-tooltip';
-    document.body.appendChild(this.overlay); document.body.appendChild(this.tooltip);
-    setTimeout(() => this.showStep(), 800);
-  },
-  
-  showStep() {
-    if(this.current >= this.steps.length) return this.complete();
-    const step = this.steps[this.current];
-    const el = document.querySelector(step.target);
-    if(!el) { setTimeout(() => this.showStep(), 300); return; }
-    
-    if(this.highlightEl) this.highlightEl.classList.remove('tutorial-highlight');
-    this.highlightEl = el; el.classList.add('tutorial-highlight');
-    
-    const rect = el.getBoundingClientRect();
-    const ttW = 300, ttH = this.tooltip.offsetHeight || 180;
-    let top = rect.bottom + 10, left = rect.left;
-    if(step.pos === 'top') { top = rect.top - ttH - 10; }
-    if(left + ttW > window.innerWidth) left = window.innerWidth - ttW - 20;
-    if(left < 10) left = 10;
-    if(top < 10) top = rect.bottom + 10;
-    this.tooltip.style.top = top + 'px';
-    this.tooltip.style.left = left + 'px';
-    
-    this.tooltip.innerHTML = `
-      <h4>${step.title}</h4>
-      <p>${step.content}</p>
-      <div class="tutorial-controls">
-        <span class="tutorial-progress">${this.current + 1} / ${this.steps.length}</span>
-        <div style="display:flex;gap:0.5rem">
-          <button class="tutorial-btn skip" onclick="Tutorial.skip()">Salta</button>
-          <button class="tutorial-btn next" onclick="Tutorial.next()">${this.current === this.steps.length - 1 ? 'Inizia' : 'Avanti →'}</button>
-        </div>
-      </div>`;
-      
-    this.overlay.classList.add('active');
-    this.overlay.onclick = (e) => { if(e.target === this.overlay) this.skip(); };
-  },
-  
-  next() {
-    if(this.current === this.steps.length - 1 && this.steps[this.current].action) {
-      this.steps[this.current].action();
+  // Config per ogni tab
+  configs: {
+    home: {
+      steps: [
+        { target: '.mode-toggle', hint: 'Switch between WVTR (water vapor) and OTR (oxygen) mode', pos: 'bottom' },
+        { target: '.nav-tab[data-tab="calc"]', hint: 'Start building your laminate structure here', pos: 'bottom' },
+        { target: '.top-row', hint: 'Explore community materials & monthly rankings', pos: 'bottom' },
+        { target: '.features-grid', hint: 'Key features: resistance model, Arrhenius, sensitivity analysis', pos: 'top' }
+      ],
+      pulseTargets: [] // Nessun campo da compilare in Home
+    },
+    calc: {
+      steps: [
+        { target: '.mode-toggle', hint: 'Confirm you\'re in the right mode (WVTR/OTR)', pos: 'bottom' },
+        { target: '.layer-card:first-child .form-input:first-child', hint: 'Select a material for Layer 1', pos: 'right' },
+        { target: '.layer-card:first-child .form-input:nth-child(2)', hint: 'Enter thickness in µm', pos: 'right' },
+        { target: '#sel-cond', hint: 'Choose matching test conditions', pos: 'top' },
+        { target: '.btn-danger[onclick="doCalc()"]', hint: 'Click to calculate total permeability', pos: 'top' }
+      ],
+      pulseTargets: ['.layer-card .form-input:disabled', '#sel-cond:disabled'] // Si attiva dopo render
+    },
+    materials: {
+      steps: [
+        { target: '#material-search', hint: 'Search by name, family, supplier or test method', pos: 'bottom' },
+        { target: '.btn[onclick="showMatModal()"]', hint: 'Add your own material to the database', pos: 'bottom' },
+        { target: '.material-item:first-child .mat-header', hint: 'Click to expand and see details', pos: 'bottom' }
+      ],
+      pulseTargets: []
+    },
+    arrhenius: {
+      steps: [
+        { target: '#arr-mat', hint: 'Select a material with multi-temperature data (✓ Arrhenius)', pos: 'bottom' },
+        { target: '#arr-temp', hint: 'Enter target temperature for prediction', pos: 'right' },
+        { target: '#arr-ea', hint: 'Optional: override auto-calculated Eₐ for "what-if" analysis', pos: 'top' }
+      ],
+      pulseTargets: ['#arr-mat', '#arr-temp']
+    },
+    sensitivity: {
+      steps: [
+        { target: '#sens-layer', hint: 'Choose which layer thickness to vary', pos: 'bottom' },
+        { target: '#sens-tmin, #sens-tmax', hint: 'Set thickness range for analysis', pos: 'top' },
+        { target: '#opt-target', hint: 'Set target permeability for optimizer', pos: 'bottom' }
+      ],
+      pulseTargets: ['#sens-layer', '#opt-target']
+    },
+    shelflife: {
+      steps: [
+        { target: '#sl-product', hint: 'Pick a product template or use Custom', pos: 'bottom' },
+        { target: '#sl-rate', hint: 'Enter package WVTR/OTR (or calculate first)', pos: 'right' },
+        { target: '#sl-temp, #sl-rh-ext', hint: 'Define storage environment', pos: 'top' }
+      ],
+      pulseTargets: ['#sl-product', '#sl-rate']
+    },
+    compare: {
+      steps: [
+        { target: '.grid.grid-2 input[type="checkbox"]', hint: 'Select up to 3 laminates to compare', pos: 'bottom' },
+        { target: '#compareChart', hint: 'Visual comparison appears here', pos: 'top' }
+      ],
+      pulseTargets: []
+    },
+    laminates: {
+      steps: [
+        { target: '.grid.grid-2 > div:first-child', hint: 'Saved laminates appear here', pos: 'bottom' },
+        { target: '#lamChart', hint: 'Comparison chart (requires 2+ laminates)', pos: 'top' }
+      ],
+      pulseTargets: []
     }
-    this.current++;
-    this.showStep();
   },
-  skip() { this.complete(); },
-  complete() {
-    if(this.highlightEl) this.highlightEl.classList.remove('tutorial-highlight');
-    this.overlay.classList.remove('active');
-    this.tooltip.style.transform = 'scale(0.9)'; this.tooltip.style.opacity = '0';
-    setTimeout(() => {
-      this.overlay.remove(); this.tooltip.remove();
-      localStorage.setItem('wvtr_tutorial_v2', 'true');
-    }, 250);
+  
+  active: false,
+  currentTab: null,
+  hintEl: null,
+  pulseEls: [],
+  
+  // Inizializza tutorial per il tab corrente
+  initForTab(tabId) {
+    // Se l'utente ha già visto il tutorial per questo tab, non mostrare nulla
+    if (localStorage.getItem(`wvtr_tutorial_${tabId}_v2`) === 'true') return;
+    
+    const config = this.configs[tabId];
+    if (!config) return;
+    
+    this.currentTab = tabId;
+    this.active = true;
+    
+    // Mostra hint uno alla volta con delay
+    let stepIdx = 0;
+    const showNext = () => {
+      if (!this.active || stepIdx >= config.steps.length) {
+        // Tutorial completato per questo tab
+        localStorage.setItem(`wvtr_tutorial_${tabId}_v2`, 'true');
+        this.cleanup();
+        return;
+      }
+      const step = config.steps[stepIdx];
+      this.showHint(step);
+      stepIdx++;
+      // Prossimo hint dopo 4 secondi o se l'utente clicca
+      setTimeout(showNext, 4000);
+    };
+    
+    // Inizia dopo breve delay per permettere il render
+    setTimeout(showNext, 600);
+    
+    // Attiva pulse sui campi target
+    this.startPulse(config.pulseTargets);
+  },
+  
+  showHint(step) {
+    this.cleanupHint();
+    const target = document.querySelector(step.target);
+    if (!target) return;
+    
+    const rect = target.getBoundingClientRect();
+    const hint = document.createElement('div');
+    hint.className = 'tutorial-hint';
+    hint.innerHTML = `<button class="tutorial-dismiss" onclick="Tutorial.dismissHint()">×</button>${step.hint}`;
+    
+    // Posizionamento
+    let top = rect.bottom + 8;
+    let left = rect.left + rect.width / 2;
+    if (step.pos === 'top') top = rect.top - 50;
+    if (step.pos === 'right') {
+      top = rect.top + rect.height / 2 - 25;
+      left = rect.right + 8;
+      hint.style.setProperty('--arrow-dir', 'left');
+    }
+    if (left + 220 > window.innerWidth) left = window.innerWidth - 230;
+    if (left < 10) left = 10;
+    
+    hint.style.top = top + 'px';
+    hint.style.left = left + 'px';
+    document.body.appendChild(hint);
+    this.hintEl = hint;
+    
+    // Click sul target per avanzare subito
+    target.onclick = (e) => {
+      e.stopPropagation();
+      this.dismissHint();
+    };
+  },
+  
+  dismissHint() {
+    this.cleanupHint();
+    // Avanza al prossimo step immediatamente
+    const config = this.configs[this.currentTab];
+    if (config) {
+      // Triggera il prossimo hint rimuovendo il timeout esistente
+      this.cleanup();
+      this.initForTab(this.currentTab); // Riavvia da dove eravamo (stepIdx++ interno)
+    }
+  },
+  
+  cleanupHint() {
+    if (this.hintEl) {
+      this.hintEl.remove();
+      this.hintEl = null;
+    }
+  },
+  
+  startPulse(targets) {
+    this.stopPulse();
+    targets.forEach(sel => {
+      const el = document.querySelector(sel);
+      if (el && !el.disabled) {
+        el.classList.add('tutorial-pulse');
+        this.pulseEls.push(el);
+      }
+    });
+  },
+  
+  stopPulse() {
+    this.pulseEls.forEach(el => el.classList.remove('tutorial-pulse'));
+    this.pulseEls = [];
+  },
+  
+  cleanup() {
+    this.cleanupHint();
+    this.stopPulse();
+  },
+  
+  // Chiudi tutorial corrente (per dismiss button)
+  close() {
+    this.active = false;
+    this.cleanup();
+    if (this.currentTab) {
+      localStorage.setItem(`wvtr_tutorial_${this.currentTab}_v2`, 'true');
+    }
   }
 };
 </script>
@@ -1631,7 +1768,7 @@ function render() {
     }
     postNavRender();
     refreshAds();
-    Tutorial.init(); 
+    Tutorial.initForTab(State.tab);
   });
 }
   // === ANIMAZIONI POST-RENDER PER LA HOME ===
@@ -2190,7 +2327,9 @@ function renderHome() {
                 </div>
             </div>
         </div>
-
+html += '<div style="text-align:center; margin-top:1.5rem; opacity:0.7">'+
+  '<span class="replay-tutorial" onclick="localStorage.removeItem(\'wvtr_tutorial_home_v2\'); Tutorial.initForTab(\'home\')">🎓 Replay tutorial</span>'+
+'</div>';
     </div>
     `;
 }
