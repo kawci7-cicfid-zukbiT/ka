@@ -2997,7 +2997,8 @@ layersHTML += '<div class="layer-card"><span class="layer-badge">LAYER '+(i+1)+'
     '<div class="card"><h2>Save Laminate</h2><div style="display:flex;gap:.4rem;align-items:flex-end">'+
     '<div class="form-group" style="flex:1;margin:0"><label>Name</label><input type="text" class="form-input" id="lam-name" value="'+State.laminateName+'" placeholder="Name..." oninput="State.laminateName=this.value;updateSaveBtn()"></div>'+
     '<button class="btn btn-primary" id="save-btn" onclick="doSaveLam()">Save</button></div><div id="save-feedback"></div></div>' : '')+
-    '</div></div>';
+    '</div></div>'+
+        renderCalcMethodology();  // ← ✅ NUOVA RIGA
 }
 
 function updateSaveBtn(){var btn=document.getElementById('save-btn');if(btn) btn.disabled=State.laminateName.trim()==='';}
@@ -3187,7 +3188,54 @@ function drawLaminateCurveChart(){
     legendEl.innerHTML=html;
   }
 }
+// ====================================================================
+// 📚 CALCULATOR METHODOLOGY EXPLAINER (TEXTBOOK STYLE)
+// ====================================================================
+function renderCalcMethodology() {
+return `
+<div class="card methodology-card" style="margin-top:1.5rem; border-left:4px solid var(--primary);">
+<div style="padding:1.2rem 1.5rem;">
+<h2 style="font-family:Georgia, 'Times New Roman', serif; font-size:1.2rem; color:var(--text); border-bottom:1px solid var(--border); padding-bottom:0.5rem; margin-bottom:1rem;">
+Understanding the Calculator
+</h2>
+<div style="font-size:0.92rem; line-height:1.75; color:#334155; font-family:Georgia, 'Times New Roman', serif;">
 
+<p>When you build a multilayer packaging structure, each material contributes to the overall barrier performance in a predictable way. This calculator uses a <strong>series resistance model</strong>, the same physical principle that governs electrical circuits or heat transfer through walls. Just as resistors in series add up to create total resistance, each packaging layer adds its own resistance to gas or vapor transmission.</p>
+
+<div style="background:var(--primary-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--primary); margin:0.8rem 0; font-family:sans-serif;">
+<strong>Key idea:</strong> The total barrier resistance is simply the sum of individual layer resistances. The overall permeability (WVTR or OTR) is then the inverse of that total resistance. This elegant relationship lets us predict laminate performance from individual material data.
+</div>
+
+<p>Each material in the database carries reference permeability values measured under specific temperature and humidity conditions. When you select a material and enter its thickness, the calculator scales that reference value proportionally: doubling the thickness roughly doubles the resistance, halving the permeability. This linear scaling holds well for most homogeneous polymer films within typical packaging thickness ranges.</p>
+
+<div style="background:#f8fafc; padding:0.9rem; border-radius:6px; font-family:monospace; font-size:0.9rem; text-align:center; border:1px dashed var(--border); margin:0.8rem 0;">
+<strong>Core relationship:</strong><br>
+R<sub>layer</sub> = thickness / (WVTR<sub>ref</sub> × thickness<sub>ref</sub>)<br>
+R<sub>total</sub> = R<sub>1</sub> + R<sub>2</sub> + ... + R<sub>n</sub><br>
+WVTR<sub>total</sub> = 1 / R<sub>total</sub>
+</div>
+
+<p>Metallized films and certain coated substrates behave differently. Their barrier function comes from an ultra-thin surface layer—often just nanometers thick—deposited onto a carrier film. Because this coating's performance does not scale with the substrate thickness, the calculator treats metallized materials as having a fixed permeability value, independent of the thickness you enter for the base film.</p>
+
+<p>Temperature and humidity matter. Permeability typically increases with temperature because molecules move faster and find pathways more easily. For hygroscopic materials like EVOH or nylon, humidity can dramatically affect barrier performance. That is why the calculator requires you to select matching test conditions: it only combines materials that share common measurement environments, ensuring physically meaningful results.</p>
+
+<div style="background:var(--success-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--success); margin:0.8rem 0; font-family:sans-serif;">
+<strong>Practical tip:</strong> When comparing laminate options, focus on the layer contributing the largest percentage of total resistance. Improving that "weakest link" yields the greatest performance gain. If resistance is evenly distributed, consider whether simplifying the structure could reduce cost without sacrificing protection.
+</div>
+
+<p>The resistance percentage shown for each layer helps you visualize this balance. A layer showing 70% of total resistance is doing most of the barrier work; a layer at 5% may be serving a different purpose, such as sealability or printability. Use these insights to guide material selection and thickness optimization.</p>
+
+<p>Finally, remember that calculated values are estimates based on idealized assumptions: perfect layer adhesion, uniform thickness, and defect-free films. Real-world performance can vary due to processing conditions, handling, and aging. Treat the calculator as a powerful screening tool for early-stage design, then validate critical structures with physical barrier testing under actual use conditions.</p>
+
+<div style="margin-top:1.5rem; padding:0.9rem; background:var(--bg); border-radius:8px; font-size:0.88rem; color:var(--text-light); border-left:4px solid var(--primary); font-family:sans-serif;">
+<strong>Note:</strong> This calculator supports research, development, and educational workflows. For regulatory submissions, commercial specifications, or shelf-life claims, always corroborate model predictions with empirical testing according to ASTM F1249, ASTM D3985, ISO 15106, or equivalent standards.
+</div>
+
+</div>
+</div>
+</div>
+`;
+}
 // ====================================================================
 // 📚 ARRHENIUS METHODOLOGY EXPLAINER (SEMPLIFICATO)
 // ====================================================================
@@ -3890,8 +3938,6 @@ WVTR<sub>total</sub> = 1 / R<sub>total</sub>
 <div style="background:var(--success-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--success); margin:0.8rem 0; font-family:sans-serif;">
 <strong>Practical tip:</strong> Always run sensitivity analysis at the same temperature and humidity conditions you plan to use for final calculations. Barrier properties can shift significantly with environment, and comparing curves across different conditions may lead to misleading conclusions.
 </div>
-
-<p>Finally, remember that sensitivity analysis shows theoretical behavior based on your input data. Real-world performance can be affected by processing conditions, layer adhesion, defects, and aging. Use this tool to guide early-stage decisions, then validate critical structures with physical testing under actual use conditions.</p>
 
 <div style="margin-top:1.5rem; padding:0.9rem; background:var(--bg); border-radius:8px; font-size:0.88rem; color:var(--text-light); border-left:4px solid var(--primary); font-family:sans-serif;">
 <strong>Note:</strong> This sensitivity tool supports research and development workflows. For regulatory submissions or commercial claims, always corroborate model predictions with empirical barrier testing according to ASTM F1249, ASTM D3985, or equivalent standards.
