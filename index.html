@@ -826,135 +826,6 @@ body, main, .app, .card, .material-item, .modal {
   color: var(--primary-dark);
   font-weight: 500;
 }
- /* === 📜 CUSTOM DROPDOWN GLASSMORPHISM === */
-.custom-dropdown { position: relative; width: 100%; font-family: inherit; z-index: 100; }
-.dropdown-trigger { 
-    width: 100%; 
-    padding: 0.45rem 0.7rem; 
-    border: 1.5px solid var(--border); 
-    border-radius: 8px; 
-    background: #fff; 
-    cursor: pointer; 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    font-size: 0.82rem; 
-    transition: all 0.15s; 
-}
-.dropdown-trigger:hover { border-color: var(--primary); }
-
-/* === PANEL FLOATING CON GLASSMORPHISM === */
-.dropdown-panel { 
-    position: fixed; /* ← FUORI dal contenitore */
-    top: auto;
-    left: auto;
-    right: auto;
-    background: rgba(255, 255, 255, 0.85); /* ← Trasparenza */
-    backdrop-filter: blur(12px); /* ← EFFETTO GAUSS */
-    -webkit-backdrop-filter: blur(12px); /* Safari support */
-    border: 1px solid rgba(226, 232, 240, 0.6);
-    border-radius: 12px; 
-    box-shadow: 0 20px 40px rgba(0,0,0,0.15); 
-    display: none; 
-    z-index: 9999; /* ← SOPRA TUTTO */
-    max-height: min(400px, 60vh); 
-    overflow: hidden; 
-    animation: dropdownFade 0.15s ease;
-}
-@keyframes dropdownFade {
-    from { opacity: 0; transform: translateY(-8px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-.dropdown-panel.open { display: flex; }
-
-/* Overlay scuro opzionale per focus */
-.dropdown-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.2);
-    z-index: 9998;
-    display: none;
-}
-.dropdown-overlay.active { display: block; }
-
-/* Indice laterale */
-.dropdown-index { 
-    width: 28px; 
-    background: rgba(248, 250, 252, 0.9); 
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border-right: 1px solid rgba(226, 232, 240, 0.6); 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    overflow-y: auto; 
-    padding: 8px 0; 
-    scrollbar-width: none; 
-}
-.dropdown-index::-webkit-scrollbar { display: none; }
-.index-letter { 
-    font-size: 11px; 
-    font-weight: 600; 
-    padding: 4px 0; 
-    cursor: pointer; 
-    color: var(--text-light); 
-    transition: all 0.15s; 
-    user-select: none;
-}
-.index-letter:hover { color: var(--primary); transform: scale(1.2); font-weight: 700; }
-.index-letter.active { color: var(--primary); font-weight: 700; background: var(--primary-light); border-radius: 4px; }
-
-/* Lista materiali */
-.dropdown-list { 
-    flex: 1; 
-    overflow-y: auto; 
-    padding: 4px 0; 
-    scroll-behavior: smooth; 
-    background: transparent;
-}
-.mat-group { padding: 2px 0; }
-.mat-group-title { 
-    font-size: 0.72rem; 
-    font-weight: 700; 
-    color: var(--primary-dark); 
-    background: rgba(219, 234, 254, 0.6); 
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    padding: 4px 12px; 
-    margin: 6px 0 2px 0; 
-    position: sticky; 
-    top: 0; 
-    z-index: 2; 
-}
-.mat-item { 
-    padding: 8px 14px; 
-    cursor: pointer; 
-    display: flex; 
-    align-items: center; 
-    justify-content: space-between; 
-    font-size: 0.82rem; 
-    transition: background 0.12s; 
-    border-radius: 6px;
-    margin: 0 4px;
-}
-.mat-item:hover { background: rgba(59, 130, 246, 0.12); }
-.mat-item.selected { 
-    background: var(--primary); 
-    color: #fff; 
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
-}
-.mat-item.selected .mat-meta { color: rgba(255,255,255,0.85) !important; }
-.mat-meta { 
-    font-size: 0.7rem; 
-    color: var(--text-light); 
-    white-space: nowrap; 
-    overflow: hidden; 
-    text-overflow: ellipsis; 
-    max-width: 55%; 
-    text-align: right; 
-    margin-left: auto; 
-    padding-left: 8px; 
-}
 </style>
 </head>
 <body>
@@ -3051,12 +2922,30 @@ if(!hasMats) {
         if(DB.materials[m].id === l.mid) { mat = DB.materials[m]; break; }
       }
     }
-    var matOpts = '<option value="">Select...</option>';
-for(var j=0; j<DB.materials.length; j++){
-  var mat = DB.materials[j];
-  
-  // ✅ APPLICA FILTRO TEST METHOD
-  if(!passesTestMethodFilter(mat)) continue;
+    // ✅ FILTRA e ORDINA i materiali alfabeticamente
+var filteredMats = DB.materials.filter(function(mat){
+    return passesTestMethodFilter(mat);
+});
+filteredMats.sort(function(a, b){
+    return a.name.localeCompare(b.name, 'en', {sensitivity: 'base'});
+});
+
+// ✅ GENERA LE OPZIONI DAL LISTINO ORDINATO
+var matOpts = '<option value="">Select...</option>';
+for(var j=0; j<filteredMats.length; j++){
+    var mat = filteredMats[j];  // ← Usa filteredMats invece di DB.materials
+    
+    var label = mat.name;
+    if(mat.isMetallized){
+        label += ' <span style="color:var(--warning);font-size:0.7em">[⚙️ Metallized]</span>';
+    }
+    var currentTM = State.mode === 'wvtr' ? (mat.testMethodWVTR || '') : (mat.testMethodOTR || '');
+    if(currentTM){
+        label += ' <span style="color:var(--text-light);font-size:0.7em">['+currentTM+']</span>';
+    }
+    var selected = (l.mid === mat.id) ? ' selected' : '';
+    matOpts += '<option value="'+mat.id+'"'+selected+'>'+label+'</option>';
+}
   
   // Mostra il test method nel label (opzionale, ma utile)
   // Mostra il test method E il flag metallized nel label
@@ -3076,7 +2965,7 @@ if(currentTM){
 }
     layersHTML += '<div class="layer-card"><span class="layer-badge">LAYER '+(i+1)+'</span>'+
       '<div class="layer-grid">'+
-      '<div class="form-group" style="margin:0"><label>Material</label>'+getMaterialDropdownHTML(i)+'</div>'+
+      '<div class="form-group" style="margin:0"><label>Material</label><select class="form-input" onchange="onLayerChange('+i+',\'mid\',this.value)">'+matOpts+'</select></div>'+
       '<div class="form-group" style="margin:0"><label>Thickness (µm)</label><input type="number" step="any" class="form-input" value="'+(l.thick||'')+'" placeholder="0" onchange="onLayerChange('+i+',\'thick\',this.value)"></div>'+
       '<div style="display:flex;align-items:center;gap:.3rem">'+(i>0 ? '<button class="btn btn-sm btn-danger" onclick="rmLayer('+i+')">X</button>' : '')+
       (res && res.transmissionAtThickness > 0 ? '<span class="badge badge-green">'+res.transmissionAtThickness.toFixed(3)+'</span>' : '')+
@@ -3356,7 +3245,7 @@ function renderArrheniusMethodology() {
   </div>
 
   <p style="font-size:0.85rem; color:var(--text-light); margin-top:0.5rem;">
-  <strong>Quick note:</strong> Keep humidity consistent (within ±5%) across all tests. Because humidity affects permeability independently of temperature, and we want to isolate temperature's role.
+  <strong>Quick note:</strong> Keep humidity consistent (within ±5%) across all tests. Why? Because humidity affects permeability independently of temperature, and we want to isolate temperature's role.
   </p>
 
   <!-- SECTION : HOW THE CALCULATOR WORKS -->
@@ -4643,148 +4532,7 @@ function importFile(input){
   reader.readAsText(file);
 }
 
-// === 📜 HANDLERS DROPDOWN PERSONALIZZATO ===
-function getMaterialDropdownHTML(layerIdx) {
-    var l = State.layers[layerIdx];
-    var mats = DB.materials.filter(m => passesTestMethodFilter(m));
-    mats.sort((a, b) => a.name.localeCompare(b.name));
-    
-    var groups = {};
-    mats.forEach(m => {
-        var first = m.name.charAt(0).toUpperCase();
-        if(!/[A-Z]/.test(first)) first = '#';
-        if(!groups[first]) groups[first] = [];
-        groups[first].push(m);
-    });
-    
-    var letters = Object.keys(groups).sort();
-    var indexHTML = letters.map(l => 
-        `<div class="index-letter" onclick="scrollToGroup('${l}', ${layerIdx})">${l}</div>`
-    ).join('');
-    
-    var listHTML = letters.map(l => {
-        var items = groups[l].map(m => {
-            var isSelected = l.mid === m.id;
-            var cls = isSelected ? 'mat-item selected' : 'mat-item';
-            var label = `<span>${m.name}</span>`;
-            if(m.isMetallized) label += ` <span style="color:var(--warning);font-size:0.7em">[⚙️]</span>`;
-            var tm = State.mode === 'wvtr' ? (m.testMethodWVTR || '') : (m.testMethodOTR || '');
-            if(tm) label += `<span class="mat-meta">[${tm}]</span>`;
-            return `<div class="${cls}" onclick="selectMaterial(${layerIdx}, ${m.id})">${label}</div>`;
-        }).join('');
-        return `<div class="mat-group"><div class="mat-group-title" id="group-${l}-${layerIdx}">${l}</div>${items}</div>`;
-    }).join('');
-    
-    var selectedName = 'Select material...';
-    if(l.mid !== null) {
-        var selMat = DB.materials.find(m => m.id === l.mid);
-        selectedName = selMat ? selMat.name : 'Unknown';
-    }
-    
-    return `<div class="custom-dropdown">
-        <div class="dropdown-trigger" onclick="toggleDropdown(${layerIdx}, event)">
-            <span>${selectedName}</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-        <div class="dropdown-panel" id="dropdown-panel-${layerIdx}">
-            <div class="dropdown-index">${indexHTML}</div>
-            <div class="dropdown-list">${listHTML}</div>
-        </div>
-    </div>`;
-}
 
-function toggleDropdown(idx, e) {
-    e.stopPropagation();
-    var panel = document.getElementById('dropdown-panel-' + idx);
-    var trigger = panel?.closest('.custom-dropdown')?.querySelector('.dropdown-trigger');
-    if(!panel || !trigger) return;
-    
-    var isOpen = panel.classList.contains('open');
-    
-    // Chiudi tutti gli altri dropdown
-    document.querySelectorAll('.dropdown-panel.open').forEach(p => {
-        p.classList.remove('open');
-        p.style.top = '';
-        p.style.left = '';
-        p.style.right = '';
-        p.style.width = '';
-    });
-    document.querySelector('.dropdown-overlay')?.classList.remove('active');
-    
-    if(!isOpen) {
-        // Calcola posizione rispetto al viewport
-        var rect = trigger.getBoundingClientRect();
-        var panelWidth = Math.max(320, rect.width); // larghezza minima
-        var spaceBelow = window.innerHeight - rect.bottom;
-        var spaceAbove = rect.top;
-        
-        // Posiziona sotto o sopra in base allo spazio disponibile
-        if(spaceBelow < 200 && spaceAbove > spaceBelow) {
-            // Posiziona SOPRA il trigger
-            panel.style.top = (rect.top - 10) + 'px';
-            panel.style.bottom = 'auto';
-        } else {
-            // Posiziona SOTTO il trigger
-            panel.style.top = (rect.bottom + 8) + 'px';
-            panel.style.bottom = 'auto';
-        }
-        
-        // Allinea a sinistra del trigger, ma evita overflow a destra
-        var leftPos = Math.min(rect.left, window.innerWidth - panelWidth - 12);
-        panel.style.left = leftPos + 'px';
-        panel.style.right = 'auto';
-        panel.style.width = panelWidth + 'px';
-        
-        // Mostra overlay e dropdown
-        var overlay = document.querySelector('.dropdown-overlay');
-        if(!overlay) {
-            overlay = document.createElement('div');
-            overlay.className = 'dropdown-overlay';
-            overlay.onclick = function() {
-                document.querySelectorAll('.dropdown-panel.open').forEach(p => {
-                    p.classList.remove('open');
-                    p.style.top = ''; p.style.left = ''; p.style.right = ''; p.style.width = '';
-                });
-                overlay.classList.remove('active');
-            };
-            document.body.appendChild(overlay);
-        }
-        overlay.classList.add('active');
-        panel.classList.add('open');
-    }
-}
-
-function scrollToGroup(letter, layerIdx) {
-    var el = document.getElementById('group-' + letter + '-' + layerIdx);
-    if(el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-function selectMaterial(layerIdx, matId) {
-    recordMaterialUsage(matId);
-    State.layers[layerIdx].mid = matId;
-    DB.saveState(State);
-    
-    var dropdown = document.getElementById('dropdown-panel-' + layerIdx);
-    if(dropdown) {
-        var trigger = dropdown.closest('.custom-dropdown').querySelector('.dropdown-trigger span');
-        var mat = DB.materials.find(m => m.id === matId);
-        trigger.textContent = mat ? mat.name : 'Select material...';
-        
-        dropdown.querySelectorAll('.mat-item').forEach(el => el.classList.remove('selected'));
-        var selItem = dropdown.querySelector(`.mat-item[onclick*="selectMaterial(${layerIdx}, ${matId})"]`);
-        if(selItem) selItem.classList.add('selected');
-    }
-    
-    document.querySelectorAll('.dropdown-panel.open').forEach(p => p.classList.remove('open'));
-    if(State.autoCalc) doCalcSilent(); else renderContent();
-}
-
-// Chiudi dropdown cliccando fuori
-document.addEventListener('click', function(e) {
-    if(!e.target.closest('.custom-dropdown')) {
-        document.querySelectorAll('.dropdown-panel.open').forEach(p => p.classList.remove('open'));
-    }
-});
 // ✅ Avvio app corretto con Firebase
 // ✅ Avvio app con attesa per Firebase
 (async function initApp() {
@@ -4867,6 +4615,5 @@ for(const fm of fbMats) {
 })();
   
 </script>
-  <div class="dropdown-overlay" onclick="document.querySelectorAll('.dropdown-panel.open').forEach(p=>{p.classList.remove('open');p.style.top='';p.style.left='';p.style.right='';p.style.width='';});this.classList.remove('active')"></div>
 </body>
 </html>
