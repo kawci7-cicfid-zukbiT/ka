@@ -2923,6 +2923,7 @@ if(!hasMats) {
       }
     }
     // ✅ FILTRA e ORDINA i materiali alfabeticamente
+// ✅ FILTRA e ORDINA i materiali alfabeticamente
 var filteredMats = DB.materials.filter(function(mat){
     return passesTestMethodFilter(mat);
 });
@@ -2946,34 +2947,20 @@ for(var j=0; j<filteredMats.length; j++){
     var selected = (l.mid === mat.id) ? ' selected' : '';
     matOpts += '<option value="'+mat.id+'"'+selected+'>'+label+'</option>';
 }
-  
-  // Mostra il test method nel label (opzionale, ma utile)
-  // Mostra il test method E il flag metallized nel label
-// Mostra il test method E il flag metallized nel label
-var label = mat.name;
-if(mat.isMetallized){
-  label += ' <span style="color:var(--warning);font-size:0.7em">[⚙️ Metallized]</span>';
-}
-// ✅ ✅ ✅ MOSTRA SOLO IL TEST METHOD DELLA MODALITÀ CORRENTE ✅ ✅ ✅
-var currentTM = State.mode === 'wvtr' ? (mat.testMethodWVTR || '') : (mat.testMethodOTR || '');
-if(currentTM){
-  label += ' <span style="color:var(--text-light);font-size:0.7em">['+currentTM+']</span>';
-}
-  
-  var selected = (l.mid === mat.id) ? ' selected' : '';
-  matOpts += '<option value="'+mat.id+'"'+selected+'>'+label+'</option>';
-}
-    layersHTML += '<div class="layer-card"><span class="layer-badge">LAYER '+(i+1)+'</span>'+
-      '<div class="layer-grid">'+
-      '<div class="form-group" style="margin:0"><label>Material</label><select class="form-input" onchange="onLayerChange('+i+',\'mid\',this.value)">'+matOpts+'</select></div>'+
-      '<div class="form-group" style="margin:0"><label>Thickness (µm)</label><input type="number" step="any" class="form-input" value="'+(l.thick||'')+'" placeholder="0" onchange="onLayerChange('+i+',\'thick\',this.value)"></div>'+
-      '<div style="display:flex;align-items:center;gap:.3rem">'+(i>0 ? '<button class="btn btn-sm btn-danger" onclick="rmLayer('+i+')">X</button>' : '')+
-      (res && res.transmissionAtThickness > 0 ? '<span class="badge badge-green">'+res.transmissionAtThickness.toFixed(3)+'</span>' : '')+
-      (res && res.isBarrier ? '<span class="badge badge-purple">BARRIER</span>' : '')+
-      '</div></div>'+
-      (res ? '<div style="margin-top:.35rem;font-size:.68rem;color:var(--text-light)">R: '+rStr(res.resistance)+' - '+res.resistancePct.toFixed(1)+'%</div>' : '')+
-      '</div>';
-  }
+// ← ✅ QUI CHIUDI IL FOR, NON PRIMA!
+
+// ✅ Ora prosegui con layersHTML (senza duplicare il codice del label!)
+layersHTML += '<div class="layer-card"><span class="layer-badge">LAYER '+(i+1)+'</span>'+
+    '<div class="layer-grid">'+
+    '<div class="form-group" style="margin:0"><label>Material</label><select class="form-input" onchange="onLayerChange('+i+',\'mid\',this.value)">'+matOpts+'</select></div>'+
+    '<div class="form-group" style="margin:0"><label>Thickness (µm)</label><input type="number" step="any" class="form-input" value="'+(l.thick||'')+'" placeholder="0" onchange="onLayerChange('+i+',\'thick\',this.value)"></div>'+
+    '<div style="display:flex;align-items:center;gap:.3rem">'+(i>0 ? '<button class="btn btn-sm btn-danger" onclick="rmLayer('+i+')">X</button>' : '')+
+    (res && res.transmissionAtThickness > 0 ? '<span class="badge badge-green">'+res.transmissionAtThickness.toFixed(3)+'</span>' : '')+
+    (res && res.isBarrier ? '<span class="badge badge-purple">BARRIER</span>' : '')+
+    '</div></div>'+
+    (res ? '<div style="margin-top:.35rem;font-size:.68rem;color:var(--text-light)">R: '+rStr(res.resistance)+' - '+res.resistancePct.toFixed(1)+'%</div>' : '')+
+    '</div>';
+} // ← ✅ Questa è la parentesi che chiude il FOR dei layer (i)
 
   var selectedCond = State.selCond ? State.selCond.temperature+'\u00b0C/'+State.selCond.humidity+'%' : null;
   var canCalc = !!selectedCond && State.layers.every(function(l){ return l.mid !== null && l.thick > 0; });
