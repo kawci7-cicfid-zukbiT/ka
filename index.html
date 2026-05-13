@@ -900,29 +900,6 @@ main {
     padding-right: 1rem !important;
   }
 }
-  /* === 🎓 TOUR GUIDATO ONBOARDING === */
-.tour-overlay { position: fixed; inset: 0; background: transparent; z-index: 9999; pointer-events: none; opacity: 0; transition: opacity 0.3s ease; }
-.tour-overlay.active { opacity: 1; pointer-events: auto; }
-.tour-spotlight { position: fixed; border-radius: 10px; box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.7); transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1); pointer-events: auto; cursor: pointer; border: 2px solid var(--primary); }
-.tour-card { position: fixed; background: var(--card); color: var(--text); padding: 1.25rem; border-radius: var(--radius); box-shadow: 0 20px 40px rgba(0,0,0,0.2); max-width: 340px; width: 92%; z-index: 10000; pointer-events: auto; animation: tourSlide 0.35s ease; border: 1px solid var(--border); }
-.tour-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; }
-.tour-step { font-size: 0.7rem; font-weight: 700; color: var(--primary); background: var(--primary-light); padding: 0.2rem 0.5rem; border-radius: 20px; }
-.tour-close { background: none; border: none; font-size: 1.1rem; cursor: pointer; color: var(--text-light); padding: 0.2rem; transition: color 0.2s; }
-.tour-close:hover { color: var(--danger); }
-.tour-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.4rem; line-height: 1.3; }
-.tour-text { font-size: 0.82rem; line-height: 1.5; color: var(--text-light); margin-bottom: 0.9rem; }
-.tour-controls { display: flex; justify-content: space-between; gap: 0.5rem; }
-.tour-btn { flex: 1; padding: 0.45rem; border: none; border-radius: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
-.tour-btn-outline { background: var(--bg); color: var(--text-light); border: 1px solid var(--border); }
-.tour-btn-primary { background: var(--primary); color: #fff; }
-.tour-btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
-.tour-checkbox { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.7rem; font-size: 0.72rem; color: var(--text-light); cursor: pointer; }
-.tour-help-trigger { position: relative; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; width: 26px; height: 26px; color: #fff; font-weight: 700; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; margin-right: 0.5rem; }
-.tour-help-trigger:hover { background: #fff; color: var(--primary); }
-@keyframes tourSlide { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-@media (max-width: 600px) {
-  .tour-card { bottom: 20px !important; top: auto !important; left: 50% !important; transform: translateX(-50%) !important; max-width: calc(100vw - 32px); }
-}
 </style>
   <!-- 📢 GOOGLE ADSENSE -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
@@ -933,115 +910,8 @@ main {
     } catch(e) { /* ignora se non caricato o primo render */ }
   };
 </script>
-  
 </head>
 <body>
-  // === 🎓 TOUR MANAGER ===
-<script>
-  const Tour = {
-  currentStep: 0,
-  steps: [
-    { target: '.mode-toggle', title: '1. Modalità di Calcolo', text: 'Seleziona WVTR per barriera al vapore acqueo o OTR per barriera all\'ossigeno. Il database e le unità si adatteranno automaticamente.', pos: 'bottom' },
-    { target: '.nav-tab[data-tab="calc"]', title: '2. Navigazione', text: 'Usa i tab in alto per spostarti tra le sezioni. Il Calculator è il cuore dell\'app, ma troverai anche Analisi di Sensibilità, Arrhenius e Shelf Life.', pos: 'bottom' },
-    { target: '.layer-card', title: '3. Struttura del Laminato', text: 'Aggiungi layer selezionando i materiali e inserendo lo spessore. Il filtro "Test Method" ti aiuta a confrontare solo dati compatibili.', pos: 'right', fallback: '.card' },
-    { target: 'button[onclick="doCalc()"]', title: '4. Calcolo & Salvataggio', text: 'Attiva "Auto-calculate" per aggiornamenti in tempo reale o premi il pulsante. Dai un nome e salva il laminato nel database locale.', pos: 'left', fallback: '.btn-primary' },
-    { target: '#material-search', title: '5. Database & Community', text: 'Cerca materiali, aggiungine di nuovi, pubblicali sulla community globale e valuta l\'affidabilità dei dati condivisi.', pos: 'bottom', fallback: '.search-input' }
-  ],
-  init() {
-    if (localStorage.getItem('wvtr_tour_completed') === 'true') return;
-    setTimeout(() => this.start(), 600);
-  },
-  start() {
-    this.currentStep = parseInt(localStorage.getItem('wvtr_tour_step') || '0');
-    if (this.currentStep >= this.steps.length) this.currentStep = 0;
-    document.getElementById('tour-overlay').classList.add('active');
-    this.addHelpButton();
-    this.render();
-    this.bind();
-  },
-  addHelpButton() {
-    if (document.querySelector('.tour-help-trigger')) return;
-    const btn = document.createElement('button');
-    btn.className = 'tour-help-trigger';
-    btn.innerHTML = '?';
-    btn.title = 'Riavvia tutorial';
-    btn.onclick = () => { localStorage.removeItem('wvtr_tour_completed'); localStorage.removeItem('wvtr_tour_step'); this.start(); };
-    const headerTop = document.querySelector('.header-top');
-    if (headerTop) headerTop.insertBefore(btn, headerTop.firstChild);
-  },
-  render() {
-    const s = this.steps[this.currentStep];
-    const target = document.querySelector(s.target) || document.querySelector(s.fallback);
-    const spotlight = document.querySelector('.tour-spotlight');
-    const card = document.querySelector('.tour-card');
-    document.querySelector('.tour-step').textContent = `Step ${this.currentStep + 1} / ${this.steps.length}`;
-    document.querySelector('.tour-title').textContent = s.title;
-    document.querySelector('.tour-text').textContent = s.text;
-    document.querySelector('[data-tour="prev"]').style.visibility = this.currentStep === 0 ? 'hidden' : 'visible';
-    document.querySelector('[data-tour="next"]').textContent = this.currentStep === this.steps.length - 1 ? 'Concludi' : 'Avanti';
-    if (target && spotlight) {
-      const r = target.getBoundingClientRect();
-      spotlight.style.top = `${r.top}px`;
-      spotlight.style.left = `${r.left}px`;
-      spotlight.style.width = `${r.width}px`;
-      spotlight.style.height = `${r.height}px`;
-      spotlight.style.opacity = '1';
-    } else {
-      spotlight.style.opacity = '0.3';
-      spotlight.style.top = '50%'; spotlight.style.left = '50%';
-      spotlight.style.width = '200px'; spotlight.style.height = '150px';
-    }
-    this.positionCard(target, s.pos, card);
-  },
-  positionCard(target, pref, card) {
-    if (!card) return;
-    if (window.innerWidth < 600) return;
-    const tRect = target ? target.getBoundingClientRect() : { top: 0, left: 0, width: 0, height: 0 };
-    const cRect = card.getBoundingClientRect();
-    let top = tRect.top, left = tRect.left;
-    switch(pref) {
-      case 'bottom': top += tRect.height + 12; left += (tRect.width / 2) - (cRect.width / 2); break;
-      case 'top': top -= cRect.height + 12; left += (tRect.width / 2) - (cRect.width / 2); break;
-      case 'right': top += (tRect.height - cRect.height) / 2; left += tRect.width + 12; break;
-      case 'left': top += (tRect.height - cRect.height) / 2; left -= cRect.width + 12; break;
-    }
-    top = Math.max(10, Math.min(top, window.innerHeight - cRect.height - 10));
-    left = Math.max(10, Math.min(left, window.innerWidth - cRect.width - 10));
-    card.style.top = `${top}px`;
-    card.style.left = `${left}px`;
-    card.style.right = 'auto';
-    card.style.bottom = 'auto';
-  },
-  next() {
-    if (this.currentStep < this.steps.length - 1) {
-      this.currentStep++;
-      localStorage.setItem('wvtr_tour_step', this.currentStep);
-      this.render();
-    } else this.finish();
-  },
-  prev() {
-    if (this.currentStep > 0) {
-      this.currentStep--;
-      localStorage.setItem('wvtr_tour_step', this.currentStep);
-      this.render();
-    }
-  },
-  skip() { this.finish(); },
-  finish() {
-    if (document.getElementById('tour-dont-show').checked) localStorage.setItem('wvtr_tour_completed', 'true');
-    localStorage.removeItem('wvtr_tour_step');
-    document.getElementById('tour-overlay').classList.remove('active');
-  },
-  bind() {
-    document.querySelector('[data-tour="next"]').onclick = () => this.next();
-    document.querySelector('[data-tour="prev"]').onclick = () => this.prev();
-    document.querySelector('[data-tour="skip"]').onclick = () => this.skip();
-    document.querySelector('.tour-close').onclick = () => this.finish();
-    document.querySelector('.tour-spotlight').onclick = () => this.next();
-    window.addEventListener('resize', () => this.render());
-  }
-};
-</script>
 <!-- 🔥 FIREBASE COMMUNITY SETUP -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -1148,7 +1018,6 @@ window.loadFromCommunity = async function() {
         return [];
     }
 };
-  
 </script>
 
 <div class="app">
@@ -5095,7 +4964,6 @@ for(const fm of fbMats) {
     // 4. Renderizza l'app
     console.log("🎨 Rendering app...");
     render();
-    Tour.init(); 
     
   } catch(e) {
     console.error("❌ Init error:", e);
@@ -5105,25 +4973,5 @@ for(const fm of fbMats) {
 })();
   
 </script>
-  <!-- 🎓 TOUR OVERLAY -->
-<div id="tour-overlay" class="tour-overlay">
-  <div class="tour-spotlight"></div>
-  <div class="tour-card">
-    <div class="tour-header">
-      <span class="tour-step"></span>
-      <button class="tour-close" title="Chiudi">✕</button>
-    </div>
-    <h3 class="tour-title"></h3>
-    <p class="tour-text"></p>
-    <div class="tour-controls">
-      <button class="tour-btn tour-btn-outline" data-tour="prev">Indietro</button>
-      <button class="tour-btn tour-btn-outline" data-tour="skip">Salta</button>
-      <button class="tour-btn tour-btn-primary" data-tour="next">Avanti</button>
-    </div>
-    <label class="tour-checkbox">
-      <input type="checkbox" id="tour-dont-show"> Non mostrare più all'avvio
-    </label>
-  </div>
-</div>
 </body>
 </html>
