@@ -900,7 +900,142 @@ main {
     padding-right: 1rem !important;
   }
 }
+  /* 🎓 TUTORIAL GUIDATO (Non invasivo) */
+.tutorial-backdrop {
+  position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4);
+  z-index: 9998; opacity: 0; transition: opacity 0.25s ease; pointer-events: none;
+}
+.tutorial-backdrop.active { opacity: 1; pointer-events: auto; }
+.tutorial-tooltip {
+  position: fixed; background: var(--card); border-radius: 12px;
+  padding: 1rem; box-shadow: var(--shadow-lg); border: 1px solid var(--border);
+  z-index: 10000; max-width: 300px; transition: all 0.25s ease;
+}
+.tutorial-tooltip h4 {
+  margin: 0 0 0.4rem; font-size: 0.9rem; color: var(--primary);
+  display: flex; align-items: center; gap: 0.3rem;
+}
+.tutorial-tooltip p {
+  margin: 0 0 0.7rem; font-size: 0.78rem; color: var(--text-light); line-height: 1.45;
+}
+.tutorial-controls { display: flex; justify-content: space-between; align-items: center; }
+.tutorial-progress { font-size: 0.68rem; color: var(--text-light); font-weight: 500; }
+.tutorial-btn {
+  padding: 0.3rem 0.65rem; border: none; border-radius: 6px;
+  font-size: 0.75rem; cursor: pointer; font-weight: 500; transition: all 0.15s;
+}
+.tutorial-btn.next { background: var(--primary); color: #fff; }
+.tutorial-btn.next:hover { background: var(--primary-dark); }
+.tutorial-btn.skip { background: transparent; color: var(--text-light); }
+.tutorial-btn.skip:hover { color: var(--text); }
+.tutorial-highlight {
+  outline: 3px solid var(--primary) !important;
+  outline-offset: 3px !important;
+  z-index: 150 !important;
+  position: relative !important;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.15) !important;
+  border-radius: var(--radius);
+}
+/* Pulsante replay discreto */
+.replay-tutorial {
+  font-size: 0.68rem; color: var(--text-light); text-decoration: underline;
+  cursor: pointer; opacity: 0.7; transition: opacity 0.2s;
+}
+.replay-tutorial:hover { opacity: 1; }
+  
 </style>
+
+  .replay-tutorial:hover { opacity: 1; }
+</style>  <!-- ✅ CHIUDI PRIMA LO STYLE -->
+
+<!-- 🎓 TUTORIAL SYSTEM (JavaScript - FUORI dallo style) -->
+<script>
+const Tutorial = {
+  steps: [
+    { target: '.header-top h1', title: '👋 Benvenuto', content: 'Questo tool calcola la permeabilità di imballaggi multistrato (WVTR/OTR) usando un modello a resistenze in serie.', pos: 'bottom' },
+    { target: '.nav-tabs', title: '📑 Navigazione', content: 'Cambia sezione con i tab in alto. Il cuore dell\'app è il <strong>Calculator</strong>, dove configurerai i layer.', pos: 'bottom' },
+    { target: '.top-row', title: '🌍 Community & Classifica', content: 'Condividi materiali, vota l\'affidabilità e scopri i più usati del mese. I dati si sincronizzano in cloud.', pos: 'bottom' },
+    { target: '.features-grid', title: '⚙️ Funzionalità chiave', content: 'Modello a resistenze, analisi di sensitività, previsione Arrhenius e calcolo shelf-life avanzato.', pos: 'top' },
+    { target: '.hero', title: '🚀 Pronto a iniziare?', content: 'Clicca sul tab <strong>Calculator</strong> per aggiungere i layer, selezionare le condizioni e calcolare la permeabilità totale.', pos: 'top', action: () => { document.querySelector('[data-tab="calc"]').click(); } }
+  ],
+  current: 0,
+  overlay: null,
+  tooltip: null,
+  highlightEl: null,
+  
+  init() {
+    if(localStorage.getItem('wvtr_tutorial_v2') === 'true') return;
+    this.overlay = document.createElement('div'); this.overlay.className = 'tutorial-backdrop';
+    this.tooltip = document.createElement('div'); this.tooltip.className = 'tutorial-tooltip';
+    document.body.appendChild(this.overlay); document.body.appendChild(this.tooltip);
+    setTimeout(() => this.showStep(), 800);
+  },
+  
+  showStep() {
+    if(this.current >= this.steps.length) return this.complete();
+    const step = this.steps[this.current];
+    const el = document.querySelector(step.target);
+    if(!el) { setTimeout(() => this.showStep(), 300); return; }
+    
+    if(this.highlightEl) this.highlightEl.classList.remove('tutorial-highlight');
+    this.highlightEl = el; el.classList.add('tutorial-highlight');
+    
+    const rect = el.getBoundingClientRect();
+    const ttW = 300, ttH = this.tooltip.offsetHeight || 180;
+    let top = rect.bottom + 10, left = rect.left;
+    if(step.pos === 'top') { top = rect.top - ttH - 10; }
+    if(left + ttW > window.innerWidth) left = window.innerWidth - ttW - 20;
+    if(left < 10) left = 10;
+    if(top < 10) top = rect.bottom + 10;
+    this.tooltip.style.top = top + 'px';
+    this.tooltip.style.left = left + 'px';
+    
+    this.tooltip.innerHTML = `
+      <h4>${step.title}</h4>
+      <p>${step.content}</p>
+      <div class="tutorial-controls">
+        <span class="tutorial-progress">${this.current + 1} / ${this.steps.length}</span>
+        <div style="display:flex;gap:0.5rem">
+          <button class="tutorial-btn skip" onclick="Tutorial.skip()">Salta</button>
+          <button class="tutorial-btn next" onclick="Tutorial.next()">${this.current === this.steps.length - 1 ? 'Inizia' : 'Avanti →'}</button>
+        </div>
+      </div>`;
+      
+    this.overlay.classList.add('active');
+    this.overlay.onclick = (e) => { if(e.target === this.overlay) this.skip(); };
+  },
+  
+  next() {
+    if(this.current === this.steps.length - 1 && this.steps[this.current].action) {
+      this.steps[this.current].action();
+    }
+    this.current++;
+    this.showStep();
+  },
+  skip() { this.complete(); },
+  complete() {
+    if(this.highlightEl) this.highlightEl.classList.remove('tutorial-highlight');
+    this.overlay.classList.remove('active');
+    this.tooltip.style.transform = 'scale(0.9)'; this.tooltip.style.opacity = '0';
+    setTimeout(() => {
+      this.overlay.remove(); this.tooltip.remove();
+      localStorage.setItem('wvtr_tutorial_v2', 'true');
+    }, 250);
+  }
+};
+</script>
+
+<!-- 📢 GOOGLE ADSENSE -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+<script>
+  window.refreshAds = function() {
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    } catch(e) { /* ignora se non caricato o primo render */ }
+  };
+</script>
+</head>
+  
   <!-- 📢 GOOGLE ADSENSE -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
 <script>
@@ -1496,6 +1631,7 @@ function render() {
     }
     postNavRender();
     refreshAds();
+    Tutorial.init(); 
   });
 }
   // === ANIMAZIONI POST-RENDER PER LA HOME ===
