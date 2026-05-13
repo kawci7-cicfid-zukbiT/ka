@@ -883,6 +883,23 @@ body, main, .app, .card, .material-item, .modal {
     margin-left: 0;
   }
 }
+  /* ✅ FORZA DISTANZA DAI BORDI SINISTRO/DESTRO */
+main {
+  padding-left: 2.5rem !important;
+  padding-right: 2.5rem !important;
+}
+@media (max-width: 768px) {
+  main {
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
+  }
+}
+@media (max-width: 480px) {
+  main {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+}
 </style>
   <!-- 📢 GOOGLE ADSENSE -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
@@ -1938,9 +1955,9 @@ function renderHome() {
             <div class="card" style="margin:0; padding:1rem">
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.8rem">
                     <h2 style="margin:0; font-size:1rem; display:flex; align-items:center; gap:0.4rem">
-                        <span></span> Most used materials of the month
+                        <span></span> Most used materials of the month are
                     </h2>
-                    <span class="badge badge-blue">This Month</span>
+                    <span class="badge badge-blue"></span>
                 </div>
                 <div id="top3-ranking" style="display:flex; flex-direction:column; gap:0.5rem">
                     <div style="text-align:center; padding:1rem; color:var(--text-light); font-size:0.8rem">Start calculating...</div>
