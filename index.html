@@ -826,7 +826,48 @@ body, main, .app, .card, .material-item, .modal {
   color: var(--primary-dark);
   font-weight: 500;
 }
+  /* 📢 ADSENSE CONTAINER */
+.ad-container {
+  width: 100%;
+  max-width: 728px;
+  min-height: 90px; /* Evita layout shift (CLS) */
+  margin: 1rem auto;
+  padding: 0.5rem;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  text-align: center;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.ad-container::before {
+  content: "Pubblicità";
+  position: absolute;
+  top: 4px;
+  left: 8px;
+  font-size: 0.6rem;
+  color: #94a3b8;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.ad-container ins { display: block; width: 100%; }
+@media (max-width: 768px) {
+  .ad-container { min-height: 60px; margin: 0.75rem auto; max-width: 95%; }
+}
 </style>
+  <!-- 📢 GOOGLE ADSENSE -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+<script>
+  window.refreshAds = function() {
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    } catch(e) { /* ignora se non caricato o primo render */ }
+  };
+</script>
 </head>
 <body>
 <!-- 🔥 FIREBASE COMMUNITY SETUP -->
@@ -963,8 +1004,15 @@ window.loadFromCommunity = async function() {
     </div>
     <div class="nav-tabs" id="nav-tabs"></div>
   </header>
-  
-  <main id="app-content"></main>
+  <div class="ad-container">
+  <ins class="adsbygoogle"
+       style="display:block"
+       data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+       data-ad-slot="TEST"
+       data-ad-format="auto"
+       data-full-width-responsive="true"></ins>
+</div>
+<main id="app-content"></main>
 </div>
 
 <div class="modal-overlay" id="modal-overlay">
@@ -1405,6 +1453,7 @@ function render() {
       initHomeAnimations();
     }
     postNavRender();
+    refreshAds();
   });
 }
   // === ANIMAZIONI POST-RENDER PER LA HOME ===
@@ -1897,7 +1946,10 @@ function renderHome() {
         <div class="progress-bar"><div class="progress-fill" style="--progress: ${Math.min(totalLams/30*100,100)}%;background:var(--purple)"></div></div>
     </div>
 </div>
-
+<!-- ✅ INSERISCI QUI IL BANNER HOME -->
+<div class="ad-container" style="margin:1.25rem auto; max-width:728px;">
+  <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="TEST" data-ad-format="auto" data-full-width-responsive="true"></ins>
+</div>
         <!-- 4. FEATURES GRID -->
         <div class="section-row features-grid" id="featuresSection">
             <div class="card feature-card" style="margin:0; display:flex; align-items:start; gap:0.8rem">
