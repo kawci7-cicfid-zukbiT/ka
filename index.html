@@ -3165,28 +3165,25 @@ function drawLaminateCurveChart(){
     var datasets = [];
     var allTemps = [];
     var allVals = [];
-    var layerCount = 0;
     
-    // ✅ Mostra SOLO i layer con dati multi-temperatura (max 3 per chiarezza)
-    for(var i=0; i<State.layers.length && layerCount<3; i++){
+    // 1️⃣ Dataset per ogni materiale (SOLO PALLINI, nessun linea)
+    for(var i = 0; i < State.layers.length; i++){
         var layer = State.layers[i];
         if(layer.mid === null || layer.thick <= 0) continue;
         
         var mat = null;
-        for(var m=0; m<DB.materials.length; m++) {
-            if(DB.materials[m].id === layer.mid) { mat = DB.materials[m]; break; }
+        for(var m = 0; m < DB.materials.length; m++){
+            if(DB.materials[m].id === layer.mid){ mat = DB.materials[m]; break; }
         }
         if(!mat) continue;
         
+        var color = LAYER_COLORS[i % LAYER_COLORS.length];
         var vals = Engine.getValues(mat);
-        if(!vals || vals.length < 2) continue;  // Salta materiali single-temp
-        
-        var color = LAYER_COLORS[layerCount % LAYER_COLORS.length];
         var dataPoints = [];
         
-        for(var j=0; j<vals.length; j++){
+        for(var j = 0; j < vals.length; j++){
             var cond = mat.validConditions[j];
-            if(cond && vals[j] && vals[j].value > 0){
+            if(cond){
                 var product = vals[j].value * vals[j].thickness;
                 var resistance = layer.thick / product;
                 var trans = resistance > 0 ? 1/resistance : 0;
@@ -3196,56 +3193,47 @@ function drawLaminateCurveChart(){
             }
         }
         
-        if(dataPoints.length >= 2){
-            datasets.push({
-                label: 'L'+(i+1)+': '+mat.name,  // Etichetta compatta
-                data: dataPoints,
-                borderColor: color,
-                backgroundColor: color,
-                borderWidth: 2,
-                pointRadius: 5,
-                pointHoverRadius: 7,
-                pointBackgroundColor: '#fff',
-                pointBorderColor: color,
-                type: 'scatter',
-                order: 2,
-                showLine: false
-            });
-            layerCount++;
-        }
+        datasets.push({
+            label: mat.name,
+            data: dataPoints,
+            borderColor: color,
+            backgroundColor: color,
+            borderWidth: 0,
+            pointRadius: 7,
+            pointHoverRadius: 10,
+            pointBackgroundColor: '#fff',
+            pointBorderColor: color,
+            pointBorderWidth: 2,
+            type: 'scatter',
+            order: 2
+        });
     }
     
-    // ✅ Curva del laminato totale (sempre visibile)
+    // 2️⃣ Curva del Laminato Totale (linea sottile per riferimento)
     var laminateCurve = [];
     if(allTemps.length > 0){
         var tMin = Math.min.apply(null, allTemps) - 5;
         var tMax = Math.max.apply(null, allTemps) + 5;
         
-        for(var t=tMin; t<=tMax; t+=1){  // Step più ampio per curva più liscia
+        for(var t = tMin; t <= tMax; t += 0.5){
             var totalR = 0;
             var valid = true;
-            
-            for(var li=0; li<State.layers.length; li++){
+            for(var li = 0; li < State.layers.length; li++){
                 var ly = State.layers[li];
-                if(ly.mid === null || ly.thick <= 0) { valid=false; break; }
-                
+                if(ly.mid === null || ly.thick <= 0){ valid = false; break; }
                 var mt = null;
-                for(var mi=0; mi<DB.materials.length; mi++) {
-                    if(DB.materials[mi].id === ly.mid) { mt = DB.materials[mi]; break; }
+                for(var mi = 0; mi < DB.materials.length; mi++){
+                    if(DB.materials[mi].id === ly.mid){ mt = DB.materials[mi]; break; }
                 }
-                if(!mt) { valid=false; break; }
+                if(!mt){ valid = false; break; }
                 
-                // Cerca condizione esatta o usa Arrhenius
                 var condIdx = -1;
-                for(var ci=0; ci<mt.validConditions.length; ci++){
-                    if(Math.abs(mt.validConditions[ci].temperature - t) < 0.01){
-                        condIdx = ci; break;
-                    }
+                for(var ci = 0; ci < mt.validConditions.length; ci++){
+                    if(Math.abs(mt.validConditions[ci].temperature - t) < 0.01){ condIdx = ci; break; }
                 }
-                
                 if(condIdx >= 0){
                     var wv = Engine.getValues(mt)[condIdx];
-                    if(wv.value <= 0.00001) { valid=false; break; }
+                    if(wv.value <= 0.00001){ valid = false; break; }
                     var prod = wv.value * wv.thickness;
                     totalR += ly.thick / prod;
                 } else {
@@ -3254,7 +3242,7 @@ function drawLaminateCurveChart(){
                         var transMat = Engine.predict(pp.A, pp.Ea, t);
                         var prod2 = transMat * Engine.getValues(mt)[0].thickness;
                         totalR += ly.thick / prod2;
-                    } else { valid=false; break; }
+                    } else { valid = false; break; }
                 }
             }
             if(valid && totalR > 0) laminateCurve.push({x: t, y: 1/totalR});
@@ -3263,34 +3251,35 @@ function drawLaminateCurveChart(){
     
     if(laminateCurve.length > 0){
         datasets.push({
-            label: '🔴 LAMINATE TOTAL',  // Etichetta in maiuscolo per enfasi
+            label: 'LAMINATE TOTAL',
             data: laminateCurve,
-            borderColor: '#dc2626',
-            backgroundColor: 'rgba(220, 38, 38, 0.08)',
-            borderWidth: 3,
+            borderColor: 'rgba(220, 38, 38, 0.4)',
+            backgroundColor: 'transparent',
+            borderWidth: 1.5,
+            borderDash: [4, 4],
             pointRadius: 0,
             type: 'line',
-            fill: true,
-            order: 0,
-            tension: 0.3
+            fill: false,
+            order: 3
         });
     }
     
-    // ✅ PUNTO ROSSO: Valore calcolato corrente
+    // 3️⃣ PALLINO ROSSO: Risultato calcolato (sopra tutto)
     if(State.selCond && State.calcResult && State.calcResult.total > 0 && !State.calcResult.isBarrier){
         datasets.push({
-            label: '● Current: '+State.calcResult.total.toFixed(4),
+            label: '🔴 CALCULATED',
             data: [{x: State.selCond.temperature, y: State.calcResult.total}],
             borderColor: '#dc2626',
             backgroundColor: '#dc2626',
             borderWidth: 3,
-            pointRadius: 9,
-            pointHoverRadius: 11,
+            pointRadius: 11, // 🔴 GRANDE
+            pointHoverRadius: 13,
             pointBackgroundColor: '#fff',
             pointBorderColor: '#dc2626',
+            pointBorderWidth: 2,
             type: 'scatter',
             showLine: false,
-            order: -1
+            order: 0 // Disegna PRIMA di tutto (sopra)
         });
     }
     
@@ -3303,38 +3292,19 @@ function drawLaminateCurveChart(){
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            interaction: {
-                mode: 'nearest',
-                axis: 'x',
-                intersect: false
-            },
+            interaction: { mode: 'nearest', axis: 'x', intersect: false },
             plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        boxWidth: 12,
-                        font: { size: 9, weight: '500' },
-                        padding: 12,
-                        usePointStyle: true,
-                        // ✅ Filtra etichette duplicate o troppo lunghe
-                        filter: function(legendItem, chartData) {
-                            return legendItem.text && legendItem.text.length < 40;
-                        }
-                    }
-                },
+                legend: { display: false }, // ✅ LEGENDA NATIVA DISABILITATA
                 tooltip: {
                     backgroundColor: 'rgba(15, 23, 42, 0.95)',
                     titleFont: { size: 11 },
                     bodyFont: { size: 10 },
                     padding: 10,
-                    displayColors: true,
                     callbacks: {
                         label: function(context) {
                             var label = context.dataset.label || '';
-                            if(label.includes('LAMINATE') || label.includes('Current')){
-                                return label + ' = ' + context.parsed.y.toFixed(6) + ' ' + unit;
-                            }
-                            return label + ': ' + context.parsed.y.toFixed(6) + ' ' + unit;
+                            var val = context.parsed.y !== null ? context.parsed.y.toFixed(6) + ' ' + unit : '';
+                            return label + ': ' + val;
                         }
                     }
                 }
@@ -3342,50 +3312,40 @@ function drawLaminateCurveChart(){
             scales: {
                 x: {
                     type: 'linear',
-                    title: { 
-                        display: true, 
-                        text: 'Temperature (°C)',
-                        font: { size: 10, weight: '600' }
-                    },
+                    title: { display: true, text: 'Temperature (°C)', font: { size: 10, weight: '600' } },
                     grid: { color: 'rgba(0,0,0,0.04)' },
                     ticks: { font: { size: 9 } }
                 },
                 y: {
-                    title: { 
-                        display: true, 
-                        text: getLabel() + ' (' + unit + ')',
-                        font: { size: 10, weight: '600' }
-                    },
+                    title: { display: true, text: getLabel() + ' (' + unit + ')', font: { size: 10, weight: '600' } },
                     beginAtZero: true,
                     grid: { color: 'rgba(0,0,0,0.04)' },
                     ticks: { 
                         font: { size: 9 },
-                        callback: function(value) {
-                            return value < 0.01 ? value.toExponential(2) : value.toFixed(4);
-                        }
+                        callback: function(value) { return value < 0.01 ? value.toExponential(2) : value.toFixed(4); }
                     }
                 }
             }
         }
     });
     
-    // ✅ LEGENDA UNIFICATA SOTTO IL GRAFICO (opzionale, se preferisci testo invece di Chart.js legend)
+    // ✅ TUA LEGENDA HTML (sotto il grafico)
     var legendEl = document.getElementById('lamCurveLegend');
-    if(legendEl && datasets.length > 0){
-        var html = '<div style="display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center; font-size:0.75rem">';
-        for(var d=0; d<datasets.length; d++){
+    if(legendEl){
+        var html = '<div style="display:flex;flex-wrap:wrap;gap:0.6rem;justify-content:center;margin-top:0.5rem">';
+        for(var d = 0; d < datasets.length; d++){
             var col = datasets[d].borderColor || datasets[d].backgroundColor;
-            var text = datasets[d].label || 'Dataset '+(d+1);
-            // Tronca etichette troppo lunghe
-            if(text.length > 25) text = text.substring(0,22) + '...';
-            html += '<span style="display:inline-flex; align-items:center; gap:0.3rem; color:var(--text-light)">';
-            html += '<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:'+col+'"></span>';
-            html += text+'</span>';
+            var text = datasets[d].label || '';
+            if(!text) continue;
+            html += '<span style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.72rem;color:var(--text)">';
+            html += '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:'+col+';border:2px solid #fff;box-shadow:0 0 0 1px var(--border)"></span>';
+            html +='</span>';
         }
-        html += '</div>';
         legendEl.innerHTML = html;
     }
 }
+    
+    
 // ====================================================================
 // 📚 CALCULATOR METHODOLOGY EXPLAINER (TEXTBOOK STYLE)
 // ====================================================================
