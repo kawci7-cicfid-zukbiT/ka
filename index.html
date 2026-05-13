@@ -3798,7 +3798,8 @@ function renderSensitivity(){
     '<div class="grid grid-2">'+
     '<div class="form-group"><label>Target '+getLabel()+' ('+getUnit()+')</label><input type="number" step="any" class="form-input" id="opt-target" value="'+State.targetValue+'" onchange="doOptimize()"></div>'+
     '<div class="form-group"><label>Barrier layer</label><select class="form-input" id="opt-layer" onchange="doOptimize()">'+barrierOpts+'</select></div></div>'+
-    '<div id="opt-result"></div></div></div>';
+    '<div id="opt-result"></div></div></div>'+  // ✅ Virgolette corrette
+renderSensitivityMethodology(); // ← ✅ AGGIUNGI QUESTA RIGA QUI
 }
 
 function onSensChange(){State.sensLayerIdx=parseInt(document.getElementById('sens-layer')?document.getElementById('sens-layer').value:'0');drawSensitivityChart();}
@@ -3856,7 +3857,51 @@ function doOptimize(){
     '<span style="color:var(--text-light);font-size:0.7rem">('+current+'&rarr;'+result.thickness.toFixed(1)+'um, '+(result.thickness<current?'✓ Savings':'⚠ Increase needed')+')</span>'+
   '</div>';
 }  // ← ✅ AGGIUNGI QUESTA PARENTESI GRAFFA!
+// ====================================================================
+// 📚 SENSITIVITY METHODOLOGY EXPLAINER (TEXTBOOK STYLE)
+// ====================================================================
+function renderSensitivityMethodology() {
+return `
+<div class="card methodology-card" style="margin-top:1.5rem; border-left:4px solid var(--primary);">
+<div style="padding:1.2rem 1.5rem;">
+<h2 style="font-family:Georgia, 'Times New Roman', serif; font-size:1.2rem; color:var(--text); border-bottom:1px solid var(--border); padding-bottom:0.5rem; margin-bottom:1rem;">
+Understanding Sensitivity Analysis
+</h2>
+<div style="font-size:0.92rem; line-height:1.75; color:#334155; font-family:Georgia, 'Times New Roman', serif;">
 
+<p>Sensitivity analysis helps you see how small changes in one layer's thickness affect the overall barrier performance of your laminate. In packaging design, not all layers contribute equally to protection. By varying one layer at a time while keeping others fixed, you can identify which materials give you the most "bang for your buck" and where you might safely reduce thickness to save cost.</p>
+
+<div style="background:var(--primary-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--primary); margin:0.8rem 0; font-family:sans-serif;">
+<strong>Key idea:</strong> Barrier performance follows a series resistance model. Just like electrical resistors in series, each layer adds its own resistance to permeation. The total resistance is the sum of individual layer resistances, and the total permeability is the inverse of that sum.
+</div>
+
+<p>When you increase the thickness of a high-barrier layer like EVOH or metallized film, the total resistance rises sharply at first, then gradually levels off. This diminishing return happens because other layers eventually become the limiting factor. Conversely, thinning a critical barrier layer can cause permeability to jump dramatically once that layer's resistance drops below a certain threshold.</p>
+
+<div style="background:#f8fafc; padding:0.9rem; border-radius:6px; font-family:monospace; font-size:0.9rem; text-align:center; border:1px dashed var(--border); margin:0.8rem 0;">
+<strong>Core relationship:</strong><br>
+R<sub>total</sub> = R<sub>1</sub> + R<sub>2</sub> + ... + R<sub>n</sub><br>
+WVTR<sub>total</sub> = 1 / R<sub>total</sub>
+</div>
+
+<p>The calculator uses your material's reference WVTR or OTR value—measured at a specific thickness and condition—to estimate resistance per micron. It then scales that resistance linearly with thickness for non-metallized materials. For metallized or coated films, barrier performance is treated as a surface property independent of substrate thickness, reflecting how these ultra-thin coatings actually work in practice.</p>
+
+<p>When interpreting your sensitivity curve, look for the "knee" of the curve: the point where adding more thickness yields progressively smaller improvements. This is often the optimal balance between performance and material cost. If your curve is nearly flat, that layer is not the limiting factor; focus your attention elsewhere in the structure.</p>
+
+<div style="background:var(--success-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--success); margin:0.8rem 0; font-family:sans-serif;">
+<strong>Practical tip:</strong> Always run sensitivity analysis at the same temperature and humidity conditions you plan to use for final calculations. Barrier properties can shift significantly with environment, and comparing curves across different conditions may lead to misleading conclusions.
+</div>
+
+<p>Finally, remember that sensitivity analysis shows theoretical behavior based on your input data. Real-world performance can be affected by processing conditions, layer adhesion, defects, and aging. Use this tool to guide early-stage decisions, then validate critical structures with physical testing under actual use conditions.</p>
+
+<div style="margin-top:1.5rem; padding:0.9rem; background:var(--bg); border-radius:8px; font-size:0.88rem; color:var(--text-light); border-left:4px solid var(--primary); font-family:sans-serif;">
+<strong>Note:</strong> This sensitivity tool supports research and development workflows. For regulatory submissions or commercial claims, always corroborate model predictions with empirical barrier testing according to ASTM F1249, ASTM D3985, or equivalent standards.
+</div>
+
+</div>
+</div>
+</div>
+`;
+}
 function renderCompare(){
   var unit=getUnit();
   if(DB.laminates.length<2) return '<div class="card"><div class="empty-state"><p>Save 2+ laminates to compare</p></div></div>';
