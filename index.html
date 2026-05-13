@@ -3273,7 +3273,7 @@ function drawLaminateCurveChart(){
     }
     
     if(laminateCurve.length > 0) datasets.push({
-        label: '🔴 LAMINATE TOTAL', 
+        label: ' LAMINATE TOTAL', 
         data: laminateCurve,  // ✅ CORRETTO: "data:" esplicito (qui mancava!)
         borderColor: '#dc2626',
         backgroundColor: 'rgba(220,38,38,0.1)',
@@ -3337,22 +3337,29 @@ function drawLaminateCurveChart(){
     
     // ✅ GENERAZIONE LEGENDA HTML CON PALLINI E DESCRIZIONE
     var legendEl = document.getElementById('lamCurveLegend');
-    if(legendEl){
-        var html = '<div style="display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center; margin-top:0.8rem;">';
-        for(var d = 0; d < datasets.length; d++){
-            var ds = datasets[d];
-            var col = ds.borderColor || ds.backgroundColor;
-            var txt = ds.label || '';
-            if(!txt) continue;
-            
-            html += '<div style="display:flex; align-items:center; gap:0.4rem; background:#fff; padding:0.35rem 0.6rem; border-radius:6px; border:1px solid var(--border); font-size:0.75rem; font-weight:500; color:var(--text);">';
-            html += '<span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:' + col + '; flex-shrink:0;"></span>';
-            html += '<span>' + txt + '</span>';
-            html += '</div>';
+if(legendEl){
+    var html = '<div style="display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center; margin-top:0.8rem;">';
+    for(var d = 0; d < datasets.length; d++){
+        var ds = datasets[d];
+        var col = ds.borderColor || ds.backgroundColor;
+        var txt = ds.label || '';
+        if(!txt) continue;
+        
+        // ✅ ✅ ✅ AGGIUNGI QUESTO CONTROLLO ✅ ✅ ✅
+        // Salta il punto rosso calcolato (non è un materiale)
+        if(txt.indexOf('Current:') >= 0 || txt.indexOf('Calculated') >= 0) {
+            continue;
         }
+        // ✅ ✅ ✅ FINE CONTROLLO ✅ ✅ ✅
+        
+        html += '<div style="display:flex; align-items:center; gap:0.4rem; background:#fff; padding:0.35rem 0.6rem; border-radius:6px; border:1px solid var(--border); font-size:0.75rem; font-weight:500; color:var(--text);">';
+        html += '<span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:' + col + '; flex-shrink:0;"></span>';
+        html += '<span>' + txt + '</span>';
         html += '</div>';
-        legendEl.innerHTML = html;
     }
+    html += '</div>';
+    legendEl.innerHTML = html;
+}
 }
     
 // ====================================================================
