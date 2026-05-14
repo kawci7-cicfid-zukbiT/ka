@@ -1831,7 +1831,13 @@ function formatWithSigFigs(value, sigFigs) {
   }
   return sign + str;
 }
-
+function formatChartValue(value, sigFigs, unit) {
+  if (value === null || value === undefined) return '-';
+  if (value === Infinity) return '∞';
+  var sf = sigFigs || getDisplayPrecision();
+  var formatted = formatWithSigFigs(value, sf);
+  return unit ? formatted + ' ' + unit : formatted;
+}
 function getDisplayPrecision() {
   var precisions = [];
   // 1. Controlla i layer attivi
@@ -3150,8 +3156,11 @@ function drawShelfLifeCharts(res) {
               bodyFont: { size: 10 },
               padding: 10,
               callbacks: {
-                label: ctx => `🌡️ ${ctx.parsed.x}°C → ${Math.round(ctx.parsed.y)} days`
-              }
+  label: ctx => {
+    var prec = getDisplayPrecision();
+    return '🌡️ ' + ctx.parsed.x + '°C → ' + formatWithSigFigs(ctx.parsed.y, prec) + ' days';
+  }
+}
             }
           },
           scales: {
@@ -3447,87 +3456,65 @@ function doSaveLam(){
 }
 
 function drawBarChart(){
-    var canvas = document.getElementById('barChart');
-    if(!canvas || !State.calcResult || !State.calcResult.layers) return;
-    destroyChart('bar');
-    
-    var ctx = canvas.getContext('2d');
-    var labels = [];
-    var barData = [];
-    var colors = [];
-    
-    for(var i=0; i<State.calcResult.layers.length; i++){
-        var layer = State.calcResult.layers[i];
-        labels.push('L'+(i+1));  // Solo numero layer per leggibilità
-        barData.push(parseFloat(layer.resistancePct.toFixed(1)));
-        colors.push(LAYER_COLORS[i % LAYER_COLORS.length]);
-    }
-    
-    chartInstances.bar = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Resistance %',
-                data: barData,
-                backgroundColor: colors.map(c => c + 'cc'),  // Leggera trasparenza
-                borderColor: colors,
-                borderWidth: 2,
-                borderRadius: 6,
-                borderSkipped: false
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { 
-                    display: false  // ✅ Legenda nascosta: i layer sono auto-esplicativi
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                    titleFont: { size: 11 },
-                    bodyFont: { size: 10 },
-                    padding: 10,
-                    callbacks: {
-                        label: function(context) {
-                            var layer = State.calcResult.layers[context.dataIndex];
-                            return [
-                                layer.materialName,
-                                'Resistance: ' + context.parsed.y.toFixed(1) + '%',
-                                'R = ' + rStr(layer.resistance)
-                            ];
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    title: { 
-                        display: true, 
-                        text: '% of Total Resistance',
-                        font: { size: 10, weight: '600' }
-                    },
-                    grid: { color: 'rgba(0,0,0,0.04)' },
-                    ticks: { 
-                        font: { size: 9 },
-                        callback: function(value) { return value + '%'; }
-                    }
-                },
-                x: {
-                    title: { 
-                        display: true, 
-                        text: 'Layer',
-                        font: { size: 10, weight: '600' }
-                    },
-                    grid: { display: false },
-                    ticks: { font: { size: 9 } }
-                }
-            }
+  var canvas = document.getElementById('barChart');
+  if(!canvas || !State.calcResult || !State.calcResult.layers) return;
+  destroyChart('bar');
+  var ctx = canvas.getContext('2d');
+  var labels = [], barData = [], colors = [];
+  for(var i=0; i<State.calcResult.layers.length; i++){
+    var layer = State.calcResult.layers[i];
+    labels.push('L'+(i+1));
+    barData.push(parseFloat(layer.resistancePct.toFixed(1)));
+    colors.push(LAYER_COLORS[i % LAYER_COLORS.length]);
+  }
+  var prec = getDisplayPrecision();
+  chartInstances.bar = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Resistance %',
+        data: barData,
+        backgroundColor: colors.map(c => c + 'cc'),
+        borderColor: colors,
+        borderWidth: 2,
+        borderRadius: 6,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(15, 23, 42, 0.95)',
+          callbacks: {
+            label: function(context) {
+  var layer = State.calcResult.layers[context.dataIndex];
+  var prec = getDisplayPrecision();
+  return [
+    layer.materialName,
+    'Resistance: ' + formatWithSigFigs(context.parsed.y, prec) + '%',
+    'R = ' + formatWithSigFigs(layer.resistance, prec)
+  ];
+}
+          }
         }
-    });
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          title: { display: true, text: '% of Total Resistance' },
+          ticks: {
+            callback: function(value) { return formatChartValue(value, prec, '%'); }
+          }
+        },
+        x: { title: { display: true, text: 'Layer' } }
+      }
+    }
+  });
 }
 
 function drawLaminateCurveChart(){
@@ -3695,11 +3682,12 @@ function drawLaminateCurveChart(){
                     },
                     callbacks: {
                         label: function(ctx){
-                            var lbl = ctx.dataset.label || '';
-                            if(lbl.includes('LAMINATE TOTAL')) return ' LAMINATE: '+ctx.parsed.y.toFixed(6)+' '+getUnit();
-                            if(lbl.includes('(Fit)')) return lbl;
-                            return lbl+': '+ctx.parsed.y.toFixed(6)+' '+getUnit();
-                        }
+  var lbl = ctx.dataset.label || '';
+  var prec = getDisplayPrecision();
+  if(lbl.includes('LAMINATE TOTAL')) return ' LAMINATE: '+formatWithSigFigs(ctx.parsed.y, prec)+' '+getUnit();
+  if(lbl.includes('(Fit)')) return lbl;
+  return lbl+': '+formatWithSigFigs(ctx.parsed.y, prec)+' '+getUnit();
+}
                     }
                 }
             },
@@ -3716,7 +3704,10 @@ function drawLaminateCurveChart(){
                     grid: { color: 'rgba(0,0,0,0.04)' },
                     ticks: { 
                         font: { size: 9 },
-                        callback: function(value) { return value < 0.01 ? value.toExponential(2) : value.toFixed(4); }
+                       callback: function(value) {
+  var prec = getDisplayPrecision();
+  return value < 0.01 ? formatWithSigFigs(value, prec) : formatWithSigFigs(value, prec);
+}
                     }
                 }
             }
