@@ -5022,7 +5022,7 @@ var hygroHTML =
         '<input type="number" class="form-input" id="mf-refrh" value="'+(mat && mat.hygroscopicRefRH ? mat.hygroscopicRefRH : 50)+'" placeholder="50">'+
       '</div>'+
     '</div>'+
-    '<div style="font-size:0.68rem;color:var(--text-light);margin-top:0.3rem">Material is auto-flagged as hygroscopic when β > 0</div>'+
+    '<div style="font-size:0.68rem;color:var(--text-light);margin-top:0.3rem"></div>'+
   '</div>';
     
 // ✅ GENERA LE RIGHE DINAMICHE
@@ -5150,9 +5150,10 @@ conditionsArray.push({ temperature: temp, humidity: hum });
 }
 
 var finalFamily = family || getFamily(name);
-var isHygro = document.getElementById('mf-hygroscopic').checked;
+// ✅ NUOVA LOGICA: auto-flag se β > 0 (nessuna checkbox)
 var betaVal = parseFloat(document.getElementById('mf-beta').value) || 0;
 var refRHVal = parseFloat(document.getElementById('mf-refrh').value) || 50;
+var isHygro = betaVal > 0;  // Flag automatico
 
 var matData = {
 name: name,
