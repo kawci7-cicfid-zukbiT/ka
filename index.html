@@ -1234,6 +1234,24 @@ calcLayerResistance: function(layer, material, condition) {
   
   return { resistance: finalResistance, transmissionAtThickness: finalTransmission, baseTransmission: baseTransmission, isBarrier: finalTransmission < 0.1, hygroCorrection: hygro.factor !== 1 ? hygro : null };
 },
+    calcTotal:function(layers,materials,condition){
+  var results=[];var totalR=0;
+  for(var i=0;i<layers.length;i++){
+    var layer=layers[i];
+    if(layer.mid===null||layer.thick<=0) return{error:'All layers must have material and thickness > 0'};
+    var mat=null;for(var j=0;j<materials.length;j++){if(materials[j].id===layer.mid){mat=materials[j];break;}}
+    if(!mat) return{error:'Material not found for layer '+(i+1)};
+    var res=Engine.calcLayerResistance(layer,mat,condition);
+    if(res.error) return{error:res.error};
+    if(res.resistance===null) return{error:'Calculation failed'};
+    results.push({layerIndex:i,materialName:mat.name,thickness:layer.thick,resistance:res.resistance,transmissionAtThickness:res.transmissionAtThickness,isBarrier:res.isBarrier});
+    if(res.resistance===Infinity) return{total:0,layers:results,isBarrier:true,error:null};
+    totalR+=res.resistance;
+  }
+  var total=totalR>0?1/totalR:0;
+  for(var r=0;r<results.length;r++){results[r].resistancePct=totalR>0?(results[r].resistance/totalR)*100:0;}
+  return{total:total,layers:results,totalResistance:totalR,isBarrier:false,error:null};
+},
   validateArrhenius:function(mat){
     var vals=this.getValues(mat);
     var e=this.validateData(mat);if(e.length>0) return{valid:false,error:e.join('. ')};
@@ -4869,23 +4887,23 @@ function showMatModal(editId) {
       '</label>'+
     '</div>';
  
-var hygroHTML = `
-<div style="margin:0.5rem 0;padding:0.5rem;background:var(--warning-light);border-radius:8px;border-left:3px solid var(--warning)">
-  <label style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.3rem;font-size:0.75rem">
-    <input type="checkbox" id="mf-hygroscopic" ${(mat && mat.isHygroscopic) ? 'checked' : ''} style="accent-color:var(--warning)">
-    <strong>Hygroscopic Material</strong>
-  </label>
-  <div class="grid grid-2" style="gap:0.4rem">
-    <div class="form-group" style="margin:0">
-      <label>β Coefficient (%/RH)</label>
-      <input type="number" step="0.001" class="form-input" id="mf-beta" value="${mat && mat.hygroscopicBeta ? mat.hygroscopicBeta : ''}" placeholder="0.034">
-    </div>
-    <div class="form-group" style="margin:0">
-      <label>Reference RH (%)</label>
-      <input type="number" class="form-input" id="mf-refrh" value="${mat && mat.hygroscopicRefRH ? mat.hygroscopicRefRH : 50}" placeholder="50">
-    </div>
-  </div>
-</div>`;
+var hygroHTML = 
+  '<div style="margin:0.5rem 0;padding:0.5rem;background:var(--warning-light);border-radius:8px;border-left:3px solid var(--warning)">'+
+    '<label style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.3rem;font-size:0.75rem">'+
+      '<input type="checkbox" id="mf-hygroscopic" '+(mat && mat.isHygroscopic ? 'checked' : '')+' style="accent-color:var(--warning)">'+
+      '<strong>Hygroscopic Material</strong>'+
+    '</label>'+
+    '<div class="grid grid-2" style="gap:0.4rem">'+
+      '<div class="form-group" style="margin:0">'+
+        '<label>β Coefficient (%/RH)</label>'+
+        '<input type="number" step="0.001" class="form-input" id="mf-beta" value="'+(mat && mat.hygroscopicBeta ? mat.hygroscopicBeta : '')+'" placeholder="0.034">'+
+      '</div>'+
+      '<div class="form-group" style="margin:0">'+
+        '<label>Reference RH (%)</label>'+
+        '<input type="number" class="form-input" id="mf-refrh" value="'+(mat && mat.hygroscopicRefRH ? mat.hygroscopicRefRH : 50)+'" placeholder="50">'+
+      '</div>'+
+    '</div>'+
+  '</div>';
   // ✅ GENERA LE RIGHE DINAMICHE
   var rowsHTML = '';
   for(var r=0; r<currentValues.length; r++){
@@ -4953,6 +4971,7 @@ var hygroHTML = `
       '<span style="font-size:0.75rem;color:var(--text-light)">Entering data for <strong>'+currentLabel+'</strong> • Unit: '+currentUnit+'</span>'+
     '</div>'+
     metallizedHTML+
+             hygroHTML+ 
     '<div id="mf-rows">'+rowsHTML+'</div>'+
     '<button class="btn btn-outline btn-full" onclick="addMatRow()" style="margin-top:0.4rem">+ Add Condition</button>',
     
@@ -5020,6 +5039,7 @@ if(tdsLink && !tdsLink.startsWith('http')) {
       
       var finalFamily = family || getFamily(name);
         var isHygro = document.getElementById('mf-hygroscopic').checked;
+var isHygro = document.getElementById('mf-hygroscopic').checked;
 var betaVal = parseFloat(document.getElementById('mf-beta').value) || 0;
 var refRHVal = parseFloat(document.getElementById('mf-refrh').value) || 50;
         
