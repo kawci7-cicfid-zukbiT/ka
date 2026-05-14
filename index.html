@@ -4391,16 +4391,32 @@ function drawSensitivityChart(){
   var layerIdx = State.sensLayerIdx;
   var tMin = parseFloat(document.getElementById('sens-tmin')?.value || '10');
   var tMax = parseFloat(document.getElementById('sens-tmax')?.value || '500');
+  
+  // Verifica prerequisiti
+  if(!State.layers || State.layers.length === 0){
+    showSensitivityEmpty('Add layers in Calculator first');
+    return;
+  }
+  
   var common = Engine.findCommonConditions(State.layers, DB.materials);
+  if(common.error){
+    showSensitivityEmpty(common.error);
+    return;
+  }
+  
   var condition = State.selCond || (common.conditions && common.conditions[0]) || {temperature:25, humidity:50};
   
+  // Verifica che il layer selezionato esista e abbia un materiale
+  var targetLayer = State.layers[layerIdx];
+  if(!targetLayer || targetLayer.mid === null){
+    showSensitivityEmpty('Select a valid layer to vary');
+    return;
+  }
+  
   var result = Engine.calcSensitivityCurve(State.layers, DB.materials, condition, layerIdx, tMin, tMax, 80);
-  if(result.error || !result.points || result.points.length === 0) {
-    var ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '12px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('No valid data points', canvas.clientWidth/2, canvas.clientHeight/2);
+  
+  if(result.error || !result.points || result.points.length === 0){
+    showSensitivityEmpty(result.error || 'No valid data points');
     return;
   }
   
@@ -4408,60 +4424,32 @@ function drawSensitivityChart(){
   var labels = result.points.map(p => p.thickness.toFixed(0));
   var vals = result.points.map(p => parseFloat(p.total.toFixed(6)));
   
-  // ✅ Supporto materiali igroscopici: curve multiple per RH diverse
-  var targetMat = State.layers[layerIdx].mid ? DB.materials.find(m => m.id === State.layers[layerIdx].mid) : null;
-  var isHygro = targetMat && targetMat.isHygroscopic;
-  var datasets = [];
-  
-  if(isHygro) {
-    // Mostra curve per diverse umidità
-    var rhLevels = [30, 50, 70, 85];
-    var colors = ['#3b82f6','#22c55e','#f59e0b','#ef4444'];
-    
-    rhLevels.forEach(function(rh, idx){
-      var cond = {temperature: condition.temperature, humidity: rh};
-      var res = Engine.calcSensitivityCurve(State.layers, DB.materials, cond, layerIdx, tMin, tMax, 80);
-      if(!res.error && res.points.length > 0) {
-        var v = res.points.map(p => parseFloat(p.total.toFixed(6)));
-        datasets.push({
-          label: 'β ' + rh + '% RH',
-          data: v,
-          borderColor: colors[idx],
-          backgroundColor: colors[idx] + '20',
-          borderWidth: rh === condition.humidity ? 2.5 : 1.5,
-          borderDash: rh === condition.humidity ? [] : [4,2],
-          fill: false,
-          tension: 0.4,
-          pointRadius: 0
-        });
-      }
-    });
-  } else {
-    // Comportamento standard: singola curva
-    datasets.push({
-      label: getLabel() + ' vs Layer ' + (layerIdx+1),
-      data: vals,
-      borderColor: '#3b82f6',
-      backgroundColor: 'rgba(59,130,246,0.1)',
-      fill: true,
-      tension: 0.4,
-      pointRadius: 0,
-      borderWidth: 2
-    });
+  // ✅ Evita grafico con tutti valori zero
+  var allZero = vals.every(v => v === 0);
+  if(allZero){
+    showSensitivityEmpty('All calculated values are zero');
+    return;
   }
   
   chartInstances.sens = new Chart(ctx, {
     type: 'line',
     data: {
       labels: labels,
-      datasets: datasets
+      datasets: [{
+        label: getLabel() + ' vs Layer ' + (layerIdx+1) + ' thickness',
+        data: vals,
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59,130,246,0.1)',
+        fill: true,
+        tension: 0.4,
+        pointRadius: 0,
+        borderWidth: 2
+      }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'bottom', labels: { font: { size: 9 } } }
-      },
+      plugins: { legend: { display: false } },
       scales: {
         x: { title: { display: true, text: 'Layer thickness (µm)' } },
         y: {
@@ -4472,6 +4460,24 @@ function drawSensitivityChart(){
       }
     }
   });
+}
+
+// ✅ Funzione helper per mostrare messaggio di errore nel canvas
+function showSensitivityEmpty(msg){
+  var canvas = document.getElementById('sensChart');
+  if(!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var dpr = window.devicePixelRatio || 1;
+  canvas.width = canvas.clientWidth * dpr;
+  canvas.height = canvas.clientHeight * dpr;
+  ctx.scale(dpr, dpr);
+  
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '12px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(msg || 'No data', canvas.clientWidth/2, canvas.clientHeight/2);
 }
 function doOptimize(){
   var target=parseFloat(document.getElementById('opt-target')?document.getElementById('opt-target').value:'0.5');
