@@ -1792,10 +1792,79 @@ function clearProject() {
   State.layers=[{mid:null,thick:0}];State.selCond=null;State.laminateName='';State.calcResult=null;State.calcError=null;
   DB.saveState(State);render();
 }
-function rStr(v) { return v===Infinity?'∞':v==null?'-':v.toFixed(4); }
+function rStr(v) { 
+  if (v === Infinity) return '∞'; 
+  if (v == null) return '-'; 
+  return formatWithSigFigs(v, getDisplayPrecision()); 
+}
 function getUnit() { return Engine.getUnits().value; }
 function getLabel() { return Engine.getUnits().label; }
+// === 📏 SIGNIFICANT FIGURES UTILITIES ===
+function countSigFigs(value) {
+  if (value === null || value === undefined || value === '') return 2;
+  var str = String(value).trim().toLowerCase().replace(/^[+\-]/, '').replace(/e[+\-]?\d+$/, '').replace(/[a-z\/°%\s]/g, '');
+  var digits = str.replace('.', '');
+  digits = digits.replace(/^0+/, '');
+  if (digits === '' || digits === '0') return 1;
+  if (str.indexOf('.') === -1) {
+    digits = digits.replace(/0+$/, '');
+    if (digits === '') digits = '1';
+  }
+  return Math.min(Math.max(digits.length, 2), 6);
+}
 
+function formatWithSigFigs(value, sigFigs) {
+  if (value === null || value === undefined) return '-';
+  if (value === Infinity) return '∞';
+  if (value === 0) return '0';
+  var sign = value < 0 ? '-' : '';
+  value = Math.abs(value);
+  var magnitude = Math.floor(Math.log10(value));
+  var factor = Math.pow(10, sigFigs - 1 - magnitude);
+  var rounded = Math.round(value * factor) / factor;
+  if (rounded < 0.001 || rounded >= 10000) {
+    return sign + rounded.toExponential(sigFigs - 1);
+  }
+  var str = rounded.toString();
+  if (str.indexOf('.') === -1 && sigFigs > str.replace('.', '').length) {
+    return sign + rounded.toFixed(sigFigs - Math.floor(Math.log10(rounded)) - 1);
+  }
+  return sign + str;
+}
+
+function getDisplayPrecision() {
+  var precisions = [];
+  // 1. Controlla i layer attivi
+  if (State.layers) {
+    for (var i = 0; i < State.layers.length; i++) {
+      var l = State.layers[i];
+      if (l.thick && l.thick > 0) precisions.push(countSigFigs(l.thick));
+      if (l.mid) {
+        var mat = DB.materials.find(function(m){ return m.id === l.mid; });
+        if (mat) {
+          var vals = State.mode === 'wvtr' ? mat.wvtrValues : mat.otrValues;
+          if (vals) {
+            for (var v = 0; v < vals.length; v++) {
+              if (vals[v] && vals[v].value != null) precisions.push(countSigFigs(vals[v].value));
+            }
+          }
+        }
+      }
+    }
+  }
+  // 2. Controlla input Shelf Life se presenti
+  var slIds = ['sl-weight', 'sl-area', 'sl-rate', 'sl-temp', 'sl-rh-ext'];
+  for (var s = 0; s < slIds.length; s++) {
+    var el = document.getElementById(slIds[s]);
+    if (el && el.value) precisions.push(countSigFigs(el.value));
+  }
+  // Se nessuna precisione rilevata, default 3
+  if (precisions.length === 0) return 3;
+  // Regola fisica: il risultato non può essere più preciso del dato meno preciso
+  var min = precisions[0];
+  for (var p = 1; p < precisions.length; p++) if (precisions[p] < min) min = precisions[p];
+  return min;
+}
 function searchMaterialWeb(matName) {
   var encoded=encodeURIComponent(matName);
   Modal.open('Search Online: '+matName,
@@ -2892,7 +2961,7 @@ function renderShelfLifeResult(res) {
   panel.innerHTML = `
     <div style="animation:fadeIn 0.3s ease">
       <div style="text-align:center;padding:1.25rem;background:linear-gradient(135deg,var(--primary-light),#e0f2fe);border-radius:12px;margin-bottom:1rem">
-        <div style="font-size:2.2rem;font-weight:800;color:var(--primary);line-height:1.2">
+        <div style="font-size:2.2rem;font-weight:800;color:var(--primary);line-height:1.2">${isFinite(res.days) ? formatWithSigFigs(res.days, getDisplayPrecision()) : '∞'} Days
           ${isFinite(res.days) ? Math.round(res.days) : '∞'} Days
         </div>
         <div style="font-size:0.85rem;color:var(--text-light);margin-top:0.4rem;font-weight:500">
@@ -3257,11 +3326,13 @@ layersHTML += '<div class="layer-card"><span class="layer-badge">LAYER '+(i+1)+'
   if(State.calcError) {
     resultHTML = '<div class="alert alert-error">'+State.calcError+'</div>';
   } else if(hasResult){
-    resultHTML = '<div class="result-card fade-in"><div class="result-value">'+State.calcResult.total.toFixed(6)+'</div><div class="result-unit">'+getUnit()+'</div></div>';
-    var detail = '';
+    var prec = getDisplayPrecision();
+resultHTML = '<div class="result-card fade-in"><div class="result-value">'+formatWithSigFigs(State.calcResult.total, prec)+'</div><div class="result-unit">'+getUnit()+'</div></div>';
+      var detail = '';
     for(var r=0; r<State.calcResult.layers.length; r++){
       var rl = State.calcResult.layers[r];
-      detail += '<div><strong>'+rl.materialName+'</strong> ('+rl.thickness+'µm): '+getLabel()+' = '+rl.transmissionAtThickness.toFixed(4)+' '+getUnit()+' • R='+rStr(rl.resistance)+' • '+rl.resistancePct.toFixed(1)+'%</div>';
+      var prec2 = getDisplayPrecision();
+detail += '<div><strong>'+rl.materialName+'</strong> ('+rl.thickness+'µm): '+getLabel()+' = '+formatWithSigFigs(rl.transmissionAtThickness, prec2)+' '+getUnit()+' • R='+formatWithSigFigs(rl.resistance, prec2)+' • '+rl.resistancePct.toFixed(1)+'%</div>';
     }
     detail += '<div style="padding-top:.25rem;border-top:2px solid #93c5fd;margin-top:.25rem"><strong>Total R:</strong> '+rStr(State.calcResult.totalResistance)+'</div>';
     resultHTML += '<div class="result-detail">'+detail+'</div>';
@@ -3294,7 +3365,7 @@ if(hasResult && State.calcResult.layers) {
     '<span style="font-size:.75rem;color:var(--text-light)">Auto-calculate</span></div>'+
     '<button class="btn btn-danger btn-full" onclick="doCalc()"'+(canCalc?'':' disabled')+'>Calculate '+getLabel()+'</button></div></div>'+
     '<div><div class="card"><h2>Result</h2>'+(resultHTML||'<p style="color:var(--text-light);font-size:.8rem;text-align:center;padding:1.5rem">Configure layers and calculate</p>')+'</div>'+
-    (hasResult ? '<div class="card" id="hygro-card" style="display:none"><h2>Hygroscopic Behavior Over Time</h2><p style="font-size:0.75rem;color:var(--text-light);margin-bottom:0.5rem">WVTR increases as material absorbs moisture</p><div class="chart-container" style="min-height:280px"><canvas id="hygroTimeChart"></canvas></div></div>' : '')+
+    (hasResult ? '<div class="card" id="hygro-card" style="display:none"><h2>Time-Dependent barrier integrity</h2><p style="font-size:0.75rem;color:var(--text-light);margin-bottom:0.5rem">WVTR increases as material absorbs moisture</p><div class="chart-container" style="min-height:280px"><canvas id="hygroTimeChart"></canvas></div></div>' : '')+
      (hasResult ? '<div class="card"><h2>'+getLabel()+' vs Temperature</h2><div class="chart-container"><canvas id="lamCurveChart"></canvas></div><div id="lamCurveLegend" style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.5rem;justify-content:center"></div></div>'+
     '<div class="card"><h2>Save Laminate</h2><div style="display:flex;gap:.4rem;align-items:flex-end">'+
     '<div class="form-group" style="flex:1;margin:0"><label>Name</label><input type="text" class="form-input" id="lam-name" value="'+State.laminateName+'" placeholder="Name..." oninput="State.laminateName=this.value;updateSaveBtn()"></div>'+
