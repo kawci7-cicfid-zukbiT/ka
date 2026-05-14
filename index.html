@@ -4966,13 +4966,16 @@ filtered.sort(function(a, b){
   }
   
   // ✅ SISTEMA AFFIDABILITÀ
-  var relScore = getReliabilityScore(m);
-  var relBadge = getReliabilityBadge(relScore);
-  var userVote = hasUserVoted(m.id);
-  var voteOpacity = userVote ? 'opacity:0.5;cursor:not-allowed' : '';
-  var upActive = userVote === 'up' ? 'style="background:var(--success-light);border-color:var(--success);color:var(--success)"' : '';
-  var downActive = userVote === 'down' ? 'style="background:var(--danger-light);border-color:var(--danger);color:var(--danger)"' : '';
+  // ✅ ✅ ✅ SISTEMA VOTAZIONE FLESSIBILE (SOSTITUISCI TUTTO QUESTO BLOCCO) ✅ ✅ ✅
+var relScore = getReliabilityScore(m);
+var relBadge = getReliabilityBadge(relScore);
+var userVote = hasUserVoted(m.id);
 
+// ✅ Nessuna variabile 'voteDisabled': i pulsanti restano SEMPRE cliccabili
+var upActive = userVote === 'up' ? 'style="background:var(--success-light);border-color:var(--success);color:var(--success)"' : '';
+var downActive = userVote === 'down' ? 'style="background:var(--danger-light);border-color:var(--danger);color:var(--danger)"' : '';
+var upTitle = userVote === 'up' ? 'Click to unvote' : 'Mark as reliable';
+var downTitle = userVote === 'down' ? 'Click to unvote' : 'Mark as unreliable';
   // ✅ ✅ ✅ SMART SEARCH: BADGE E HIGHLIGHT ✅ ✅ ✅
   
   // 1. Genera badge che mostrano DOVE è stato trovato il match
@@ -5050,8 +5053,8 @@ filtered.sort(function(a, b){
             '<span class="reliability-badge '+(relScore>=70?'high':relScore>=40?'medium':'low')+'">'+relScore+'%</span>'+
           '</div>'+
          '<div class="mat-voting-buttons">'+
-'<button class="btn btn-outline" '+voteDisabled+' onclick="event.stopPropagation();voteReliability(\''+String(m.id)+'\',\'up\')" title="Mark as reliable" '+upActive+'>👍</button>'+
-'<button class="btn btn-outline" '+voteDisabled+' onclick="event.stopPropagation();voteReliability(\''+String(m.id)+'\',\'down\')" title="Mark as unreliable" '+downActive+'>👎</button>'+
+'<button class="btn btn-outline" onclick="event.stopPropagation();voteReliability(\''+String(m.id)+'\',\'up\')" title="'+upTitle+'" '+upActive+'>👍</button>'+
+'<button class="btn btn-outline" onclick="event.stopPropagation();voteReliability(\''+String(m.id)+'\',\'down\')" title="'+downTitle+'" '+downActive+'>👎</button>'+
 '</div>'+
         '</div>'+
         
