@@ -2265,41 +2265,49 @@ function renderHome() {
 // ✅ Vota affidabilità (con controllo connessione Cloud)
 async function voteReliability(matId, voteType) {
     var matIdStr = String(matId);
-    if(hasUserVoted(matIdStr)) {
-        alert("⚠️ You have already voted for this material");
-        return;
-    }
-    
+    var currentVote = hasUserVoted(matIdStr); // 'up', 'down' o null
     var mat = DB.materials.find(m => String(m.id) === matIdStr);
     if(!mat) return;
-    
-    console.log("🗳️ Voting:", mat.name, "| firebaseDocId:", mat.firebaseDocId, "| hasCloudDB:", !!window.communityDB);
-    
     if(!mat.reliabilityVotes) mat.reliabilityVotes = { up: 0, down: 0 };
-    if(voteType === 'up') mat.reliabilityVotes.up++;
-    else mat.reliabilityVotes.down++;
-    
-    recordUserVote(matIdStr, voteType);
-    DB.save();
-    renderContent();
-    
-    // ✅ SYNC CON FIREBASE
-    if(mat.firebaseDocId && window.communityDB) {
-        try {
-            console.log("🔥 Sending vote to Firebase...");
-            const ref = window.fbDoc(window.communityDB, "materials", mat.firebaseDocId);
-            const updateData = {};
-            if(voteType === 'up') updateData["reliabilityVotes.up"] = window.fbIncrement(1);
-            else updateData["reliabilityVotes.down"] = window.fbIncrement(1);
-            
-            await window.fbUpdateDoc(ref, updateData);
-            console.log("✅ Firebase vote synced!");
-        } catch(e) {
-            console.error("❌ FIREBASE ERROR:", e.code, e.message);
-            alert("⚠️ Vote recorded locally, but cloud error: " + e.message);
+
+    var firebaseUpdate = {};
+    var needsSync = mat.firebaseDocId && window.communityDB;
+
+    // ✅ Se l'utente ha già votato, gestiamo la modifica
+    if (currentVote) {
+        // Rimuovi il vecchio voto (decrementa locale)
+        mat.reliabilityVotes[currentVote] = Math.max(0, (mat.reliabilityVotes[currentVote] || 0) - 1);
+        if(needsSync) firebaseUpdate["reliabilityVotes." + currentVote] = window.fbIncrement(-1);
+
+        // Se clicca lo stesso pulsante → ANNULLA VOTO (unvote)
+        if (currentVote === voteType) {
+            recordUserVote(matIdStr, null); // Rimuove dal localStorage
+            DB.save();
+            renderContent();
+            if(needsSync) {
+                try {
+                    const ref = window.fbDoc(window.communityDB, "materials", mat.firebaseDocId);
+                    await window.fbUpdateDoc(ref, firebaseUpdate);
+                } catch(e) { console.warn("⚠️ Vote un-sync failed:", e); }
+            }
+            return;
         }
-    } else {
-        console.warn("⚠️ Vote NOT synced to Firebase - missing firebaseDocId or DB");
+    }
+
+    // ✅ Applica il nuovo voto
+    mat.reliabilityVotes[voteType] = (mat.reliabilityVotes[voteType] || 0) + 1;
+    recordUserVote(matIdStr, voteType);
+    if(needsSync) firebaseUpdate["reliabilityVotes." + voteType] = window.fbIncrement(1);
+
+    DB.save();
+    renderContent(); // Aggiorna UI immediatamente
+
+    // ✅ Sync Firebase (solo se ci sono cambiamenti da inviare)
+    if(needsSync && Object.keys(firebaseUpdate).length > 0) {
+        try {
+            const ref = window.fbDoc(window.communityDB, "materials", mat.firebaseDocId);
+            await window.fbUpdateDoc(ref, firebaseUpdate);
+        } catch(e) { console.warn("⚠️ Vote sync failed:", e); }
     }
 }
   
@@ -2317,9 +2325,12 @@ function hasUserVoted(matId) {
 function recordUserVote(matId, voteType) {
     try {
         var votes = JSON.parse(localStorage.getItem('wvtr_user_votes') || '{}');
-        votes[String(matId)] = voteType;
+        if (voteType) {
+            votes[String(matId)] = voteType;
+        } else {
+            delete votes[String(matId)]; // ✅ Rimuove il voto se l'utente annulla
+        }
         localStorage.setItem('wvtr_user_votes', JSON.stringify(votes));
-        console.log("📝 Salvato in localStorage:", votes);
     } catch(e) { console.error("❌ Errore save localStorage:", e); }
 }
 
@@ -4099,7 +4110,7 @@ function renderArrhenius() {
     '<div class="form-group" style="margin-top:0.5rem;padding:0.6rem;background:var(--primary-light);border-radius:8px">' +
       '<label style="display:flex;align-items:center;gap:0.3rem;font-weight:600">' +
         '<span>Eₐ Activation Energy (kJ/mol)</span>' +
-        '<span class="badge badge-blue" style="font-size:0.6rem" title="Auto-filled from material data, editable">✏️ Editable</span>' +
+        '<span class="badge badge-blue" style="font-size:0.6rem" title="Auto-filled from material data, editable"></span>' +
       '</label>' +
       '<input type="number" step="any" class="form-input" id="arr-ea" value="" placeholder="Auto-calculated or enter custom value" oninput="onArrEaChange()">' +
       '<span style="font-size:0.65rem;color:var(--text-light);display:block;margin-top:0.25rem">Leave empty to auto-calculate from material data, or enter a custom value for "what-if" analysis</span>' +
@@ -4958,7 +4969,6 @@ filtered.sort(function(a, b){
   var relScore = getReliabilityScore(m);
   var relBadge = getReliabilityBadge(relScore);
   var userVote = hasUserVoted(m.id);
-  var voteDisabled = userVote ? 'disabled' : '';
   var voteOpacity = userVote ? 'opacity:0.5;cursor:not-allowed' : '';
   var upActive = userVote === 'up' ? 'style="background:var(--success-light);border-color:var(--success);color:var(--success)"' : '';
   var downActive = userVote === 'down' ? 'style="background:var(--danger-light);border-color:var(--danger);color:var(--danger)"' : '';
