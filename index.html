@@ -2349,103 +2349,132 @@ function renderShelfLifeMethodology() {
 }
   // ✅ FUNZIONE: Render tab Shelf Life
 
-// ✅ FUNZIONE PRINCIPALE renderShelfLife() - CORRETTA E COMPLETA
+// ====================================================================
+// 🧪 SHELF LIFE MODULE (CORRETTO + RIQUADRO LAMINATO)
+// ====================================================================
 function renderShelfLife() {
-    const modeLabel = State.mode === 'wvtr' ? 'WVTR' : 'OTR';
-    const unit = State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
-    const currentRate = (State.calcResult && State.calcResult.total) ? State.calcResult.total.toFixed(6) : '';
-    
-    // Dropdown prodotti
-    let prodOpts = '';
-    for(let k in PRODUCTS_DB) prodOpts += `<option value="${k}">${PRODUCTS_DB[k].name}</option>`;
-    
-    return `
-    <div class="grid grid-2">
-        <!-- === FORM DI INPUT === -->
-        <div class="card">
-            <h2 style="display:flex;align-items:center;gap:0.4rem">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px">
-                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                </svg>
-                Advanced Shelf Life Engine
-            </h2>
-            <div class="form-group">
-                <label>Product Template</label>
-                <select class="form-input" id="sl-product" onchange="fillProductDefaults(this.value)">${prodOpts}</select>
-            </div>
-            <div class="grid grid-2">
-                <div class="form-group"><label>Weight (g or mL)</label><input type="number" step="any" class="form-input" id="sl-weight" value="100"></div>
-                <div class="form-group"><label>Surface Area (m²)</label><input type="number" step="any" class="form-input" id="sl-area" value="0.1"></div>
-            </div>
-            <div class="grid grid-2">
-                <div class="form-group"><label>Storage Temp (°C)</label><input type="number" step="any" class="form-input" id="sl-temp" value="25"></div>
-                <div class="form-group"><label>Ext. RH (%)</label><input type="number" step="any" class="form-input" id="sl-rh-ext" value="65"></div>
-            </div>
-            <div class="form-group">
-                <label>Package ${modeLabel} (${unit})</label>
-                <input type="number" step="any" class="form-input" id="sl-rate" value="${currentRate}" placeholder="e.g. 0.5">
-            </div>
-            <!-- Campi specifici per Moisture -->
-            <div id="moisture-fields" class="grid grid-2" style="margin-top:0.5rem">
-                <div class="form-group"><label>Initial Moisture (%)</label><input type="number" step="any" class="form-input" id="sl-minit" value="3"></div>
-                <div class="form-group"><label>Critical Moisture (%)</label><input type="number" step="any" class="form-input" id="sl-mcrit" value="8"></div>
-            </div>
-            <!-- Campi specifici per OTR/Oxidation -->
-            <div id="otx-fields" class="grid grid-2" style="margin-top:0.5rem;display:none">
-                <div class="form-group"><label>Fat Content (kg)</label><input type="number" step="any" class="form-input" id="sl-fat" value="0.3"></div>
-                <div class="form-group"><label>O₂ Critical Limit (ml/kg fat)</label><input type="number" step="any" class="form-input" id="sl-o2crit" value="400"></div>
-            </div>
-            <!-- Accelerazione termica -->
-            <div style="margin:0.8rem 0;padding:0.6rem;background:var(--primary-light);border-radius:8px">
-                <label style="display:flex;align-items:center;gap:0.4rem;margin:0">
-                    <input type="checkbox" id="sl-use-arr" checked> <strong>Apply Thermal Acceleration</strong>
-                </label>
-                <div class="grid grid-2" style="margin-top:0.4rem">
-                    <div class="form-group"><label>Eₐ (kJ/mol)</label><input type="number" step="any" class="form-input" id="sl-ea" value="60"></div>
-                    <div class="form-group"><label>Q₁₀ (alt. to Eₐ)</label><input type="number" step="any" class="form-input" id="sl-q10" value="2.0"></div>
-                </div>
-            </div>
-            <button class="btn btn-primary btn-full" onclick="calculateAdvancedShelfLife()" style="margin-top:0.5rem">
-                 Calculate Shelf Life & Simulate
-            </button>
+  const modeLabel = State.mode === 'wvtr' ? 'WVTR' : 'OTR';
+  const unit = State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
+  const currentRate = (State.calcResult && State.calcResult.total) ? State.calcResult.total.toFixed(6) : '';
+  
+  // ✅ GENERA NOME E STRUTTURA DEL LAMINATO
+  let laminateName = State.laminateName || 'Custom Structure';
+  let structureStr = '';
+  if (State.layers && State.layers.length > 0) {
+    let layers = [];
+    for(let i=0; i<State.layers.length; i++) {
+      if(State.layers[i].mid !== null && State.layers[i].thick > 0) {
+        let mat = DB.materials.find(m => m.id === State.layers[i].mid);
+        if(mat) layers.push(`${mat.name} (${State.layers[i].thick}µm)`);
+      }
+    }
+    structureStr = layers.join(' / ') || 'No layers configured';
+  }
+
+  // Dropdown prodotti
+  let prodOpts = '';
+  for(let k in PRODUCTS_DB) prodOpts += `<option value="${k}">${PRODUCTS_DB[k].name}</option>`;
+  
+  return `
+  <div class="grid grid-2">
+    <!-- === FORM DI INPUT === -->
+    <div class="card">
+      <h2 style="display:flex;align-items:center;gap:0.4rem">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+        Advanced Shelf Life Engine
+      </h2>
+      
+      <!-- ✅ NUOVO RIQUADRO: Laminato/Materiale Selezionato -->
+      <div style="background:var(--primary-light); border:1px solid #93c5fd; border-radius:8px; padding:0.75rem; margin-bottom:0.85rem; font-size:0.82rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
+          <strong style="color:var(--primary);">📦 Laminate / Structure</strong>
+          <span class="badge badge-blue">${State.mode.toUpperCase()}</span>
         </div>
-        
-        <!-- === RISULTATI + GRAFICI (stacked verticalmente) === -->
-        <div>
-            <div class="card" id="sl-result-panel">
-                <div style="text-align:center;padding:2rem;color:var(--text-light)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:48px;height:48px;margin-bottom:0.5rem;opacity:0.3">
-                        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                    <p>Select parameters and calculate to see predictions</p>
-                </div>
-            </div>
-            
-            <!-- Grafici sotto il risultato, uno sotto l'altro -->
-            <div id="sl-charts-container" style="display:none;margin-top:1rem">
-                <div class="card" style="margin-bottom:1rem">
-                    <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.4rem">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--primary)">
-                            <path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>
-                        </svg>
-                        Quality Decay Over Time
-                    </h3>
-                    <div class="chart-mini" style="height:280px"><canvas id="slDecayChart"></canvas></div>
-                </div>
-                <div class="card">
-                    <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.4rem">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--purple)">
-                            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/><path d="M5.5 12h13"/>
-                        </svg>
-                        Shelf Life vs Temperature
-                    </h3>
-                    <div class="chart-mini" style="height:280px"><canvas id="slTempChart"></canvas></div>
-                </div>
-            </div>
+        <div style="font-weight:600; color:var(--text); margin-bottom:0.2rem;">${laminateName}</div>
+        <div style="font-size:0.75rem; color:var(--text-light); word-break:break-word;">${structureStr}</div>
+        <div style="margin-top:0.4rem; padding-top:0.4rem; border-top:1px dashed #93c5fd; display:flex; justify-content:space-between; align-items:center;">
+          <span>Calculated ${modeLabel}:</span>
+          <span style="font-weight:700; color:var(--primary); font-family:monospace; font-size:0.9rem;">${currentRate || '-'} ${unit}</span>
         </div>
+      </div>
+
+      <div class="form-group">
+        <label>Product Template</label>
+        <select class="form-input" id="sl-product" onchange="fillProductDefaults(this.value)">${prodOpts}</select>
+      </div>
+      <div class="grid grid-2">
+        <div class="form-group"><label>Weight (g or mL)</label><input type="number" step="any" class="form-input" id="sl-weight" value="100"></div>
+        <div class="form-group"><label>Surface Area (m²)</label><input type="number" step="any" class="form-input" id="sl-area" value="0.1"></div>
+      </div>
+      <div class="grid grid-2">
+        <div class="form-group"><label>Storage Temp (°C)</label><input type="number" step="any" class="form-input" id="sl-temp" value="25"></div>
+        <div class="form-group"><label>Ext. RH (%)</label><input type="number" step="any" class="form-input" id="sl-rh-ext" value="65"></div>
+      </div>
+      <div class="form-group">
+        <label>Package ${modeLabel} (${unit})</label>
+        <input type="number" step="any" class="form-input" id="sl-rate" value="${currentRate}" placeholder="e.g. 0.5">
+        <span style="font-size:0.68rem;color:var(--text-light);margin-top:0.2rem;display:block">Auto-filled from Calculator. You can override manually if needed.</span>
+      </div>
+      <!-- Campi specifici per Moisture -->
+      <div id="moisture-fields" class="grid grid-2" style="margin-top:0.5rem">
+        <div class="form-group"><label>Initial Moisture (%)</label><input type="number" step="any" class="form-input" id="sl-minit" value="3"></div>
+        <div class="form-group"><label>Critical Moisture (%)</label><input type="number" step="any" class="form-input" id="sl-mcrit" value="8"></div>
+      </div>
+      <!-- Campi specifici per OTR/Oxidation -->
+      <div id="otx-fields" class="grid grid-2" style="margin-top:0.5rem;display:none">
+        <div class="form-group"><label>Fat Content (kg)</label><input type="number" step="any" class="form-input" id="sl-fat" value="0.3"></div>
+        <div class="form-group"><label>O₂ Critical Limit (ml/kg fat)</label><input type="number" step="any" class="form-input" id="sl-o2crit" value="400"></div>
+      </div>
+      <!-- Accelerazione termica -->
+      <div style="margin:0.8rem 0;padding:0.6rem;background:var(--primary-light);border-radius:8px">
+        <label style="display:flex;align-items:center;gap:0.4rem;margin:0">
+          <input type="checkbox" id="sl-use-arr" checked> <strong>Apply Thermal Acceleration</strong>
+        </label>
+        <div class="grid grid-2" style="margin-top:0.4rem">
+          <div class="form-group"><label>Eₐ (kJ/mol)</label><input type="number" step="any" class="form-input" id="sl-ea" value="60"></div>
+          <div class="form-group"><label>Q₁₀ (alt. to Eₐ)</label><input type="number" step="any" class="form-input" id="sl-q10" value="2.0"></div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="calculateAdvancedShelfLife()" style="margin-top:0.5rem">
+        Calculate Shelf Life & Simulate
+      </button>
     </div>
-    ${renderShelfLifeMethodology()}
-    `;
+    <!-- === RISULTATI + GRAFICI === -->
+    <div>
+      <div class="card" id="sl-result-panel">
+        <div style="text-align:center;padding:2rem;color:var(--text-light)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:48px;height:48px;margin-bottom:0.5rem;opacity:0.3">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <p>Select parameters and calculate to see predictions</p>
+        </div>
+      </div>
+      <div id="sl-charts-container" style="display:none;margin-top:1rem">
+        <div class="card" style="margin-bottom:1rem">
+          <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.4rem">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--primary)">
+              <path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>
+            </svg>
+            Quality Decay Over Time
+          </h3>
+          <div class="chart-mini" style="height:280px"><canvas id="slDecayChart"></canvas></div>
+        </div>
+        <div class="card">
+          <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.75rem;display:flex;align-items:center;gap:0.4rem">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;color:var(--purple)">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/><path d="M5.5 12h13"/>
+            </svg>
+            Shelf Life vs Temperature
+          </h3>
+          <div class="chart-mini" style="height:280px"><canvas id="slTempChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  ${renderShelfLifeMethodology()}
+  `;
 }
 
 // ✅ FUNZIONE: Calcolo Shelf Life (Modello lineare ASTM/ISO)
