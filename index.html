@@ -5057,33 +5057,52 @@ var hygroHTML =
   '</div>';
     
 // ✅ GENERA LE RIGHE DINAMICHE
-var rowsHTML = '';
-for(var r=0; r<currentValues.length; r++){
-var v = currentValues[r] || {value:'', thickness:''};
-var c = conds[r] || {temperature:'', humidity:''};
-rowsHTML += '<div class="wvtr-row-form" style="grid-template-columns:1fr 1fr">'+
-'<div style="display:flex;gap:0.4rem">'+
-'<div class="form-group" style="margin:0;flex:1">'+
-'<label>'+currentLabel+' Value</label>'+
-'<input type="number" step="any" class="form-input mf-val" value="'+(v.value||'')+'" placeholder="0">'+
-'</div>'+
-'<div class="form-group" style="margin:0;flex:1">'+
-'<label>Thickness (µm)</label>'+
-'<input type="number" step="any" class="form-input mf-thick" value="'+(v.thickness||'')+'" placeholder="0">'+
-'</div>'+
-'</div>'+
-'<div style="display:flex;gap:0.4rem">'+
-'<div class="form-group" style="margin:0;flex:1">'+
-'<label>Temp (°C)</label>'+
-'<input type="number" step="any" class="form-input mf-temp" value="'+(c.temperature||'')+'" placeholder="23">'+
-'</div>'+
-'<div class="form-group" style="margin:0;flex:1">'+
-'<label>Humidity (%)</label>'+
-'<input type="number" step="any" class="form-input mf-hum" value="'+(c.humidity||'')+'" placeholder="50">'+
-'</div>'+
-'</div>'+
-'</div>';
-}
+  // ✅ ✅ ✅ LISTE SEPARATE PER WVTR E OTR ✅ ✅ ✅
+  var ctmWVTR = ['','ASTM F1249','ISO 15106-3','ASTM E96','JIS K7129','MOCON PERMATRAN','DIN 53122','Custom/Other'];
+  var ctmOTR = ['','ASTM D3985','ISO 15106-2','JIS K7126','MOCON OXTRAN','Custom/Other'];
+  var ctm = currentMode === 'wvtr' ? ctmWVTR : ctmOTR;
+
+  // ✅ GENERA LE RIGHE DINAMICHE (con Test Method per riga)
+  var rowsHTML = '';
+  for(var r=0; r<currentValues.length; r++){
+    var v = currentValues[r] || {value:'', thickness:''};
+    var c = conds[r] || {temperature:'', humidity:''};
+    var rowTM = v.testMethod || c.testMethod || ''; // ✅ Recupera metodo salvato
+    
+    // ✅ Crea opzioni per il dropdown della riga
+    var tmOpts = '';
+    for(var t=0;t<ctm.length;t++){
+      var s = (rowTM === ctm[t]) ? ' selected' : '';
+      tmOpts += '<option value="'+ctm[t]+'"'+s+'>'+(ctm[t]||'-- Select Method --')+'</option>';
+    }
+
+    rowsHTML += '<div class="wvtr-row-form" style="grid-template-columns:1fr 1fr 1fr">'+
+      '<div style="display:flex;gap:0.4rem">'+
+        '<div class="form-group" style="margin:0;flex:1">'+
+          '<label>'+currentLabel+' Value</label>'+
+          '<input type="number" step="any" class="form-input mf-val" value="'+(v.value||'')+'" placeholder="0">'+
+        '</div>'+
+        '<div class="form-group" style="margin:0;flex:1">'+
+          '<label>Thickness (µm)</label>'+
+          '<input type="number" step="any" class="form-input mf-thick" value="'+(v.thickness||'')+'" placeholder="0">'+
+        '</div>'+
+      '</div>'+
+      '<div style="display:flex;gap:0.4rem">'+
+        '<div class="form-group" style="margin:0;flex:1">'+
+          '<label>Temp (°C)</label>'+
+          '<input type="number" step="any" class="form-input mf-temp" value="'+(c.temperature||'')+'" placeholder="23">'+
+        '</div>'+
+        '<div class="form-group" style="margin:0;flex:1">'+
+          '<label>Humidity (%)</label>'+
+          '<input type="number" step="any" class="form-input mf-hum" value="'+(c.humidity||'')+'" placeholder="50">'+
+        '</div>'+
+      '</div>'+
+      '<div class="form-group" style="margin:0">'+
+        '<label>Test Method</label>'+
+        '<select class="form-input mf-testmethod">'+tmOpts+'</select>'+
+      '</div>'+
+    '</div>';
+  }
 
 // ✅ ✅ ✅ LISTE SEPARATE PER WVTR E OTR ✅ ✅ ✅
 var ctmWVTR = ['','ASTM F1249','ISO 15106-3','ASTM E96','JIS K7129','MOCON PERMATRAN','DIN 53122','Custom/Other'];
@@ -5094,12 +5113,17 @@ var ctm = currentMode === 'wvtr' ? ctmWVTR : ctmOTR;
 var currentTM = currentMode === 'wvtr' ? (mat ? mat.testMethodWVTR : '') : (mat ? mat.testMethodOTR : '');
 var isCustom = currentTM && ctm.indexOf(currentTM) < 0;
 
-Modal.open(editId ? 'Edit Material' : 'Add Material',
 '<div class="form-group"><label>Name *</label><input type="text" class="form-input" id="mf-name" value="'+(mat?mat.name:'')+'"></div>'+
-'<div class="form-group"><label>Material Family</label><select class="form-input" id="mf-family">'+familyOpts+'</select><span style="font-size:0.7rem;color:var(--text-light)">Select the polymer family for categorization</span></div>'+
-'<div class="form-group"><label>Company Name</label><input type="text" class="form-input" id="mf-company" value="'+(mat?mat.company||'':'')+'" placeholder="e.g. DuPont, 3M, ..."></div>'+
-'<div class="form-group"><label>TDS Link (optional)</label><input type="url" class="form-input" id="mf-tdslink" value="'+(mat?mat.tdsLink||'':'')+'" placeholder="https://..."></div>'+
-metallizedHTML+
+  '<div class="form-group"><label>Material Family</label><select class="form-input" id="mf-family">'+familyOpts+'</select><span style="font-size:0.7rem;color:var(--text-light)">Select the polymer family for categorization</span></div>'+
+  '<div class="form-group"><label>Company Name</label><input type="text" class="form-input" id="mf-company" value="'+(mat?mat.company||'':'')+'" placeholder="e.g. DuPont, 3M, ..."></div>'+
+  '<div class="form-group"><label>TDS Link (optional)</label><input type="url" class="form-input" id="mf-tdslink" value="'+(mat?mat.tdsLink||'':'')+'" placeholder="https://..."></div>'+
+  
+  // ✅ INFO METODO (primo, come richiesto)
+  '<div style="margin:0.5rem 0;padding:0.4rem 0.6rem;background:var(--primary-light);border-radius:6px;display:flex;align-items:center;gap:0.4rem">'+
+    '<span class="badge badge-blue">'+currentLabel+'</span>'+
+    '<span style="font-size:0.75rem;color:var(--text-light)">Select a specific test method for each measurement row below</span>'+
+  '</div>'+
+    metallizedHTML+
 hygroHTML+
 '<div class="form-group" id="mf-testmethod-group">'+
 '<label style="display:flex;align-items:center;gap:0.4rem">'+
@@ -5133,19 +5157,19 @@ var tmSelect = document.getElementById('mf-testmethod-select');
 var tmCustom = document.getElementById('mf-testmethod-custom');
 var testMethodValue = '';
 if(tmSelect && tmSelect.value && tmSelect.value !== '_custom') {
-testMethodValue = tmSelect.value;
+  testMethodValue = tmSelect.value;
 }
-if(tmCustom && tmCustom.style && tmCustom.style.display !== 'none' && tmCustom.value && tmCustom.value.trim()) {
-testMethodValue = tmCustom.value.trim();
+if(tmCustom && tmCustom.style.display !== 'none' && tmCustom.value.trim()) {
+  testMethodValue = tmCustom.value.trim();
 }
 
-// ✅ ✅ ✅ SALVATAGGIO SEPARATO PER WVTR/OTR ✅ ✅ ✅
+// ✅ SALVATAGGIO SEPARATO PER WVTR/OTR
 var testMethodWVTR = mat ? mat.testMethodWVTR : '';
 var testMethodOTR = mat ? mat.testMethodOTR : '';
 if(currentMode === 'wvtr') {
-testMethodWVTR = testMethodValue;
+  testMethodWVTR = testMethodValue;
 } else {
-testMethodOTR = testMethodValue;
+  testMethodOTR = testMethodValue;
 }
 
 var isMetallized = document.getElementById('mf-metallized') ? document.getElementById('mf-metallized').checked : false;
@@ -5162,32 +5186,36 @@ return false;
 }
 
 var vals = document.querySelectorAll('.mf-val');
-var testMethods = document.querySelectorAll('.mf-testmethod');
 var thicks = document.querySelectorAll('.mf-thick');
 var temps = document.querySelectorAll('.mf-temp');
 var hums = document.querySelectorAll('.mf-hum');
+var testMethods = document.querySelectorAll('.mf-testmethod'); // ✅ NUOVO: select per test method
+
 var valuesArray = [];
 var conditionsArray = [];
-for(var i=0; i<vals.length; i++){
-var val = parseFloat(vals[i].value);
-var thick = parseFloat(thicks[i].value);
-var temp = parseFloat(temps[i].value);
-var hum = parseFloat(hums[i].value);
-var rowTM = testMethods[i] ? testMethods[i].value.trim() : '';
-  
-  if(isNaN(val) || val < 0) { alert(currentLabel+' value invalid row '+(i+1)); return false; }
-  if(isNaN(thick) || thick <= 0) { alert('Thickness must be > 0 row '+(i+1)); return false; }
-  if(isNaN(temp)) { alert('Temperature required row '+(i+1)); return false; }
-  if(isNaN(hum)) { alert('Humidity required row '+(i+1)); return false; }
-  
-  // ✅ SALVA CON testMethod (se specificato)
-  var entry = { value: val, thickness: thick };
-  if(rowTM) entry.testMethod = rowTM;
-  valuesArray.push(entry);
-  
-  var cond = { temperature: temp, humidity: hum };
-  if(rowTM) cond.testMethod = rowTM;
-  conditionsArray.push(cond);
+
+for(var i = 0; i < vals.length; i++) {
+    var val = parseFloat(vals[i].value);
+    var thick = parseFloat(thicks[i].value);
+    var temp = parseFloat(temps[i].value);
+    var hum = parseFloat(hums[i].value);
+    var rowTM = testMethods[i] ? testMethods[i].value.trim() : ''; // ✅ Leggi metodo della riga
+    
+    // Validazioni
+    if(isNaN(val) || val < 0) { alert(currentLabel + ' value invalid row ' + (i+1)); return false; }
+    if(isNaN(thick) || thick <= 0) { alert('Thickness must be > 0 row ' + (i+1)); return false; }
+    if(isNaN(temp)) { alert('Temperature required row ' + (i+1)); return false; }
+    if(isNaN(hum)) { alert('Humidity required row ' + (i+1)); return false; }
+    
+    // ✅ Crea oggetto valore con testMethod (solo se specificato)
+    var valueEntry = { value: val, thickness: thick };
+    if(rowTM) valueEntry.testMethod = rowTM;
+    valuesArray.push(valueEntry);
+    
+    // ✅ Crea oggetto condizione con testMethod (solo se specificato)
+    var condEntry = { temperature: temp, humidity: hum };
+    if(rowTM) condEntry.testMethod = rowTM;
+    conditionsArray.push(condEntry);
 }
 
 var finalFamily = family || getFamily(name);
