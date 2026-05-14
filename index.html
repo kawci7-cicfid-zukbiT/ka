@@ -4394,6 +4394,11 @@ function drawSensitivityChart(){
   
   var ctx=canvas.getContext('2d');
   var datasets=[];
+  
+  // ✅ ✅ ✅ DICHIARA lbls E vals FUORI DAL LOOP ✅ ✅ ✅
+  var lbls=[];
+  var vals=[];
+  
   var targetMat=State.layers[layerIdx].mid ? DB.materials.find(m=>m.id===State.layers[layerIdx].mid) : null;
   var isHygro=targetMat && targetMat.isHygroscopic;
   var rhLevels = isHygro ? [30, 50, 70, 85] : [condition.humidity];
@@ -4403,23 +4408,51 @@ function drawSensitivityChart(){
     var cond = {temperature:condition.temperature, humidity:rh};
     var res = Engine.calcSensitivityCurve(State.layers, DB.materials, cond, layerIdx, tMin, tMax, 80);
     if(!res.error && res.points.length>0){
-      var lbls=res.points.map(p=>p.thickness.toFixed(0));
-      var vals=res.points.map(p=>parseFloat(p.total.toFixed(6)));
+      // ✅ Usa variabili temporanee per non sovrascrivere lbls/vals se già popolati
+      var tmpLbls=res.points.map(p=>p.thickness.toFixed(0));
+      var tmpVals=res.points.map(p=>parseFloat(p.total.toFixed(6)));
+      
+      // ✅ Popola lbls/vals solo alla prima iterazione valida
+      if(lbls.length===0){ lbls=tmpLbls; vals=tmpVals; }
+      
       datasets.push({
         label:(isHygro?'β-corrected ':'')+rh+'% RH',
-        data:vals, borderColor:colors[idx%colors.length], backgroundColor:colors[idx%colors.length]+'20',
-        borderWidth:isHygro&&rh!==condition.humidity?2.5:2, borderDash:isHygro&&rh!==condition.humidity?[4,2]:[],
+        data:tmpVals, 
+        borderColor:colors[idx%colors.length], 
+        backgroundColor:colors[idx%colors.length]+'20',
+        borderWidth:isHygro&&rh!==condition.humidity?2.5:2, 
+        borderDash:isHygro&&rh!==condition.humidity?[4,2]:[],
         fill:false, tension:0.4, pointRadius:0
       });
     }
   });
   
-  chartInstances.sens=new Chart(ctx,{type:'line',data:{labels:lbls,datasets:datasets},
-    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:9}}}},
-      scales:{x:{title:{display:true,text:'Layer thickness (µm)'}},y:{title:{display:true,text:'Total '+getLabel()+' ('+getUnit()+')'},beginAtZero:true,ticks:{callback:v=>v<0.01?v.toExponential(2):v.toFixed(4)}}}}
+  // ✅ ✅ ✅ CONTROLLO DI SICUREZZA: se lbls è ancora vuoto, esci ✅ ✅ ✅
+  if(lbls.length===0 || datasets.length===0){
+    ctx.fillStyle='#94a3b8';
+    ctx.font='12px sans-serif';
+    ctx.textAlign='center';
+    ctx.fillText('No valid data points', canvas.clientWidth/2, canvas.clientHeight/2);
+    return;
+  }
+  
+  chartInstances.sens=new Chart(ctx,{
+    type:'line',
+    data:{labels:lbls,datasets:datasets},
+    options:{
+      responsive:true,
+      plugins:{legend:{position:'bottom',labels:{font:{size:9}}}},
+      scales:{
+        x:{title:{display:true,text:'Layer thickness (µm)'}},
+        y:{
+          title:{display:true,text:'Total '+getLabel()+' ('+getUnit()+')'},
+          beginAtZero:true,
+          ticks:{callback:function(v){return v<0.01?v.toExponential(2):v.toFixed(4);}}
+        }
+      }
+    }
   });
 }
-
 function doOptimize(){
   var target=parseFloat(document.getElementById('opt-target')?document.getElementById('opt-target').value:'0.5');
   var barrierIdx=parseInt(document.getElementById('opt-layer')?document.getElementById('opt-layer').value:'0');
