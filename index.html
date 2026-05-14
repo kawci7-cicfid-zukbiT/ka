@@ -3875,14 +3875,16 @@ function drawHygroscopicTimeChart() {
         tooltip: {
           callbacks: {
             label: function(ctx) {
-              return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(4) + ' ' + getUnit();
-            },
+  var prec = getDisplayPrecision();
+  return ctx.dataset.label + ': ' + formatWithSigFigs(ctx.parsed.y, prec) + ' ' + getUnit();
+},
             afterLabel: function(ctx) {
-              if(ctx.dataIndex === timePoints.length-1) {
-                return '↑ +'+increasePct+'% vs initial after '+satTime+' days';
-              }
-              return '';
-            }
+  if(ctx.dataIndex === timePoints.length-1) {
+    var prec = getDisplayPrecision();
+    return '↑ +' + formatWithSigFigs(parseFloat(increasePct), prec) + '% vs initial after '+satTime+' days';
+  }
+  return '';
+}
           }
         }
       },
@@ -3894,7 +3896,13 @@ function drawHygroscopicTimeChart() {
         y: {
           title: { display: true, text: getLabel() + ' (' + getUnit() + ')', font: { size: 10 } },
           beginAtZero: true,
-          ticks: { callback: function(v){ return v.toFixed(4); } }
+          // ✅ NUOVO:
+ticks: {
+  callback: function(value) {
+    var prec = getDisplayPrecision();
+    return value < 0.01 ? formatWithSigFigs(value, prec) : formatWithSigFigs(value, prec);
+  }
+}
         }
       }
     }
