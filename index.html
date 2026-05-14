@@ -4384,70 +4384,90 @@ function onSensChange(){State.sensLayerIdx=parseInt(document.getElementById('sen
 function postSensitivityRender(){if(State.layers.some(function(l){return l.mid!==null;})) setTimeout(function(){drawSensitivityChart();doOptimize();},100);}
 
 function drawSensitivityChart(){
-  var canvas=document.getElementById('sensChart');if(!canvas) return;
+  var canvas = document.getElementById('sensChart');
+  if(!canvas) return;
   destroyChart('sens');
-  var layerIdx=State.sensLayerIdx;
-  var tMin=parseFloat(document.getElementById('sens-tmin').value);
-  var tMax=parseFloat(document.getElementById('sens-tmax').value);
-  var common=Engine.findCommonConditions(State.layers,DB.materials);
-  var condition=State.selCond||(common.conditions&&common.conditions[0])||{temperature:25,humidity:50};
   
-  var ctx=canvas.getContext('2d');
-  var datasets=[];
+  var layerIdx = State.sensLayerIdx;
+  var tMin = parseFloat(document.getElementById('sens-tmin')?.value || '10');
+  var tMax = parseFloat(document.getElementById('sens-tmax')?.value || '500');
+  var common = Engine.findCommonConditions(State.layers, DB.materials);
+  var condition = State.selCond || (common.conditions && common.conditions[0]) || {temperature:25, humidity:50};
   
-  // ✅ ✅ ✅ DICHIARA lbls E vals FUORI DAL LOOP ✅ ✅ ✅
-  var lbls=[];
-  var vals=[];
-  
-  var targetMat=State.layers[layerIdx].mid ? DB.materials.find(m=>m.id===State.layers[layerIdx].mid) : null;
-  var isHygro=targetMat && targetMat.isHygroscopic;
-  var rhLevels = isHygro ? [30, 50, 70, 85] : [condition.humidity];
-  var colors=['#3b82f6','#22c55e','#f59e0b','#ef4444'];
-  
-  rhLevels.forEach(function(rh, idx){
-    var cond = {temperature:condition.temperature, humidity:rh};
-    var res = Engine.calcSensitivityCurve(State.layers, DB.materials, cond, layerIdx, tMin, tMax, 80);
-    if(!res.error && res.points.length>0){
-      // ✅ Usa variabili temporanee per non sovrascrivere lbls/vals se già popolati
-      var tmpLbls=res.points.map(p=>p.thickness.toFixed(0));
-      var tmpVals=res.points.map(p=>parseFloat(p.total.toFixed(6)));
-      
-      // ✅ Popola lbls/vals solo alla prima iterazione valida
-      if(lbls.length===0){ lbls=tmpLbls; vals=tmpVals; }
-      
-      datasets.push({
-        label:(isHygro?'β-corrected ':'')+rh+'% RH',
-        data:tmpVals, 
-        borderColor:colors[idx%colors.length], 
-        backgroundColor:colors[idx%colors.length]+'20',
-        borderWidth:isHygro&&rh!==condition.humidity?2.5:2, 
-        borderDash:isHygro&&rh!==condition.humidity?[4,2]:[],
-        fill:false, tension:0.4, pointRadius:0
-      });
-    }
-  });
-  
-  // ✅ ✅ ✅ CONTROLLO DI SICUREZZA: se lbls è ancora vuoto, esci ✅ ✅ ✅
-  if(lbls.length===0 || datasets.length===0){
-    ctx.fillStyle='#94a3b8';
-    ctx.font='12px sans-serif';
-    ctx.textAlign='center';
+  var result = Engine.calcSensitivityCurve(State.layers, DB.materials, condition, layerIdx, tMin, tMax, 80);
+  if(result.error || !result.points || result.points.length === 0) {
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '12px sans-serif';
+    ctx.textAlign = 'center';
     ctx.fillText('No valid data points', canvas.clientWidth/2, canvas.clientHeight/2);
     return;
   }
   
-  chartInstances.sens=new Chart(ctx,{
-    type:'line',
-    data:{labels:lbls,datasets:datasets},
-    options:{
-      responsive:true,
-      plugins:{legend:{position:'bottom',labels:{font:{size:9}}}},
-      scales:{
-        x:{title:{display:true,text:'Layer thickness (µm)'}},
-        y:{
-          title:{display:true,text:'Total '+getLabel()+' ('+getUnit()+')'},
-          beginAtZero:true,
-          ticks:{callback:function(v){return v<0.01?v.toExponential(2):v.toFixed(4);}}
+  var ctx = canvas.getContext('2d');
+  var labels = result.points.map(p => p.thickness.toFixed(0));
+  var vals = result.points.map(p => parseFloat(p.total.toFixed(6)));
+  
+  // ✅ Supporto materiali igroscopici: curve multiple per RH diverse
+  var targetMat = State.layers[layerIdx].mid ? DB.materials.find(m => m.id === State.layers[layerIdx].mid) : null;
+  var isHygro = targetMat && targetMat.isHygroscopic;
+  var datasets = [];
+  
+  if(isHygro) {
+    // Mostra curve per diverse umidità
+    var rhLevels = [30, 50, 70, 85];
+    var colors = ['#3b82f6','#22c55e','#f59e0b','#ef4444'];
+    
+    rhLevels.forEach(function(rh, idx){
+      var cond = {temperature: condition.temperature, humidity: rh};
+      var res = Engine.calcSensitivityCurve(State.layers, DB.materials, cond, layerIdx, tMin, tMax, 80);
+      if(!res.error && res.points.length > 0) {
+        var v = res.points.map(p => parseFloat(p.total.toFixed(6)));
+        datasets.push({
+          label: 'β ' + rh + '% RH',
+          data: v,
+          borderColor: colors[idx],
+          backgroundColor: colors[idx] + '20',
+          borderWidth: rh === condition.humidity ? 2.5 : 1.5,
+          borderDash: rh === condition.humidity ? [] : [4,2],
+          fill: false,
+          tension: 0.4,
+          pointRadius: 0
+        });
+      }
+    });
+  } else {
+    // Comportamento standard: singola curva
+    datasets.push({
+      label: getLabel() + ' vs Layer ' + (layerIdx+1),
+      data: vals,
+      borderColor: '#3b82f6',
+      backgroundColor: 'rgba(59,130,246,0.1)',
+      fill: true,
+      tension: 0.4,
+      pointRadius: 0,
+      borderWidth: 2
+    });
+  }
+  
+  chartInstances.sens = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: datasets
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 9 } } }
+      },
+      scales: {
+        x: { title: { display: true, text: 'Layer thickness (µm)' } },
+        y: {
+          title: { display: true, text: 'Total ' + getLabel() + ' (' + getUnit() + ')' },
+          beginAtZero: true,
+          ticks: { callback: function(v){ return v < 0.01 ? v.toExponential(2) : v.toFixed(4); } }
         }
       }
     }
