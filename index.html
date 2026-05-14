@@ -5009,24 +5009,22 @@ var metallizedHTML =
 '</div>';
 
 // ✅ Sezione Hygroscopic Properties
-var hygroHTML =
-'<div style="margin:0.5rem 0;padding:0.5rem;background:var(--warning-light);border-radius:8px;border-left:3px solid var(--warning)">'+
-'<label style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.3rem;font-size:0.75rem">'+
-'<input type="checkbox" id="mf-hygroscopic" '+(mat && mat.isHygroscopic ? 'checked' : '')+' style="accent-color:var(--warning)">'+
-'<strong>Hygroscopic Material</strong>'+
-'</label>'+
-'<div class="grid grid-2" style="gap:0.4rem">'+
-'<div class="form-group" style="margin:0">'+
-'<label>β Coefficient (%/RH)</label>'+
-'<input type="number" step="0.001" class="form-input" id="mf-beta" value="'+(mat && mat.hygroscopicBeta ? mat.hygroscopicBeta : '')+'" placeholder="0.034">'+
-'</div>'+
-'<div class="form-group" style="margin:0">'+
-'<label>Reference RH (%)</label>'+
-'<input type="number" class="form-input" id="mf-refrh" value="'+(mat && mat.hygroscopicRefRH ? mat.hygroscopicRefRH : 50)+'" placeholder="50">'+
-'</div>'+
-'</div>'+
-'</div>';
-
+var hygroHTML = 
+  '<div class="form-group" style="margin-top:0.8rem">'+
+    '<label>Hygroscopic Properties</label>'+
+    '<div class="grid grid-2" style="gap:0.5rem">'+
+      '<div class="form-group" style="margin:0">'+
+        '<label>β Coefficient (%/RH)</label>'+
+        '<input type="number" step="0.001" class="form-input" id="mf-beta" value="'+(mat && mat.hygroscopicBeta ? mat.hygroscopicBeta : '')+'" placeholder="0.034">'+
+      '</div>'+
+      '<div class="form-group" style="margin:0">'+
+        '<label>Reference RH (%)</label>'+
+        '<input type="number" class="form-input" id="mf-refrh" value="'+(mat && mat.hygroscopicRefRH ? mat.hygroscopicRefRH : 50)+'" placeholder="50">'+
+      '</div>'+
+    '</div>'+
+    '<div style="font-size:0.68rem;color:var(--text-light);margin-top:0.3rem">Material is auto-flagged as hygroscopic when β > 0</div>'+
+  '</div>';
+    
 // ✅ GENERA LE RIGHE DINAMICHE
 var rowsHTML = '';
 for(var r=0; r<currentValues.length; r++){
@@ -5088,10 +5086,10 @@ return o;
 })()+
 '</select>'+
 '<input type="text" class="form-input" id="mf-testmethod-custom" value="'+(isCustom ? currentTM : '')+'" placeholder="Enter custom method..." style="display:'+(isCustom ? 'block' : 'none')+';margin-top:0.3rem">'+
-'<span style="font-size:0.7rem;color:var(--text-light)">Standard used for testing this material ('+currentLabel+')</span>'+
+'<span style="font-size:0.7rem;color:var(--text-light)"> </span>'+
 '</div>'+
 '<div style="margin:0.5rem 0;padding:0.4rem 0.6rem;background:var(--primary-light);border-radius:6px;display:flex;align-items:center;gap:0.4rem">'+
-'<span style="font-size:0.75rem;color:var(--text-light)">Entering data for <strong>'+currentLabel+'</strong> • Unit: '+currentUnit+'</span>'+
+'<span style="font-size:0.75rem;color:var(--text-light)"><strong>'+currentLabel+'</strong> • Unit: '+currentUnit+'</span>'+
 '</div>'+
 '<div id="mf-rows">'+rowsHTML+'</div>'+
 '<button class="btn btn-outline btn-full" onclick="addMatRow()" style="margin-top:0.4rem">+ Add Condition</button>',
