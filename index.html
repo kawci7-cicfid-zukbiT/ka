@@ -5012,21 +5012,21 @@ function showMatModal(editId) {
     '</div>';
  
 var hygroHTML = 
-  '<div style="margin:0.5rem 0;padding:0.5rem;background:var(--warning-light);border-radius:8px;border-left:3px solid var(--warning)">'+
-    '<label style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.3rem;font-size:0.75rem">'+
-      '<input type="checkbox" id="mf-hygroscopic" '+(mat && mat.isHygroscopic ? 'checked' : '')+' style="accent-color:var(--warning)">'+
-      '<strong>Hygroscopic Material</strong>'+
-    '</label>'+
-    '<div class="grid grid-2" style="gap:0.4rem">'+
+  '<div style="margin:0.5rem 0;padding:0.55rem 0.7rem;border:1.5px solid var(--border);border-radius:10px;background:#fff;">'+
+    '<div style="font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:0.45rem;display:flex;align-items:center;gap:0.4rem;">'+
+      'Hygroscopic Properties'+
+    '</div>'+
+    '<div class="grid grid-2" style="gap:0.6rem;">'+
       '<div class="form-group" style="margin:0">'+
-        '<label>β Coefficient (%/RH)</label>'+
+        '<label style="font-size:0.82rem;font-weight:600;">β Coefficient (%/RH)</label>'+
         '<input type="number" step="0.001" class="form-input" id="mf-beta" value="'+(mat && mat.hygroscopicBeta ? mat.hygroscopicBeta : '')+'" placeholder="0.034">'+
       '</div>'+
       '<div class="form-group" style="margin:0">'+
-        '<label>Reference RH (%)</label>'+
+        '<label style="font-size:0.82rem;font-weight:600;">Reference RH (%)</label>'+
         '<input type="number" class="form-input" id="mf-refrh" value="'+(mat && mat.hygroscopicRefRH ? mat.hygroscopicRefRH : 50)+'" placeholder="50">'+
       '</div>'+
     '</div>'+
+    '<div style="font-size:0.72rem;color:var(--text-light);margin-top:0.35rem;">Material is auto-flagged as hygroscopic when β > 0</div>'+
   '</div>';
   // ✅ GENERA LE RIGHE DINAMICHE
   var rowsHTML = '';
@@ -5162,10 +5162,10 @@ if(tdsLink && !tdsLink.startsWith('http')) {
       }
       
       var finalFamily = family || getFamily(name);
-        var isHygro = document.getElementById('mf-hygroscopic').checked;
-var isHygro = document.getElementById('mf-hygroscopic').checked;
+        // ✅ NUOVA LOGICA: auto-flag se β > 0
 var betaVal = parseFloat(document.getElementById('mf-beta').value) || 0;
 var refRHVal = parseFloat(document.getElementById('mf-refrh').value) || 50;
+var isHygro = betaVal > 0;  // Flag automatico
         
       var matData = {
   name: name,
