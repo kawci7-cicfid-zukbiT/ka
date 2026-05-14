@@ -1186,81 +1186,61 @@ const Engine={
   if(common.length===0) return{conditions:[],error:'No common test conditions found',warning:null,matInfo:matInfo};
   return{conditions:common,error:null,warning:null,matInfo:matInfo};
 },
- calcLayerResistance:function(layer,material,condition){
-  var vals=this.getValues(material);
-  var idx=-1;
-  for(var i=0;i<material.validConditions.length;i++){
-    // ✅ CONFRONTA ANCHE IL TEST METHOD (se presente)
-    var condMatch = Math.abs(material.validConditions[i].temperature-condition.temperature)<0.01 && 
-                    Math.abs(material.validConditions[i].humidity-condition.humidity)<0.01;
-    var methodMatch = !material.validConditions[i].testMethod || 
-                      !State.selectedTestMethod || 
-                      material.validConditions[i].testMethod === State.selectedTestMethod;
-    
-    if(condMatch && methodMatch){ idx=i; break; }
-  }
-  if(idx<0) return{resistance:null,error:'Condition not found'};
-  
-  var wd=vals[idx];
-  // ✅ Anche qui: verifica test method del valore
-  if(wd.testMethod && State.selectedTestMethod && wd.testMethod !== State.selectedTestMethod){
-    return{resistance:null,error:'Test method mismatch'};
-  }
-  
-  if(!wd||wd.value==null||wd.thickness==null) return{resistance:null,error:'Missing data'};
-  if(wd.value<=0.00001) return{resistance:Infinity,transmissionAtThickness:0,isBarrier:true};
-  
-  
-  // ✅ ✅ ✅ GESTIONE MATERIALI METALLIZZATI ✅ ✅ ✅
-  if(material.isMetallized){
-    // Per metallizzati: la barriera è una proprietà di superficie, NON scala con lo spessore
-    // Il valore inserito è già la permeabilità del coating (indipendente dal substrato)
-    var surfacePermeability = wd.value;  // valore come inserito dall'utente
-    var resistance = 1 / surfacePermeability;  // resistenza fissa, indipendente da layer.thick
-    return{
-      resistance: resistance,
-      transmissionAtThickness: surfacePermeability,  // valore fisso
-      isBarrier: surfacePermeability < 0.1,  // soglia per considerare "barriera"
-      isMetallized: true  // flag per debug/visualizzazione
-    };
-  }
-  
-  // ✅ Comportamento standard per materiali NON metallizzati
-  var product=wd.value*wd.thickness;
-  var resistance=layer.thick/product;
-  return{resistance:resistance,transmissionAtThickness:1/resistance,isBarrier:false};
-},
-calcLayerResistance: function(layer, material, condition) {
-  var vals = this.getValues(material);
-  var idx = -1;
-  for(var i = 0; i < material.validConditions.length; i++) {
-    if(Math.abs(material.validConditions[i].temperature - condition.temperature) < 0.01 && 
-       Math.abs(material.validConditions[i].humidity - condition.humidity) < 0.01) {
-      idx = i; break;
+ calcLayerResistance: function(layer, material, condition) {
+    var vals = this.getValues(material);
+    var idx = -1;
+
+    // ✅ 1. TROVA CONDIZIONE MATCH (Temp + RH + Test Method)
+    for (var i = 0; i < material.validConditions.length; i++) {
+        var condMatch = Math.abs(material.validConditions[i].temperature - condition.temperature) < 0.01 &&
+                        Math.abs(material.validConditions[i].humidity - condition.humidity) < 0.01;
+        
+        // ✅ Se è impostato un filtro, accetta solo condizioni che lo rispettano
+        var methodMatch = !material.validConditions[i].testMethod ||
+                          !State.selectedTestMethod ||
+                          material.validConditions[i].testMethod === State.selectedTestMethod;
+                          
+        if (condMatch && methodMatch) { idx = i; break; }
     }
-  }
-  if(idx < 0) return { resistance: null, error: 'Condition not found' };
-  var wd = vals[idx];
-  if(!wd || wd.value == null || wd.thickness == null) return { resistance: null, error: 'Missing data' };
-  if(wd.value <= 0.00001) return { resistance: Infinity, transmissionAtThickness: 0, isBarrier: true };
-  
-  if(material.isMetallized) {
-    var surfacePermeability = wd.value;
-    var resistance = 1 / surfacePermeability;
-    return { resistance: resistance, transmissionAtThickness: surfacePermeability, isBarrier: surfacePermeability < 0.1, isMetallized: true, hygroCorrection: null };
-  }
-  
-  var product = wd.value * wd.thickness;
-  var baseResistance = layer.thick / product;
-  var baseTransmission = 1 / baseResistance;
-  
-  // ✅ CORREZIONE IGROSCOPICA
-  var hygro = Engine.calcHygroscopicCorrection(material, condition);
-  var finalTransmission = baseTransmission * hygro.factor;
-  var finalResistance = finalTransmission > 0 ? 1 / finalTransmission : Infinity;
-  
-  return { resistance: finalResistance, transmissionAtThickness: finalTransmission, baseTransmission: baseTransmission, isBarrier: finalTransmission < 0.1, hygroCorrection: hygro.factor !== 1 ? hygro : null };
-},
+
+    if (idx < 0) return { resistance: null, error: 'Condition or test method not found' };
+
+    var wd = vals[idx];
+    if (!wd || wd.value == null || wd.thickness == null) return { resistance: null, error: 'Missing data' };
+    if (wd.value <= 0.00001) return { resistance: Infinity, transmissionAtThickness: 0, isBarrier: true, hygroCorrection: null };
+
+    // ✅ 2. GESTIONE MATERIALI METALLIZZATI (barriera indipendente dallo spessore)
+    if (material.isMetallized) {
+        var surfacePermeability = wd.value;
+        var resistance = 1 / surfacePermeability;
+        return {
+            resistance: resistance,
+            transmissionAtThickness: surfacePermeability,
+            isBarrier: surfacePermeability < 0.1,
+            isMetallized: true,
+            hygroCorrection: null
+        };
+    }
+
+    // ✅ 3. CALCOLO STANDARD (scala linearmente con lo spessore)
+    var product = wd.value * wd.thickness;
+    var baseResistance = layer.thick / product;
+    var baseTransmission = 1 / baseResistance;
+
+    // ✅ 4. APPLICA CORREZIONE IGROSCOPICA
+    var hygro = Engine.calcHygroscopicCorrection(material, condition);
+    var finalTransmission = baseTransmission * hygro.factor;
+    var finalResistance = finalTransmission > 0 ? 1 / finalTransmission : Infinity;
+
+    // ✅ 5. RESTITUISCI OGGETTO COMPLETO
+    return {
+        resistance: finalResistance,
+        transmissionAtThickness: finalTransmission,
+        baseTransmission: baseTransmission, // utile per debug/grafici
+        isBarrier: finalTransmission < 0.1,
+        hygroCorrection: hygro.factor !== 1 ? hygro : null
+    };
+}
     calcTotal:function(layers,materials,condition){
   var results=[];var totalR=0;
   for(var i=0;i<layers.length;i++){
