@@ -3276,7 +3276,8 @@ if(hasResult && State.calcResult.layers) {
     '<div class="form-group" style="flex:1;margin:0"><label>Name</label><input type="text" class="form-input" id="lam-name" value="'+State.laminateName+'" placeholder="Name..." oninput="State.laminateName=this.value;updateSaveBtn()"></div>'+
     '<button class="btn btn-primary" id="save-btn" onclick="doSaveLam()">Save</button></div><div id="save-feedback"></div></div>' : '')+
     '</div></div>'+
-        renderCalcMethodology();  // ← ✅ NUOVA RIGA
+       renderCalcMethodology() +  // ← Plus sign for concatenation
+  '</div>';  // ← Close the outer grid div
 }
 
 function updateSaveBtn(){var btn=document.getElementById('save-btn');if(btn) btn.disabled=State.laminateName.trim()==='';}
