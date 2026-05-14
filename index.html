@@ -4474,7 +4474,8 @@ function renderSensitivity(){
     '<div class="form-group"><label>Target '+getLabel()+' ('+getUnit()+')</label><input type="number" step="any" class="form-input" id="opt-target" value="'+State.targetValue+'" onchange="doOptimize()"></div>'+
     '<div class="form-group"><label>Barrier layer</label><select class="form-input" id="opt-layer" onchange="doOptimize()">'+barrierOpts+'</select></div></div>'+
     '<div id="opt-result"></div></div></div>'+  // ✅ Virgolette corrette
-renderSensitivityMethodology(); // ← ✅ AGGIUNGI QUESTA RIGA QUI
+renderSensitivityMethodology() +  // ← Plus sign
+  '</div>';  // ← Close outer div
 }
 
 function onSensChange(){State.sensLayerIdx=parseInt(document.getElementById('sens-layer')?document.getElementById('sens-layer').value:'0');drawSensitivityChart();}
