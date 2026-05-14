@@ -1161,30 +1161,55 @@ const Engine={
   },
   getValues:function(mat){return this.mode==='wvtr'?mat.wvtrValues:mat.otrValues;},
   getUnits:function(){return this.mode==='wvtr'?{value:'g/m²·day',label:'WVTR'}:{value:'cc/m²·day',label:'OTR'};},
-  findCommonConditions:function(layers,materials){
-    var mats=layers.filter(function(l){return l.mid!==null;}).map(function(l){return materials.find(function(m){return m.id===l.mid;});}).filter(Boolean);
-    if(mats.length===0) return{conditions:[],error:null,warning:null,matInfo:null};
-    var allE=[];for(var j=0;j<mats.length;j++){var v=Engine.validateData(mats[j]);for(var k=0;k<v.length;k++) allE.push(v[k]);}
-    if(allE.length>0) return{conditions:[],error:allE.join('. '),warning:null,matInfo:null};
-    var common=[].concat(mats[0].validConditions);
-    for(var i=1;i<mats.length;i++){
-      var nc=mats[i].validConditions;
-      common=common.filter(function(c){return nc.some(function(n){return Math.abs(n.temperature-c.temperature)<0.01&&Math.abs(n.humidity-c.humidity)<0.01;});});
-    }
-    var matInfo=mats.map(function(m){return{name:m.name,conditions:m.validConditions.map(function(c){return c.temperature+'°C/'+c.humidity+'%';})};});
-    if(common.length===0) return{conditions:[],error:'No common test conditions found',warning:null,matInfo:matInfo};
-    return{conditions:common,error:null,warning:null,matInfo:matInfo};
-  },
-  calcLayerResistance:function(layer,material,condition){
+  findCommonConditions:function(layers,materials,testMethodFilter){
+  var mats=layers.filter(function(l){return l.mid!==null;}).map(function(l){return materials.find(function(m){return m.id===l.mid;});}).filter(Boolean);
+  if(mats.length===0) return{conditions:[],error:null,warning:null,matInfo:null};
+  
+  var allE=[];for(var j=0;j<mats.length;j++){var v=Engine.validateData(mats[j]);for(var k=0;k<v.length;k++) allE.push(v[k]);}
+  if(allE.length>0) return{conditions:[],error:allE.join('. '),warning:null,matInfo:null};
+  
+  var common=[].concat(mats[0].validConditions);
+  for(var i=1;i<mats.length;i++){
+    var nc=mats[i].validConditions;
+    common=common.filter(function(c){
+      // ✅ FILTRO PER TEST METHOD (se specificato)
+      if(testMethodFilter && c.testMethod && c.testMethod !== testMethodFilter) return false;
+      return nc.some(function(n){
+        // ✅ Anche qui: filtra per test method
+        if(testMethodFilter && n.testMethod && n.testMethod !== testMethodFilter) return false;
+        return Math.abs(n.temperature-c.temperature)<0.01&&Math.abs(n.humidity-c.humidity)<0.01;
+      });
+    });
+  }
+  
+  var matInfo=mats.map(function(m){return{name:m.name,conditions:m.validConditions.map(function(c){return c.temperature+'°C/'+c.humidity+'%';})};});
+  if(common.length===0) return{conditions:[],error:'No common test conditions found',warning:null,matInfo:matInfo};
+  return{conditions:common,error:null,warning:null,matInfo:matInfo};
+},
+ calcLayerResistance:function(layer,material,condition){
   var vals=this.getValues(material);
   var idx=-1;
   for(var i=0;i<material.validConditions.length;i++){
-    if(Math.abs(material.validConditions[i].temperature-condition.temperature)<0.01&&Math.abs(material.validConditions[i].humidity-condition.humidity)<0.01){idx=i;break;}
+    // ✅ CONFRONTA ANCHE IL TEST METHOD (se presente)
+    var condMatch = Math.abs(material.validConditions[i].temperature-condition.temperature)<0.01 && 
+                    Math.abs(material.validConditions[i].humidity-condition.humidity)<0.01;
+    var methodMatch = !material.validConditions[i].testMethod || 
+                      !State.selectedTestMethod || 
+                      material.validConditions[i].testMethod === State.selectedTestMethod;
+    
+    if(condMatch && methodMatch){ idx=i; break; }
   }
   if(idx<0) return{resistance:null,error:'Condition not found'};
+  
   var wd=vals[idx];
+  // ✅ Anche qui: verifica test method del valore
+  if(wd.testMethod && State.selectedTestMethod && wd.testMethod !== State.selectedTestMethod){
+    return{resistance:null,error:'Test method mismatch'};
+  }
+  
   if(!wd||wd.value==null||wd.thickness==null) return{resistance:null,error:'Missing data'};
   if(wd.value<=0.00001) return{resistance:Infinity,transmissionAtThickness:0,isBarrier:true};
+  
   
   // ✅ ✅ ✅ GESTIONE MATERIALI METALLIZZATI ✅ ✅ ✅
   if(material.isMetallized){
@@ -3097,12 +3122,18 @@ for(var i=0; i<DB.materials.length; i++){
 }
 
 
+// Nel render del filtro test method:
 var tmOpts = '<option value="">All test methods</option>';
 var tmList = Object.keys(testMethods).sort();
 for(var t=0; t<tmList.length; t++){
   var sel = State.selectedTestMethod === tmList[t] ? ' selected' : '';
   var escaped = tmList[t].replace(/"/g,'&quot;');
-  tmOpts += '<option value="'+escaped+'"'+sel+'>'+tmList[t]+'</option>';
+  // ✅ CONTA QUANTE CONDIZIONI SONO DISPONIBILI PER QUESTO METODO
+  var count = DB.materials.filter(function(m){
+    return (m.testMethodWVTR === tmList[t] || m.testMethodOTR === tmList[t]) &&
+           Engine.findCommonConditions(State.layers, [m], tmList[t]).conditions.length > 0;
+  }).length;
+  tmOpts += '<option value="'+escaped+'"'+sel+'>'+tmList[t]+' ('+count+')</option>';
 }
 
 // === HTML DEL FILTRO TEST METHOD ===
@@ -5131,6 +5162,7 @@ return false;
 }
 
 var vals = document.querySelectorAll('.mf-val');
+var testMethods = document.querySelectorAll('.mf-testmethod');
 var thicks = document.querySelectorAll('.mf-thick');
 var temps = document.querySelectorAll('.mf-temp');
 var hums = document.querySelectorAll('.mf-hum');
@@ -5141,12 +5173,21 @@ var val = parseFloat(vals[i].value);
 var thick = parseFloat(thicks[i].value);
 var temp = parseFloat(temps[i].value);
 var hum = parseFloat(hums[i].value);
-if(isNaN(val) || val < 0) { alert(currentLabel+' value invalid row '+(i+1)); return false; }
-if(isNaN(thick) || thick <= 0) { alert('Thickness must be > 0 row '+(i+1)); return false; }
-if(isNaN(temp)) { alert('Temperature required row '+(i+1)); return false; }
-if(isNaN(hum)) { alert('Humidity required row '+(i+1)); return false; }
-valuesArray.push({ value: val, thickness: thick });
-conditionsArray.push({ temperature: temp, humidity: hum });
+var rowTM = testMethods[i] ? testMethods[i].value.trim() : '';
+  
+  if(isNaN(val) || val < 0) { alert(currentLabel+' value invalid row '+(i+1)); return false; }
+  if(isNaN(thick) || thick <= 0) { alert('Thickness must be > 0 row '+(i+1)); return false; }
+  if(isNaN(temp)) { alert('Temperature required row '+(i+1)); return false; }
+  if(isNaN(hum)) { alert('Humidity required row '+(i+1)); return false; }
+  
+  // ✅ SALVA CON testMethod (se specificato)
+  var entry = { value: val, thickness: thick };
+  if(rowTM) entry.testMethod = rowTM;
+  valuesArray.push(entry);
+  
+  var cond = { temperature: temp, humidity: hum };
+  if(rowTM) cond.testMethod = rowTM;
+  conditionsArray.push(cond);
 }
 
 var finalFamily = family || getFamily(name);
@@ -5204,6 +5245,16 @@ function addMatRow(){
   var currentMode = State.mode;
   var currentLabel = currentMode === 'wvtr' ? 'WVTR' : 'OTR';
   
+  // ✅ Liste test method separate
+  var ctmWVTR = ['','ASTM F1249','ISO 15106-3','ASTM E96','JIS K7129','MOCON PERMATRAN','DIN 53122','Custom/Other'];
+  var ctmOTR = ['','ASTM D3985','ISO 15106-2','JIS K7126','MOCON OXTRAN','Custom/Other'];
+  var ctm = currentMode === 'wvtr' ? ctmWVTR : ctmOTR;
+  
+  var tmOpts = '';
+  for(var t=0; t<ctm.length; t++){
+    tmOpts += '<option value="'+ctm[t]+'">'+(ctm[t]||'-- Select --')+'</option>';
+  }
+  
   document.getElementById('mf-rows').insertAdjacentHTML('beforeend',
     '<div class="wvtr-row-form" style="grid-template-columns:1fr 1fr">'+
       '<div style="display:flex;gap:0.4rem">'+
@@ -5226,9 +5277,13 @@ function addMatRow(){
           '<input type="number" step="any" class="form-input mf-hum" value="" placeholder="50">'+
         '</div>'+
       '</div>'+
+      // ✅ NUOVO: Dropdown test method per questa riga
+      '<div class="form-group" style="margin:0;flex:1">'+
+        '<label>Test Method</label>'+
+        '<select class="form-input mf-testmethod">'+tmOpts+'</select>'+
+      '</div>'+
     '</div>');
 }
-
 function showBulkImport(){
   Modal.open('Bulk Import (CSV)',
     '<p style="font-size:.78rem;color:var(--text-light);margin-bottom:.75rem">'+
