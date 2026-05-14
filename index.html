@@ -2227,21 +2227,25 @@ function renderShelfLifeMethodology() {
         <p style="font-size:0.85rem; color:var(--text-light); font-style:italic; margin-top:0.5rem;"></p>
 
         <!-- SEZIONE 2 -->
-        <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin-top:2rem; font-weight:700;">Oxygen Ingress: When Fats Go Rancid</h3>
-        <p>For products high in fat (chips, nuts, cooking oils), oxygen is the main enemy. Unlike moisture, oxygen usually enters at a steady rate because the product quickly "uses up" what gets in through oxidation.</p>
-        
-        <div style="background:var(--warning-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--warning); margin:0.8rem 0; font-family:sans-serif;">
-           <strong>Key Insight:</strong> Shelf life ends when the total accumulated oxygen reaches a known threshold that causes off-flavors or rancidity.
-        </div>
+     
+<h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin-top:2rem; font-weight:700;">Oxygen Ingress: When Fats Go Rancid</h3>
+<p>For products high in fat (chips, nuts, cooking oils), oxygen is the main enemy. Unlike moisture, oxygen usually enters at a steady rate because the product quickly "uses up" what gets in through oxidation.</p>
+<div style="background:var(--warning-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--warning); margin:0.8rem 0; font-family:sans-serif;">
+<strong>Key Insight:</strong> Shelf life ends when the total accumulated oxygen reaches a known threshold that causes off-flavors or rancidity.
+</div>
+<h4 style="margin:1.2rem 0 0.5rem 0; font-family:sans-serif;"> The Core Formula (Simplified)</h4>
+<div style="background:#f8fafc; padding:0.9rem; border-radius:6px; font-family:monospace; font-size:0.95rem; text-align:center; border:1px dashed var(--border); margin-bottom:0.8rem;">
+Shelf Life = [Fat Content × Max Safe Oxygen] ÷ [Package Area × OTR × Temperature Factor]
+</div>
+<ul style="padding-left:1.2rem; margin:0 0 1rem 0;">
+<li><strong>OTR:</strong> How much oxygen passes through 1 m² of film per day.</li>
+<li><strong>Max Safe Oxygen:</strong> The limit before taste or nutritional quality degrades (varies by product).</li>
+</ul>
 
-        <h4 style="margin:1.2rem 0 0.5rem 0; font-family:sans-serif;"> The Core Formula (Simplified)</h4>
-        <div style="background:#f8fafc; padding:0.9rem; border-radius:6px; font-family:monospace; font-size:0.95rem; text-align:center; border:1px dashed var(--border); margin-bottom:0.8rem;">
-          Shelf Life = [Fat Content × Max Safe Oxygen] ÷ [Package Area × OTR × Temperature Factor]
-        </div>
-        <ul style="padding-left:1.2rem; margin:0 0 1rem 0;">
-          <li><strong>OTR:</strong> How much oxygen passes through 1 m² of film per day.</li>
-          <li><strong>Max Safe Oxygen:</strong> The limit before taste or nutritional quality degrades (varies by product).</li>
-        </ul>
+<p style="margin-top:1.2rem; font-style:italic; color:#475569; line-height:1.75;">
+It is important to note that the oxidation model implemented here operates on a zero-order kinetic assumption, meaning it treats the degradation rate as constant throughout the product’s life. In practice, however, lipid oxidation follows an autocatalytic pathway: it begins slowly during an induction phase, then accelerates as free radicals accumulate and propagate chain reactions. Because of this simplification, the calculator may slightly overestimate shelf life during the final stages of storage. For this reason, the predictions are most reliable for fast-moving products with shorter shelf lives (typically under six months) or when used as a conservative, first-pass estimate during early packaging design. For long-term stability studies, always complement these calculations with real-time or accelerated shelf-life testing.
+</p>
+
 
         <!-- SEZIONE 3 -->
         <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin-top:2rem; font-weight:700;">Temperature: The Invisible Accelerator</h3>
