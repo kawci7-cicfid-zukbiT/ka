@@ -4929,7 +4929,8 @@ filtered.sort(function(a, b){
         
         // 3. ACTION BUTTONS
         '<div class="mat-actions">'+
-      '<button class="btn btn-outline" onclick="event.stopPropagation();showMatModal(\''+m.id+'\')">✏️ Edit</button>'+    
+      // ✅ CODICE CORRETTO:
+'<button class="btn btn-outline" onclick="event.stopPropagation();showMatModal(\''+m.id+'\')">✏️ Edit</button>'   
       (isUserMat ? '<button class="btn btn-danger" onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">🗑️ Delete</button>' : '')+
           '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Datasheet</button>'+
           ((isUserMat || isComm) ? '<button class="btn '+(m.firebaseDocId?'btn-success':'btn-primary')+'" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">'+(m.firebaseDocId?'🔄 Update':'🌍 Publish')+'</button>' : '')+
@@ -5114,7 +5115,6 @@ var ctm = currentMode === 'wvtr' ? ctmWVTR : ctmOTR;
 // ✅ Valore salvato per la modalità corrente
 var currentTM = currentMode === 'wvtr' ? (mat ? mat.testMethodWVTR : '') : (mat ? mat.testMethodOTR : '');
 var isCustom = currentTM && ctm.indexOf(currentTM) < 0;
-
 '<div class="form-group"><label>Name *</label><input type="text" class="form-input" id="mf-name" value="'+(mat?mat.name:'')+'"></div>'+
   '<div class="form-group"><label>Material Family</label><select class="form-input" id="mf-family">'+familyOpts+'</select><span style="font-size:0.7rem;color:var(--text-light)">Select the polymer family for categorization</span></div>'+
   '<div class="form-group"><label>Company Name</label><input type="text" class="form-input" id="mf-company" value="'+(mat?mat.company||'':'')+'" placeholder="e.g. DuPont, 3M, ..."></div>'+
