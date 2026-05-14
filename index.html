@@ -2271,84 +2271,79 @@ function getReliabilityBadge(score) {
 // 📚 SHELF LIFE METHODOLOGY (TEXTBOOK STYLE - TESTO INTATTO)
 // ====================================================================
 function renderShelfLifeMethodology() {
-  return `
-  <div class="card" style="margin-top:1rem; border-left:4px solid var(--primary); background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
-    <div style="padding:1.2rem 1.5rem;">
-      <h2 style="font-family:Georgia, 'Times New Roman', serif; font-size:1.25rem; color:var(--text); border-bottom:1px solid var(--border); padding-bottom:0.5rem; margin-bottom:1.2rem;">
-         How Shelf Life is Calculated
-      </h2>
-      
-      <div style="font-size:0.92rem; line-height:1.8; color:#334155; font-family:Georgia, 'Times New Roman', serif;">
-        
-        <!-- SEZIONE 1 -->
-        <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin-top:1.5rem; font-weight:700;">Moisture Gain: Why It Slows Down Over Time</h3>
-        <p>Packaging is never completely airtight. Water vapor from the outside air slowly moves through the film into your product. The speed of this movement depends on the humidity difference between the outside environment and the inside of the package.</p>
-        
-        <div style="background:var(--primary-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--primary); margin:0.8rem 0; font-family:sans-serif;">
-           <strong>Key Insight:</strong> As the product absorbs moisture, it becomes less "thirsty." This means the driving force weakens over time, so moisture enters quickly at first, then naturally slows down. Our calculator tracks this real-world curve instead of assuming a constant, linear rate.
-        </div>
+return `
+<div class="card" style="margin-top:1rem; border-left:4px solid var(--primary); background:#fff; box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+<div style="padding:1.2rem 1.5rem;">
+<h2 style="font-family:Georgia, 'Times New Roman', serif; font-size:1.25rem; color:var(--text); border-bottom:1px solid var(--border); padding-bottom:0.5rem; margin-bottom:1.2rem;">
+How Shelf Life is Calculated
+</h2>
+<div style="font-size:0.92rem; line-height:1.8; color:#334155; font-family:Georgia, 'Times New Roman', serif;">
 
-        <h4 style="margin:1.2rem 0 0.5rem 0; font-family:sans-serif;"> The Core Formula (Simplified)</h4>
-        <div style="background:#f8fafc; padding:0.9rem; border-radius:6px; font-family:monospace; font-size:0.95rem; text-align:center; border:1px dashed var(--border); margin-bottom:0.8rem;">
-          Shelf Life = [Product Weight × Allowed Moisture Increase] ÷ [Package Area × WVTR × Humidity Driving Force]
-        </div>
-        <ul style="padding-left:1.2rem; margin:0 0 1rem 0;">
-          <li><strong>WVTR:</strong> How much water vapor passes through 1 m² of film per day.</li>
-          <li><strong>Driving Force:</strong> The humidity gap between outside air and the product's interior.</li>
-          <li><strong>Allowed Increase:</strong> The safe moisture limit before texture, crispness, or safety drops.</li>
-        </ul>
-        <p>To make this accurate, we use the GAB Model, a food-science standard that converts raw moisture levels into Water Activity (a_w). Water activity is the true predictor of mold growth, clumping, and texture loss in sensitive foods like biscuits, coffee, and milk powders.</p>
-        <p style="font-size:0.85rem; color:var(--text-light); font-style:italic; margin-top:0.5rem;"></p>
+<h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin-top:1.5rem; font-weight:700;">Moisture Gain: Why It Slows Down Over Time</h3>
+<p>Packaging is never completely airtight. Water vapor from the outside air slowly moves through the film into your product. The speed of this movement depends on the humidity difference between the outside environment and the inside of the package.</p>
 
-        <!-- SEZIONE 2 -->
-<h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin-top:2rem; font-weight:700;">Oxygen Ingress: When Fats Go Rancid</h3>
-<p>For products high in fat (chips, nuts, cooking oils), oxygen is the main enemy. Unlike moisture, oxygen usually enters at a steady rate because the product quickly "uses up" what gets in through oxidation.</p>
-<div style="background:var(--warning-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--warning); margin:0.8rem 0; font-family:sans-serif;">
-   <strong>Key Insight:</strong> Shelf life ends when the total accumulated oxygen reaches a known threshold that causes off-flavors or rancidity.
+<div style="background:var(--primary-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--primary); margin:0.8rem 0; font-family:sans-serif;">
+<strong>Key Insight:</strong> As the product absorbs moisture, it becomes less "thirsty." This means the driving force weakens over time, so moisture enters quickly at first, then naturally slows down. Our calculator tracks this real‑world curve instead of assuming a constant, linear rate.
 </div>
+
 <h4 style="margin:1.2rem 0 0.5rem 0; font-family:sans-serif;"> The Core Formula (Simplified)</h4>
 <div style="background:#f8fafc; padding:0.9rem; border-radius:6px; font-family:monospace; font-size:0.95rem; text-align:center; border:1px dashed var(--border); margin-bottom:0.8rem;">
-   Shelf Life = [Fat Content × Max Safe Oxygen] ÷ [Package Area × OTR × Temperature Factor]
+Shelf Life = [Product Weight × Allowed Moisture Increase] ÷ [Package Area × WVTR × Humidity Driving Force]
 </div>
-<ul style="padding-left:1.2rem; margin:0 0 1rem 0;">
-   <li><strong>OTR:</strong> How much oxygen passes through 1 m² of film per day.</li>
-   <li><strong>Max Safe Oxygen:</strong> The limit before taste or nutritional quality degrades (varies by product).</li>
-</ul>
-<p>It is important to note that the oxidation model implemented here operates on a zero-order kinetic assumption, meaning it treats the degradation rate as constant throughout the product’s life. In practice, however, lipid oxidation follows an autocatalytic pathway: it begins slowly during an induction phase, then accelerates as free radicals accumulate and propagate chain reactions. Because of this simplification, the calculator may slightly overestimate shelf life during the final stages of storage. For this reason, the predictions are most reliable for fast-moving products with shorter shelf lives (typically under six months) or when used as a conservative, first-pass estimate during early packaging design. For long-term stability studies, always complement these calculations with real-time or accelerated shelf-life testing.</p>
 
-        <!-- SEZIONE 3 -->
-        <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin-top:2rem; font-weight:700;">Temperature: The Invisible Accelerator</h3>
-        <p>Heat dramatically speeds up both moisture absorption and oxidation. To predict real-world shelf life, we apply two proven kinetic models:</p>
-        <ul style="padding-left:1.2rem; margin:0.5rem 0;">
-          <li><strong>Q₁₀ Rule:</strong> A practical shortcut widely used in food science. For every 10°C (18°F) rise in storage temperature, degradation typically doubles or triples.</li>
-          <li><strong>Arrhenius Equation:</strong> A more precise scientific model that calculates exactly how sensitive your specific product is to heat based on its Activation Energy (Eₐ).</li>
-        </ul>
-        <div style="background:var(--success-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--success); margin:0.8rem 0; font-family:sans-serif;">
-           <strong>Key Insight:</strong> This allows you to run reliable "What-If" scenarios. <em>Example: "If my product lasts 12 months at 20°C, how long will it last in a 35°C warehouse?"</em>
-        </div>
+<p>To make this accurate, we use the GAB Model, a food‑science standard that converts raw moisture levels into Water Activity (a<sub>w</sub>). Water activity is the true predictor of mold growth, clumping, and texture loss in sensitive foods like biscuits, coffee, and milk powders.</p>
 
-        <!-- RIFERIMENTI -->
-        <h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin-top:2rem; font-weight:700;"> Scientific Standards & References</h3>
-        <p>This calculator aligns with internationally recognized testing and modeling standards:</p>
-        <ul style="padding-left:1.2rem; margin:0.5rem 0; color:var(--text-light); list-style-type:disc;">
-          <li>ASTM F1249 & ISO 15106-3 </li>
-          <li>ASTM D3985 & ISO 15106-2 </li>
-          <li>ISO 18787 </li>
-          <li>Van den Berg & Bruin (1981) </li>
-          <li>Labuza (1984) & ICH Q1A(R2) </li>
-        </ul>
+<h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin-top:2rem; font-weight:700;">Oxygen Ingress: When Fats Go Rancid</h3>
+<p>For products high in fat (chips, nuts, cooking oils), oxygen is the main enemy. Unlike moisture, oxygen usually enters at a steady rate because the product quickly "uses up" what gets in through oxidation.</p>
 
-        <div style="margin-top:2rem; padding:0.9rem; background:var(--bg); border-radius:8px; font-size:0.88rem; color:var(--text-light); border-left:4px solid var(--primary); font-family:sans-serif;">
-           <strong>Note:</strong> This tool supports R&D and predictive modeling. Final shelf-life claims should always be validated with real-time storage tests and comply with local food regulations (e.g., EU 1169/2011, FDA 21 CFR).
-        </div>
+<div style="background:var(--warning-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--warning); margin:0.8rem 0; font-family:sans-serif;">
+<strong>Key Insight:</strong> Shelf life ends when the total accumulated oxygen reaches a known threshold that causes off‑flavors or rancidity.
+</div>
 
-      </div>
-    </div>
-  </div>
-  `;
+<h4 style="margin:1.2rem 0 0.5rem 0; font-family:sans-serif;"> The Core Formula (Simplified)</h4>
+<div style="background:#f8fafc; padding:0.9rem; border-radius:6px; font-family:monospace; font-size:0.95rem; text-align:center; border:1px dashed var(--border); margin-bottom:0.8rem;">
+Shelf Life = [Fat Content × Max Safe Oxygen] ÷ [Package Area × OTR × Temperature Factor]
+</div>
+
+<p>It is important to note that the oxidation model implemented here operates on a zero‑order kinetic assumption, meaning it treats the degradation rate as constant throughout the product's life. In practice, however, lipid oxidation follows an autocatalytic pathway: it begins slowly during an induction phase, then accelerates as free radicals accumulate and propagate chain reactions. Because of this simplification, the calculator may slightly overestimate shelf life during the final stages of storage. For this reason, the predictions are most reliable for fast‑moving products with shorter shelf lives (typically under six months) or when used as a conservative, first‑pass estimate during early packaging design. For long‑term stability studies, always complement these calculations with real‑time or accelerated shelf‑life testing.</p>
+
+<h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin-top:2rem; font-weight:700;">Temperature: The Invisible Accelerator</h3>
+<p>Heat dramatically speeds up both moisture absorption and oxidation. To predict real‑world shelf life, we apply two proven kinetic models:</p>
+
+<p style="margin-left:1.2rem;"><strong>Q₁₀ Rule:</strong> A practical shortcut widely used in food science. For every 10°C (18°F) rise in storage temperature, degradation typically doubles or triples.</p>
+<p style="margin-left:1.2rem;"><strong>Arrhenius Equation:</strong> A more precise scientific model that calculates exactly how sensitive your specific product is to heat based on its Activation Energy (E<sub>a</sub>).</p>
+
+<div style="background:var(--success-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--success); margin:0.8rem 0; font-family:sans-serif;">
+<strong>Key Insight:</strong> This allows you to run reliable "What‑If" scenarios. <em>Example: "If my product lasts 12 months at 20°C, how long will it last in a 35°C warehouse?"</em>
+</div>
+
+<h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin-top:2rem; font-weight:700;">Hygroscopic Materials: When Humidity Changes the Barrier</h3>
+<p>Some packaging materials—such as EVOH, certain nylons, or biodegradable polymers—are hygroscopic, meaning their barrier properties depend on the surrounding humidity. When the external relative humidity differs from the reference condition at which the material's WVTR or OTR was measured, the calculator applies a correction factor based on the material's hygroscopic coefficient (β).</p>
+
+<div style="background:#f8fafc; padding:0.9rem; border-radius:6px; font-family:monospace; font-size:0.9rem; text-align:center; border:1px dashed var(--border); margin:0.8rem 0;">
+Correction Factor = exp( β × (RH<sub>storage</sub> − RH<sub>reference</sub>) )
+</div>
+
+<p>This exponential relationship means that even modest changes in humidity can significantly affect permeability for highly hygroscopic materials. For example, an EVOH layer tested at 50% RH may show a 60–80% increase in WVTR when used in a 75% RH environment. The calculator automatically applies this correction when you provide a β value and a reference RH for the material. If these values are not supplied, the material is treated as humidity‑independent, which may lead to optimistic shelf‑life estimates in humid climates.</p>
+
+<div style="background:var(--warning-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--warning); margin:0.8rem 0; font-family:sans-serif;">
+<strong>Practical note:</strong> When designing for tropical or high‑humidity markets, always check whether your barrier layer is hygroscopic. If it is, enter the manufacturer's β coefficient or a literature value to ensure your shelf‑life prediction reflects real‑world conditions.
+</div>
+
+<h3 style="font-family:-apple-system, BlinkMacSystemFont, sans-serif; font-size:1.05rem; color:var(--primary-dark); margin-top:2rem; font-weight:700;"> Scientific Standards & References</h3>
+<p>This calculator aligns with internationally recognized testing and modeling standards:</p>
+
+<p style="margin-left:1.2rem; color:var(--text-light);">ASTM F1249 & ISO 15106‑3 (WVTR) • ASTM D3985 & ISO 15106‑2 (OTR) • ISO 18787 (Water Activity) • Van den Berg & Bruin (1981), Labuza (1984) • ICH Q1A(R2) (Stability Testing)</p>
+
+<div style="margin-top:2rem; padding:0.9rem; background:var(--bg); border-radius:8px; font-size:0.88rem; color:var(--text-light); border-left:4px solid var(--primary); font-family:sans-serif;">
+<strong>Note:</strong> This tool supports R&D and predictive modeling. Final shelf‑life claims should always be validated with real‑time storage tests and comply with local food regulations (e.g., EU 1169/2011, FDA 21 CFR).
+</div>
+
+</div>
+</div>
+</div>
+`;
 }
-  // ✅ FUNZIONE: Render tab Shelf Life
-
 // ====================================================================
 // 🧪 SHELF LIFE MODULE (CORRETTO + RIQUADRO LAMINATO)
 // ====================================================================
@@ -2389,7 +2384,7 @@ function renderShelfLife() {
       <!-- ✅ NUOVO RIQUADRO: Laminato/Materiale Selezionato -->
       <div style="background:var(--primary-light); border:1px solid #93c5fd; border-radius:8px; padding:0.75rem; margin-bottom:0.85rem; font-size:0.82rem;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.3rem;">
-          <strong style="color:var(--primary);">📦 Laminate / Structure</strong>
+          <strong style="color:var(--primary);"> Laminate / Structure</strong>
           <span class="badge badge-blue">${State.mode.toUpperCase()}</span>
         </div>
         <div style="font-weight:600; color:var(--text); margin-bottom:0.2rem;">${laminateName}</div>
@@ -3870,7 +3865,13 @@ R<sub>total</sub> = R<sub>1</sub> + R<sub>2</sub> + ... + R<sub>n</sub><br>
 WVTR<sub>total</sub> = 1 / R<sub>total</sub>
 </div>
 
-<p>Metallized films and certain coated substrates behave differently. Their barrier function comes from an ultra-thin surface layer—often just nanometers thick—deposited onto a carrier film. Because this coating's performance does not scale with the substrate thickness, the calculator treats metallized materials as having a fixed permeability value, independent of the thickness you enter for the base film.</p>
+<p>Some materials, such as EVOH, nylon, or certain biopolymers, are <strong>hygroscopic</strong>: their barrier properties change with the humidity of their environment. For these materials, the calculator applies a humidity correction based on the material's hygroscopic coefficient (β) and its reference relative humidity. The correction follows an exponential relationship: permeability increases as the external humidity rises above the reference condition, and decreases when it falls below. This behavior is captured by the factor exp(β × ΔRH), where ΔRH is the difference between the storage humidity and the material's reference humidity.</p>
+
+<div style="background:var(--warning-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--warning); margin:0.8rem 0; font-family:sans-serif;">
+<strong>Practical note:</strong> If you do not provide a β value for a hygroscopic material, the calculator treats it as humidity‑independent. This may lead to optimistic shelf‑life estimates in humid environments. When possible, enter the manufacturer's β coefficient or a literature value for more accurate predictions.
+</div>
+
+<p>Metallized films and certain coated substrates behave differently. Their barrier function comes from an ultra‑thin surface layer—often just nanometers thick—deposited onto a carrier film. Because this coating's performance does not scale with the substrate thickness, the calculator treats metallized materials as having a fixed permeability value, independent of the thickness you enter for the base film.</p>
 
 <p>Temperature and humidity matter. Permeability typically increases with temperature because molecules move faster and find pathways more easily. For hygroscopic materials like EVOH or nylon, humidity can dramatically affect barrier performance. That is why the calculator requires you to select matching test conditions: it only combines materials that share common measurement environments, ensuring physically meaningful results.</p>
 
@@ -3880,10 +3881,10 @@ WVTR<sub>total</sub> = 1 / R<sub>total</sub>
 
 <p>The resistance percentage shown for each layer helps you visualize this balance. A layer showing 70% of total resistance is doing most of the barrier work; a layer at 5% may be serving a different purpose, such as sealability or printability. Use these insights to guide material selection and thickness optimization.</p>
 
-<p>Finally, remember that calculated values are estimates based on idealized assumptions: perfect layer adhesion, uniform thickness, and defect-free films. Real-world performance can vary due to processing conditions, handling, and aging. Treat the calculator as a powerful screening tool for early-stage design, then validate critical structures with physical barrier testing under actual use conditions.</p>
+<p>Finally, remember that calculated values are estimates based on idealized assumptions: perfect layer adhesion, uniform thickness, and defect‑free films. Real‑world performance can vary due to processing conditions, handling, and aging. Treat the calculator as a powerful screening tool for early‑stage design, then validate critical structures with physical barrier testing under actual use conditions.</p>
 
 <div style="margin-top:1.5rem; padding:0.9rem; background:var(--bg); border-radius:8px; font-size:0.88rem; color:var(--text-light); border-left:4px solid var(--primary); font-family:sans-serif;">
-<strong>Note:</strong> This calculator supports research, development, and educational workflows. For regulatory submissions, commercial specifications, or shelf-life claims, always corroborate model predictions with empirical testing according to ASTM F1249, ASTM D3985, ISO 15106, or equivalent standards.
+<strong>Note:</strong> This calculator supports research, development, and educational workflows. For regulatory submissions, commercial specifications, or shelf‑life claims, always corroborate model predictions with empirical testing according to ASTM F1249, ASTM D3985, ISO 15106, or equivalent standards.
 </div>
 
 </div>
