@@ -1125,6 +1125,22 @@ window.loadFromCommunity = async function() {
 <script>
 const Engine={
   R_GAS:8.314,
+    calcHygroscopicCorrection: function(mat, condition) {
+  if (!mat.isHygroscopic || !mat.hygroscopicBeta || mat.hygroscopicBeta <= 0) {
+    return { factor: 1, correction: 0, message: null };
+  }
+  var refRH = mat.hygroscopicRefRH || 50;
+  var beta = mat.hygroscopicBeta;
+  var rhDiff = condition.humidity - refRH;
+  var factor = Math.exp(beta * rhDiff);
+  var correctionPct = (factor - 1) * 100;
+  return {
+    factor: factor,
+    correction: correctionPct,
+    message: mat.name + ': +' + correctionPct.toFixed(1) + '% permeability at ' + condition.humidity + '% RH vs ' + refRH + '% RH reference',
+    isSignificant: Math.abs(correctionPct) > 10
+  };
+},
   mode:'wvtr',
   validateData:function(mat){
     var errs=[];
@@ -1187,24 +1203,37 @@ const Engine={
   var resistance=layer.thick/product;
   return{resistance:resistance,transmissionAtThickness:1/resistance,isBarrier:false};
 },
-  calcTotal:function(layers,materials,condition){
-    var results=[];var totalR=0;
-    for(var i=0;i<layers.length;i++){
-      var layer=layers[i];
-      if(layer.mid===null||layer.thick<=0) return{error:'All layers must have material and thickness > 0'};
-      var mat=null;for(var j=0;j<materials.length;j++){if(materials[j].id===layer.mid){mat=materials[j];break;}}
-      if(!mat) return{error:'Material not found for layer '+(i+1)};
-      var res=Engine.calcLayerResistance(layer,mat,condition);
-      if(res.error) return{error:res.error};
-      if(res.resistance===null) return{error:'Calculation failed'};
-      results.push({layerIndex:i,materialName:mat.name,thickness:layer.thick,resistance:res.resistance,transmissionAtThickness:res.transmissionAtThickness,isBarrier:res.isBarrier});
-      if(res.resistance===Infinity) return{total:0,layers:results,isBarrier:true,error:null};
-      totalR+=res.resistance;
+calcLayerResistance: function(layer, material, condition) {
+  var vals = this.getValues(material);
+  var idx = -1;
+  for(var i = 0; i < material.validConditions.length; i++) {
+    if(Math.abs(material.validConditions[i].temperature - condition.temperature) < 0.01 && 
+       Math.abs(material.validConditions[i].humidity - condition.humidity) < 0.01) {
+      idx = i; break;
     }
-    var total=totalR>0?1/totalR:0;
-    for(var r=0;r<results.length;r++){results[r].resistancePct=totalR>0?(results[r].resistance/totalR)*100:0;}
-    return{total:total,layers:results,totalResistance:totalR,isBarrier:false,error:null};
-  },
+  }
+  if(idx < 0) return { resistance: null, error: 'Condition not found' };
+  var wd = vals[idx];
+  if(!wd || wd.value == null || wd.thickness == null) return { resistance: null, error: 'Missing data' };
+  if(wd.value <= 0.00001) return { resistance: Infinity, transmissionAtThickness: 0, isBarrier: true };
+  
+  if(material.isMetallized) {
+    var surfacePermeability = wd.value;
+    var resistance = 1 / surfacePermeability;
+    return { resistance: resistance, transmissionAtThickness: surfacePermeability, isBarrier: surfacePermeability < 0.1, isMetallized: true, hygroCorrection: null };
+  }
+  
+  var product = wd.value * wd.thickness;
+  var baseResistance = layer.thick / product;
+  var baseTransmission = 1 / baseResistance;
+  
+  // ✅ CORREZIONE IGROSCOPICA
+  var hygro = Engine.calcHygroscopicCorrection(material, condition);
+  var finalTransmission = baseTransmission * hygro.factor;
+  var finalResistance = finalTransmission > 0 ? 1 / finalTransmission : Infinity;
+  
+  return { resistance: finalResistance, transmissionAtThickness: finalTransmission, baseTransmission: baseTransmission, isBarrier: finalTransmission < 0.1, hygroCorrection: hygro.factor !== 1 ? hygro : null };
+},
   validateArrhenius:function(mat){
     var vals=this.getValues(mat);
     var e=this.validateData(mat);if(e.length>0) return{valid:false,error:e.join('. ')};
@@ -2645,13 +2674,40 @@ function calculateAdvancedShelfLife() {
 
   // Calcolo fattore di accelerazione e rate efficace
   const accel = getAccelFactor(Ea_J, Q10_input, 25, T_store);
-  const effectiveRate = rateInput * accel;
+    // ✅ CORREZIONE IGROSCOPICA PER SHELF LIFE
+  let hygroFactor = 1;
+  let hygroMsg = [];
+  
+  // Controlla ogni layer del laminato corrente
+  if (State.layers && State.selCond) {
+    for (let li = 0; li < State.layers.length; li++) {
+      const layer = State.layers[li];
+      if (!layer.mid) continue;
+      
+      const mat = DB.materials.find(m => m.id === layer.mid);
+      if (mat && mat.isHygroscopic && mat.hygroscopicBeta > 0) {
+        const refRH = mat.hygroscopicRefRH || 50;
+        const beta = mat.hygroscopicBeta;
+        const rhDiff = RH_out - refRH;  // RH_esterna dal form Shelf Life
+        const factor = Math.exp(beta * rhDiff);
+        
+        if (factor > 1) {
+          hygroFactor *= factor;
+          hygroMsg.push(`${mat.name}: ×${factor.toFixed(2)} a ${RH_out}% RH`);
+        }
+      }
+    }
+  }
+  
+  const effectiveRate = rateInput * accel * hygroFactor;  // ← ✅ RIGA MODIFICATA
   
   let result = { 
     days: 0, 
     history: [], 
     mode: typeof State !== 'undefined' ? State.mode : 'wvtr', 
-    type: prod.type 
+    type: prod.type ,
+      hygroWarning: hygroMsg.length > 0 ? { message: 'Hygroscopic correction applied', details: hygroMsg } : null  // ← ✅ AGGIUNTA
+
   };
 
   if (prod.type === 'moisture') {
@@ -2787,8 +2843,17 @@ function renderShelfLifeResult(res) {
         </div>
       </div>
     </div>`;
+ 
+    if (res.hygroWarning && res.hygroWarning.details && res.hygroWarning.details.length > 0) {
+    panel.innerHTML += 
+    '<div class="alert alert-warning" style="margin-top:0.75rem;font-size:0.75rem">' +
+      '<strong>⚠️ ' + res.hygroWarning.message + '</strong><br>' +
+      res.hygroWarning.details.map(function(d){ return '• ' + d; }).join('<br>') +
+      '<div style="margin-top:0.3rem;font-size:0.68rem;color:var(--text-light)">Shelf life accounts for humidity-dependent barrier degradation</div>' +
+    '</div>';
+  }
   
-  // Mostra container grafici e avvia rendering
+  // ✅ 3. MOSTRA GRAFICI
   if (chartsContainer) {
     chartsContainer.style.display = 'block';
     requestAnimationFrame(() => {
@@ -3126,6 +3191,20 @@ layersHTML += '<div class="layer-card"><span class="layer-badge">LAYER '+(i+1)+'
     detail += '<div style="padding-top:.25rem;border-top:2px solid #93c5fd;margin-top:.25rem"><strong>Total R:</strong> '+rStr(State.calcResult.totalResistance)+'</div>';
     resultHTML += '<div class="result-detail">'+detail+'</div>';
   }
+    // ✅ AVVISO IGROSCOPICO
+if(hasResult && State.calcResult.layers) {
+  var hygroWarnings = [];
+  for(var r = 0; r < State.calcResult.layers.length; r++) {
+    var lr = State.calcResult.layers[r];
+    if(lr.hygroCorrection && lr.hygroCorrection.isSignificant) hygroWarnings.push(lr.hygroCorrection.message);
+  }
+  if(hygroWarnings.length > 0) {
+    resultHTML += `<div class="alert alert-warning" style="margin-top:0.75rem;display:flex;gap:0.4rem;align-items:flex-start;font-size:0.75rem">
+      <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <div><strong>Hygroscopic correction applied:</strong><br>${hygroWarnings.map(w => '• '+w).join('<br>')}<div style="margin-top:0.3rem;font-size:0.68rem;color:var(--text-light)">β correction based on external RH vs material reference conditions</div></div>
+    </div>`;
+  }
+}
 
  return '<div class="grid grid-2">'+
   '<div><div class="card">'+cardHeader+
@@ -3140,7 +3219,8 @@ layersHTML += '<div class="layer-card"><span class="layer-badge">LAYER '+(i+1)+'
     '<span style="font-size:.75rem;color:var(--text-light)">Auto-calculate</span></div>'+
     '<button class="btn btn-danger btn-full" onclick="doCalc()"'+(canCalc?'':' disabled')+'>Calculate '+getLabel()+'</button></div></div>'+
     '<div><div class="card"><h2>Result</h2>'+(resultHTML||'<p style="color:var(--text-light);font-size:.8rem;text-align:center;padding:1.5rem">Configure layers and calculate</p>')+'</div>'+
-    (hasResult ? '<div class="card"><h2>'+getLabel()+' vs Temperature</h2><div class="chart-container"><canvas id="lamCurveChart"></canvas></div><div id="lamCurveLegend" style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.5rem;justify-content:center"></div></div>'+
+    (hasResult ? '<div class="card" id="hygro-card" style="display:none"><h2>Hygroscopic Behavior Over Time</h2><p style="font-size:0.75rem;color:var(--text-light);margin-bottom:0.5rem">WVTR increases as material absorbs moisture</p><div class="chart-container" style="min-height:280px"><canvas id="hygroTimeChart"></canvas></div></div>' : '')+
+     (hasResult ? '<div class="card"><h2>'+getLabel()+' vs Temperature</h2><div class="chart-container"><canvas id="lamCurveChart"></canvas></div><div id="lamCurveLegend" style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.5rem;justify-content:center"></div></div>'+
     '<div class="card"><h2>Save Laminate</h2><div style="display:flex;gap:.4rem;align-items:flex-end">'+
     '<div class="form-group" style="flex:1;margin:0"><label>Name</label><input type="text" class="form-input" id="lam-name" value="'+State.laminateName+'" placeholder="Name..." oninput="State.laminateName=this.value;updateSaveBtn()"></div>'+
     '<button class="btn btn-primary" id="save-btn" onclick="doSaveLam()">Save</button></div><div id="save-feedback"></div></div>' : '')+
@@ -3203,6 +3283,7 @@ function doCalcSilent(){
 function postCalcRender(){
     drawBarChart();
     drawLaminateCurveChart();
+    drawHygroscopicTimeChart();
 }
 function doSaveLam(){
   var name=State.laminateName.trim();
@@ -3520,6 +3601,104 @@ function drawLaminateCurveChart(){
         html += '</div>';
         legendEl.innerHTML = html;
     }
+}
+    // ====================================================================
+// 📈 GRAFICO SATURAZIONE IGROSCOPICA NEL TEMPO
+// ====================================================================
+function drawHygroscopicTimeChart() {
+  var canvas = document.getElementById('hygroTimeChart');
+  var hygroCard = document.getElementById('hygro-card');
+  if(!canvas) return;
+  
+  destroyChart('hygroTime');
+  
+  // Controlla se c'è almeno un materiale igroscopico
+  var hasHygro = State.layers.some(function(l){ 
+    return l.mid!==null && DB.materials.find(function(m){return m.id===l.mid;})?.isHygroscopic; 
+  });
+  
+  if(!hasHygro || !State.selCond) { 
+    if(hygroCard) hygroCard.style.display='none'; 
+    return; 
+  }
+  if(hygroCard) hygroCard.style.display='block';
+  
+  // Trova il primo materiale igroscopico
+  var mat = DB.materials.find(function(m){ 
+    return m.id===State.layers[0].mid && m.isHygroscopic; 
+  }) || DB.materials.find(function(m){return m.isHygroscopic;});
+  
+  if(!mat) return;
+  
+  var ctx = canvas.getContext('2d');
+  var beta = mat.hygroscopicBeta || 0.034;
+  var refRH = mat.hygroscopicRefRH || 50;
+  var extRH = State.selCond.humidity;
+  
+  var timePoints=[], wvtrPoints=[];
+  var satTime = 200; // giorni
+  var baseVal = Engine.getValues(mat)[0]?.value || 0.1;
+  
+  // Simula assorbimento umidità nel tempo
+  for(var t=0; t<=satTime; t+=5){
+    var saturation = 1-Math.exp(-t/50); // da 0 a 1
+    var effRH = refRH + (extRH-refRH)*saturation;
+    var corr = Math.exp(beta*(effRH-refRH));
+    timePoints.push(t); 
+    wvtrPoints.push(baseVal*corr);
+  }
+  
+  chartInstances.hygroTime = new Chart(ctx, {
+    type:'line', 
+    data:{
+      labels:timePoints, 
+      datasets:[
+        {
+          label:'Effective '+getLabel()+' (absorption)', 
+          data:wvtrPoints, 
+          borderColor:'#ef4444', 
+          backgroundColor:'rgba(239,68,68,0.1)', 
+          fill:true, 
+          tension:0.4, 
+          pointRadius:0, 
+          borderWidth:2
+        },
+        {
+          label:'Tabulated (reference)', 
+          data:new Array(timePoints.length).fill(baseVal), 
+          borderColor:'#94a3b8', 
+          borderDash:[4,3], 
+          pointRadius:0, 
+          borderWidth:1
+        }
+      ]
+    },
+    options:{
+      responsive:true, 
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'bottom',labels:{font:{size:9}}},
+        tooltip:{
+          callbacks:{
+            label:function(ctx){
+              return ctx.dataset.label+': '+ctx.parsed.y.toFixed(4)+' '+getUnit();
+            }
+          }
+        }
+      }, 
+      scales:{
+        x:{
+          title:{display:true,text:'Days',font:{size:10}},
+          grid:{display:false}
+        },
+        y:{
+          title:{display:true,text:getLabel()+' ('+getUnit()+')',font:{size:10}},
+          beginAtZero:true,
+          ticks:{callback:function(v){return v.toFixed(4);}}
+        }
+      }
+    }
+  });
 }
 // ====================================================================
 // 📚 CALCULATOR METHODOLOGY EXPLAINER (TEXTBOOK STYLE)
@@ -4190,16 +4369,37 @@ function drawSensitivityChart(){
   var canvas=document.getElementById('sensChart');if(!canvas) return;
   destroyChart('sens');
   var layerIdx=State.sensLayerIdx;
-  var tMin5=parseFloat(document.getElementById('sens-tmin')?document.getElementById('sens-tmin').value:'10');
-  var tMax5=parseFloat(document.getElementById('sens-tmax')?document.getElementById('sens-tmax').value:'500');
+  var tMin=parseFloat(document.getElementById('sens-tmin').value);
+  var tMax=parseFloat(document.getElementById('sens-tmax').value);
   var common=Engine.findCommonConditions(State.layers,DB.materials);
   var condition=State.selCond||(common.conditions&&common.conditions[0])||{temperature:25,humidity:50};
-  var result=Engine.calcSensitivityCurve(State.layers,DB.materials,condition,layerIdx,tMin5,tMax5,100);
-  if(result.error) return;
+  
   var ctx=canvas.getContext('2d');
-  var labels=[];var vals=[];
-  for(var p=0;p<result.points.length;p++){labels.push(result.points[p].thickness.toFixed(0));vals.push(parseFloat(result.points[p].total.toFixed(6)));}
-  chartInstances.sens=new Chart(ctx,{type:'line',data:{labels:labels,datasets:[{label:getLabel()+' vs Layer '+(layerIdx+1)+' thickness',data:vals,borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,0.1)',fill:true,tension:0.4,pointRadius:0,borderWidth:2}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:'Layer thickness (um)'}},y:{title:{display:true,text:'Total '+getLabel()+' ('+getUnit()+')'},beginAtZero:true}}}});
+  var datasets=[];
+  var targetMat=State.layers[layerIdx].mid ? DB.materials.find(m=>m.id===State.layers[layerIdx].mid) : null;
+  var isHygro=targetMat && targetMat.isHygroscopic;
+  var rhLevels = isHygro ? [30, 50, 70, 85] : [condition.humidity];
+  var colors=['#3b82f6','#22c55e','#f59e0b','#ef4444'];
+  
+  rhLevels.forEach(function(rh, idx){
+    var cond = {temperature:condition.temperature, humidity:rh};
+    var res = Engine.calcSensitivityCurve(State.layers, DB.materials, cond, layerIdx, tMin, tMax, 80);
+    if(!res.error && res.points.length>0){
+      var lbls=res.points.map(p=>p.thickness.toFixed(0));
+      var vals=res.points.map(p=>parseFloat(p.total.toFixed(6)));
+      datasets.push({
+        label:(isHygro?'β-corrected ':'')+rh+'% RH',
+        data:vals, borderColor:colors[idx%colors.length], backgroundColor:colors[idx%colors.length]+'20',
+        borderWidth:isHygro&&rh!==condition.humidity?2.5:2, borderDash:isHygro&&rh!==condition.humidity?[4,2]:[],
+        fill:false, tension:0.4, pointRadius:0
+      });
+    }
+  });
+  
+  chartInstances.sens=new Chart(ctx,{type:'line',data:{labels:lbls,datasets:datasets},
+    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:9}}}},
+      scales:{x:{title:{display:true,text:'Layer thickness (µm)'}},y:{title:{display:true,text:'Total '+getLabel()+' ('+getUnit()+')'},beginAtZero:true,ticks:{callback:v=>v<0.01?v.toExponential(2):v.toFixed(4)}}}}
+  });
 }
 
 function doOptimize(){
@@ -4668,7 +4868,24 @@ function showMatModal(editId) {
         '<strong>Metallized/Coated film</strong> – Barrier independent of substrate thickness'+
       '</label>'+
     '</div>';
-  
+ 
+var hygroHTML = `
+<div style="margin:0.5rem 0;padding:0.5rem;background:var(--warning-light);border-radius:8px;border-left:3px solid var(--warning)">
+  <label style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.3rem;font-size:0.75rem">
+    <input type="checkbox" id="mf-hygroscopic" ${(mat && mat.isHygroscopic) ? 'checked' : ''} style="accent-color:var(--warning)">
+    <strong>Hygroscopic Material</strong>
+  </label>
+  <div class="grid grid-2" style="gap:0.4rem">
+    <div class="form-group" style="margin:0">
+      <label>β Coefficient (%/RH)</label>
+      <input type="number" step="0.001" class="form-input" id="mf-beta" value="${mat && mat.hygroscopicBeta ? mat.hygroscopicBeta : ''}" placeholder="0.034">
+    </div>
+    <div class="form-group" style="margin:0">
+      <label>Reference RH (%)</label>
+      <input type="number" class="form-input" id="mf-refrh" value="${mat && mat.hygroscopicRefRH ? mat.hygroscopicRefRH : 50}" placeholder="50">
+    </div>
+  </div>
+</div>`;
   // ✅ GENERA LE RIGHE DINAMICHE
   var rowsHTML = '';
   for(var r=0; r<currentValues.length; r++){
@@ -4802,12 +5019,19 @@ if(tdsLink && !tdsLink.startsWith('http')) {
       }
       
       var finalFamily = family || getFamily(name);
+        var isHygro = document.getElementById('mf-hygroscopic').checked;
+var betaVal = parseFloat(document.getElementById('mf-beta').value) || 0;
+var refRHVal = parseFloat(document.getElementById('mf-refrh').value) || 50;
+        
       var matData = {
   name: name,
   family: finalFamily,
   company: company,              
   tdsLink: tdsLink,              
   isMetallized: isMetallized,
+          isHygroscopic: isHygro,
+hygroscopicBeta: isHygro ? betaVal : 0,
+hygroscopicRefRH: isHygro ? refRHVal : 50,
   testMethodWVTR: testMethodWVTR,
   testMethodOTR: testMethodOTR,
 wvtrValues: currentMode === 'wvtr' ? valuesArray : (mat && mat.wvtrValues ? mat.wvtrValues : []),
