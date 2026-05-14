@@ -1186,113 +1186,75 @@ const Engine={
   if(common.length===0) return{conditions:[],error:'No common test conditions found',warning:null,matInfo:matInfo};
   return{conditions:common,error:null,warning:null,matInfo:matInfo};
 },
- calcLayerResistance:function(layer,material,condition){
-  var vals=this.getValues(material);
-  var idx=-1;
-  
-  for(var i=0;i<material.validConditions.length;i++){
-    var cond = material.validConditions[i];
-    // 1. Check Temperatura/Umidità
-    var condMatch = Math.abs(cond.temperature-condition.temperature)<0.01 && 
-                    Math.abs(cond.humidity-condition.humidity)<0.01;
-    
-    if(condMatch){
-      // 2. Check Test Method
-      var methodMatch = true;
-      if(State.selectedTestMethod){
-        // Prendi il metodo della riga, se vuoto usa il default del materiale
-        var rowMethod = cond.testMethod || '';
-        if(!rowMethod) {
-           rowMethod = State.mode === 'wvtr' ? (material.testMethodWVTR || '') : (material.testMethodOTR || '');
-        }
-        // Se la riga ha un metodo e non corrisponde al filtro, salta
-        if(rowMethod && rowMethod !== State.selectedTestMethod){
-          methodMatch = false;
-        }
-      }
-      
-      if(methodMatch){
-        idx = i; 
-        break;
-      }
-    }
-  }
-  
-  if(idx<0) return{resistance:null,error:'Condition not found'};
-  var wd=vals[idx];
-  if(!wd||wd.value==null||wd.thickness==null) return{resistance:null,error:'Missing data'};
-  if(wd.value<=0.00001) return{resistance:Infinity,transmissionAtThickness:0,isBarrier:true};
-  
-  if(material.isMetallized){
-    var surfacePermeability = wd.value;
-    var resistance = 1 / surfacePermeability;
-    return{
-      resistance: resistance,
-      transmissionAtThickness: surfacePermeability,
-      isBarrier: surfacePermeability < 0.1,
-      isMetallized: true
-    };
-  }
-  
-  var product=wd.value*wd.thickness;
-  var resistance=layer.thick/product;
-  return{resistance:resistance,transmissionAtThickness:1/resistance,isBarrier:false};
-}
-  
-  // ✅ Comportamento standard per materiali NON metallizzati
-  var product=wd.value*wd.thickness;
-  var resistance=layer.thick/product;
-  return{resistance:resistance,transmissionAtThickness:1/resistance,isBarrier:false};
-},
 calcLayerResistance: function(layer, material, condition) {
-  var vals = this.getValues(material);
-  var idx = -1;
-  for(var i = 0; i < material.validConditions.length; i++) {
-    if(Math.abs(material.validConditions[i].temperature - condition.temperature) < 0.01 && 
-       Math.abs(material.validConditions[i].humidity - condition.humidity) < 0.01) {
-      idx = i; break;
+    var vals = this.getValues(material);
+    var idx = -1;
+    
+    // Cerca la condizione corrispondente (temperatura/umidità)
+    for(var i = 0; i < material.validConditions.length; i++) {
+        if(Math.abs(material.validConditions[i].temperature - condition.temperature) < 0.01 &&
+           Math.abs(material.validConditions[i].humidity - condition.humidity) < 0.01) {
+            idx = i; 
+            break;
+        }
     }
-  }
-  if(idx < 0) return { resistance: null, error: 'Condition not found' };
-  var wd = vals[idx];
-  if(!wd || wd.value == null || wd.thickness == null) return { resistance: null, error: 'Missing data' };
-  if(wd.value <= 0.00001) return { resistance: Infinity, transmissionAtThickness: 0, isBarrier: true };
-  
-  if(material.isMetallized) {
-    var surfacePermeability = wd.value;
-    var resistance = 1 / surfacePermeability;
-    return { resistance: resistance, transmissionAtThickness: surfacePermeability, isBarrier: surfacePermeability < 0.1, isMetallized: true, hygroCorrection: null };
-  }
-  
-  var product = wd.value * wd.thickness;
-  var baseResistance = layer.thick / product;
-  var baseTransmission = 1 / baseResistance;
-  
-  // ✅ CORREZIONE IGROSCOPICA
-  var hygro = Engine.calcHygroscopicCorrection(material, condition);
-  var finalTransmission = baseTransmission * hygro.factor;
-  var finalResistance = finalTransmission > 0 ? 1 / finalTransmission : Infinity;
-  
-  return { resistance: finalResistance, transmissionAtThickness: finalTransmission, baseTransmission: baseTransmission, isBarrier: finalTransmission < 0.1, hygroCorrection: hygro.factor !== 1 ? hygro : null };
-},
-    calcTotal:function(layers,materials,condition){
-  var results=[];var totalR=0;
-  for(var i=0;i<layers.length;i++){
-    var layer=layers[i];
-    if(layer.mid===null||layer.thick<=0) return{error:'All layers must have material and thickness > 0'};
-    var mat=null;for(var j=0;j<materials.length;j++){if(materials[j].id===layer.mid){mat=materials[j];break;}}
-    if(!mat) return{error:'Material not found for layer '+(i+1)};
-    var res=Engine.calcLayerResistance(layer,mat,condition);
-    if(res.error) return{error:res.error};
-    if(res.resistance===null) return{error:'Calculation failed'};
-    results.push({layerIndex:i,materialName:mat.name,thickness:layer.thick,resistance:res.resistance,transmissionAtThickness:res.transmissionAtThickness,isBarrier:res.isBarrier});
-    if(res.resistance===Infinity) return{total:0,layers:results,isBarrier:true,error:null};
-    totalR+=res.resistance;
-  }
-  var total=totalR>0?1/totalR:0;
-  for(var r=0;r<results.length;r++){results[r].resistancePct=totalR>0?(results[r].resistance/totalR)*100:0;}
-  return{total:total,layers:results,totalResistance:totalR,isBarrier:false,error:null};
-},
+    
+    if(idx < 0) return { resistance: null, error: 'Condition not found' };
+    
+    var wd = vals[idx];
+    if(!wd || wd.value == null || wd.thickness == null) return { resistance: null, error: 'Missing data' };
+    
+    // Gestione valore zero o quasi-zero (barriera perfetta)
+    if(wd.value <= 0.00001) return { resistance: Infinity, transmissionAtThickness: 0, isBarrier: true };
+    
+    // ✅ GESTIONE MATERIALI METALLIZZATI
+    // Per metallizzati: la barriera è una proprietà di superficie, NON scala con lo spessore
+    if(material.isMetallized) {
+        var surfacePermeability = wd.value;  // valore come inserito dall'utente
+        var resistance = 1 / surfacePermeability;  // resistenza fissa, indipendente da layer.thick
+        return {
+            resistance: resistance,
+            transmissionAtThickness: surfacePermeability,  // valore fisso
+            isBarrier: surfacePermeability < 0.1,  // soglia per considerare "barriera"
+            isMetallized: true,
+            hygroCorrection: null  // nessun effetto igroscopico per metallizzati
+        };
+    }
+    
+    // ✅ Comportamento standard per materiali NON metallizzati
+    var product = wd.value * wd.thickness;
+    var baseResistance = layer.thick / product;
+    var baseTransmission = 1 / baseResistance;
+    
+    // ✅ CORREZIONE IGROSCOPICA (solo per materiali igroscopici)
+    var hygroCorrection = null;
+    if(material.isHygroscopic && material.hygroscopicBeta && material.hygroscopicBeta > 0) {
+        var refRH = material.hygroscopicRefRH || 50;
+        var beta = material.hygroscopicBeta;
+        var rhDiff = condition.humidity - refRH;
+        var factor = Math.exp(beta * rhDiff);
+        
+        hygroCorrection = {
+            factor: factor,
+            correctionPct: (factor - 1) * 100,
+            message: material.name + ': +' + ((factor - 1) * 100).toFixed(1) + '% permeability at ' + condition.humidity + '% RH vs ' + refRH + '% RH reference',
+            isSignificant: Math.abs((factor - 1) * 100) > 10
+        };
+        
+        // Applica la correzione alla trasmissione
+        baseTransmission = baseTransmission * factor;
+    }
+    
+    var finalResistance = baseTransmission > 0 ? 1 / baseTransmission : Infinity;
+    
+    return {
+        resistance: finalResistance,
+        transmissionAtThickness: baseTransmission,
+        baseTransmission: baseTransmission,  // valore prima della correzione igroscopica
+        isBarrier: baseTransmission < 0.1,
+        hygroCorrection: hygroCorrection
+    };
+}
   validateArrhenius:function(mat){
     var vals=this.getValues(mat);
     var e=this.validateData(mat);if(e.length>0) return{valid:false,error:e.join('. ')};
