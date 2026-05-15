@@ -2563,6 +2563,7 @@ function renderShelfLife() {
   <option value="tray">Tray with Lid</option>
   <option value="bottle">🍾 Bottle (Olive Oil/Wine style)</option>
 </select>
+</div>
           <div class="form-group" style="margin:0">
     <label>Welding Margin (cm)</label>
     <input type="number" id="sl-margin" value="2" step="0.5" class="form-input" onchange="SL.calcArea()">
@@ -6373,7 +6374,8 @@ function doOptimize(){
     '<span><strong>'+((mat)?mat.name:'Layer '+(barrierIdx+1))+'</strong> min: <span style="color:var(--primary);font-weight:700">'+result.thickness.toFixed(1)+' um</span></span>'+
     '<span style="color:var(--text-light);font-size:0.7rem">('+current+'&rarr;'+result.thickness.toFixed(1)+'um, '+(result.thickness<current?'✓ Savings':'⚠ Increase needed')+')</span>'+
   '</div>';
-}  // ← ✅ AGGIUNGI QUESTA PARENTESI GRAFFA!
+} 
+    }// ← ✅ AGGIUNGI QUESTA PARENTESI GRAFFA!
 // ====================================================================
 // 📚 SENSITIVITY METHODOLOGY EXPLAINER (TEXTBOOK STYLE)
 // ====================================================================
@@ -7084,7 +7086,7 @@ function showBulkImport(){
       var data=document.getElementById('bulk-data').value.trim();
       if(!data){alert('Paste data first');return false;}
       try{
-        var lines=data.split('\n').filter(function(l){return l.trim();});
+        var lines = data.split('\n').filter(function(l){ return l.trim(); });
         var count=0;
         for(var li=0;li<lines.length;li++){
         // ✅ CORRETTO
