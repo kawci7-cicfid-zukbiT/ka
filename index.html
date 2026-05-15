@@ -2681,7 +2681,7 @@ function renderShelfLife() {
         </div>
         
         <!-- Grafico B: Step Impact (NUOVO - PRINCIPALE) -->
-        <div class="card" style="margin-top:0.5rem; border-left:4px solid var(--warning);">
+        <div class="card" style="margin-top:0.5rem;">
           <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;"> Shelf Life Consumed per Step</h3>
           <p style="font-size:0.72rem;color:var(--text-light);margin-bottom:0.5rem">
             Horizontal bars show % of total shelf life consumed in each logistics phase. 
@@ -2692,7 +2692,7 @@ function renderShelfLife() {
         </div>
         
         <!-- Grafico C: Moisture Accumulation (solo per prodotti moisture) -->
-        <div class="card" style="margin-top:0.5rem; border-left:4px solid var(--primary);">
+        <div class="card" style="margin-top:0.5rem;">
           <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;">Moisture Accumulation</h3>
           <p style="font-size:0.72rem;color:var(--text-light);margin-bottom:0.5rem">
             Internal moisture growth along the chain. Red zone = above critical limit.
@@ -3079,10 +3079,13 @@ const SL = {
         </div>`;
 
         if (res.hygroWarning) {
-            panel.innerHTML += `<div class="alert alert-warning" style="margin-top:0.5rem;font-size:0.75rem">
-                <strong>⚠️ ${res.hygroWarning.message}</strong><br>${res.hygroWarning.details.join('<br>')}
-            </div>`;
-        }
+  panel.innerHTML += `<div class="alert alert-warning" style="margin-top:0.5rem;font-size:0.75rem;background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px solid #fcd34d;border-radius:8px;padding:0.6rem 0.8rem">
+    <strong style="text-shadow:0 1px 0 rgba(255,255,255,0.6),0 -1px 0 rgba(0,0,0,0.08);letter-spacing:0.2px;font-weight:700">⚠️ ${res.hygroWarning.message}</strong><br>
+    ${res.hygroWarning.details.map(d => 
+      `<span style="display:block;margin-top:0.2rem;text-shadow:0 1px 0 rgba(255,255,255,0.5);color:#92400e;font-weight:500">• ${d}</span>`
+    ).join('')}
+  </div>`;
+}
 
         const chartsContainer = document.getElementById('sl-charts-container');
         if (chartsContainer) {
