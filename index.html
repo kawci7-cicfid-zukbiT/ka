@@ -3483,49 +3483,50 @@ drawMoistureAccumulationChart(res) {
         ]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            position: 'top',
-            labels: { boxWidth: 12, font: { size: 10 }, padding: 10 }
-          },
-          tooltip: {
-            callbacks: {
-              label: function(ctx) {
-                const val = ctx.parsed.y;
-                const detail = pointDetails[ctx.dataIndex];
-                const status = val >= M_crit ? ' 🔴 ABOVE LIMIT' :
-                              val >= M_crit * 0.9 ? ' 🟡 WARNING' : ' 🟢 Safe';
-                return [
-                  `💧 ${ctx.dataset.label}: ${val.toFixed(2)}%${status}`,
-                  `📅 Day ${detail?.day || ctx.dataIndex}`,
-                  `📦 Step: ${detail?.step || ''}`
-                ];
-              }
-            }
-          }
-        },
-        scales: {
-          x: {
-            title: { display: true, text: 'Logistics Chain Progress', font: { size: 10 } },
-            ticks: { font: { size: 8 }, maxRotation: 45, minRotation: 45 },
-            grid: { display: false }
-          },
-          y: {
-            beginAtZero: true,
-            max: Math.max(M_crit * 1.3, (moisturePoints.length > 0 ? Math.max(...moisturePoints) : M_crit) * 1.1),
-            title: { display: true, text: 'Moisture Content (%)', font: { size: 10 } },
-            ticks: { callback: v => v.toFixed(1) + '%', font: { size: 9 } },
-            grid: { color: 'rgba(0,0,0,0.04)' }
-          }
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      position: 'top',
+      labels: { boxWidth: 12, font: { size: 10 }, padding: 10 }
+    },
+    tooltip: {
+      callbacks: {
+        label: function(ctx) {
+          const val = ctx.parsed.y;
+          const detail = pointDetails[ctx.dataIndex];
+          const status = val >= M_crit ? ' 🔴 ABOVE LIMIT' :
+                        val >= M_crit * 0.9 ? ' 🟡 WARNING' : ' 🟢 Safe';
+          return [
+            `💧 ${ctx.dataset.label}: ${val.toFixed(2)}%${status}`,
+            `📅 Day ${detail?.day || ctx.dataIndex}`,
+            `📦 Step: ${detail?.step || ''}`
+          ];
         }
       }
-    });
-  } catch (e) {
-    console.error('❌ Error creating Moisture Accumulation chart:', e);
+    }
+  },
+  scales: {
+    x: {
+      title: { display: true, text: 'Logistics Chain Progress', font: { size: 10 } },
+      ticks: { font: { size: 8 }, maxRotation: 45, minRotation: 45 },
+      grid: { display: false }
+    },
+    y: {
+      beginAtZero: true,
+      max: Math.max(M_crit * 1.3, (moisturePoints.length > 0 ? Math.max(...moisturePoints) : M_crit) * 1.1),
+      title: { display: true, text: 'Moisture Content (%)', font: { size: 10 } },
+      ticks: { callback: v => v.toFixed(1) + '%', font: { size: 9 } },
+      grid: { color: 'rgba(0,0,0,0.04)' }
+    }
   }
+}  // ← ✅ CHIUSURA OPTIONS
+});  // ← chiude new Chart()
+} catch (e) {
+  console.error('❌ Error creating Moisture Accumulation chart:', e);
 }
+}  // ← chiude la funzione
+    
     // --- UI TOGGLES & HELPERS ---
 function toggleRateSource() {
     const src = document.querySelector('input[name="sl-rate-source"]:checked')?.value;
