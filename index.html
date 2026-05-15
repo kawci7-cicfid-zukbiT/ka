@@ -2513,12 +2513,12 @@ function renderShelfLife() {
 
       <!-- STEP 2: THERMAL ACCELERATION (Eₐ ↔ Q₁₀) -->
       <div style="padding:1rem; border-bottom:1px solid var(--border);">
-        <div style="display:flex;align-items:center;gap:0.5rem; margin-bottom:0.5rem; color:var(--warning); font-weight:600; font-size:0.85rem;">
-          <span>▼ 2. Thermal Acceleration</span>
-        </div>
+<div style="display:flex;align-items:center;gap:0.5rem; margin-bottom:0.5rem; color:var(--primary); font-weight:600; font-size:0.85rem;">
+<span>▼ 2. Thermal Acceleration</span>
+</div>
         <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:0.75rem;">
           <label style="font-size:0.75rem; color:var(--text-light); display:block; margin-bottom:0.4rem; font-weight:600;">
-            Enter either Eₐ <strong>or</strong> Q₁₀ — not both. The unused field is disabled automatically.
+            
           </label>
           <div class="grid grid-2" style="gap:0.5rem;">
             <div class="form-group" style="margin:0">
@@ -2531,7 +2531,7 @@ function renderShelfLife() {
             </div>
           </div>
           <div style="font-size:0.65rem; color:var(--text-light); margin-top:0.3rem;" id="sl-ea-q10-hint">
-            Leave empty to use product default. If both are filled, Q₁₀ is ignored.
+            Leave empty to use product default. 
           </div>
         </div>
       </div>
@@ -2554,25 +2554,55 @@ function renderShelfLife() {
         <div id="geom-selector" class="grid grid-2" style="margin-top:0.5rem; gap:0.4rem;">
           <div class="form-group" style="margin:0">
             <label>Shape Type</label>
-            <select class="form-input" id="sl-shape" onchange="SL.calcArea()">
-              <option value="flat">Flat Pouch</option>
-              <option value="standup">Stand-Up Pouch</option>
-              <option value="flow">Flow Pack</option>
-              <option value="box">Rectangular Box</option>
-              <option value="cylinder">Cylindrical Jar</option>
-              <option value="tray">Tray with Lid</option>
-            </select>
+            <select class="form-input" id="sl-shape" onchange="SL.onShapeChange()">
+  <option value="flat">Flat Pouch</option>
+  <option value="standup">Stand-Up Pouch</option>
+  <option value="flow">Flow Pack</option>
+  <option value="box">Rectangular Box</option>
+  <option value="cylinder">Cylindrical Jar</option>
+  <option value="tray">Tray with Lid</option>
+  <option value="bottle">🍾 Bottle (Olive Oil/Wine style)</option>
+</select>
           </div>
           <div class="form-group" style="margin:0">
             <label>Welding Margin (cm)</label>
             <input type="number" id="sl-margin" value="2" step="0.5" class="form-input" onchange="SL.calcArea()">
           </div>
-        </div>
-        <div id="dims-selector" class="grid grid-2" style="margin-top:0.4rem; gap:0.4rem;">
-          <div class="form-group" style="margin:0"><label>Width L (cm)</label><input type="number" id="sl-w" value="12" step="0.1" class="form-input" oninput="SL.calcArea()"></div>
-          <div class="form-group" style="margin:0"><label>Height H (cm)</label><input type="number" id="sl-h" value="17" step="0.1" class="form-input" oninput="SL.calcArea()"></div>
-          <div class="form-group" style="margin:0"><label>Depth / Diameter (cm)</label><input type="number" id="sl-d" value="0" step="0.1" class="form-input" oninput="SL.calcArea()"></div>
-        </div>
+        <div id="dims-selector" style="margin-top:0.4rem;">
+  <!-- Default fields (Flat/Standup/Flow) -->
+  <div id="dims-pouch" class="grid grid-2" style="gap:0.4rem;">
+    <div class="form-group" style="margin:0"><label>Width L (cm)</label><input type="number" id="sl-w" value="12" step="0.1" class="form-input" oninput="SL.calcArea()"></div>
+    <div class="form-group" style="margin:0"><label>Height H (cm)</label><input type="number" id="sl-h" value="17" step="0.1" class="form-input" oninput="SL.calcArea()"></div>
+    <div class="form-group" style="margin:0"><label>Depth / Diameter (cm)</label><input type="number" id="sl-d" value="0" step="0.1" class="form-input" oninput="SL.calcArea()"></div>
+  </div>
+  
+  <!-- Bottle fields (hidden by default) -->
+  <div id="dims-bottle" class="grid grid-2" style="gap:0.4rem; display:none;">
+    <div class="form-group" style="margin:0">
+      <label>🔵 Body Radius (cm)</label>
+      <input type="number" id="sl-bottle-body-r" value="3.5" step="0.1" class="form-input" oninput="SL.calcArea()" placeholder="e.g. 3.5">
+    </div>
+    <div class="form-group" style="margin:0">
+      <label>↕️ Body Height (cm)</label>
+      <input type="number" id="sl-bottle-body-h" value="16" step="0.1" class="form-input" oninput="SL.calcArea()" placeholder="e.g. 16">
+    </div>
+    <div class="form-group" style="margin:0">
+      <label>🔘 Neck Radius (cm)</label>
+      <input type="number" id="sl-bottle-neck-r" value="1.2" step="0.1" class="form-input" oninput="SL.calcArea()" placeholder="e.g. 1.2">
+    </div>
+    <div class="form-group" style="margin:0">
+      <label>↕️ Neck Height (cm)</label>
+      <input type="number" id="sl-bottle-neck-h" value="4" step="0.1" class="form-input" oninput="SL.calcArea()" placeholder="e.g. 4">
+    </div>
+    <div class="form-group" style="margin:0; grid-column: 1 / -1;">
+      <label>〰️ Shoulder Height (cm)</label>
+      <input type="number" id="sl-bottle-shoulder-h" value="2.5" step="0.1" class="form-input" oninput="SL.calcArea()" placeholder="Transition zone (default 2.5)">
+    </div>
+    <div style="grid-column:1/-1; font-size:0.65rem; color:var(--text-light); padding:0.2rem 0;">
+      💡 Approximates a real bottle: cylindrical body + conical shoulders + narrow neck + rounded bottom
+    </div>
+  </div>
+</div>
         <div id="manual-area-input" style="display:none; margin-top:0.5rem;">
           <div class="form-group" style="margin:0">
             <label>Total Surface Area (m²)</label>
@@ -2737,21 +2767,22 @@ const SL = {
     
     // --- Package mode toggle (Auto geometry vs Manual area) ---
     togglePkgMode() {
-        const m = document.querySelector('input[name="pkg-geom"]:checked')?.value;
-        const geomSel = document.getElementById('geom-selector');
-        const dimsSel = document.getElementById('dims-selector');
-        const manualInp = document.getElementById('manual-area-input');
-        if (m === 'auto') {
-            if (geomSel) geomSel.style.display = 'grid';
-            if (dimsSel) dimsSel.style.display = 'grid';
-            if (manualInp) manualInp.style.display = 'none';
-        } else {
-            if (geomSel) geomSel.style.display = 'none';
-            if (dimsSel) dimsSel.style.display = 'none';
-            if (manualInp) manualInp.style.display = 'block';
-        }
-        this.calcArea();
-    },
+  const m = document.querySelector('input[name="pkg-geom"]:checked')?.value;
+  const geomSel = document.getElementById('geom-selector');
+  const dimsSel = document.getElementById('dims-selector');
+  const manualInp = document.getElementById('manual-area-input');
+  
+  if (m === 'auto') {
+    if (geomSel) geomSel.style.display = 'grid';
+    if (dimsSel) dimsSel.style.display = 'block';
+    if (manualInp) manualInp.style.display = 'none';
+    this.onShapeChange(); // ← Usa onShapeChange per gestire visibilità campi
+  } else {
+    if (geomSel) geomSel.style.display = 'none';
+    if (dimsSel) dimsSel.style.display = 'none';
+    if (manualInp) manualInp.style.display = 'block';
+  }
+},
     
     // --- Package type change → auto-fill dimensions ---
     onPkgChange() {
@@ -2768,48 +2799,99 @@ const SL = {
         // this.updateIcon(type); // Funzione rimossa se non definita
         this.calcArea();
     },
+    // --- Shape change handler ---
+onShapeChange() {
+  const sel = document.getElementById('sl-shape');
+  if (!sel) return;
+  const type = sel.value;
+  
+  // Show/hide dimension groups
+  const pouchDims = document.getElementById('dims-pouch');
+  const bottleDims = document.getElementById('dims-bottle');
+  
+  if (type === 'bottle') {
+    if (pouchDims) pouchDims.style.display = 'none';
+    if (bottleDims) bottleDims.style.display = 'grid';
+  } else {
+    if (pouchDims) pouchDims.style.display = 'grid';
+    if (bottleDims) bottleDims.style.display = 'none';
+  }
+  
+  this.calcArea();
+},
+
+// --- Area calculation (updated with bottle geometry) ---
+calcArea() {
+  const mode = document.querySelector('input[name="pkg-geom"]:checked')?.value;
+  let area = 0;
+  
+  if (mode === 'manual') {
+    area = parseFloat(document.getElementById('sl-area-manual')?.value) || 0;
+  } else {
+    const type = document.getElementById('sl-shape')?.value || 'flat';
+    const m = parseFloat(document.getElementById('sl-margin')?.value) || 0;
     
-    // --- Area calculation (core logic) ---
-    calcArea() {
-        const mode = document.querySelector('input[name="pkg-geom"]:checked')?.value;
-        let area = 0;
-        if (mode === 'manual') {
-            area = parseFloat(document.getElementById('sl-area-manual')?.value) || 0;
-        } else {
-            // Usa gli ID corretti definiti nell'HTML (sl-w, sl-h, sl-d)
-            const w = parseFloat(document.getElementById('sl-w')?.value) || 0;
-            const h = parseFloat(document.getElementById('sl-h')?.value) || 0;
-            const d = parseFloat(document.getElementById('sl-d')?.value) || 0;
-            const m = parseFloat(document.getElementById('sl-margin')?.value) || 0;
-            const type = document.getElementById('sl-shape')?.value || 'flat';
-            
-            const wT = w + m * 2;
-            const hT = h + m * 2;
-            const dT = d + m * 2; // Profondità
-            
-            let areaCm2 = 0;
-            if (type === 'flat') {
-                areaCm2 = 2 * wT * hT;
-            } else if (type === 'standup') {
-                areaCm2 = 2 * wT * hT * 1.3;
-            } else if (type === 'flow') {
-                areaCm2 = wT * hT * 2.2;
-            } else if (type === 'box') {
-                areaCm2 = 2 * (wT * hT + wT * dT + hT * dT);
-            } else if (type === 'cylinder') {
-                // d è diametro
-                const r = d / 2;
-                areaCm2 = 2 * Math.PI * r * (r + hT);
-            } else if (type === 'tray') {
-                areaCm2 = (wT * hT) + 2 * (wT * dT) + 2 * (hT * dT);
-            }
-            area = areaCm2 / 10000; // cm² → m²
-        }
-        const areaDisplay = document.getElementById('sl-area-display');
-        const areaInput = document.getElementById('sl-area');
-        if (areaDisplay) areaDisplay.textContent = area.toFixed(4) + ' m²';
-        if (areaInput) areaInput.value = area.toFixed(4);
-    },
+    if (type === 'bottle') {
+      // === REALISTIC BOTTLE GEOMETRY ===
+      const R_body = parseFloat(document.getElementById('sl-bottle-body-r')?.value) || 3.5;
+      const H_body = parseFloat(document.getElementById('sl-bottle-body-h')?.value) || 16;
+      const R_neck = parseFloat(document.getElementById('sl-bottle-neck-r')?.value) || 1.2;
+      const H_neck = parseFloat(document.getElementById('sl-bottle-neck-h')?.value) || 4;
+      const H_shoulder = parseFloat(document.getElementById('sl-bottle-shoulder-h')?.value) || 2.5;
+      
+      // 1. Body lateral surface (cylinder): 2πR * H
+      const areaBodyLateral = 2 * Math.PI * R_body * H_body;
+      
+      // 2. Neck lateral surface (cylinder): 2πr * h
+      const areaNeckLateral = 2 * Math.PI * R_neck * H_neck;
+      
+      // 3. Shoulders (frustum of cone approximation)
+      // Slant height = sqrt((R_body - R_neck)² + H_shoulder²)
+      const slantHeight = Math.sqrt(Math.pow(R_body - R_neck, 2) + Math.pow(H_shoulder, 2));
+      const areaShoulders = Math.PI * (R_body + R_neck) * slantHeight;
+      
+      // 4. Bottom (circular base, approximated as flat for simplicity)
+      // Real bottles have curved bottoms, but flat circle is close enough for surface area
+      const areaBottom = Math.PI * Math.pow(R_body, 2);
+      
+      // 5. Add welding margin (applied to body and neck heights)
+      const marginFactor = 1 + (m / 100); // Small % increase for margin
+      area = (areaBodyLateral + areaNeckLateral + areaShoulders + areaBottom) * marginFactor / 10000; // cm² → m²
+      
+    } else {
+      // === STANDARD SHAPES ===
+      const w = parseFloat(document.getElementById('sl-w')?.value) || 0;
+      const h = parseFloat(document.getElementById('sl-h')?.value) || 0;
+      const d = parseFloat(document.getElementById('sl-d')?.value) || 0;
+      
+      const wT = w + m * 2;
+      const hT = h + m * 2;
+      const dT = d + m * 2;
+      
+      let areaCm2 = 0;
+      if (type === 'flat') {
+        areaCm2 = 2 * wT * hT;
+      } else if (type === 'standup') {
+        areaCm2 = 2 * wT * hT * 1.3;
+      } else if (type === 'flow') {
+        areaCm2 = wT * hT * 2.2;
+      } else if (type === 'box') {
+        areaCm2 = 2 * (wT * hT + wT * dT + hT * dT);
+      } else if (type === 'cylinder') {
+        const r = d / 2;
+        areaCm2 = 2 * Math.PI * r * (r + hT);
+      } else if (type === 'tray') {
+        areaCm2 = (wT * hT) + 2 * (wT * dT) + 2 * (hT * dT);
+      }
+      area = areaCm2 / 10000; // cm² → m²
+    }
+  }
+  
+  const areaDisplay = document.getElementById('sl-area-display');
+  const areaInput = document.getElementById('sl-area');
+  if (areaDisplay) areaDisplay.textContent = area.toFixed(4) + ' m²';
+  if (areaInput) areaInput.value = area.toFixed(4);
+}
 
     // --- Product change → auto-fill defaults ---
     onProductChange() {
@@ -3543,233 +3625,331 @@ drawMoistureAccumulationChart(res) {
   console.error('❌ Error creating Moisture Accumulation chart:', e);
  }
 },
-    // ====================================================================
-    // 📄 EXPORT TO PDF (CORRETTA & PROFESSIONALE)
-    // ====================================================================
-    async exportToPDF() {
-        // Feedback visivo
-        const btn = event?.target?.closest('button');
-        if (btn) {
-            btn.disabled = true;
-            btn.innerHTML = '⏳ Generating PDF...';
-        }
+ // ====================================================================
+// 📄 EXPORT TO PDF - CON FORMULE SPIEGATE
+// ====================================================================
+async exportToPDF() {
+  const { jsPDF } = window.jspdf;
+  
+  // Feedback visivo sul pulsante
+  const btn = event?.target?.closest('button');
+  if (btn) {
+    const originalHTML = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Generating PDF...';
+  }
 
+  try {
+    // 1. Crea container temporaneo per il report
+    const reportDiv = document.createElement('div');
+    reportDiv.id = 'pdf-report-container';
+    reportDiv.style.cssText = `
+      position: fixed;
+      left: -9999px;
+      top: 0;
+      width: 794px;
+      background: #ffffff !important;
+      color: #0f172a !important;
+      padding: 24px !important;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+      font-size: 14px !important;
+      line-height: 1.5 !important;
+      box-shadow: none !important;
+      z-index: 9999 !important;
+    `;
+
+    // 2. CSS inline per formattazione PDF
+    const styleBlock = document.createElement('style');
+    styleBlock.textContent = `
+      @media print {
+        .page-break { page-break-before: always; }
+        .no-break { page-break-inside: avoid; break-inside: avoid; }
+      }
+      .section { margin-bottom: 20px; page-break-inside: avoid; }
+      .formula-block { 
+        background: #f8fafc !important; 
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 6px !important;
+        padding: 12px !important;
+        margin: 8px 0 !important;
+        font-family: 'Courier New', monospace !important;
+        font-size: 13px !important;
+        text-align: center !important;
+        page-break-inside: avoid !important;
+      }
+      .alert-hygro {
+        background: linear-gradient(135deg, #fef3c7, #fde68a) !important;
+        border: 1px solid #fcd34d !important;
+        border-radius: 8px !important;
+        padding: 10px 14px !important;
+        margin: 12px 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 4px !important;
+        page-break-inside: avoid !important;
+      }
+      .alert-hygro-title {
+        font-weight: 700 !important;
+        color: #92400e !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        white-space: nowrap !important;
+      }
+      .alert-hygro-details {
+        color: #92400e !important;
+        font-size: 13px !important;
+        margin-left: 22px !important;
+        line-height: 1.4 !important;
+      }
+      .chart-wrapper {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        margin: 16px 0 !important;
+      }
+      table { border-collapse: collapse !important; width: 100% !important; font-size: 13px !important; }
+      th { background: #f1f5f9 !important; font-weight: 600 !important; padding: 8px !important; text-align: left !important; }
+      td { padding: 6px 8px !important; border-bottom: 1px solid #e2e8f0 !important; }
+      h1 { font-size: 20px !important; margin: 0 0 4px 0 !important; color: #1e293b !important; }
+      h2 { font-size: 16px !important; margin: 16px 0 8px 0 !important; color: #1e293b !important; border-left: 4px solid #2563eb; padding-left: 10px; }
+      h3 { font-size: 14px !important; margin: 12px 0 6px 0 !important; color: #334155 !important; }
+      p { margin: 4px 0 !important; color: #475569 !important; }
+      .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+      .badge-blue { background: #dbeafe !important; color: #1e40af !important; }
+      .header-bar { border-bottom: 3px solid #2563eb !important; padding-bottom: 12px !important; margin-bottom: 20px !important; }
+      .footer-note { font-size: 11px !important; color: #64748b !important; margin-top: 24px !important; padding-top: 12px !important; border-top: 1px solid #e2e8f0 !important; text-align: center !important; }
+    `;
+    reportDiv.appendChild(styleBlock);
+
+    // 3. Header del report
+    reportDiv.innerHTML += `
+      <div class="header-bar">
+        <h1> WVTR/OTR Calculator - Shelf Life Report</h1>
+        <p style="color:#64748b;margin:0">Generated: ${new Date().toLocaleString('it-IT')}</p>
+        <p style="color:#64748b;margin:4px 0 0 0">Mode: <strong>${State.mode.toUpperCase()}</strong> • Unit: <strong>${State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day'}</strong></p>
+      </div>
+    `;
+
+    // 4. Sezione: Struttura del Laminato
+    const laminateName = State.laminateName || 'Unnamed Laminate';
+    let structureStr = '';
+    if (State.layers && State.layers.length > 0) {
+      const layers = [];
+      for (let i = 0; i < State.layers.length; i++) {
+        if (State.layers[i].mid !== null && State.layers[i].thick > 0) {
+          const mat = DB.materials.find(m => m.id === State.layers[i].mid);
+          if (mat) layers.push(`${mat.name} (${State.layers[i].thick}µm)`);
+        }
+      }
+      structureStr = layers.join(' / ') || '—';
+    }
+
+    reportDiv.innerHTML += `
+      <div class="section no-break">
+        <h2> Laminate Structure</h2>
+        <table>
+          <tr><td><strong>Name:</strong></td><td>${laminateName}</td></tr>
+          <tr><td><strong>Structure:</strong></td><td>${structureStr}</td></tr>
+          <tr><td><strong>Layers Count:</strong></td><td>${State.layers.filter(l => l.mid !== null).length}</td></tr>
+        </table>
+      </div>
+    `;
+
+    // 5. Sezione: Parametri di Calcolo
+    const prodKey = document.getElementById('sl-product')?.value;
+    const prod = PRODUCTS_DB[prodKey];
+    const A = parseFloat(document.getElementById('sl-area')?.value) || 0.1;
+    const W = parseFloat(document.getElementById('sl-weight')?.value) || 100;
+    const M_crit = parseFloat(document.getElementById('sl-mcrit')?.value) || (prod?.M_crit || 6);
+    const M_init = parseFloat(document.getElementById('sl-minit')?.value) || (prod?.M_init || 3);
+    const Ea = parseFloat(document.getElementById('sl-ea')?.value) || 60;
+    const Q10 = parseFloat(document.getElementById('sl-q10')?.value) || 2.0;
+    const T_store = parseFloat(document.getElementById('sl-temp')?.value) || 25;
+    const RH_ext = parseFloat(document.getElementById('sl-rh-ext')?.value) || 65;
+
+    reportDiv.innerHTML += `
+      <div class="section no-break">
+        <h2> Calculation Parameters</h2>
+        <table>
+          <tr><td><strong>Product Template:</strong></td><td>${prod?.name || '—'}</td></tr>
+          <tr><td><strong>Product Weight:</strong></td><td>${W} g</td></tr>
+          <tr><td><strong>Package Area:</strong></td><td>${A.toFixed(4)} m²</td></tr>
+          <tr><td><strong>Moisture Range:</strong></td><td>${M_init}% → ${M_crit}%</td></tr>
+          <tr><td><strong>Storage Temperature:</strong></td><td>${T_store}°C</td></tr>
+          <tr><td><strong>External RH:</strong></td><td>${RH_ext}%</td></tr>
+          <tr><td><strong>Activation Energy (Eₐ):</strong></td><td>${Ea} kJ/mol</td></tr>
+          <tr><td><strong>Q₁₀ Factor:</strong></td><td>${Q10}</td></tr>
+        </table>
+      </div>
+    `;
+
+    // 6. ✅ SEZIONE FORMULE E METODOLOGIA (NUOVA)
+    reportDiv.innerHTML += `
+      <div class="section no-break">
+        <h2> Formulas & Methodology</h2>
+        
+        <h3>Moisture Gain Model (GAB + Fick)</h3>
+        <p>Shelf life is calculated by integrating moisture ingress over time, accounting for decreasing driving force as product moisture increases.</p>
+        <div class="formula-block">
+          t = (W × ΔM) ÷ (A × WVTR × f(RH, T))
+        </div>
+        <p><strong>Where:</strong> W=weight(g), ΔM=allowed moisture increase(%), A=area(m²), WVTR=permeability, f=hygroscopic/thermal correction</p>
+        
+        <h3>Thermal Acceleration</h3>
+        <p>Temperature effect modeled via Arrhenius or Q₁₀:</p>
+        <div class="formula-block">
+          Arrhenius: k = A·exp(-Eₐ/RT) &nbsp;&nbsp;|&nbsp;&nbsp; Q₁₀: k₂ = k₁·Q₁₀^((T₂-T₁)/10)
+        </div>
+        
+        <h3>Hygroscopic Correction</h3>
+        <p>For humidity-sensitive materials (EVOH, nylon, etc.):</p>
+        <div class="formula-block">
+          Correction Factor = exp(β × (RH_storage − RH_reference))
+        </div>
+        <p><strong>β</strong> = hygroscopic coefficient (%/RH), material-specific</p>
+      </div>
+    `;
+
+    // 7. Sezione: Risultati
+    if (State.calcResult && isFinite(State.calcResult?.days)) {
+      const days = State.calcResult.days;
+      const months = (days / 30.44).toFixed(1);
+      const years = (days / 365.25).toFixed(2);
+      
+      reportDiv.innerHTML += `
+        <div class="section no-break" style="text-align:center;padding:16px;background:#f0f9ff;border-radius:8px">
+          <h2 style="margin:0 0 8px 0;border:none;padding:0">✅ Predicted Shelf Life</h2>
+          <div style="font-size:28px;font-weight:800;color:#2563eb">${Math.round(days)} Days</div>
+          <div style="font-size:14px;color:#64748b;margin-top:4px">≈ ${months} Months • ≈ ${years} Years</div>
+        </div>
+      `;
+    }
+
+    // 8. Avviso Igroscopico
+    if (State.calcResult?.hygroWarning?.details?.length > 0) {
+      reportDiv.innerHTML += `
+        <div class="section no-break">
+          <div class="alert-hygro">
+            <div class="alert-hygro-title">
+              <span>⚠️</span>
+              <span>Hygroscopic correction applied</span>
+            </div>
+            <div class="alert-hygro-details">
+              ${State.calcResult.hygroWarning.details.map(d => `• ${d}`).join('<br>')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 9. Sezione: Grafici
+    const chartConfigs = [
+      { id: 'slDecayChart', title: ' Quality Decay Over Time', desc: 'Product quality (%) vs. storage days. Red dashed line = critical limit (0% quality).' },
+      { id: 'slTempChart', title: ' Shelf Life vs Temperature', desc: 'Predicted shelf life (days) across storage temperatures. Shows sensitivity to temperature variations.' },
+      { id: 'slChainChart', title: ' Logistics Conditions', desc: 'Temperature (blue) and RH (red) profile across supply chain steps.' },
+      { id: 'slStepImpactChart', title: ' Shelf Life Consumed per Step', desc: 'Horizontal bars: % of total shelf life consumed in each logistics phase. Red ≥30%, Orange 15-30%, Blue <15%.' },
+      { id: 'slMoistureAccChart', title: ' Moisture Accumulation', desc: 'Internal moisture content (%) along the chain. Red zone = above critical limit.' },
+      { id: 'slCumulativeChart', title: ' Cumulative Timeline', desc: 'Accumulated days across configured logistics steps.' }
+    ];
+
+    for (const cfg of chartConfigs) {
+      const canvas = document.getElementById(cfg.id);
+      if (canvas && canvas.offsetParent !== null && canvas.width > 0) {
         try {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'mm', 'a4');
-            
-            // Configuraioni pagina
-            const pageWidth = doc.internal.pageSize.getWidth();
-            const pageHeight = doc.internal.pageSize.getHeight();
-            const margin = 15;
-            let yPos = 15; // Posizione verticale corrente
-
-            // --- HELPER: Controllo Page Break ---
-            // Se lo spazio rimanente è minore di quello necessario, vai a nuova pagina
-            function checkPageBreak(neededHeight) {
-                if (yPos + neededHeight > pageHeight - margin) {
-                    doc.addPage();
-                    yPos = margin;
-                }
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          const chartCanvas = await html2canvas(canvas, {
+            scale: 3,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            logging: false,
+            onclone: (doc) => {
+              const c = doc.getElementById(cfg.id);
+              if (c) c.style.background = '#fff';
             }
-
-            // --- 1. HEADER ---
-            doc.setFillColor(37, 99, 235); // Colore blu primario
-            doc.rect(0, 0, pageWidth, 30, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(22);
-            doc.setFont(undefined, 'bold');
-            doc.text("Shelf Life Prediction Report", margin, 20);
-            doc.setFontSize(11);
-            doc.setFont(undefined, 'normal');
-            doc.text(`Date: ${new Date().toLocaleDateString()}`, pageWidth - margin, 20, { align: 'right' });
-            
-            yPos = 40;
-            doc.setTextColor(15, 23, 42); // Testo scuro
-            doc.setFillColor(255, 255, 255); // Reset sfondo
-
-            // --- 2. LAMINATE STRUCTURE ---
-            doc.setFontSize(14);
-            doc.setFont(undefined, 'bold');
-            doc.text("1. Packaging Structure", margin, yPos);
-            yPos += 8;
-            
-            doc.setFontSize(10);
-            doc.setFont(undefined, 'normal');
-            
-            const lamName = State.laminateName || "Unnamed Laminate";
-            let structureStr = "N/A";
-            if (State.layers && State.layers.length > 0) {
-                structureStr = State.layers.map(l => {
-                    if (!l.mid) return null;
-                    const mat = DB.materials.find(m => m.id === l.mid);
-                    return mat ? `${mat.name} (${l.thick}µm)` : null;
-                }).filter(Boolean).join(" / ");
-            }
-
-            // Tabella semplice
-            const structData = [
-                ["Name", lamName],
-                ["Structure", structureStr],
-                ["Mode", State.mode.toUpperCase() + (State.mode === 'wvtr' ? ' (g/m²·day)' : ' (cc/m²·day)')]
-            ];
-
-            structData.forEach(row => {
-                checkPageBreak(6);
-                doc.setFont(undefined, 'bold');
-                doc.text(row[0] + ":", margin, yPos);
-                doc.setFont(undefined, 'normal');
-                doc.text(String(row[1]), margin + 25, yPos);
-                yPos += 6;
-            });
-            yPos += 5;
-
-            // --- 3. INPUT PARAMETERS ---
-            checkPageBreak(40);
-            doc.setFontSize(14);
-            doc.setFont(undefined, 'bold');
-            doc.text("2. Simulation Parameters", margin, yPos);
-            yPos += 8;
-
-            doc.setFontSize(10);
-            doc.setFont(undefined, 'normal');
-
-            const prodKey = document.getElementById('sl-product')?.value;
-            const prod = PRODUCTS_DB[prodKey] || {};
-            const area = document.getElementById('sl-area')?.value || 0;
-            const weight = document.getElementById('sl-weight')?.value || 0;
-            const mcrit = document.getElementById('sl-mcrit')?.value || (prod.M_crit || 0);
-            const minit = document.getElementById('sl-minit')?.value || (prod.M_init || 0);
-            const ea = document.getElementById('sl-ea')?.value || "Auto";
-            const q10 = document.getElementById('sl-q10')?.value || "Auto";
-
-            const params = [
-                ["Product", prod.name || "N/A"],
-                ["Product Weight", `${weight} g`],
-                ["Package Area", `${parseFloat(area).toFixed(4)} m²`],
-                ["Moisture Limit", `${minit}% → ${mcrit}%`],
-                ["Activation Energy (Ea)", `${ea} kJ/mol`],
-                ["Q10 Factor", `${q10}`]
-            ];
-
-            params.forEach(row => {
-                checkPageBreak(6);
-                doc.setFont(undefined, 'bold');
-                doc.text(row[0] + ":", margin, yPos);
-                doc.setFont(undefined, 'normal');
-                doc.text(String(row[1]), margin + 35, yPos);
-                yPos += 6;
-            });
-            yPos += 10;
-
-            // --- 4. METHODOLOGY & FORMULAS ---
-            checkPageBreak(50);
-            doc.setFillColor(241, 245, 249); // Sfondo grigio chiaro per il box formule
-            doc.rect(margin, yPos - 5, pageWidth - (margin * 2), 45, 'F');
-            
-            doc.setFontSize(12);
-            doc.setFont(undefined, 'bold');
-            doc.text("3. Calculation Methodology", margin + 2, yPos);
-            yPos += 8;
-            
-            doc.setFontSize(9);
-            doc.setFont(undefined, 'normal');
-            
-            const formulas = [
-                "• Moisture Model: Based on Fick's Law (diffusion) coupled with GAB Model for water activity.",
-                "• Thermal Acceleration: Arrhenius Equation (k = A·exp(-Ea/RT)) or Q10 Rule applied to shelf life.",
-                "• Hygroscopic Correction: Rate = BaseRate × exp(β × (RH_storage - RH_reference)).",
-                "• Shelf Life End: Defined when internal moisture reaches Critical Moisture (M_crit) or quality drops to 0%."
-            ];
-
-            formulas.forEach(line => {
-                checkPageBreak(5);
-                doc.text(line, margin + 2, yPos);
-                yPos += 5;
-            });
-            yPos += 10;
-
-            // --- 5. CHARTS (IMMAGINI) ---
-            // Definiamo quali grafici includere
-            const chartsToInclude = [
-                { id: 'slDecayChart', title: 'Quality Decay Over Time' },
-                { id: 'slTempChart', title: 'Shelf Life vs Temperature' }
-            ];
-
-            // Aggiungi logistica solo se la tabella esiste ed è visibile
-            const chainCanvas = document.getElementById('slChainChart');
-            if (chainCanvas && chainCanvas.offsetParent !== null) {
-                chartsToInclude.push({ id: 'slChainChart', title: 'Logistics Chain Conditions' });
-            }
-            
-            const impactCanvas = document.getElementById('slStepImpactChart');
-            if (impactCanvas && impactCanvas.offsetParent !== null) {
-                chartsToInclude.push({ id: 'slStepImpactChart', title: 'Shelf Life Consumption per Step' });
-            }
-
-            // Aggiungi moisture solo se è un prodotto a umidità
-            if (prod.type === 'moisture') {
-                const moistCanvas = document.getElementById('slMoistureAccChart');
-                if (moistCanvas && moistCanvas.offsetParent !== null) {
-                    chartsToInclude.push({ id: 'slMoistureAccChart', title: 'Moisture Accumulation' });
-                }
-            }
-
-            doc.setFontSize(14);
-            doc.setFont(undefined, 'bold');
-            doc.text("4. Visual Analysis", margin, yPos);
-            yPos += 8;
-
-            for (let i = 0; i < chartsToInclude.length; i++) {
-                const chartInfo = chartsToInclude[i];
-                const canvas = document.getElementById(chartInfo.id);
-                
-                if (canvas) {
-                    // Controllo preventivo spazio per grafico (stimiamo 80mm)
-                    checkPageBreak(80);
-
-                    doc.setFontSize(11);
-                    doc.setFont(undefined, 'bold');
-                    doc.setTextColor(37, 99, 235);
-                    doc.text(chartInfo.title, margin, yPos);
-                    yPos += 2;
-                    doc.setTextColor(0, 0, 0);
-
-                    // Converti canvas in immagine
-                    // Scale 2 per alta qualità
-                    const imgData = canvas.toDataURL('image/png', 1.0);
-                    
-                    // Calcola dimensioni per adattare alla pagina
-                    const imgProps = doc.getImageProperties(imgData);
-                    const imgWidth = pageWidth - (margin * 2);
-                    const imgHeight = (imgProps.height * imgWidth) / imgProps.width;
-
-                    // Ultimo controllo: se l'immagine è troppo alta e sfora la pagina
-                    if (yPos + imgHeight > pageHeight - margin) {
-                        doc.addPage();
-                        yPos = margin;
-                    }
-
-                    doc.addImage(imgData, 'PNG', margin, yPos, imgWidth, imgHeight);
-                    yPos += imgHeight + 15; // Spazio dopo il grafico
-                }
-            }
-
-            // Salva il file
-            const safeName = State.laminateName.replace(/[^a-z0-9]/gi, '_') || 'Report';
-            doc.save(`ShelfLife_${safeName}_${new Date().toISOString().slice(0,10)}.pdf`);
-
-        } catch (error) {
-            console.error('❌ PDF export failed:', error);
-            alert('⚠️ Error generating PDF. Check console for details.');
-        } finally {
-            // Ripristina pulsante
-            if (btn) {
-                btn.disabled = false;
-                btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:middle;margin-right:0.4rem"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Full Report (PDF)`;
-            }
+          });
+          
+          const imgData = chartCanvas.toDataURL('image/png');
+          
+          reportDiv.innerHTML += `
+            <div class="section chart-wrapper no-break">
+              <h3>${cfg.title}</h3>
+              <p style="font-size:12px;color:#64748b;margin:0 0 8px 0">${cfg.desc}</p>
+              <img src="${imgData}" style="width:100%;max-width:746px;border:1px solid #e2e8f0;border-radius:4px;display:block">
+            </div>
+          `;
+        } catch (e) {
+          console.warn(`⚠️ Chart ${cfg.id} skipped:`, e);
         }
-}// ← chiude drawMoistureAccumulationChart
+      }
+    }
+
+    // 10. Footer
+    reportDiv.innerHTML += `
+      <div class="footer-note">
+        <strong>WVTR/OTR Calculator v3.0</strong><br>
+        For R&D and predictive modeling purposes only.<br>
+        Validate critical shelf-life claims with real-time testing per ASTM/ISO standards.
+      </div>
+    `;
+
+    // Aggiungi al DOM temporaneamente
+    document.body.appendChild(reportDiv);
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // 11. Cattura l'intero report
+    const pdfCanvas = await html2canvas(reportDiv, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      windowWidth: 794,
+      windowHeight: reportDiv.scrollHeight
+    });
+
+    document.body.removeChild(reportDiv);
+
+    // 12. Genera PDF con jsPDF
+    const imgData = pdfCanvas.toDataURL('image/png');
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+    const imgWidth = pdfWidth - 20;
+    const imgHeight = (pdfCanvas.height * imgWidth) / pdfCanvas.width;
+
+    let heightLeft = imgHeight;
+    let position = 10;
+
+    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+    heightLeft -= (pdfHeight - 20);
+
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight + 30;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+      heightLeft -= (pdfHeight - 20);
+    }
+
+    // 13. Download
+    const safeName = laminateName.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '');
+    const fileName = `ShelfLife_${safeName}_${new Date().toISOString().slice(0,10)}.pdf`;
+    pdf.save(fileName);
+
+  } catch (error) {
+    console.error('❌ PDF export failed:', error);
+    alert('⚠️ Could not generate PDF. Please try again or check console for details.');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:middle;margin-right:6px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Full Report (PDF)`;
+    }
+  }
+}
 };   
     // --- UI TOGGLES & HELPERS ---
 function toggleRateSource() {
@@ -4803,18 +4983,30 @@ detail += '<div><strong>'+rl.materialName+'</strong> ('+rl.thickness+'µm): '+ge
     resultHTML += '<div class="result-detail">'+detail+'</div>';
   }
     // ✅ AVVISO IGROSCOPICO
+// ✅ AVVISO IGROSCOPICO
 if(hasResult && State.calcResult.layers) {
-  var hygroWarnings = [];
-  for(var r = 0; r < State.calcResult.layers.length; r++) {
-    var lr = State.calcResult.layers[r];
-    if(lr.hygroCorrection && lr.hygroCorrection.isSignificant) hygroWarnings.push(lr.hygroCorrection.message);
-  }
-  if(hygroWarnings.length > 0) {
-    resultHTML += `<div class="alert alert-warning" style="margin-top:0.75rem;display:flex;gap:0.4rem;align-items:flex-start;font-size:0.75rem">
-      <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      <div><strong>Hygroscopic correction applied:</strong><br>${hygroWarnings.map(w => '• '+w).join('<br>')}<div style="margin-top:0.3rem;font-size:0.68rem;color:var(--text-light)">β correction based on external RH vs material reference conditions</div></div>
-    </div>`;
-  }
+    var hygroWarnings = [];
+    for(var r = 0; r < State.calcResult.layers.length; r++) {
+        var lr = State.calcResult.layers[r];
+        if(lr.hygroCorrection && lr.hygroCorrection.isSignificant) hygroWarnings.push(lr.hygroCorrection.message);
+    }
+    if(hygroWarnings.length > 0) {
+        // ✅ FIX: Usa div block invece di <br> per garantire l'a capo in flex container
+        var warningsHTML = hygroWarnings.map(function(w) {
+            return '<div style="display:block; margin:0.15rem 0; line-height:1.3">• ' + w + '</div>';
+        }).join('');
+        
+        resultHTML += `<div class="alert alert-warning" style="margin-top:0.75rem; display:flex; gap:0.4rem; align-items:flex-start; font-size:0.75rem">
+            <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;flex-shrink:0;margin-top:2px"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div style="flex:1">
+                <strong style="display:block; margin-bottom:0.2rem">Hygroscopic correction applied:</strong>
+                ${warningsHTML}
+                <div style="margin-top:0.4rem; font-size:0.68rem; color:var(--text-light); border-top:1px solid rgba(0,0,0,0.1); padding-top:0.3rem">
+                    β correction based on external RH vs material reference conditions
+                </div>
+            </div>
+        </div>`;
+    }
 }
 
  return '<div class="grid grid-2">'+
