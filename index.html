@@ -2874,82 +2874,89 @@ function calcPkgArea() {
 
   // --- Package mode toggle ---
   togglePkgMode() {
-    const m = document.querySelector('input[name="sl-pkg-mode"]:checked')?.value;
-    document.getElementById('sl-pkg-auto').style.display = m === 'auto' ? 'block' : 'none';
-    document.getElementById('sl-pkg-manual').style.display = m === 'manual' ? 'block' : 'none';
-    SL.calcArea();
-  },
+        const m = document.querySelector('input[name="pkg-geom"]:checked')?.value;
+        const geomSel = document.getElementById('geom-selector');
+        const dimsSel = document.getElementById('dims-selector');
+        const manualInp = document.getElementById('manual-area-input');
+
+        if (m === 'auto') {
+            if(geomSel) geomSel.style.display = 'grid';
+            if(dimsSel) dimsSel.style.display = 'grid';
+            if(manualInp) manualInp.style.display = 'none';
+        } else {
+            if(geomSel) geomSel.style.display = 'none';
+            if(dimsSel) dimsSel.style.display = 'none';
+            if(manualInp) manualInp.style.display = 'block';
+        }
+        SL.calcArea();
+    },
 
   // --- Package type change → auto-fill dimensions ---
   onPkgChange() {
-    const sel = document.getElementById('sl-pkg-type');
-    const opt = sel.options[sel.selectedIndex];
-    const w = opt.dataset.w, h = opt.dataset.h, d = opt.dataset.d;
-    document.getElementById('sl-pkg-w').value = w;
-    document.getElementById('sl-pkg-h').value = h;
-    document.getElementById('sl-pkg-d').value = d;
-    SL.updateIcon(opt.value);
-    SL.calcArea();
-  },
+        const sel = document.getElementById('sl-shape');
+        if(!sel) return;
+        const type = sel.value;
+        
+        // Default dimensions based on type
+        let defaults = { w: 12, h: 17 };
+        if(type === 'standup') defaults = { w: 13, h: 22 };
+        else if(type === 'flow') defaults = { w: 20, h: 12 };
+        
+        const wInp = document.getElementById('sl-width-cm');
+        const hInp = document.getElementById('sl-height-cm');
+        if(wInp) wInp.value = defaults.w;
+        if(hInp) hInp.value = defaults.h;
+        
+        SL.updateIcon(type);
+        SL.calcArea();
+    },
 
   // --- Area calculation ---
   calcArea() {
-    const mode = document.querySelector('input[name="sl-pkg-mode"]:checked')?.value;
-    let area;
-    if (mode === 'manual') {
-      area = parseFloat(document.getElementById('sl-area-manual').value) || 0;
-    } else {
-      const w = parseFloat(document.getElementById('sl-pkg-w').value) || 0;
-      const h = parseFloat(document.getElementById('sl-pkg-h').value) || 0;
-      const d = parseFloat(document.getElementById('sl-pkg-d').value) || 0;
-      const m = parseFloat(document.getElementById('sl-pkg-margin').value) || 0;
-      const type = document.getElementById('sl-pkg-type').value;
-      const wT = w + m * 2, hT = h + m * 2, dT = d + m * 2;
-      switch (type) {
-        case 'flat_pouch':    area = 2 * wT * hT; break;
-        case 'standup_pouch': area = 2 * wT * hT * 1.3; break;
-        case 'flow_pack':     area = wT * hT * 2.2; break;
-        case 'box':           area = 2 * (wT*hT + wT*dT + hT*dT); break;
-        case 'cylinder':      area = 2 * Math.PI * (d/2) * ((d/2) + hT); break;
-        case 'tray':          area = wT*hT + 2*(wT*dT + hT*dT); break;
-        case 'cup':           area = 2 * wT * hT + Math.PI * (wT/2) * (wT/2); break;
-        case 'bottle_cap':    area = Math.PI * wT * hT + 2 * Math.PI * (wT/2) * (wT/2) * 1.1; break;
-        case 'bag':           area = 2 * wT * hT * 1.1; break;
-        default:              area = 2 * wT * hT;
-      }
-      area = area / 10000; // cm² → m²
-    }
-    document.getElementById('sl-area-display').textContent = area.toFixed(4) + ' m²';
-    document.getElementById('sl-area').value = area.toFixed(4);
-  },
+        const mode = document.querySelector('input[name="pkg-geom"]:checked')?.value;
+        let area;
+        if (mode === 'manual') {
+            area = parseFloat(document.getElementById('sl-area-manual')?.value) || 0;
+        } else {
+            const w = parseFloat(document.getElementById('sl-width-cm')?.value) || 0;
+            const h = parseFloat(document.getElementById('sl-height-cm')?.value) || 0;
+            const m = parseFloat(document.getElementById('sl-margin')?.value) || 0;
+            const type = document.getElementById('sl-shape')?.value || 'flat';
+            
+            const wT = w + m * 2, hT = h + m * 2;
+            let areaCm2 = 0;
+            if(type==='flat') areaCm2 = 2 * wT * hT;
+            else if(type==='standup') areaCm2 = 2 * wT * hT * 1.3;
+            else if(type==='flow') areaCm2 = wT * hT * 2.2;
+            area = areaCm2 / 10000;
+        }
+        const areaDisplay = document.getElementById('sl-area-display');
+        const areaInput = document.getElementById('sl-area');
+        if(areaDisplay) areaDisplay.textContent = area.toFixed(4) + ' m²';
+        if(areaInput) areaInput.value = area.toFixed(4);
+    },
+
 
   // --- Package SVG icon ---
   updateIcon(type) {
-    const desc = {
-      flat_pouch: 'Flat Pouch · 2-sided',
-      standup_pouch: 'Stand-Up Pouch',
-      flow_pack: 'Flow Pack',
-      box: 'Rectangular Box',
-      cylinder: 'Cylindrical Jar',
-      tray: 'Tray with Lid',
-      cup: 'Cup with Seal',
-      bottle_cap: 'Bottle with Cap',
-      bag: 'Simple Bag'
-    };
-    document.getElementById('sl-pkg-desc').textContent = desc[type] || type;
-    const icons = {
-      flat_pouch: '<rect x="10" y="15" width="40" height="30" rx="3" fill="none" stroke="var(--primary)" stroke-width="2"/>',
-      standup_pouch: '<path d="M15 45 L15 15 Q15 8 30 8 Q45 8 45 15 L45 45" fill="none" stroke="var(--primary)" stroke-width="2"/><path d="M10 45 L50 45" stroke="var(--primary)" stroke-width="2"/>',
-      flow_pack: '<rect x="8" y="18" width="44" height="24" rx="12" fill="none" stroke="var(--primary)" stroke-width="2"/>',
-      box: '<rect x="10" y="12" width="40" height="36" rx="2" fill="none" stroke="var(--primary)" stroke-width="2"/><line x1="10" y1="28" x2="50" y2="28" stroke="var(--primary)" stroke-width="1.5"/>',
-      cylinder: '<ellipse cx="30" cy="15" rx="18" ry="8" fill="none" stroke="var(--primary)" stroke-width="2"/><path d="M12 15 L12 45" stroke="var(--primary)" stroke-width="2"/><path d="M48 15 L48 45" stroke="var(--primary)" stroke-width="2"/><ellipse cx="30" cy="45" rx="18" ry="8" fill="none" stroke="var(--primary)" stroke-width="2"/>',
-      tray: '<rect x="8" y="28" width="44" height="18" rx="2" fill="none" stroke="var(--primary)" stroke-width="2"/><path d="M8 28 Q30 18 52 28" fill="none" stroke="var(--primary)" stroke-width="2"/>',
-      cup: '<path d="M18 15 L18 42 Q18 48 30 48 Q42 48 42 42 L42 15" fill="none" stroke="var(--primary)" stroke-width="2"/><line x1="16" y1="15" x2="44" y2="15" stroke="var(--primary)" stroke-width="2"/>',
-      bottle_cap: '<path d="M22 48 L22 18 Q22 12 30 12 Q38 12 38 18 L38 48" fill="none" stroke="var(--primary)" stroke-width="2"/><rect x="24" y="6" width="12" height="8" rx="2" fill="none" stroke="var(--primary)" stroke-width="1.5"/>',
-      bag: '<path d="M12 10 L12 50 L48 50 L48 10 Z" fill="none" stroke="var(--primary)" stroke-width="2"/>'
-    };
-    document.getElementById('sl-pkg-icon').innerHTML = icons[type] || '';
-  },
+        const descEl = document.getElementById('sl-pkg-desc');
+        const iconEl = document.getElementById('sl-pkg-icon');
+        if(!descEl || !iconEl) return;
+
+        const descs = {
+            flat: 'Flat Pouch · 2-sided',
+            standup: 'Stand-Up Pouch',
+            flow: 'Flow Pack'
+        };
+        descEl.textContent = descs[type] || type;
+
+        const icons = {
+            flat: '<rect x="10" y="15" width="40" height="30" rx="3" fill="none" stroke="var(--primary)" stroke-width="2"/>',
+            standup: '<path d="M15 45 L15 15 Q15 8 30 8 Q45 8 45 15 L45 45" fill="none" stroke="var(--primary)" stroke-width="2"/><path d="M10 45 L50 45" stroke="var(--primary)" stroke-width="2"/>',
+            flow: '<rect x="8" y="18" width="44" height="24" rx="12" fill="none" stroke="var(--primary)" stroke-width="2"/>'
+        };
+        iconEl.innerHTML = icons[type] || '';
+    },
 
   // --- Product change ---
   onProductChange() {
