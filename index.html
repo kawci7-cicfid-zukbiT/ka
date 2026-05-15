@@ -3342,12 +3342,17 @@ const SL = {
 drawMoistureAccumulationChart(res) {
   destroyChart('slMoistureAcc');
   const canvas = document.getElementById('slMoistureAccChart');
-  if (!canvas || !res || res.type !== 'moisture' || typeof Chart === 'undefined') return;
+  
+  // Controlli di sicurezza iniziali
+  if (!canvas || !res || res.type !== 'moisture' || typeof Chart === 'undefined') {
+    console.log('⚠️ drawMoistureAccumulationChart: skipped (conditions not met)');
+    return;
+  }
+  
   const ctx = canvas.getContext('2d');
   const rows = document.querySelectorAll('#sl-chain-rows tr');
   if (!rows.length) return;
 
-  // Parametri prodotto
   const prodKey = document.getElementById('sl-product')?.value;
   const prod = PRODUCTS_DB[prodKey];
   if (!prod || prod.type !== 'moisture') return;
@@ -3357,7 +3362,6 @@ drawMoistureAccumulationChart(res) {
   const A = parseFloat(document.getElementById('sl-area')?.value) || 0.1;
   const W = parseFloat(document.getElementById('sl-weight')?.value) || 100;
 
-  // Rate base
   let baseRate = 0;
   const srcRadio = document.querySelector('input[name="sl-source"]:checked');
   const source = srcRadio ? srcRadio.value : 'calc';
@@ -3368,7 +3372,6 @@ drawMoistureAccumulationChart(res) {
   }
   if (!baseRate || baseRate <= 0) baseRate = 0.5;
 
-  // Simula accumulo step-by-step
   const labels = [], moisturePoints = [], pointDetails = [];
   let M_current = M_init;
   let dayCounter = 0;
@@ -3382,12 +3385,12 @@ drawMoistureAccumulationChart(res) {
     const days = parseFloat(r.querySelector('.sl-cd')?.value) || 1;
     const Psat = 0.61094 * Math.exp((17.625 * T) / (T + 243.04)) * 1000;
 
-    // Fattori di accelerazione
     const Ea_kJ = parseFloat(document.getElementById('sl-ea')?.value) || 60;
     const Q10 = parseFloat(document.getElementById('sl-q10')?.value) || 2.0;
     let accel = 1;
     const eaInput = document.getElementById('sl-ea')?.value;
     const eaDisabled = document.getElementById('sl-ea')?.disabled;
+    
     if (eaInput && parseFloat(eaInput) > 0 && !eaDisabled) {
       const R = 8.314;
       const Ea_J = Ea_kJ * 1000;
@@ -3396,7 +3399,6 @@ drawMoistureAccumulationChart(res) {
       accel = Math.pow(Q10, (T - 25) / 10);
     }
 
-    // Correzione igroscopica
     let hygroFactor = 1;
     if (State.layers) {
       for (let li = 0; li < State.layers.length; li++) {
@@ -3412,7 +3414,6 @@ drawMoistureAccumulationChart(res) {
 
     const effectiveRate = baseRate * accel * hygroFactor;
 
-    // Simula giorno per giorno
     for (let d = 0; d < days; d++) {
       const aw_current = Math.min(0.99, Math.max(0.01, M_current / M_crit * 0.85));
       const RH_in = aw_current * 100;
@@ -3422,104 +3423,108 @@ drawMoistureAccumulationChart(res) {
       M_current = Math.min(M_current + dM_day, M_crit * 1.5);
       dayCounter++;
 
-      // Campiona punti per non sovraccaricare il grafico
       if (d % Math.max(1, Math.floor(days / 8)) === 0 || d === days - 1) {
         labels.push(`${name}+${d+1}d`);
         moisturePoints.push(parseFloat(M_current.toFixed(2)));
         pointDetails.push({ day: dayCounter, M: M_current, step: name });
       }
     }
-    // Punto finale step
     labels.push(name);
     moisturePoints.push(parseFloat(M_current.toFixed(2)));
     pointDetails.push({ day: dayCounter, M: M_current, step: name, isEnd: true });
   });
 
-  // ✅ FIX: Controlla se moisturePoints ha elementi prima di usare spread
   const maxMoisture = moisturePoints.length > 0 ? Math.max(...moisturePoints) : M_crit;
 
-  chartInstances.slMoistureAcc = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: labels,
-      datasets: [
-        {
-          label: 'Internal Moisture (%)',
-          data: moisturePoints,
-          borderColor: '#3b82f6',
-          backgroundColor: (ctx) => {
-            const chart = ctx.chart;
-            const { ctx: c, chartArea } = chart;
-            if (!chartArea) return;
-            const gradient = c.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-            gradient.addColorStop(0, 'rgba(59,130,246,0.15)');
-            gradient.addColorStop(1, 'rgba(59,130,246,0.4)');
-            return gradient;
-          },
-          fill: true,
-          tension: 0.35,
-          pointRadius: (ctx) => pointDetails[ctx.dataIndex]?.isEnd ? 5 : 3,
-          pointHoverRadius: 7,
-          pointBackgroundColor: (ctx) => {
-            const m = moisturePoints[ctx.dataIndex];
-            return m >= M_crit ? '#ef4444' : '#3b82f6';
-          },
-          pointBorderColor: '#fff',
-          pointBorderWidth: 2,
-          borderWidth: 2.5
-        },
-        {
-          label: 'Critical Limit',
-          data: new Array(labels.length).fill(M_crit),
-          borderColor: '#ef4444',
-          borderDash: [6, 4],
-          borderWidth: 2.5,
-          pointRadius: 0,
-          fill: false
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: 'top',
-          labels: { boxWidth: 12, font: { size: 10 }, padding: 10 }
-        },
-        tooltip: {
-          callbacks: {
-            label: function(ctx) {
-              const val = ctx.parsed.y;
+  try {
+    chartInstances.slMoistureAcc = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Internal Moisture (%)',
+            data: moisturePoints,
+            borderColor: '#3b82f6',
+            backgroundColor: (ctx) => {
+              const chart = ctx.chart;
+              const { ctx: c, chartArea } = chart;
+              if (!chartArea) return 'rgba(59,130,246,0.1)';
+              const gradient = c.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+              gradient.addColorStop(0, 'rgba(59,130,246,0.15)');
+              gradient.addColorStop(1, 'rgba(59,130,246,0.4)');
+              return gradient;
+            },
+            fill: true,
+            tension: 0.35,
+            pointRadius: (ctx) => {
               const detail = pointDetails[ctx.dataIndex];
-              const status = val >= M_crit ? ' 🔴 ABOVE LIMIT' :
-                            val >= M_crit * 0.9 ? ' 🟡 WARNING' : ' 🟢 Safe';
-              return [
-                `💧 ${ctx.dataset.label}: ${val.toFixed(2)}%${status}`,
-                `📅 Day ${detail?.day || ctx.dataIndex}`,
-                `📦 Step: ${detail?.step || ''}`
-              ];
+              return detail?.isEnd ? 5 : 3;
+            },
+            pointHoverRadius: 7,
+            pointBackgroundColor: (ctx) => {
+              const m = moisturePoints[ctx.dataIndex];
+              if (m === undefined) return '#3b82f6';
+              return m >= M_crit ? '#ef4444' : '#3b82f6';
+            },
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            borderWidth: 2.5
+          },
+          {
+            label: 'Critical Limit',
+            data: new Array(labels.length).fill(M_crit),
+            borderColor: '#ef4444',
+            borderDash: [6, 4],
+            borderWidth: 2.5,
+            pointRadius: 0,
+            fill: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: { boxWidth: 12, font: { size: 10 }, padding: 10 }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                const val = ctx.parsed.y;
+                const detail = pointDetails[ctx.dataIndex];
+                const status = val >= M_crit ? ' 🔴 ABOVE LIMIT' :
+                              val >= M_crit * 0.9 ? ' 🟡 WARNING' : ' 🟢 Safe';
+                return [
+                  `💧 ${ctx.dataset.label}: ${val.toFixed(2)}%${status}`,
+                  `📅 Day ${detail?.day || ctx.dataIndex}`,
+                  `📦 Step: ${detail?.step || ''}`
+                ];
+              }
             }
           }
-        }
-      },
-      scales: {
-        x: {
-          title: { display: true, text: 'Logistics Chain Progress', font: { size: 10 } },
-          ticks: { font: { size: 8 }, maxRotation: 45, minRotation: 45 },
-          grid: { display: false }
         },
-        y: {
-          beginAtZero: true,
-          // ✅ FIX APPLICATO QUI:
-          max: Math.max(M_crit * 1.3, maxMoisture * 1.1),
-          title: { display: true, text: 'Moisture Content (%)', font: { size: 10 } },
-          ticks: { callback: v => v.toFixed(1) + '%', font: { size: 9 } },
-          grid: { color: 'rgba(0,0,0,0.04)' }
+        scales: {
+          x: {
+            title: { display: true, text: 'Logistics Chain Progress', font: { size: 10 } },
+            ticks: { font: { size: 8 }, maxRotation: 45, minRotation: 45 },
+            grid: { display: false }
+          },
+          y: {
+            beginAtZero: true,
+            max: Math.max(M_crit * 1.3, maxMoisture * 1.1),
+            title: { display: true, text: 'Moisture Content (%)', font: { size: 10 } },
+            ticks: { callback: v => v.toFixed(1) + '%', font: { size: 9 } },
+            grid: { color: 'rgba(0,0,0,0.04)' }
+          }
         }
       }
-    }
-  });
+    });
+  } catch (e) {
+    console.error('❌ Error creating Moisture Accumulation chart:', e);
+  }
 }
     // --- UI TOGGLES & HELPERS ---
 function toggleRateSource() {
