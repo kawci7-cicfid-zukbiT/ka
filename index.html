@@ -964,6 +964,8 @@ main {
     } catch(e) { /* ignora se non caricato o primo render */ }
   };
 </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 <!-- 🔥 FIREBASE COMMUNITY SETUP -->
@@ -2708,6 +2710,18 @@ function renderShelfLife() {
       </div>
     </div>
   </div>
+  <!-- === EXPORT BUTTON === -->
+<div class="card" style="margin-top:1rem; text-align:center;">
+  <button class="btn btn-primary btn-full" onclick="SL.exportToPDF()" style="padding:0.7rem; font-size:0.85rem;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:middle;margin-right:0.4rem">
+      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+     Export Full Report (PDF)
+  </button>
+  <p style="font-size:0.7rem;color:var(--text-light);margin-top:0.4rem">
+    Includes: laminate structure, parameters, results & all charts
+  </p>
+</div>
   ${renderShelfLifeMethodology()}
   `;
 }
@@ -3528,7 +3542,196 @@ drawMoistureAccumulationChart(res) {
 } catch (e) {
   console.error('❌ Error creating Moisture Accumulation chart:', e);
   }
-}  // ← chiude drawMoistureAccumulationChart
+} 
+    // ====================================================================
+// 📄 EXPORT TO PDF
+// ====================================================================
+async exportToPDF() {
+  const { jsPDF } = window.jspdf;
+  
+  // Feedback visivo
+  const btn = event?.target?.closest('button');
+  if (btn) {
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Generating PDF...';
+  }
+  
+  try {
+    // 1. Crea un container temporaneo per il report
+    const reportDiv = document.createElement('div');
+    reportDiv.style.cssText = `
+      position:fixed; left:-9999px; top:0; width:800px; 
+      background:#fff; padding:2rem; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+      box-shadow:0 0 0 9999px rgba(255,255,255,0.95);
+    `;
+    
+    // 2. Header con logo/titolo
+    reportDiv.innerHTML = `
+      <div style="text-align:center;padding-bottom:1rem;border-bottom:3px solid #2563eb;margin-bottom:1.5rem">
+        <h1 style="margin:0;font-size:1.5rem;color:#1e293b">WVTR/OTR Calculator</h1>
+        <p style="margin:0.3rem 0 0 0;color:#64748b;font-size:0.9rem">Shelf Life Report • ${new Date().toLocaleDateString()}</p>
+      </div>
+    `;
+    
+    // 3. Sezione: Laminate Info
+    const laminateName = State.laminateName || 'Unnamed Laminate';
+    let structureStr = '';
+    if (State.layers && State.layers.length > 0) {
+      let layers = [];
+      for(let i=0; i<State.layers.length; i++) {
+        if(State.layers[i].mid !== null && State.layers[i].thick > 0) {
+          let mat = DB.materials.find(m => m.id === State.layers[i].mid);
+          if(mat) layers.push(`${mat.name} (${State.layers[i].thick}µm)`);
+        }
+      }
+      structureStr = layers.join(' / ') || '—';
+    }
+    
+    reportDiv.innerHTML += `
+      <div style="margin-bottom:1.5rem">
+        <h2 style="font-size:1.1rem;color:#1e293b;margin:0 0 0.5rem 0;border-left:4px solid #2563eb;padding-left:0.7rem">📦 Laminate Structure</h2>
+        <table style="width:100%;border-collapse:collapse;font-size:0.85rem">
+          <tr><td style="padding:0.3rem 0;font-weight:600">Name:</td><td style="padding:0.3rem 0">${laminateName}</td></tr>
+          <tr><td style="padding:0.3rem 0;font-weight:600">Structure:</td><td style="padding:0.3rem 0">${structureStr}</td></tr>
+          <tr><td style="padding:0.3rem 0;font-weight:600">Mode:</td><td style="padding:0.3rem 0">${State.mode.toUpperCase()} • ${State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day'}</td></tr>
+        </table>
+      </div>
+    `;
+    
+    // 4. Sezione: Parameters
+    const prodKey = document.getElementById('sl-product')?.value;
+    const prod = PRODUCTS_DB[prodKey];
+    const A = parseFloat(document.getElementById('sl-area')?.value) || 0.1;
+    const W = parseFloat(document.getElementById('sl-weight')?.value) || 100;
+    const M_crit = parseFloat(document.getElementById('sl-mcrit')?.value) || (prod?.M_crit || 6);
+    const M_init = parseFloat(document.getElementById('sl-minit')?.value) || (prod?.M_init || 3);
+    const Ea = parseFloat(document.getElementById('sl-ea')?.value) || 60;
+    const Q10 = parseFloat(document.getElementById('sl-q10')?.value) || 2.0;
+    
+    reportDiv.innerHTML += `
+      <div style="margin-bottom:1.5rem">
+        <h2 style="font-size:1.1rem;color:#1e293b;margin:0 0 0.5rem 0;border-left:4px solid #2563eb;padding-left:0.7rem">⚙️ Parameters</h2>
+        <table style="width:100%;border-collapse:collapse;font-size:0.85rem">
+          <tr><td style="padding:0.25rem 0">Product:</td><td style="padding:0.25rem 0">${prod?.name || '—'}</td></tr>
+          <tr><td style="padding:0.25rem 0">Weight:</td><td style="padding:0.25rem 0">${W} g</td></tr>
+          <tr><td style="padding:0.25rem 0">Area:</td><td style="padding:0.25rem 0">${A.toFixed(4)} m²</td></tr>
+          <tr><td style="padding:0.25rem 0">Moisture Range:</td><td style="padding:0.25rem 0">${M_init}% → ${M_crit}%</td></tr>
+          <tr><td style="padding:0.25rem 0">Eₐ / Q₁₀:</td><td style="padding:0.25rem 0">${Ea} kJ/mol / ${Q10}</td></tr>
+        </table>
+      </div>
+    `;
+    
+    // 5. Sezione: Results (se disponibili)
+    if (State.calcResult && isFinite(State.calcResult.days)) {
+      const days = State.calcResult.days;
+      const months = (days / 30.44).toFixed(1);
+      const years = (days / 365.25).toFixed(2);
+      reportDiv.innerHTML += `
+        <div style="margin-bottom:1.5rem;text-align:center;padding:1rem;background:#f8fafc;border-radius:8px">
+          <div style="font-size:2rem;font-weight:800;color:#2563eb">${Math.round(days)} Days</div>
+          <div style="font-size:0.9rem;color:#64748b;margin-top:0.3rem">≈ ${months} Months • ≈ ${years} Years</div>
+        </div>
+      `;
+    }
+    
+    // 6. Sezione: Charts (cattura come immagini)
+    const chartIds = ['slDecayChart', 'slTempChart', 'slChainChart', 'slStepImpactChart', 'slMoistureAccChart', 'slCumulativeChart'];
+    const chartTitles = {
+      slDecayChart: 'Quality Decay Over Time',
+      slTempChart: 'Shelf Life vs Temperature',
+      slChainChart: 'Logistics Conditions',
+      slStepImpactChart: 'Shelf Life Consumed per Step',
+      slMoistureAccChart: 'Moisture Accumulation',
+      slCumulativeChart: 'Cumulative Timeline'
+    };
+    
+    for (const id of chartIds) {
+      const canvas = document.getElementById(id);
+      if (canvas && canvas.offsetParent !== null) { // Solo chart visibili
+        try {
+          const chartCanvas = await html2canvas(canvas, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff'
+          });
+          const imgData = chartCanvas.toDataURL('image/png');
+          
+          reportDiv.innerHTML += `
+            <div style="margin-bottom:1.5rem;page-break-inside:avoid">
+              <h3 style="font-size:0.95rem;color:#1e293b;margin:0 0 0.5rem 0">${chartTitles[id] || id}</h3>
+              <img src="${imgData}" style="width:100%;max-width:760px;border:1px solid #e2e8f0;border-radius:4px">
+            </div>
+          `;
+        } catch (e) {
+          console.warn(`⚠️ Could not capture chart ${id}:`, e);
+        }
+      }
+    }
+    
+    // 7. Footer
+    reportDiv.innerHTML += `
+      <div style="margin-top:2rem;padding-top:1rem;border-top:1px solid #e2e8f0;text-align:center;font-size:0.75rem;color:#94a3b8">
+        Generated with WVTR/OTR Calculator • ${new Date().toLocaleString()}<br>
+        For R&D purposes • Validate with real-time testing
+      </div>
+    `;
+    
+    document.body.appendChild(reportDiv);
+    
+    // 8. Attendi rendering e cattura
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    const pdfCanvas = await html2canvas(reportDiv, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false
+    });
+    
+    document.body.removeChild(reportDiv);
+    
+    // 9. Genera PDF
+    const imgData = pdfCanvas.toDataURL('image/png');
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+    
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+    const imgWidth = pdfWidth - 20; // margini 10mm per lato
+    const imgHeight = (pdfCanvas.height * imgWidth) / pdfCanvas.width;
+    
+    let heightLeft = imgHeight;
+    let position = 10;
+    
+    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+    heightLeft -= pdfHeight;
+    
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight + 10;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+      heightLeft -= pdfHeight;
+    }
+    
+    // 10. Download
+    const fileName = `ShelfLife_Report_${laminateName.replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().slice(0,10)}.pdf`;
+    pdf.save(fileName);
+    
+  } catch (error) {
+    console.error('❌ PDF export failed:', error);
+    alert('⚠️ Could not generate PDF. Please try again or check console for details.');
+  } finally {
+    // Ripristina pulsante
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:middle;margin-right:0.4rem"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>📄 Export Full Report (PDF)`;
+    }
+  }
+}// ← chiude drawMoistureAccumulationChart
 };   
     // --- UI TOGGLES & HELPERS ---
 function toggleRateSource() {
