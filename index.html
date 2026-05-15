@@ -2439,154 +2439,290 @@ Correction Factor = exp( β × (RH<sub>storage</sub> − RH<sub>reference</sub>)
 `;
 }
 function renderShelfLife() {
-    const modeLabel = State.mode === 'wvtr' ? 'WVTR' : 'OTR';
-    const unit = State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
-    const currentRate = (State.calcResult && State.calcResult.total) ? State.calcResult.total.toFixed(6) : '';
-    
-    // --- LAMINATE INFO ---
-    let laminateName = State.laminateName || 'Nessun laminato caricato';
-    let structureStr = '';
-    if (State.layers && State.layers.length > 0) {
-        let layers = [];
-        for(let i=0; i<State.layers.length; i++) {
-            if(State.layers[i].mid !== null && State.layers[i].thick > 0) {
-                let mat = DB.materials.find(m => m.id === State.layers[i].mid);
-                if(mat) layers.push(`${mat.name} (${State.layers[i].thick}µm)`);
-            }
-        }
-        structureStr = layers.join(' / ') || 'Struttura non valida';
+  const modeLabel = State.mode === 'wvtr' ? 'WVTR' : 'OTR';
+  const unit = State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
+  const currentRate = (State.calcResult && State.calcResult.total) ? State.calcResult.total.toFixed(6) : '';
+  
+  // Info laminato
+  let laminateName = State.laminateName || 'Nessun laminato';
+  let structureStr = '';
+  if (State.layers && State.layers.length > 0) {
+    let layers = [];
+    for(let i=0; i<State.layers.length; i++) {
+      if(State.layers[i].mid !== null && State.layers[i].thick > 0) {
+        let mat = DB.materials.find(m => m.id === State.layers[i].mid);
+        if(mat) layers.push(`${mat.name} (${State.layers[i].thick}µm)`);
+      }
     }
-
-    // --- PRODUCTS DB OPTIONS ---
-    let prodOpts = '';
-    for(let k in PRODUCTS_DB) prodOpts += `<option value="${k}">${PRODUCTS_DB[k].name}</option>`;
-
-    return `
-    <div class="grid grid-2">
-    <!-- === FORM DI INPUT === -->
-    <div class="card" style="padding:0; overflow:hidden;">
-        <div style="padding:1rem; background:var(--bg); border-bottom:1px solid var(--border);">
-            <h2 style="margin:0; font-size:1rem; display:flex;align-items:center;gap:0.4rem;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                Advanced Shelf Life Engine
-            </h2>
+    structureStr = layers.join(' / ') || 'Struttura non valida';
+  }
+  
+  // Prodotti DB
+  let prodOpts = '';
+  for(let k in PRODUCTS_DB) prodOpts += `<option value="${k}">${PRODUCTS_DB[k].name}</option>`;
+  
+  return `
+  <div class="grid grid-2">
+    <!-- === FORM INPUT === -->
+    <div class="card" style="padding:0;">
+      <div style="padding:1rem; background:var(--bg); border-bottom:1px solid var(--border);">
+        <h2 style="margin:0; font-size:1rem; display:flex;align-items:center;gap:0.4rem;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Advanced Shelf Life Engine
+        </h2>
+      </div>
+      
+      <!-- STEP 1: RATE & LAMINATE -->
+      <div style="padding:1rem; border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:0.5rem; margin-bottom:0.5rem; color:var(--primary); font-weight:600; font-size:0.85rem;">
+          <span> 1. Barrier Rate & Structure</span>
+        </div>
+        <div style="background:#fff; border:1px solid var(--border); border-radius:6px; padding:0.5rem; margin-bottom:0.8rem; font-size:0.75rem;">
+          <div style="font-weight:700; margin-bottom:0.2rem;">${laminateName}</div>
+          <div style="color:var(--text-light); word-break:break-word;">${structureStr}</div>
+          <div style="margin-top:0.3rem; display:flex; justify-content:space-between; align-items:center;">
+            <span>Calculated ${modeLabel}:</span>
+            <strong style="color:var(--primary); font-size:0.9rem;">${currentRate || '-'} ${unit}</strong>
+          </div>
         </div>
         
-        <!-- STEP 1: PACKAGE -->
-        <div style="padding:1rem; border-bottom:1px solid var(--border);">
-            <div style="display:flex;align-items:center;gap:0.5rem; margin-bottom:0.5rem; color:var(--primary); font-weight:600; font-size:0.85rem;">
-                <span>📦 1. Package & Material</span>
-            </div>
-            <div style="background:#fff; border:1px solid var(--border); border-radius:6px; padding:0.5rem; margin-bottom:0.8rem; font-size:0.75rem;">
-                <div style="font-weight:700; margin-bottom:0.2rem;">${laminateName}</div>
-                <div style="color:var(--text-light); word-break:break-word;">${structureStr}</div>
-                <div style="margin-top:0.3rem; display:flex; justify-content:space-between; align-items:center;">
-                    <span>Calculated ${modeLabel}:</span>
-                    <strong style="color:var(--primary); font-size:0.9rem;">${currentRate || '-'} ${unit}</strong>
-                </div>
-            </div>
-            
-            <div class="grid grid-2" style="gap:0.5rem;">
-                <div class="form-group" style="margin:0">
-                    <label>Width L (cm)</label>
-                    <input type="number" id="sl-w" value="12" step="0.1" class="form-input" oninput="calcPkgArea()">
-                </div>
-                <div class="form-group" style="margin:0">
-                    <label>Height H (cm)</label>
-                    <input type="number" id="sl-h" value="17" step="0.1" class="form-input" oninput="calcPkgArea()">
-                </div>
-            </div>
-            <div style="margin-top:0.5rem; display:flex; justify-content:space-between; align-items:center; background:var(--primary-light); padding:0.4rem; border-radius:6px;">
-                <span style="font-size:0.75rem; font-weight:500;">→ Effective Area:</span>
-                <strong id="sl-area-display" style="color:var(--primary);">0.0408 m²</strong>
-            </div>
+        <!-- Rate source toggle -->
+        <div style="margin-bottom:0.5rem;">
+          <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size:0.8rem; font-weight:500;">
+            <input type="radio" name="sl-source" value="calc" checked onchange="SL.toggleSource()">
+            Use calculated ${modeLabel} from Calculator
+          </label>
+          <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size:0.8rem; font-weight:500; margin-top:0.2rem;">
+            <input type="radio" name="sl-source" value="manual" onchange="SL.toggleSource()">
+            Enter ${modeLabel} manually
+          </label>
         </div>
-
-        <!-- STEP 2: PRODUCT -->
-        <div style="padding:1rem; border-bottom:1px solid var(--border);">
-            <div style="display:flex;align-items:center;gap:0.5rem; margin-bottom:0.5rem; color:var(--warning); font-weight:600; font-size:0.85rem;">
-                <span>🥐 2. Product</span>
+        
+        <!-- Manual rate inputs (hidden by default) -->
+        <div id="sl-manual-block" style="display:none; background:#f8fafc; border:1px solid var(--border); border-radius:6px; padding:0.6rem; margin-top:0.4rem;">
+          <div class="grid grid-2" style="gap:0.5rem;">
+            <div class="form-group" style="margin:0">
+              <label>${modeLabel} Value (${unit})</label>
+              <input type="number" id="sl-rate-manual" value="0.5" step="any" class="form-input">
             </div>
             <div class="form-group" style="margin:0">
-                <label>Food Template</label>
-                <select id="sl-product" class="form-input" onchange="SL.onProductChange(this.value)">${prodOpts}</select>
+              <label>Test Temperature (°C)</label>
+              <input type="number" id="sl-rate-temp" value="23" class="form-input">
             </div>
-            <div class="grid grid-2" style="gap:0.5rem; margin-top:0.5rem;">
-                <div class="form-group" style="margin:0"><label>Weight (g)</label><input type="number" id="sl-weight" value="100" class="form-input"></div>
-                <div class="form-group" style="margin:0"><label>Init. Moisture (%)</label><input type="number" id="sl-minit" value="3" class="form-input"></div>
-                <div class="form-group" style="margin:0"><label>Critical Moisture (%)</label><input type="number" id="sl-mcrit" value="6" class="form-input"></div>
+          </div>
+          <div class="grid grid-2" style="gap:0.5rem; margin-top:0.4rem;">
+            <div class="form-group" style="margin:0">
+              <label>Test RH (%)</label>
+              <input type="number" id="sl-rate-rh" value="50" class="form-input">
             </div>
+            <div class="form-group" style="margin:0">
+              <label>Test Standard</label>
+              <input type="text" id="sl-rate-std" value="" placeholder="e.g. ASTM F1249" class="form-input">
+            </div>
+          </div>
         </div>
-
-        <!-- STEP 3: LOGISTICS CHAIN -->
-        <div style="padding:1rem;">
-            <div style="display:flex;align-items:center;gap:0.5rem; margin-bottom:0.5rem; color:var(--purple); font-weight:600; font-size:0.85rem;">
-                <span>🚚 3. Logistics Chain</span>
-            </div>
-            <div id="sl-chain-container">
-                <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
-                    <thead>
-                        <tr style="background:var(--bg); text-align:left;">
-                            <th style="padding:4px;">Step</th>
-                            <th style="padding:4px;">T°C</th>
-                            <th style="padding:4px;">RH%</th>
-                            <th style="padding:4px;">Days</th>
-                        </tr>
-                    </thead>
-                    <tbody id="sl-chain-rows">
-                        <tr>
-                            <td style="padding:4px;"><input type="text" value="Production" class="sl-step-name"></td>
-                            <td style="padding:4px;"><input type="number" value="22" class="sl-step-t"></td>
-                            <td style="padding:4px;"><input type="number" value="50" class="sl-step-rh"></td>
-                            <td style="padding:4px;"><input type="number" value="2" class="sl-step-days"></td>
-                        </tr>
-                        <tr>
-                            <td style="padding:4px;"><input type="text" value="Transit" class="sl-step-name"></td>
-                            <td style="padding:4px;"><input type="number" value="35" class="sl-step-t"></td>
-                            <td style="padding:4px;"><input type="number" value="90" class="sl-step-rh"></td>
-                            <td style="padding:4px;"><input type="number" value="14" class="sl-step-days"></td>
-                        </tr>
-                    </tbody>
-                </table>
-                <button class="btn btn-sm btn-outline" style="width:100%; margin-top:0.5rem;" onclick="SL.addChainRow()">+ Add Step</button>
-            </div>
-            
-            <button class="btn btn-danger btn-full" onclick="SL.calculate()" style="margin-top:1.2rem;">
-                ▶ Run Simulation
-            </button>
-        </div>
-    </div>
-
-    <!-- === RISULTATI === -->
-    <div id="sl-results-area">
-        <div class="card" id="sl-result-panel">
-            <div style="text-align:center;padding:2rem;color:var(--text-light)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:48px;height:48px;margin-bottom:0.5rem;opacity:0.3"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                <p>Insert parameters and run simulation</p>
-            </div>
+      </div>
+      
+      <!-- STEP 2: PACKAGING -->
+      <div style="padding:1rem; border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:0.5rem; margin-bottom:0.5rem; color:var(--warning); font-weight:600; font-size:0.85rem;">
+          <span> 2. Packaging Dimensions</span>
         </div>
         
-        <!-- 1. Step Impact Chart -->
-        <div class="card" style="margin-top:1rem; display:none;" id="card-step-impact">
-            <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;">📊 Impact per Step (Shelf Life Consumed %)</h3>
-            <div class="chart-mini" style="height:200px"><canvas id="slStepImpactChart"></canvas></div>
-        </div>
-
-        <!-- 2. Moisture Curve -->
-        <div class="card" style="margin-top:1rem; display:none;" id="card-moisture">
-            <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;">💧 Moisture Accumulation vs Critical Limit</h3>
-            <div class="chart-mini" style="height:250px"><canvas id="slMoistureCurveChart"></canvas></div>
+        <div style="margin-bottom:0.5rem;">
+          <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size:0.8rem; font-weight:500;">
+            <input type="radio" name="pkg-geom" value="auto" checked onchange="SL.togglePkgMode()">
+             Calculate from shape
+          </label>
+          <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size:0.8rem; font-weight:500; margin-top:0.2rem;">
+            <input type="radio" name="pkg-geom" value="manual" onchange="SL.togglePkgMode()">
+             Enter area manually
+          </label>
         </div>
         
-        <!-- 3. Quality Decay -->
-        <div class="card" style="margin-top:1rem; display:none;" id="card-quality">
-            <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;">📉 Quality Decay</h3>
-            <div class="chart-mini" style="height:250px"><canvas id="slQualityChart"></canvas></div>
+        <!-- Auto geometry inputs -->
+        <div id="geom-selector" class="grid grid-2" style="margin-top:0.5rem; gap:0.4rem;">
+          <div class="form-group" style="margin:0">
+            <label>Shape Type</label>
+            <select class="form-input" id="sl-shape" onchange="SL.onPkgChange()">
+              <option value="flat">Flat Pouch</option>
+              <option value="standup">Stand-Up Pouch</option>
+              <option value="flow">Flow Pack</option>
+              <option value="box">Rectangular Box</option>
+              <option value="cylinder">Cylindrical Jar</option>
+              <option value="tray">Tray with Lid</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label>Welding Margin (cm)</label>
+            <input type="number" id="sl-margin" value="2" step="0.5" class="form-input" onchange="SL.calcArea()">
+          </div>
         </div>
+        
+        <div id="dims-selector" class="grid grid-2" style="margin-top:0.4rem; gap:0.4rem;">
+          <div class="form-group" style="margin:0"><label>Width L (cm)</label><input type="number" id="sl-w" value="12" step="0.1" class="form-input" oninput="SL.calcArea()"></div>
+          <div class="form-group" style="margin:0"><label>Height H (cm)</label><input type="number" id="sl-h" value="17" step="0.1" class="form-input" oninput="SL.calcArea()"></div>
+          <div class="form-group" style="margin:0"><label>Depth / Diameter (cm)</label><input type="number" id="sl-d" value="0" step="0.1" class="form-input" oninput="SL.calcArea()"></div>
+        </div>
+        
+        <!-- Manual area input -->
+        <div id="manual-area-input" style="display:none; margin-top:0.5rem;">
+          <div class="form-group" style="margin:0">
+            <label>Total Surface Area (m²)</label>
+            <input type="number" id="sl-area-manual" value="0.0408" step="0.001" class="form-input" oninput="SL.updateManualArea()">
+          </div>
+        </div>
+        
+        <!-- Area display -->
+        <div style="margin-top:0.5rem; display:flex; justify-content:space-between; align-items:center; background:var(--primary-light); padding:0.4rem; border-radius:6px;">
+          <span style="font-size:0.75rem; font-weight:500;">→ Effective Area:</span>
+          <strong id="sl-area-display" style="color:var(--primary);">0.0408 m²</strong>
+        </div>
+        <input type="hidden" id="sl-area" value="0.0408">
+      </div>
+      
+      <!-- STEP 3: PRODUCT -->
+      <div style="padding:1rem; border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:0.5rem; margin-bottom:0.5rem; color:var(--purple); font-weight:600; font-size:0.85rem;">
+          <span> 3. Product</span>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Food Template</label>
+          <select id="sl-product" class="form-input" onchange="SL.onProductChange(this.value)">${prodOpts}</select>
+        </div>
+        <div class="grid grid-2" style="gap:0.5rem; margin-top:0.5rem;">
+          <div class="form-group" style="margin:0"><label>Weight (g)</label><input type="number" id="sl-weight" value="100" class="form-input"></div>
+          <div class="form-group" style="margin:0"><label>Initial Moisture (%)</label><input type="number" id="sl-minit" value="3" class="form-input"></div>
+          <div class="form-group" style="margin:0"><label>Critical Moisture (%)</label><input type="number" id="sl-mcrit" value="6" class="form-input"></div>
+        </div>
+        
+        <!-- Safe zone bar -->
+        <div style="margin-top:0.8rem;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:0.2rem;">
+            <span style="font-size:0.7rem; font-weight:600;">Moisture Limit</span>
+            <span id="sl-mcrit-val" style="font-size:0.7rem; color:var(--text-light);">6%</span>
+          </div>
+          <div style="position:relative; height:20px; background:#e2e8f0; border-radius:4px; overflow:hidden;">
+            <div id="sl-safe-green" style="position:absolute; left:0; top:0; bottom:0; background:var(--success); width:33%;"></div>
+            <div id="sl-safe-now" style="position:absolute; left:16%; top:-2px; bottom:-2px; width:2px; background:#fff; z-index:2;"></div>
+            <div style="position:absolute; left:12%; top:20px; font-size:0.6rem; color:var(--success);">Now</div>
+            <div id="sl-safe-crit" style="position:absolute; right:0; top:-2px; bottom:-2px; width:2px; background:var(--danger); z-index:2;"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- STEP 4: CONDITIONS & THERMAL -->
+      <div style="padding:1rem;">
+        <div style="display:flex;align-items:center;gap:0.5rem; margin-bottom:0.5rem; color:var(--primary); font-weight:600; font-size:0.85rem;">
+          <span> 4. Storage & Acceleration</span>
+        </div>
+        
+        <!-- Single / Chain toggle -->
+        <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
+          <button class="btn btn-sm" id="btn-single" style="flex:1; background:var(--primary); color:#fff;" onclick="SL.toggleCond('single')">Single Condition</button>
+          <button class="btn btn-sm" id="btn-chain" style="flex:1; background:var(--bg); color:var(--text-light);" onclick="SL.toggleCond('chain')">Logistics Chain</button>
+        </div>
+        
+        <!-- Single condition inputs -->
+        <div id="sl-cond-single">
+          <div class="grid grid-2" style="gap:0.5rem;">
+            <div class="form-group" style="margin:0"><label>Storage Temp (°C)</label><input type="number" id="sl-temp" value="25" class="form-input"></div>
+            <div class="form-group" style="margin:0"><label>External RH (%)</label><input type="number" id="sl-rh-ext" value="65" class="form-input"></div>
+          </div>
+          
+          <!-- Ea / Q10 section -->
+          <details style="margin-top:0.5rem; border:1px solid var(--border); border-radius:6px; padding:0.5rem; background:#fafbfc;">
+            <summary style="cursor:pointer; font-size:0.8rem; font-weight:600;">⚙️ Thermal Acceleration (Eₐ ↔ Q₁₀)</summary>
+            <div style="margin-top:0.5rem;">
+              <label style="font-size:0.75rem; color:var(--text-light); display:block; margin-bottom:0.3rem;">
+                Enter either Eₐ <strong>or</strong> Q₁₀ — not both. The unused field is disabled automatically.
+              </label>
+              <div class="grid grid-2" style="gap:0.5rem;">
+                <div class="form-group" style="margin:0">
+                  <label>Activation Energy Eₐ (kJ/mol)</label>
+                  <input type="number" id="sl-ea" value="" step="0.1" class="form-input" placeholder="Auto or 60" oninput="SL.onEaInput()">
+                </div>
+                <div class="form-group" style="margin:0">
+                  <label>Q₁₀ Factor</label>
+                  <input type="number" id="sl-q10" value="" step="0.1" class="form-input" placeholder="Auto or 2.0" oninput="SL.onQ10Input()">
+                </div>
+              </div>
+              <div style="font-size:0.65rem; color:var(--text-light); margin-top:0.3rem;" id="sl-ea-q10-hint">
+                Leave empty to use product default. If both are filled, Q10 is ignored.
+              </div>
+            </div>
+          </details>
+        </div>
+        
+        <!-- Chain condition inputs -->
+        <div id="sl-cond-chain" style="display:none;">
+          <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+            <thead><tr style="background:var(--bg); text-align:left;">
+              <th style="padding:0.3rem;">Step</th><th style="padding:0.3rem;">°C</th><th style="padding:0.3rem;">RH%</th><th style="padding:0.3rem;">Days</th><th></th>
+            </tr></thead>
+            <tbody id="sl-chain-rows">
+              <tr>
+                <td style="padding:0.3rem;"><input type="text" value="Factory" style="width:100%;border:1px solid var(--border);border-radius:3px;padding:2px;"></td>
+                <td style="padding:0.3rem;"><input type="number" value="22" class="sl-ct"></td>
+                <td style="padding:0.3rem;"><input type="number" value="50" class="sl-cr"></td>
+                <td style="padding:0.3rem;"><input type="number" value="2" class="sl-cd"></td>
+                <td style="padding:0.3rem;"><span style="cursor:pointer;color:var(--danger);" onclick="this.closest('tr').remove()">✕</span></td>
+              </tr>
+              <tr>
+                <td style="padding:0.3rem;"><input type="text" value="Transit" style="width:100%;border:1px solid var(--border);border-radius:3px;padding:2px;"></td>
+                <td style="padding:0.3rem;"><input type="number" value="35" class="sl-ct"></td>
+                <td style="padding:0.3rem;"><input type="number" value="85" class="sl-cr"></td>
+                <td style="padding:0.3rem;"><input type="number" value="14" class="sl-cd"></td>
+                <td style="padding:0.3rem;"><span style="cursor:pointer;color:var(--danger);" onclick="this.closest('tr').remove()">✕</span></td>
+              </tr>
+            </tbody>
+          </table>
+          <button class="btn btn-sm btn-outline" style="width:100%; margin-top:0.4rem;" onclick="SL.addChainRow()">+ Add Step</button>
+        </div>
+        
+        <!-- Calculate button -->
+        <button class="btn btn-danger btn-full" onclick="SL.calculate()" style="margin-top:1rem; padding:0.8rem; font-size:0.9rem;">
+          ▶ Calculate Shelf Life
+        </button>
+      </div>
     </div>
+    
+    <!-- === RESULTS AREA === -->
+    <div>
+      <div class="card" id="sl-result-panel">
+        <div style="text-align:center;padding:2rem;color:var(--text-light)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:48px;height:48px;margin-bottom:0.5rem;opacity:0.3"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <p>Configure parameters and calculate to see predictions</p>
+        </div>
+      </div>
+      
+      <!-- Charts container (initially hidden) -->
+      <div id="sl-charts-container" style="display:none; margin-top:1rem;">
+        <div class="card" style="margin-bottom:1rem">
+          <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;">Quality Decay Over Time</h3>
+          <div class="chart-mini" style="height:260px"><canvas id="slDecayChart"></canvas></div>
+        </div>
+        <div class="card">
+          <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;">Shelf Life vs Temperature</h3>
+          <div class="chart-mini" style="height:260px"><canvas id="slTempChart"></canvas></div>
+        </div>
+      </div>
+      
+      <!-- Logistics charts (for chain mode) -->
+      <div id="sl-logistics-charts" style="display:none; margin-top:0.8rem;">
+        <div class="card">
+          <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;"> Logistics Chain Breakdown</h3>
+          <div class="chart-mini" style="height:220px"><canvas id="slChainChart"></canvas></div>
+        </div>
+        <div class="card" style="margin-top:0.5rem;">
+          <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;"> Cumulative Shelf Life Consumption</h3>
+          <div class="chart-mini" style="height:200px"><canvas id="slCumulativeChart"></canvas></div>
+        </div>
+      </div>
     </div>
-    ${renderShelfLifeMethodology()}
-    `;
+  </div>
+  ${renderShelfLifeMethodology()}
+  `;
 }
     // ====================================================================
 // 🧪 SHELF LIFE MODULE - SL Object (CORRECTED & OPTIMIZED)
