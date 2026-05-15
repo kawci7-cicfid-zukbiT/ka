@@ -3514,7 +3514,7 @@ drawMoistureAccumulationChart(res) {
           },
           y: {
             beginAtZero: true,
-            max: Math.max(M_crit * 1.3, maxMoisture * 1.1),
+            max: Math.max(M_crit * 1.3, (moisturePoints.length > 0 ? Math.max(...moisturePoints) : M_crit) * 1.1),
             title: { display: true, text: 'Moisture Content (%)', font: { size: 10 } },
             ticks: { callback: v => v.toFixed(1) + '%', font: { size: 9 } },
             grid: { color: 'rgba(0,0,0,0.04)' }
