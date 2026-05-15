@@ -2561,7 +2561,7 @@ function renderShelfLife() {
   <option value="box">Rectangular Box</option>
   <option value="cylinder">Cylindrical Jar</option>
   <option value="tray">Tray with Lid</option>
-  <option value="bottle">🍾 Bottle (Olive Oil/Wine style)</option>
+  <option value="bottle"> Bottle</option>
 </select>
 </div>
           <div class="form-group" style="margin:0">
@@ -2786,20 +2786,55 @@ const SL = {
 },
     
     // --- Package type change → auto-fill dimensions ---
-    onPkgChange() {
-        const sel = document.getElementById('sl-shape');
-        if (!sel) return;
-        const type = sel.value;
-        let defaults = { w: 12, h: 17 };
-        if (type === 'standup') defaults = { w: 13, h: 22 };
-        else if (type === 'flow') defaults = { w: 20, h: 12 };
-        const wInp = document.getElementById('sl-w'); // Corretto ID
-        const hInp = document.getElementById('sl-h'); // Corretto ID
-        if (wInp) wInp.value = defaults.w;
-        if (hInp) hInp.value = defaults.h;
-        // this.updateIcon(type); // Funzione rimossa se non definita
-        this.calcArea();
-    },
+    // --- SOSTITUISCI QUESTO METODO NELL'OGGETTO SL ---
+onPkgChange() {
+    const sel = document.getElementById('sl-shape');
+    if (!sel) return;
+    const type = sel.value;
+
+    // 1️⃣ Toggle visibilità campi (Bottiglia vs Standard)
+    const pouchDims = document.getElementById('dims-pouch');
+    const bottleDims = document.getElementById('dims-bottle');
+    if (type === 'bottle') {
+        if (pouchDims) pouchDims.style.display = 'none';
+        if (bottleDims) bottleDims.style.display = 'grid';
+    } else {
+        if (pouchDims) pouchDims.style.display = 'grid';
+        if (bottleDims) bottleDims.style.display = 'none';
+    }
+
+    // 2️⃣ Configurazione: etichette dinamiche + valori di default per ogni shape
+    const configs = {
+        flat:      { w: 12, h: 17, d: 0, l1: 'Width (cm)', l2: 'Height (cm)', l3: 'Depth/Gusset (cm)' },
+        standup:   { w: 13, h: 22, d: 0, l1: 'Width (cm)', l2: 'Height (cm)', l3: 'Gusset/Depth (cm)' },
+        flow:      { w: 20, h: 12, d: 0, l1: 'Fin Seal Length (cm)', l2: 'Web Width (cm)', l3: '—' },
+        box:       { w: 10, h: 15, d: 5, l1: 'Length (cm)', l2: 'Height (cm)', l3: 'Depth (cm)' },
+        cylinder:  { w: 0, h: 12, d: 10, l1: '—', l2: 'Height (cm)', l3: 'Diameter (cm)' },
+        tray:      { w: 15, h: 10, d: 3, l1: 'Length (cm)', l2: 'Width (cm)', l3: 'Depth (cm)' },
+        bottle:    { w: 0, h: 0, d: 0, l1: '—', l2: '—', l3: '—' }
+    };
+    const cfg = configs[type] || configs.flat;
+
+    // 3️⃣ Aggiorna valori e testi delle label nei campi pouch
+    if (pouchDims && pouchDims.style.display !== 'none') {
+        const wInp = document.getElementById('sl-w');
+        const hInp = document.getElementById('sl-h');
+        const dInp = document.getElementById('sl-d');
+        const labels = pouchDims.querySelectorAll('label');
+
+        if(wInp) wInp.value = cfg.w;
+        if(hInp) hInp.value = cfg.h;
+        if(dInp) dInp.value = cfg.d;
+
+        // Inietta dinamicamente le etichette corrette
+        if(labels[0]) labels[0].textContent = cfg.l1;
+        if(labels[1]) labels[1].textContent = cfg.l2;
+        if(labels[2]) labels[2].textContent = cfg.l3;
+    }
+
+    // 4️⃣ Ricalcola l'area con i nuovi valori
+    this.calcArea();
+},
     // --- Shape change handler ---
 onShapeChange() {
   const sel = document.getElementById('sl-shape');
