@@ -3524,9 +3524,9 @@ drawMoistureAccumulationChart(res) {
 });  // ← chiude new Chart()
 } catch (e) {
   console.error('❌ Error creating Moisture Accumulation chart:', e);
-}
-}  // ← chiude la funzione
-    
+  }
+}  // ← chiude drawMoistureAccumulationChart
+};   
     // --- UI TOGGLES & HELPERS ---
 function toggleRateSource() {
     const src = document.querySelector('input[name="sl-rate-source"]:checked')?.value;
