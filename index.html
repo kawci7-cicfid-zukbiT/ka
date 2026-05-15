@@ -2443,6 +2443,7 @@ function renderShelfLife() {
   const unit = State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
   const currentRate = (State.calcResult && State.calcResult.total) ? State.calcResult.total.toFixed(6) : '';
 
+  // Info laminato
   let laminateName = State.laminateName || 'Nessun laminato';
   let structureStr = '';
   if (State.layers && State.layers.length > 0) {
@@ -2456,6 +2457,7 @@ function renderShelfLife() {
     structureStr = layers.join(' / ') || 'Struttura non valida';
   }
 
+  // Prodotti DB
   let prodOpts = '';
   for(let k in PRODUCTS_DB) prodOpts += `<option value="${k}">${PRODUCTS_DB[k].name}</option>`;
 
@@ -2672,12 +2674,35 @@ function renderShelfLife() {
         </div>
       </div>
       <div id="sl-logistics-charts" style="display:none; margin-top:0.8rem;">
+        <!-- Grafico A: Condizioni ambientali -->
         <div class="card">
-          <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;">Logistics Chain Breakdown</h3>
+          <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;"> Logistics Conditions</h3>
           <div class="chart-mini" style="height:220px"><canvas id="slChainChart"></canvas></div>
         </div>
+        
+        <!-- Grafico B: Step Impact (NUOVO - PRINCIPALE) -->
+        <div class="card" style="margin-top:0.5rem; border-left:4px solid var(--warning);">
+          <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;"> Shelf Life Consumed per Step</h3>
+          <p style="font-size:0.72rem;color:var(--text-light);margin-bottom:0.5rem">
+            Horizontal bars show % of total shelf life consumed in each logistics phase. 
+            Red = high impact (&gt;30%), Orange = medium, Blue = low.
+          </p>
+          <div class="chart-mini" style="height:280px"><canvas id="slStepImpactChart"></canvas></div>
+          <div id="slStepImpactLegend" style="margin-top:0.3rem"></div>
+        </div>
+        
+        <!-- Grafico C: Moisture Accumulation (solo per prodotti moisture) -->
+        <div class="card" style="margin-top:0.5rem; border-left:4px solid var(--primary);">
+          <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;">💧 Moisture Accumulation</h3>
+          <p style="font-size:0.72rem;color:var(--text-light);margin-bottom:0.5rem">
+            Internal moisture growth along the chain. Red zone = above critical limit.
+          </p>
+          <div class="chart-mini" style="height:260px"><canvas id="slMoistureAccChart"></canvas></div>
+        </div>
+        
+        <!-- Grafico D: Cumulative Days (mantenuto per riferimento) -->
         <div class="card" style="margin-top:0.5rem;">
-          <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;">Cumulative Shelf Life Consumption</h3>
+          <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;"> Timeline</h3>
           <div class="chart-mini" style="height:200px"><canvas id="slCumulativeChart"></canvas></div>
         </div>
       </div>
@@ -3124,100 +3149,235 @@ const SL = {
     }
   },
 
-  // --- Draw Main Charts (Decay + Temp) ---
-  drawCharts(res) {
-    destroyChart('slDecay');
-    destroyChart('slTemp');
+ // ====================================================================
+// 📊 DRAW CHARTS - Quality Decay + Shelf Life vs Temperature (FIXED)
+// ====================================================================
+drawCharts(res) {
+  // Distruggi istanze precedenti
+  destroyChart('slDecay');
+  destroyChart('slTemp');
 
-    // 1. Quality Decay Chart
-    const ctx1 = document.getElementById('slDecayChart')?.getContext('2d');
-    if (ctx1 && res.history?.length > 1 && typeof Chart !== 'undefined') {
-      chartInstances.slDecay = new Chart(ctx1, {
-        type: 'line',
-        data: {
-          labels: res.history.map(h => h.t),
-          datasets: [{
+  // === 1. QUALITY DECAY CHART ===
+  const ctx1 = document.getElementById('slDecayChart')?.getContext('2d');
+  if (ctx1 && res.history?.length > 1 && typeof Chart !== 'undefined') {
+    // Trova il punto esatto in cui la qualità raggiunge 0 (shelf life end)
+    let shelfLifeEnd = null;
+    for (let i = 0; i < res.history.length; i++) {
+      if (res.history[i].quality <= 0.1 && res.history[i-1]?.quality > 0.1) {
+        // Interpolazione lineare per trovare il punto esatto
+        const prev = res.history[i-1];
+        const curr = res.history[i];
+        const ratio = prev.quality / (prev.quality - curr.quality);
+        shelfLifeEnd = prev.t + ratio * (curr.t - prev.t);
+        break;
+      }
+    }
+
+    chartInstances.slDecay = new Chart(ctx1, {
+      type: 'line',
+      data: {
+        labels: res.history.map(h => h.t),
+        datasets: [
+          {
             label: 'Quality (%)',
             data: res.history.map(h => h.quality),
             borderColor: '#3b82f6',
             backgroundColor: 'rgba(59,130,246,0.1)',
-            fill: true, tension: 0.35, pointRadius: 2, borderWidth: 2
-          }, {
+            fill: true,
+            tension: 0.35,
+            pointRadius: 2,
+            pointHoverRadius: 5,
+            borderWidth: 2
+          },
+          // ✅ NUOVO: Punto marker per Shelf Life End
+          {
+            label: '🎯 Shelf Life End',
+            data: shelfLifeEnd !== null ? [{ x: shelfLifeEnd, y: 0 }] : [],
+            borderColor: '#ef4444',
+            backgroundColor: '#ef4444',
+            borderWidth: 0,
+            pointRadius: 9,
+            pointHoverRadius: 12,
+            pointBackgroundColor: '#fff',
+            pointBorderColor: '#ef4444',
+            pointBorderWidth: 3,
+            type: 'scatter',
+            showLine: false,
+            order: -1
+          },
+          {
             label: 'Critical (0%)',
             data: new Array(res.history.length).fill(0),
-            borderColor: '#ef4444', borderDash: [6,4], borderWidth: 2, pointRadius: 0, fill: false
-          }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 10 } } } },
-          scales: {
-            x: { title: { display: true, text: 'Days' }, ticks: { font: { size: 9 } } },
-            y: { beginAtZero: true, max: 100, title: { display: true, text: 'Quality %' }, ticks: { font: { size: 9 }, callback: v => v + '%' } }
+            borderColor: '#ef4444',
+            borderDash: [6, 4],
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: false
           }
-        }
-      });
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top',
+            labels: { boxWidth: 12, font: { size: 10 }, padding: 12 }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                if (ctx.dataset.label === '🎯 Shelf Life End') {
+                  return '🎯 End: Day ' + Math.round(ctx.parsed.x) + ' (Quality = 0%)';
+                }
+                return ctx.dataset.label + ': ' + ctx.parsed.y.toFixed(1) + '%';
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            title: { display: true, text: 'Days', font: { size: 10, weight: '600' } },
+            ticks: { font: { size: 9 } },
+            grid: { color: 'rgba(0,0,0,0.04)' }
+          },
+          y: {
+            beginAtZero: true,
+            max: 100,
+            title: { display: true, text: 'Quality %', font: { size: 10, weight: '600' } },
+            ticks: { font: { size: 9 }, callback: v => v + '%' },
+            grid: { color: 'rgba(0,0,0,0.04)' }
+          }
+        },
+        interaction: { mode: 'nearest', axis: 'x', intersect: false }
+      }
+    });
+  }
+
+  // === 2. SHELF LIFE VS TEMPERATURE CHART (FIX: baseRate reading) ===
+  const ctx2 = document.getElementById('slTempChart')?.getContext('2d');
+  if (ctx2 && typeof Chart !== 'undefined') {
+    // ✅ FIX: Lettura CORRETTA del rate base (manual vs calculated)
+    let baseRate = 0;
+    const srcRadio = document.querySelector('input[name="sl-source"]:checked');
+    const source = srcRadio ? srcRadio.value : 'calc';
+    
+    if (source === 'manual') {
+      // Legge dall'input manuale
+      baseRate = parseFloat(document.getElementById('sl-rate-manual')?.value) || 0;
+    } else {
+      // Legge dal risultato calcolato (priorità assoluta)
+      baseRate = parseFloat(State.calcResult?.total) || 0;
+    }
+    
+    // Fallback di sicurezza
+    if (!baseRate || baseRate <= 0) {
+      baseRate = 0.5; // valore di default sicuro
     }
 
-    // 2. Shelf Life vs Temperature Chart
-    const ctx2 = document.getElementById('slTempChart')?.getContext('2d');
-    if (ctx2 && typeof Chart !== 'undefined') {
-      const Ea_kJ = parseFloat(document.getElementById('sl-ea')?.value) || 60;
-      const Q10 = parseFloat(document.getElementById('sl-q10')?.value) || 2.0;
-      const A = parseFloat(document.getElementById('sl-area')?.value) || 0.1;
-      const W = parseFloat(document.getElementById('sl-weight')?.value) || 100;
-      const baseRate = parseFloat(document.getElementById('sl-rate-manual')?.value) || parseFloat(State.calcResult?.total) || 0.5;
-      const temps = Array.from({ length: 36 }, (_, i) => 15 + i);
+    const Ea_kJ = parseFloat(document.getElementById('sl-ea')?.value) || 60;
+    const Q10 = parseFloat(document.getElementById('sl-q10')?.value) || 2.0;
+    const A = parseFloat(document.getElementById('sl-area')?.value) || 0.1;
+    const W = parseFloat(document.getElementById('sl-weight')?.value) || 100;
+    
+    const temps = Array.from({ length: 36 }, (_, i) => 15 + i);
+    
+    const daysArr = temps.map(T => {
+      // Calcolo fattore di accelerazione termica
+      let acc = 1;
+      const eaInput = document.getElementById('sl-ea')?.value;
+      const eaDisabled = document.getElementById('sl-ea')?.disabled;
       
-      const daysArr = temps.map(T => {
-        let acc = 1;
-        if (document.getElementById('sl-ea')?.value && !document.getElementById('sl-ea')?.disabled) {
-          const R = 8.314;
-          acc = Math.exp(-(Ea_kJ*1000/R)*(1/(T+273.15)-1/298.15));
-        } else {
-          acc = Math.pow(Q10, (T-25)/10);
-        }
-        const rate = baseRate * acc;
-        if (res.type === 'moisture') {
-          const Mc = res.M_crit || 8, Mi = res.M_init || 3;
-          return ((Mc - Mi) / 100 * W) / (rate * A);
-        } else {
-          return (400 * 0.3) / (rate * A);
-        }
-      });
+      if (eaInput && parseFloat(eaInput) > 0 && !eaDisabled) {
+        // Arrhenius
+        const R = 8.314;
+        const Ea_J = Ea_kJ * 1000;
+        acc = Math.exp(-(Ea_J / R) * (1 / (T + 273.15) - 1 / 298.15));
+      } else {
+        // Q10
+        acc = Math.pow(Q10, (T - 25) / 10);
+      }
       
-      chartInstances.slTemp = new Chart(ctx2, {
-        type: 'line',
-        data: { 
-          labels: temps, 
-          datasets: [{ 
-            label: 'Shelf Life vs Temp', 
-            data: daysArr, 
-            borderColor: '#8b5cf6', 
-            backgroundColor: 'rgba(139,92,246,0.1)', 
-            fill: true, tension: 0.4, pointRadius: 3, borderWidth: 2 
-          }] 
+      const rate = baseRate * acc;
+      
+      if (res.type === 'moisture') {
+        const Mc = res.M_crit || 8;
+        const Mi = res.M_init || 3;
+        const totalAllowed = (Mc - Mi) / 100 * W;
+        return totalAllowed / (rate * A);
+      } else {
+        // Ossidazione: fat_kg * O2_crit / (rate * A)
+        const fatKg = 0.3; // default, o leggi da prodotto
+        const O2_crit = 400; // default
+        return (O2_crit * fatKg) / (rate * A);
+      }
+    });
+    
+    chartInstances.slTemp = new Chart(ctx2, {
+      type: 'line',
+      data: {
+        labels: temps,
+        datasets: [{
+          label: 'Shelf Life vs Temperature',
+          data: daysArr,
+          borderColor: '#8b5cf6',
+          backgroundColor: 'rgba(139,92,246,0.1)',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 3,
+          pointHoverRadius: 6,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                const prec = getDisplayPrecision();
+                return '🌡️ ' + ctx.parsed.x + '°C → ' + formatWithSigFigs(ctx.parsed.y, prec) + ' days';
+              }
+            }
+          }
         },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { title: { display: true, text: 'Storage °C' }, ticks: { font: { size: 9 } } },
-            y: { title: { display: true, text: 'Days' }, ticks: { font: { size: 9 } } }
+        scales: {
+          x: {
+            title: { display: true, text: 'Storage Temperature (°C)', font: { size: 10, weight: '600' } },
+            ticks: { font: { size: 9 } },
+            grid: { color: 'rgba(0,0,0,0.04)' }
+          },
+          y: {
+            title: { display: true, text: 'Shelf Life (Days)', font: { size: 10, weight: '600' } },
+            beginAtZero: true,
+            ticks: { font: { size: 9 } },
+            grid: { color: 'rgba(0,0,0,0.04)' }
           }
         }
-      });
-    }
-  },
+      }
+    });
+  }
+},
 
-  // --- Draw Logistics Chain Charts ---
-  drawLogisticsCharts() {
-    destroyChart('slChain');
-    destroyChart('slCumulative');
+// ====================================================================
+// 📊 DRAW LOGISTICS CHARTS - Including NEW Step Impact & Moisture Acc.
+// ====================================================================
+drawLogisticsCharts(res) {
+  // Distruggi tutte le istanze precedenti
+  destroyChart('slChain');
+  destroyChart('slCumulative');
+  destroyChart('slStepImpact');
+  destroyChart('slMoistureAcc');
 
-    const rows = document.querySelectorAll('#sl-chain-rows tr');
-    if (!rows.length) return;
+  const rows = document.querySelectorAll('#sl-chain-rows tr');
+  if (!rows.length) return;
 
+  // === A. Logistics Conditions Chart (T/RH per step) ===
+  const ctx1 = document.getElementById('slChainChart')?.getContext('2d');
+  if (ctx1 && typeof Chart !== 'undefined') {
     const labels = [], temps = [], rhs = [], daysArr = [];
     rows.forEach(r => {
       labels.push(r.querySelector('input[type="text"]')?.value || 'Step');
@@ -3226,66 +3386,496 @@ const SL = {
       daysArr.push(parseFloat(r.querySelector('.sl-cd')?.value) || 0);
     });
 
-    // 1. Bar Chart: T & RH per step
-    const ctx1 = document.getElementById('slChainChart')?.getContext('2d');
-    if (ctx1 && typeof Chart !== 'undefined') {
-      chartInstances.slChain = new Chart(ctx1, {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [
-            { label: 'Temperature (°C)', data: temps, backgroundColor: 'rgba(59,130,246,0.7)', yAxisID: 'y' },
-            { label: 'RH (%)', data: rhs, backgroundColor: 'rgba(239,68,68,0.7)', yAxisID: 'y1' }
-          ]
+    chartInstances.slChain = new Chart(ctx1, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Temperature (°C)',
+            data: temps,
+            backgroundColor: 'rgba(59,130,246,0.7)',
+            borderColor: 'rgba(59,130,246,1)',
+            borderWidth: 1,
+            yAxisID: 'y',
+            borderRadius: 4
+          },
+          {
+            label: 'RH (%)',
+            data: rhs,
+            backgroundColor: 'rgba(239,68,68,0.7)',
+            borderColor: 'rgba(239,68,68,1)',
+            borderWidth: 1,
+            yAxisID: 'y1',
+            borderRadius: 4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: { boxWidth: 12, font: { size: 10 }, padding: 10 }
+          }
         },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 10 } } } },
-          scales: {
-            y: { position: 'left', title: { display: true, text: '°C' }, beginAtZero: true },
-            y1: { position: 'right', title: { display: true, text: 'RH %' }, beginAtZero: true, grid: { drawOnChartArea: false } },
-            x: { ticks: { font: { size: 9 } } }
+        scales: {
+          y: {
+            position: 'left',
+            title: { display: true, text: 'Temperature (°C)', font: { size: 10 } },
+            beginAtZero: true,
+            grid: { color: 'rgba(0,0,0,0.04)' }
+          },
+          y1: {
+            position: 'right',
+            title: { display: true, text: 'Relative Humidity (%)', font: { size: 10 } },
+            beginAtZero: true,
+            max: 100,
+            grid: { drawOnChartArea: false }
+          },
+          x: {
+            ticks: { font: { size: 9 }, maxRotation: 45, minRotation: 45 },
+            grid: { display: false }
           }
         }
-      });
-    }
+      }
+    });
+  }
 
-    // 2. Cumulative Line Chart
+  // === B. 🆕 STEP IMPACT CHART - Shelf Life Consumed per Step (%) ===
+  this.drawStepImpactChart(res);
+
+  // === C. 🆕 MOISTURE ACCUMULATION CHART (solo per prodotti moisture) ===
+  if (res && res.type === 'moisture') {
+    this.drawMoistureAccumulationChart(res);
+  }
+
+  // === D. Cumulative Timeline Chart (giorni configurati) ===
+  const ctx2 = document.getElementById('slCumulativeChart')?.getContext('2d');
+  if (ctx2 && typeof Chart !== 'undefined') {
     const cumDays = [];
     let cum = 0;
     const cumLabels = [];
-    daysArr.forEach((d, i) => {
+    
+    rows.forEach((r, i) => {
+      const d = parseFloat(r.querySelector('.sl-cd')?.value) || 0;
+      const name = r.querySelector('input[type="text"]')?.value || 'Step';
       cum += d;
       cumDays.push(cum);
-      cumLabels.push(labels[i]);
+      cumLabels.push(name);
     });
     
-    const ctx2 = document.getElementById('slCumulativeChart')?.getContext('2d');
-    if (ctx2 && typeof Chart !== 'undefined') {
-      chartInstances.slCumulative = new Chart(ctx2, {
-        type: 'line',
-        data: {
-          labels: cumLabels,
-          datasets: [{
-            label: 'Cumulative Days',
-            data: cumDays,
-            borderColor: '#16a34a',
-            backgroundColor: 'rgba(22,163,74,0.1)',
-            fill: true, tension: 0.3, pointRadius: 5, pointBackgroundColor: '#16a34a', borderWidth: 2
-          }]
+    chartInstances.slCumulative = new Chart(ctx2, {
+      type: 'line',
+      data: {
+        labels: cumLabels,
+        datasets: [{
+          label: 'Cumulative Days (Configured)',
+          data: cumDays,
+          borderColor: '#64748b',
+          backgroundColor: 'rgba(100,116,139,0.1)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 5,
+          pointBackgroundColor: '#64748b',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                return '📅 Cumulative: ' + ctx.parsed.y + ' days';
+              }
+            }
+          }
         },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { title: { display: true, text: 'Days' }, beginAtZero: true },
-            x: { ticks: { font: { size: 9 } } }
+        scales: {
+          y: {
+            title: { display: true, text: 'Days', font: { size: 10 } },
+            beginAtZero: true,
+            ticks: { font: { size: 9 } },
+            grid: { color: 'rgba(0,0,0,0.04)' }
+          },
+          x: {
+            ticks: { font: { size: 9 }, maxRotation: 45, minRotation: 45 },
+            grid: { display: false }
           }
         }
-      });
-    }
+      }
+    });
   }
-};
+},
+
+// ====================================================================
+// 🆕 STEP IMPACT CHART - Shelf Life Consumed per Step (%)
+// ====================================================================
+drawStepImpactChart(res) {
+  destroyChart('slStepImpact');
+  const canvas = document.getElementById('slStepImpactChart');
+  if (!canvas || !res || typeof Chart === 'undefined') return;
+  
+  const ctx = canvas.getContext('2d');
+  const rows = document.querySelectorAll('#sl-chain-rows tr');
+  if (!rows.length) return;
+  
+  // Parametri base
+  const A = parseFloat(document.getElementById('sl-area')?.value) || 0.1;
+  const W = parseFloat(document.getElementById('sl-weight')?.value) || 100;
+  
+  // Recupera prodotto e calcola totale ammissibile
+  const prodKey = document.getElementById('sl-product')?.value;
+  const prod = PRODUCTS_DB[prodKey];
+  if (!prod) return;
+  
+  let totalAllowed = 0;
+  if (prod.type === 'moisture') {
+    const Mc = parseFloat(document.getElementById('sl-mcrit')?.value) || prod.M_crit;
+    const Mi = parseFloat(document.getElementById('sl-minit')?.value) || prod.M_init;
+    totalAllowed = (Mc - Mi) / 100 * W; // grammi di acqua ammissibili
+  } else {
+    const fatKg = prod.fat_kg || 0.3;
+    const O2_crit = prod.O2_crit || 400;
+    totalAllowed = O2_crit * fatKg; // ml O2 ammissibili
+  }
+  
+  // Rate base (stessa logica del fix drawCharts)
+  let baseRate = 0;
+  const srcRadio = document.querySelector('input[name="sl-source"]:checked');
+  const source = srcRadio ? srcRadio.value : 'calc';
+  if (source === 'manual') {
+    baseRate = parseFloat(document.getElementById('sl-rate-manual')?.value) || 0;
+  } else {
+    baseRate = parseFloat(State.calcResult?.total) || 0;
+  }
+  if (!baseRate || baseRate <= 0) baseRate = 0.5;
+  
+  // Calcola consumo per ogni step
+  const labels = [], consumptionPct = [], details = [];
+  let cumulativeConsumed = 0;
+  
+  rows.forEach((r, idx) => {
+    const name = r.querySelector('input[type="text"]')?.value || `Step ${idx+1}`;
+    const T = parseFloat(r.querySelector('.sl-ct')?.value) || 25;
+    const RH = parseFloat(r.querySelector('.sl-cr')?.value) || 65;
+    const days = parseFloat(r.querySelector('.sl-cd')?.value) || 1;
+    
+    // Fattore di accelerazione termica
+    const Ea_kJ = parseFloat(document.getElementById('sl-ea')?.value) || 60;
+    const Q10 = parseFloat(document.getElementById('sl-q10')?.value) || 2.0;
+    let accel = 1;
+    const eaInput = document.getElementById('sl-ea')?.value;
+    const eaDisabled = document.getElementById('sl-ea')?.disabled;
+    
+    if (eaInput && parseFloat(eaInput) > 0 && !eaDisabled) {
+      const R = 8.314;
+      const Ea_J = Ea_kJ * 1000;
+      accel = Math.exp(-(Ea_J / R) * (1 / (T + 273.15) - 1 / 298.15));
+    } else {
+      accel = Math.pow(Q10, (T - 25) / 10);
+    }
+    
+    // Correzione igroscopica (se applicabile)
+    let hygroFactor = 1;
+    if (State.layers && State.selCond) {
+      for (let li = 0; li < State.layers.length; li++) {
+        const layer = State.layers[li];
+        if (!layer.mid) continue;
+        const mat = DB.materials.find(m => m.id === layer.mid);
+        if (!mat) continue;
+        const isWVTR = (State.mode || 'wvtr') === 'wvtr';
+        const beta = isWVTR ? (mat.hygroscopicBetaWVTR || 0) : (mat.hygroscopicBetaOTR || 0);
+        const refRH = isWVTR ? (mat.hygroscopicRefRHWVTR || 50) : (mat.hygroscopicRefRHOTR || 50);
+        if (beta > 0) {
+          hygroFactor *= Math.exp(beta * (RH - refRH));
+        }
+      }
+    }
+    
+    // Rate effettivo e quantità trasferita
+    const effectiveRate = baseRate * accel * hygroFactor;
+    const transferred = effectiveRate * A * days;
+    const pct = totalAllowed > 0 ? (transferred / totalAllowed) * 100 : 0;
+    
+    labels.push(name);
+    consumptionPct.push(parseFloat(pct.toFixed(1)));
+    cumulativeConsumed += pct;
+    details.push({
+      name, T, RH, days,
+      pct: pct.toFixed(1),
+      cumulative: cumulativeConsumed.toFixed(1),
+      transferred: transferred.toFixed(4)
+    });
+  });
+  
+  // Colori in base alla percentuale di consumo
+  const colors = consumptionPct.map(p => {
+    if (p >= 30) return 'rgba(239, 68, 68, 0.85)';
+    if (p >= 15) return 'rgba(245, 158, 11, 0.85)';
+    return 'rgba(59, 130, 246, 0.7)';
+  });
+  
+  chartInstances.slStepImpact = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Shelf Life Consumed (%)',
+        data: consumptionPct,
+        backgroundColor: colors,
+        borderColor: colors.map(c => c.replace('0.85', '1').replace('0.7', '0.9')),
+        borderWidth: 1,
+        borderRadius: 6,
+        borderSkipped: false,
+        barPercentage: 0.8,
+        categoryPercentage: 0.9
+      }]
+    },
+    options: {
+      indexAxis: 'y', // ✅ Orizzontale
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              const d = details[ctx.dataIndex];
+              return [
+                `📦 ${d.name}`,
+                `🌡️ ${d.T}°C • 💧 ${d.RH}% RH • 📅 ${d.days} days`,
+                `⚠️ Consumed: ${d.pct}% of total shelf life`,
+                `📊 Cumulative: ${d.cumulative}%`,
+                `💧 Transferred: ${d.transferred} ${State.mode === 'wvtr' ? 'g' : 'cc'}`
+              ];
+            },
+            afterLabel: function(ctx) {
+              const d = details[ctx.dataIndex];
+              if (parseFloat(d.cumulative) >= 100) {
+                return '🔴 CRITICAL: Shelf life exhausted at this step!';
+              }
+              return '';
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          max: 100,
+          title: {
+            display: true,
+            text: '% of Total Shelf Life Consumed',
+            font: { size: 10, weight: '600' }
+          },
+          ticks: {
+            callback: v => v + '%',
+            font: { size: 9 }
+          },
+          grid: { color: 'rgba(0,0,0,0.04)' }
+        },
+        y: {
+          ticks: { font: { size: 9, weight: '500' } },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+},
+
+// ====================================================================
+// 🆕 MOISTURE ACCUMULATION CHART - Crescita umidità interna step-by-step
+// ====================================================================
+drawMoistureAccumulationChart(res) {
+  destroyChart('slMoistureAcc');
+  const canvas = document.getElementById('slMoistureAccChart');
+  if (!canvas || !res || res.type !== 'moisture' || typeof Chart === 'undefined') return;
+  
+  const ctx = canvas.getContext('2d');
+  const rows = document.querySelectorAll('#sl-chain-rows tr');
+  if (!rows.length) return;
+  
+  // Parametri prodotto
+  const prodKey = document.getElementById('sl-product')?.value;
+  const prod = PRODUCTS_DB[prodKey];
+  if (!prod || prod.type !== 'moisture') return;
+  
+  const M_crit = parseFloat(document.getElementById('sl-mcrit')?.value) || prod.M_crit;
+  const M_init = parseFloat(document.getElementById('sl-minit')?.value) || prod.M_init;
+  const A = parseFloat(document.getElementById('sl-area')?.value) || 0.1;
+  const W = parseFloat(document.getElementById('sl-weight')?.value) || 100;
+  
+  // Rate base
+  let baseRate = 0;
+  const srcRadio = document.querySelector('input[name="sl-source"]:checked');
+  const source = srcRadio ? srcRadio.value : 'calc';
+  if (source === 'manual') {
+    baseRate = parseFloat(document.getElementById('sl-rate-manual')?.value) || 0;
+  } else {
+    baseRate = parseFloat(State.calcResult?.total) || 0;
+  }
+  if (!baseRate || baseRate <= 0) baseRate = 0.5;
+  
+  // Simula accumulo step-by-step
+  const labels = [], moisturePoints = [], pointDetails = [];
+  let M_current = M_init;
+  let dayCounter = 0;
+  const Psat_ref = 0.61094 * Math.exp((17.625 * 25) / (25 + 243.04)) * 1000;
+  const dP_std = Psat_ref * 0.5;
+  
+  rows.forEach((r, idx) => {
+    const name = r.querySelector('input[type="text"]')?.value || `Step ${idx+1}`;
+    const T = parseFloat(r.querySelector('.sl-ct')?.value) || 25;
+    const RH_out = parseFloat(r.querySelector('.sl-cr')?.value) || 65;
+    const days = parseFloat(r.querySelector('.sl-cd')?.value) || 1;
+    
+    const Psat = 0.61094 * Math.exp((17.625 * T) / (T + 243.04)) * 1000;
+    
+    // Fattori di accelerazione
+    const Ea_kJ = parseFloat(document.getElementById('sl-ea')?.value) || 60;
+    const Q10 = parseFloat(document.getElementById('sl-q10')?.value) || 2.0;
+    let accel = 1;
+    const eaInput = document.getElementById('sl-ea')?.value;
+    const eaDisabled = document.getElementById('sl-ea')?.disabled;
+    
+    if (eaInput && parseFloat(eaInput) > 0 && !eaDisabled) {
+      const R = 8.314;
+      const Ea_J = Ea_kJ * 1000;
+      accel = Math.exp(-(Ea_J / R) * (1 / (T + 273.15) - 1 / 298.15));
+    } else {
+      accel = Math.pow(Q10, (T - 25) / 10);
+    }
+    
+    // Correzione igroscopica
+    let hygroFactor = 1;
+    if (State.layers) {
+      for (let li = 0; li < State.layers.length; li++) {
+        const layer = State.layers[li];
+        if (!layer.mid) continue;
+        const mat = DB.materials.find(m => m.id === layer.mid);
+        if (!mat) continue;
+        const beta = mat.hygroscopicBetaWVTR || 0;
+        const refRH = mat.hygroscopicRefRHWVTR || 50;
+        if (beta > 0) hygroFactor *= Math.exp(beta * (RH_out - refRH));
+      }
+    }
+    
+    const effectiveRate = baseRate * accel * hygroFactor;
+    
+    // Simula giorno per giorno
+    for (let d = 0; d < days; d++) {
+      const aw_current = Math.min(0.99, Math.max(0.01, M_current / M_crit * 0.85));
+      const RH_in = aw_current * 100;
+      const dP = Psat * Math.max((RH_out - RH_in), 1) / 100;
+      const rate_scale = dP / dP_std;
+      const dM_day = (effectiveRate * rate_scale * A) / W * 100;
+      
+      M_current = Math.min(M_current + dM_day, M_crit * 1.5);
+      dayCounter++;
+      
+      // Campiona punti per non sovraccaricare il grafico
+      if (d % Math.max(1, Math.floor(days / 8)) === 0 || d === days - 1) {
+        labels.push(`${name}+${d+1}d`);
+        moisturePoints.push(parseFloat(M_current.toFixed(2)));
+        pointDetails.push({ day: dayCounter, M: M_current, step: name });
+      }
+    }
+    
+    // Punto finale step
+    labels.push(name);
+    moisturePoints.push(parseFloat(M_current.toFixed(2)));
+    pointDetails.push({ day: dayCounter, M: M_current, step: name, isEnd: true });
+  });
+  
+  chartInstances.slMoistureAcc = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Internal Moisture (%)',
+          data: moisturePoints,
+          borderColor: '#3b82f6',
+          backgroundColor: (ctx) => {
+            const chart = ctx.chart;
+            const { ctx: c, chartArea } = chart;
+            if (!chartArea) return;
+            const gradient = c.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+            gradient.addColorStop(0, 'rgba(59,130,246,0.15)');
+            gradient.addColorStop(1, 'rgba(59,130,246,0.4)');
+            return gradient;
+          },
+          fill: true,
+          tension: 0.35,
+          pointRadius: (ctx) => pointDetails[ctx.dataIndex]?.isEnd ? 5 : 3,
+          pointHoverRadius: 7,
+          pointBackgroundColor: (ctx) => {
+            const m = moisturePoints[ctx.dataIndex];
+            return m >= M_crit ? '#ef4444' : '#3b82f6';
+          },
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          borderWidth: 2.5
+        },
+        {
+          label: 'Critical Limit',
+          data: new Array(labels.length).fill(M_crit),
+          borderColor: '#ef4444',
+          borderDash: [6, 4],
+          borderWidth: 2.5,
+          pointRadius: 0,
+          fill: false
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: { boxWidth: 12, font: { size: 10 }, padding: 10 }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              const val = ctx.parsed.y;
+              const detail = pointDetails[ctx.dataIndex];
+              const status = val >= M_crit ? ' 🔴 ABOVE LIMIT' :
+                            val >= M_crit * 0.9 ? ' 🟡 WARNING' : ' 🟢 Safe';
+              return [
+                `💧 ${ctx.dataset.label}: ${val.toFixed(2)}%${status}`,
+                `📅 Day ${detail?.day || ctx.dataIndex}`,
+                `📦 Step: ${detail?.step || ''}`
+              ];
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'Logistics Chain Progress', font: { size: 10 } },
+          ticks: { font: { size: 8 }, maxRotation: 45, minRotation: 45 },
+          grid: { display: false }
+        },
+        y: {
+          beginAtZero: true,
+          max: Math.max(M_crit * 1.3, Math.max(...moisturePoints) * 1.1),
+          title: { display: true, text: 'Moisture Content (%)', font: { size: 10 } },
+          ticks: { callback: v => v.toFixed(1) + '%', font: { size: 9 } },
+          grid: { color: 'rgba(0,0,0,0.04)' }
+        }
+      }
+    }
+  });
+}
     // --- UI TOGGLES & HELPERS ---
 function toggleRateSource() {
     const src = document.querySelector('input[name="sl-rate-source"]:checked')?.value;
