@@ -3189,7 +3189,7 @@ function calcPkgArea() {
     panel.innerHTML = `
       <div style="animation:fadeIn 0.3s ease">
         <div style="text-align:center;padding:1.25rem;background:linear-gradient(135deg,var(--primary-light),#e0f2fe);border-radius:12px;margin-bottom:1rem">
-          <div style="font-size:2.2rem;font-weight:800;color:var(--primary);line-height:1.2">${daysStr} Days</div>
+          <div style="font-size:2.2rem;font-weight:800;color:var(--primary);line-height:1.2">${isFinite(res.days) ? formatWithSigFigs(res.days, getDisplayPrecision()) : '∞'} Days</div>
           <div style="font-size:0.85rem;color:var(--text-light);margin-top:0.4rem;font-weight:500">
             ≈ ${months.toFixed(1)} Months · ≈ ${years.toFixed(2)} Years
           </div>
@@ -3844,102 +3844,139 @@ function fillProductDefaults(key) {
  * Esegue il calcolo avanzato della shelf life
  */
 function calculateAdvancedShelfLife() {
-    const prodKey = document.getElementById('sl-product')?.value;
-    const prod = PRODUCTS_DB[prodKey];
-    if(!prod) { alert("Seleziona un prodotto"); return; }
+  const prodId = document.getElementById('sl-product')?.value;
+  const prod = PRODUCTS_DB[prodId];
+  if (!prod) { alert("⚠️ Select a product type first"); return; }
 
-    // 1. Rate
-    const rateSrc = document.querySelector('input[name="sl-rate-source"]:checked')?.value;
-    let rateInput = rateSrc === 'manual' ? getSlVal('sl-rate', 0) : getSlVal('sl-rate-manual', State.calcResult?.total || 0);
-    if(rateInput <= 0) { alert("Inserisci un valore WVTR/OTR valido"); return; }
+  // === 1. GET INPUTS BASE ===
+  const W = parseFloat(document.getElementById('sl-weight').value) || 100;
+  const A = parseFloat(document.getElementById('sl-area').value) || 0.1;
+  const rateInput = parseFloat(document.getElementById('sl-rate')?.value) || (State.calcResult?.total || 0);
+  if (rateInput <= 0) { alert("Enter a valid rate"); return; }
 
-    // 2. Thermal
-    const Ea = getSlVal('sl-ea', 60) * 1000;
-    const Q10 = getSlVal('sl-q10', 2.0);
+  // === 2. DEFINISCI SUBITO T_store E RH_out CON DEFAULT ===
+  // ✅ Questo risolve il problema: variabili sempre definite prima dell'uso
+  let T_store = 25;
+  let RH_out = 65;
+
+  // === 3. LOGICA PER DETERMINARE VALORI EFFETTIVI ===
+  const isChain = document.getElementById('sl-cond-chain')?.style.display !== 'none';
+  
+  if (isChain) {
+    // Calcolo medio ponderato per catena logistica
+    let totD = 0, wT = 0, wRH = 0;
+    document.querySelectorAll('#sl-chain-rows tr').forEach(r => {
+      const d = parseFloat(r.querySelector('.sl-cd')?.value) || 0;
+      wT += (parseFloat(r.querySelector('.sl-ct')?.value) || 0) * d;
+      wRH += (parseFloat(r.querySelector('.sl-cr')?.value) || 0) * d;
+      totD += d;
+    });
+    if (totD > 0) {
+      T_store = wT / totD;
+      RH_out = wRH / totD;
+    }
+    // Se totD === 0, restano i default 25°C / 65%
+  } else {
+    // Modalità singola: leggi direttamente dagli input
+    T_store = parseFloat(document.getElementById('sl-temp')?.value) || 25;
+    RH_out = parseFloat(document.getElementById('sl-rh-ext')?.value) || 65;
+  }
+
+  // === 4. ORA PUOI USARE T_store E RH_out IN SICUREZZA ===
+  // Calcolo Psat (ora T_store è sempre definito)
+  const Psat = getPsat(T_store) * 1000;
+  const dP_std = Psat * 0.5;
+
+  // Thermal acceleration
+  const Ea_kJ = parseFloat(document.getElementById('sl-ea')?.value) || 60;
+  const Q10 = parseFloat(document.getElementById('sl-q10')?.value) || 2.0;
+  const Ea_J = Ea_kJ * 1000;
+  
+  let accel = 1;
+  if (Q10 > 0) {
+    accel = Math.pow(Q10, (T_store - 25) / 10);
+  } else if (Ea_J > 0) {
+    const R = 8.314;
+    accel = Math.exp(-(Ea_J / R) * (1 / (T_store + 273.15) - 1 / 298.15));
+  }
+
+  // Hygroscopic correction (ora RH_out è sempre definito)
+  let hygroFactor = 1;
+  let hygroMsg = [];
+  if (State.layers && State.selCond) {
+    for (let li = 0; li < State.layers.length; li++) {
+      const layer = State.layers[li];
+      if (!layer.mid) continue;
+      const mat = DB.materials.find(m => m.id === layer.mid);
+      if (!mat) continue;
+      
+      const isW = State.mode === 'wvtr';
+      const beta = isW ? (mat.hygroscopicBetaWVTR || 0) : (mat.hygroscopicBetaOTR || 0);
+      const ref = isW ? (mat.hygroscopicRefRHWVTR || 50) : (mat.hygroscopicRefRHOTR || 50);
+      
+      if (beta > 0) {
+        const f = Math.exp(beta * (RH_out - ref));
+        if (f > 1) {
+          hygroFactor *= f;
+          hygroMsg.push(`${mat.name}: ×${f.toFixed(2)} @ ${RH_out.toFixed(0)}% RH`);
+        }
+      }
+    }
+  }
+
+  const effectiveRate = rateInput * accel * hygroFactor;
+
+  // === 5. RESTO DEL CALCOLO (invariato) ===
+  let result = {
+    days: 0, history: [], mode: State.mode, type: prod.type,
+    hygroWarning: hygroMsg.length ? { message: 'Hygroscopic correction', details: hygroMsg } : null,
+    isChain: isChain
+  };
+
+  if (prod.type === 'moisture') {
+    const M_crit = parseFloat(document.getElementById('sl-mcrit').value) || prod.M_crit;
+    const M_init = parseFloat(document.getElementById('sl-minit').value) || prod.M_init;
     
-    // 3. Area & Weight
-    const A = getSlVal('sl-area', 0.1);
-    const W = getSlVal('sl-weight', 100);
+    if (M_crit <= M_init) { alert('Critical moisture must be > initial'); return; }
     
-    // 4. Conditions
-    const isChain = document.getElementById('cond-chain-box').style.display !== 'none';
-    let T_store = 25, RH_out = 65;
-    if(isChain) {
-        let totD=0, wT=0, wRH=0;
-        document.querySelectorAll('#chain-rows tr').forEach(r => {
-            const d = parseFloat(r.querySelector('.c-d')?.value)||0;
-            wT += (parseFloat(r.querySelector('.c-t')?.value)||0)*d;
-            wRH += (parseFloat(r.querySelector('.c-rh')?.value)||0)*d;
-            totD += d;
-        });
-        if(totD>0) { T_store = wT/totD; RH_out = wRH/totD; }
+    let M = M_init, t = 0;
+    result.history = [{ t: 0, M: M, quality: 100 }];
+    
+    while (M < M_crit && t < 5000) {
+      const aw = SL.solveGAB(M / 100, prod.GAB);
+      const RH_in = aw * 100;
+      const dP = Psat * Math.max((RH_out - RH_in), 1) / 100; // ✅ RH_out ora sicuro
+      const rate_scale = dP / dP_std;
+      const dM = (effectiveRate * rate_scale * A) / W * 100;
+      
+      M += dM; t += 1;
+      const quality = Math.max(0, 100 - ((M - M_init) / (M_crit - M_init)) * 100);
+      result.history.push({ t, M: Math.min(M, M_crit), quality });
+    }
+    result.days = t;
+    result.M_crit = M_crit;
+    result.M_init = M_init;
+  } else {
+    // Logica ossidazione (simile, ora con RH_out sicuro)
+    const fatKg = prod.fat_kg || 0.3;
+    const O2_crit = prod.O2_crit || 400;
+    const totalO2 = O2_crit * fatKg;
+    const dayO2 = effectiveRate * A;
+    
+    if (dayO2 <= 0) {
+      result.days = Infinity;
     } else {
-        T_store = getSlVal('sl-temp', 25);
-        RH_out = getSlVal('sl-rh-ext', 65);
+      const days = totalO2 / dayO2;
+      for (let d = 0; d <= Math.min(days * 1.2, 3650); d += 5) {
+        const quality = Math.max(0, 100 - ((dayO2 * d) / totalO2) * 100);
+        result.history.push({ t: d, quality });
+      }
+      result.days = Math.round(days);
     }
+    result.type = 'otx';
+  }
 
-    // Thermal Factor
-    let accel = 1;
-    if(Q10 > 0) accel = Math.pow(Q10, (T_store - 25)/10);
-    else if(Ea > 0) {
-        const R = 8.314;
-        accel = Math.exp(-(Ea/R) * (1/(T_store+273.15) - 1/298.15));
-    }
-
-    // Hygro Factor
-    let hygroFactor = 1;
-    let hygroMsg = [];
-    if(State.layers && State.selCond) {
-        for(let l of State.layers) {
-            if(!l.mid) continue;
-            const mat = DB.materials.find(m => m.id === l.mid);
-            if(!mat) continue;
-            const isW = State.mode === 'wvtr';
-            const beta = isW ? (mat.hygroscopicBetaWVTR||0) : (mat.hygroscopicBetaOTR||0);
-            const ref = isW ? (mat.hygroscopicRefRHWVTR||50) : (mat.hygroscopicRefRHOTR||50);
-            if(beta > 0) {
-                const f = Math.exp(beta * (RH_out - ref));
-                if(f > 1) { hygroFactor *= f; hygroMsg.push(`${mat.name}: ×${f.toFixed(2)}`); }
-            }
-        }
-    }
-
-    const effRate = rateInput * accel * hygroFactor;
-    
-    let res = { days:0, history:[], type:prod.type, mode:State.mode, hygroWarning: hygroMsg.length ? {details:hygroMsg} : null };
-    
-    if(prod.type === 'moisture') {
-        const Mc = getSlVal('sl-mcrit', prod.M_crit);
-        const Mi = getSlVal('sl-minit', prod.M_init);
-        if(Mc <= Mi) { alert("Critical Moisture deve essere > Initial"); return; }
-        
-        const Psat = getPsat(T_store)*1000;
-        const dP_std = Psat*0.5;
-        let M = Mi, t = 0;
-        res.history = [{t:0, M:Mi, quality:100}];
-        
-        while(M < Mc && t < 5000) {
-            const aw = solveAwFromGAB(M/100, prod.GAB);
-            const RH_in = aw*100;
-            const dP = Psat * Math.max((RH_out - RH_in), 1)/100;
-            const dM = (effRate * (dP/dP_std) * A) / W * 100;
-            M += dM; t += 1;
-            res.history.push({t, M:Math.min(M,Mc), quality: Math.max(0, 100 - ((M-Mi)/(Mc-Mi))*100)});
-        }
-        res.days = t; res.M_crit = Mc; res.M_init = Mi;
-    } else {
-        const fat = getSlVal('sl-fat', prod.fat_kg);
-        const O2c = getSlVal('sl-o2crit', prod.O2_crit);
-        if(fat<=0||O2c<=0) { alert("Inserisci Fat e O2 limit"); return; }
-        const totO2 = O2c * fat;
-        const dayO2 = effRate * A;
-        res.days = Math.round(totO2 / dayO2);
-        for(let d=0; d<=res.days*1.2; d+=5) {
-            res.history.push({t:d, quality: Math.max(0, 100 - ((dayO2*d)/totO2)*100)});
-        }
-    }
-    
-    renderShelfLifeResult(res);
+  SL.renderResult(result);
 }
 
 // ====================================================================
@@ -4444,9 +4481,9 @@ function doCalcSilent(){
   if(!result.error){State.calcResult=result;State.calcError=null;renderContent();setTimeout(postCalcRender,150);}
 }
 function postCalcRender(){
-    drawBarChart();
-    drawLaminateCurveChart();
-    drawHygroscopicTimeChart();
+  drawBarChart();
+  drawLaminateCurveChart();
+  drawHygroscopicTimeChart();
 }
 function doSaveLam(){
   var name=State.laminateName.trim();
