@@ -3761,171 +3761,187 @@ function drawLaminateCurveChart(){
     // ====================================================================
 // 📈 GRAFICO SATURAZIONE IGROSCOPICA NEL TEMPO
 // ====================================================================
+// ====================================================================
+// 📈 GRAFICO SATURAZIONE IGROSCOPICA NEL TEMPO (VERSIONE CORRETTA)
+// ====================================================================
 function drawHygroscopicTimeChart() {
-  var canvas = document.getElementById('hygroTimeChart');
-  var hygroCard = document.getElementById('hygro-card');
-  if(!canvas) return;
-  
-  destroyChart('hygroTime');
-  
-  // Controlla se c'è almeno un materiale igroscopico
-  var hasHygro = State.layers.some(function(l){
-    return l.mid!==null && DB.materials.find(function(m){return m.id===l.mid;})?.isHygroscopic;
-  });
-  
-  if(!hasHygro || !State.selCond) {
-    if(hygroCard) hygroCard.style.display='none';
-    return;
-  }
-  if(hygroCard) hygroCard.style.display='block';
-  
-  var ctx = canvas.getContext('2d');
-  var extRH = State.selCond.humidity;
-  var timePoints = [], wvtrPoints = [];
-  var satTime = 200; // giorni per saturazione
-  
-  // Calcola resistenza base dei layer NON igroscopici (costante nel tempo)
-  var fixedResistance = 0;
-  var hygroLayers = [];
-  
-  for(var li=0; li<State.layers.length; li++) {
-    var layer = State.layers[li];
-    if(!layer.mid || layer.thick <= 0) continue;
+    var canvas = document.getElementById('hygroTimeChart');
+    var hygroCard = document.getElementById('hygro-card');
+    if(!canvas) return;
+    destroyChart('hygroTime');
+
+    // ✅ 1. MODALITÀ ATTIVA E CHIAVI CORRETTE
+    var currentMode = State.mode || 'wvtr';
+    var betaKey = currentMode === 'wvtr' ? 'hygroscopicBetaWVTR' : 'hygroscopicBetaOTR';
+    var refKey = currentMode === 'wvtr' ? 'hygroscopicRefRHWVTR' : 'hygroscopicRefRHOTR';
     
-    var mat = DB.materials.find(function(m){ return m.id === layer.mid; });
-    if(!mat) continue;
+    // ✅ 2. CONTROLLA SE C'È ALMENO UN MATERIALE IGROSCOPICO (MODE-AWARE)
+    var hasHygro = State.layers.some(function(l){
+        if(l.mid === null) return false;
+        var mat = DB.materials.find(function(m){ return m.id === l.mid; });
+        if(!mat) return false;
+        // Prova prima il campo mode-specific, poi fallback al legacy
+        var beta = mat[betaKey] || mat.hygroscopicBeta || 0;
+        return beta > 0;
+    });
     
-    var vals = Engine.getValues(mat);
-    var idx = -1;
-    for(var ci=0; ci<mat.validConditions.length; ci++) {
-      if(Math.abs(mat.validConditions[ci].temperature - State.selCond.temperature) < 0.01 &&
-         Math.abs(mat.validConditions[ci].humidity - State.selCond.humidity) < 0.01) {
-        idx = ci; break;
-      }
+    if(!hasHygro || !State.selCond) {
+        if(hygroCard) hygroCard.style.display='none';
+        return;
     }
-    if(idx < 0) continue;
-    var wd = vals[idx];
-    if(!wd || wd.value <= 0.00001) continue;
+    if(hygroCard) hygroCard.style.display='block';
     
-    if(mat.isHygroscopic && mat.hygroscopicBeta > 0) {
-      // Salva info per calcolo dinamico
-      hygroLayers.push({
-        mat: mat,
-        thickness: layer.thick,
-        refValue: wd.value,
-        refThick: wd.thickness,
-        beta: mat.hygroscopicBeta,
-        refRH: mat.hygroscopicRefRH || 50
-      });
-    } else {
-      // Resistenza fissa per materiali non-igroscopici
-      var product = wd.value * wd.thickness;
-      fixedResistance += layer.thick / product;
-    }
-  }
-  
-  // Simula evoluzione nel tempo
-  for(var t=0; t<=satTime; t+=5) {
-    var totalR = fixedResistance; // Parte costante
+    var ctx = canvas.getContext('2d');
+    var extRH = State.selCond.humidity;
+    var timePoints = [], wvtrPoints = [];
+    var satTime = 200; // giorni per saturazione
     
-    // Calcola resistenza variabile dei layer igroscopici
-    for(var hi=0; hi<hygroLayers.length; hi++) {
-      var hl = hygroLayers[hi];
-      
-      // Fattore di saturazione: da 0 a 1 asintoticamente
-      var saturation = 1 - Math.exp(-t / 50);
-      
-      // RH effettiva nel materiale igroscopico
-      var effRH = hl.refRH + (extRH - hl.refRH) * saturation;
-      
-      // Applica correzione β
-      var corrFactor = Math.exp(hl.beta * (effRH - hl.refRH));
-      
-      // Calcola resistenza del layer igroscopico al tempo t
-      var product = hl.refValue * hl.refThick;
-      var baseR = hl.thickness / product;
-      var dynamicR = baseR / corrFactor; // Resistenza diminuisce con l'umidità
-      
-      totalR += dynamicR;
+    // ✅ 3. CALCOLA RESISTENZA BASE E RACCOGLI LAYER IGROSCOPICI
+    var fixedResistance = 0;
+    var hygroLayers = [];
+    
+    for(var li=0; li<State.layers.length; li++) {
+        var layer = State.layers[li];
+        if(!layer.mid || layer.thick <= 0) continue;
+        
+        var mat = DB.materials.find(function(m){ return m.id === layer.mid; });
+        if(!mat) continue;
+        
+        var vals = Engine.getValues(mat);
+        var idx = -1;
+        for(var ci=0; ci<mat.validConditions.length; ci++) {
+            if(Math.abs(mat.validConditions[ci].temperature - State.selCond.temperature) < 0.01 &&
+               Math.abs(mat.validConditions[ci].humidity - State.selCond.humidity) < 0.01) {
+                idx = ci; break;
+            }
+        }
+        if(idx < 0) continue;
+        var wd = vals[idx];
+        if(!wd || wd.value <= 0.00001) continue;
+        
+        // ✅ 4. LETTURA MODE-AWARE DI BETA E REF RH (CON FALLBACK LEGACY)
+        var modeBeta = mat[betaKey] || mat.hygroscopicBeta || 0;
+        var modeRefRH = mat[refKey] || mat.hygroscopicRefRH || 50;
+        
+        if(modeBeta > 0) {
+            // Salva info per calcolo dinamico con i valori corretti per la modalità
+            hygroLayers.push({
+                mat: mat,
+                thickness: layer.thick,
+                refValue: wd.value,
+                refThick: wd.thickness,
+                beta: modeBeta,           // ✅ Beta corretto per WVTR o OTR
+                refRH: modeRefRH          // ✅ Ref RH corretto per WVTR o OTR
+            });
+        } else {
+            // Resistenza fissa per materiali non-igroscopici
+            var product = wd.value * wd.thickness;
+            fixedResistance += layer.thick / product;
+        }
     }
     
-    // WVTR totale = 1 / Resistenza totale
-    var totalWVTR = totalR > 0 ? 1 / totalR : 0;
+    // ✅ 5. SIMULA EVOLUZIONE NEL TEMPO
+    for(var t=0; t<=satTime; t+=5) {
+        var totalR = fixedResistance; // Parte costante
+        
+        // Calcola resistenza variabile dei layer igroscopici
+        for(var hi=0; hi<hygroLayers.length; hi++) {
+            var hl = hygroLayers[hi];
+            
+            // Fattore di saturazione: da 0 a 1 asintoticamente
+            var saturation = 1 - Math.exp(-t / 50);
+            
+            // RH effettiva nel materiale igroscopico
+            var effRH = hl.refRH + (extRH - hl.refRH) * saturation;
+            
+            // Applica correzione β: permeabilità aumenta con l'umidità
+            var corrFactor = Math.exp(hl.beta * (effRH - hl.refRH));
+            
+            // Calcola resistenza del layer igroscopico al tempo t
+            var product = hl.refValue * hl.refThick;
+            var baseR = hl.thickness / product;
+            var dynamicR = baseR / corrFactor; // Resistenza diminuisce quando permeabilità aumenta
+            
+            totalR += dynamicR;
+        }
+        
+        // WVTR/OTR totale = 1 / Resistenza totale
+        var totalWVTR = totalR > 0 ? 1 / totalR : 0;
+        
+        timePoints.push(t);
+        wvtrPoints.push(totalWVTR);
+    }
     
-    timePoints.push(t);
-    wvtrPoints.push(totalWVTR);
-  }
-  
-  // Calcola valore iniziale e finale per legenda
-  var initialWVTR = wvtrPoints[0];
-  var finalWVTR = wvtrPoints[wvtrPoints.length-1];
-  var increasePct = ((finalWVTR - initialWVTR) / initialWVTR * 100).toFixed(1);
-  
-  chartInstances.hygroTime = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: timePoints,
-      datasets: [
-        {
-          label: 'Effective '+getLabel()+' (with hygroscopic degradation)',
-          data: wvtrPoints,
-          borderColor: '#ef4444',
-          backgroundColor: 'rgba(239,68,68,0.1)',
-          fill: true,
-          tension: 0.4,
-          pointRadius: 0,
-          borderWidth: 2
+    // ✅ 6. CALCOLA VALORI PER LEGENDA
+    var initialWVTR = wvtrPoints[0];
+    var finalWVTR = wvtrPoints[wvtrPoints.length-1];
+    var increasePct = initialWVTR > 0 ? ((finalWVTR - initialWVTR) / initialWVTR * 100).toFixed(1) : 0;
+    
+    // ✅ 7. DISEGNA IL GRAFICO
+    chartInstances.hygroTime = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: timePoints,
+            datasets: [
+                {
+                    label: 'Effective '+getLabel()+' (with hygroscopic degradation)',
+                    data: wvtrPoints,
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239,68,68,0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    borderWidth: 2
+                },
+                {
+                    label: 'Initial value (t=0)',
+                    data: new Array(timePoints.length).fill(initialWVTR),
+                    borderColor: '#22c55e',
+                    borderDash: [4,3],
+                    pointRadius: 0,
+                    borderWidth: 1
+                }
+            ]
         },
-        {
-          label: 'Initial value (t=0)',
-          data: new Array(timePoints.length).fill(initialWVTR),
-          borderColor: '#22c55e',
-          borderDash: [4,3],
-          pointRadius: 0,
-          borderWidth: 1
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { font: { size: 9 } } },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            var prec = getDisplayPrecision();
+                            return ctx.dataset.label + ': ' + formatWithSigFigs(ctx.parsed.y, prec) + ' ' + getUnit();
+                        },
+                        afterLabel: function(ctx) {
+                            if(ctx.dataIndex === timePoints.length-1 && initialWVTR > 0) {
+                                var prec = getDisplayPrecision();
+                                return '↑ +' + formatWithSigFigs(parseFloat(increasePct), prec) + '% vs initial after '+satTime+' days';
+                            }
+                            return '';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: { display: true, text: 'Days', font: { size: 10 } },
+                    grid: { display: false }
+                },
+                y: {
+                    title: { display: true, text: getLabel() + ' (' + getUnit() + ')', font: { size: 10 } },
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            var prec = getDisplayPrecision();
+                            return value < 0.01 ? formatWithSigFigs(value, prec) : formatWithSigFigs(value, prec);
+                        }
+                    }
+                }
+            }
         }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { position: 'bottom', labels: { font: { size: 9 } } },
-        tooltip: {
-          callbacks: {
-            label: function(ctx) {
-  var prec = getDisplayPrecision();
-  return ctx.dataset.label + ': ' + formatWithSigFigs(ctx.parsed.y, prec) + ' ' + getUnit();
-},
-            afterLabel: function(ctx) {
-  if(ctx.dataIndex === timePoints.length-1) {
-    var prec = getDisplayPrecision();
-    return '↑ +' + formatWithSigFigs(parseFloat(increasePct), prec) + '% vs initial after '+satTime+' days';
-  }
-  return '';
-}
-          }
-        }
-      },
-      scales: {
-        x: {
-          title: { display: true, text: 'Days', font: { size: 10 } },
-          grid: { display: false }
-        },
-        y: {
-          title: { display: true, text: getLabel() + ' (' + getUnit() + ')', font: { size: 10 } },
-          beginAtZero: true,
-          // ✅ NUOVO:
-ticks: {
-  callback: function(value) {
-    var prec = getDisplayPrecision();
-    return value < 0.01 ? formatWithSigFigs(value, prec) : formatWithSigFigs(value, prec);
-  }
-}
-        }
-      }
-    }
-  });
+    });
 }
 // ====================================================================
 // 📚 CALCULATOR METHODOLOGY EXPLAINER (TEXTBOOK STYLE)
