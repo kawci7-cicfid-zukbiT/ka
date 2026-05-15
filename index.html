@@ -2441,9 +2441,6 @@ Correction Factor = exp( β × (RH<sub>storage</sub> − RH<sub>reference</sub>)
 // ====================================================================
 // 🧪 SHELF LIFE MODULE (CORRETTO + RIQUADRO LAMINATO)
 // ====================================================================
-// ====================================================================
-// 🧪 SHELF LIFE MODULE (REFACTORED UI)
-// ====================================================================
 function renderShelfLife() {
     const modeLabel = State.mode === 'wvtr' ? 'WVTR' : 'OTR';
     const unit = State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
@@ -2462,196 +2459,187 @@ function renderShelfLife() {
         }
         structureStr = layers.join(' / ') || 'No layers configured';
     }
-
+    
     // --- PRODUCT OPTIONS ---
     let prodOpts = '';
     for(let k in PRODUCTS_DB) prodOpts += `<option value="${k}">${PRODUCTS_DB[k].name}</option>`;
-
+    
     return `
     <div class="grid grid-2">
-        <!-- === FORM DI INPUT === -->
-        <div class="card" style="padding:0;">
-            <div style="padding:1rem; border-bottom:1px solid var(--border); background:var(--bg);">
-                <h2 style="margin:0; font-size:1rem; display:flex;align-items:center;gap:0.4rem;">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    Advanced Shelf Life Engine
-                </h2>
+    <!-- === FORM DI INPUT === -->
+    <div class="card" style="padding:0;">
+        <div style="padding:1rem; border-bottom:1px solid var(--border); background:var(--bg);">
+            <h2 style="margin:0; font-size:1rem; display:flex;align-items:center;gap:0.4rem;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Advanced Shelf Life Engine
+            </h2>
+        </div>
+        
+        <!-- STEP 1: PACKAGE -->
+        <div style="padding:1rem; border-bottom:1px solid var(--border);">
+            <div style="display:flex;align-items:center;gap:0.5rem; margin-bottom:0.5rem; color:var(--primary); font-weight:600; font-size:0.85rem;">
+                <span>📦 1. PACKAGE GEOMETRY</span>
             </div>
             
-            <!-- STEP 1: PACKAGE -->
-            <div style="padding:1rem; border-bottom:1px solid var(--border);">
-                <div style="display:flex;align-items:center;gap:0.5rem; margin-bottom:0.5rem; color:var(--primary); font-weight:600; font-size:0.85rem;">
-                    <span>📦 1. PACKAGE & LAMINATE</span>
-                </div>
-                
-                <!-- Info Laminato -->
-                <div style="background:#fff; border:1px solid var(--border); border-radius:6px; padding:0.5rem; margin-bottom:0.8rem; font-size:0.75rem;">
-                    <div style="font-weight:700; margin-bottom:0.2rem;">${laminateName}</div>
-                    <div style="color:var(--text-light); word-break:break-word;">${structureStr}</div>
-                    <div style="margin-top:0.3rem; display:flex; justify-content:space-between; align-items:center;">
-                        <span>Calculated ${modeLabel}:</span>
-                        <strong style="color:var(--primary); font-size:0.9rem;">${currentRate || '-'} ${unit}</strong>
-                    </div>
-                    <!-- Barra visiva Rate (Mockup visivo) -->
-                    <div style="height:4px; background:var(--bg); border-radius:2px; margin-top:4px; overflow:hidden;">
-                        <div style="width:${Math.min(parseFloat(currentRate)*10, 100)}%; height:100%; background:var(--primary);"></div>
-                    </div>
-                </div>
-
-                <!-- Geometrie -->
-                <div style="margin-bottom:0.5rem;">
-                    <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size:0.8rem; font-weight:500;">
-                        <input type="radio" name="pkg-geom" value="auto" checked onchange="togglePkgGeom('auto')"> 
-                        📐 Calculate from Shape
-                    </label>
-                    <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size:0.8rem; font-weight:500; margin-top:0.2rem;">
-                        <input type="radio" name="pkg-geom" value="manual" onchange="togglePkgGeom('manual')"> 
-                        ✏️ Enter Area Manually
-                    </label>
-                </div>
-
-                <!-- Selettore Geometria -->
-                <div id="geom-selector" class="grid grid-2" style="margin-top:0.5rem; gap:0.4rem;">
-                    <div class="form-group" style="margin:0">
-                        <label>Shape Type</label>
-                        <select class="form-input" id="sl-shape" onchange="calcPackageArea()">
-                            <option value="flat">Flat Pouch (Flat Bag)</option>
-                            <option value="standup">Stand-Up Pouch (Doypack)</option>
-                            <option value="flow">Flow Pack (Pillow)</option>
-                        </select>
-                    </div>
-                    <div class="form-group" style="margin:0">
-                        <label>Welding Margin (cm)</label>
-                        <input type="number" id="sl-margin" value="2" step="0.5" class="form-input" onchange="calcPackageArea()">
-                    </div>
-                </div>
-
-                <!-- Dimensioni -->
-                <div id="dims-selector" class="grid grid-2" style="margin-top:0.4rem; gap:0.4rem;">
-                    <div class="form-group" style="margin:0"><label>Width L (cm)</label><input type="number" id="sl-width-cm" value="12" step="0.1" class="form-input" oninput="calcPackageArea()"></div>
-                    <div class="form-group" style="margin:0"><label>Height H (cm)</label><input type="number" id="sl-height-cm" value="17" step="0.1" class="form-input" oninput="calcPackageArea()"></div>
-                </div>
-
-                <!-- Area Calcolata -->
-                <div style="margin-top:0.5rem; padding:0.4rem; background:var(--primary-light); border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-size:0.75rem; font-weight:500;">→ Effective Area:</span>
-                    <strong id="sl-area-display" style="color:var(--primary);">0.048 m²</strong>
-                </div>
-                
-                <!-- Input Area Nascosto (per logica esistente) -->
-                <input type="hidden" id="sl-area" value="0.048">
+            <!-- Info Laminato (se disponibile) -->
+            ${structureStr !== 'No layers configured' ? `
+            <div style="background:#fff; border:1px solid var(--border); border-radius:6px; padding:0.5rem; margin-bottom:0.8rem; font-size:0.75rem;">
+                <div style="font-weight:700; margin-bottom:0.2rem;">${laminateName}</div>
+                <div style="color:var(--text-light); word-break:break-word;">${structureStr}</div>
+            </div>` : ''}
+            
+            <!-- Selezione Metodo Calcolo Area -->
+            <div style="margin-bottom:0.8rem;">
+                <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size:0.8rem; font-weight:500; margin-bottom:0.4rem;">
+                    <input type="radio" name="pkg-geom" value="auto" checked onchange="togglePkgGeom('auto')">
+                    📐 Calculate from Shape
+                </label>
+                <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size:0.8rem; font-weight:500;">
+                    <input type="radio" name="pkg-geom" value="manual" onchange="togglePkgGeom('manual')">
+                    ✏️ Enter Area Manually
+                </label>
             </div>
-
-            <!-- STEP 2: PRODUCT -->
-            <div style="padding:1rem; border-bottom:1px solid var(--border);">
-                <div style="display:flex;align-items:center;gap:0.5rem; margin-bottom:0.5rem; color:var(--warning); font-weight:600; font-size:0.85rem;">
-                    <span>🥐 2. PRODUCT</span>
+            
+            <!-- Opzioni Shape (visibile solo se auto) -->
+            <div id="geom-selector" class="grid grid-2" style="gap:0.5rem;">
+                <div class="form-group" style="margin:0">
+                    <label>Package Type</label>
+                    <select class="form-input" id="sl-shape" onchange="calcPackageArea()">
+                        <option value="flat">Flat Pouch (2 sides)</option>
+                        <option value="standup">Stand-Up Pouch (Doypack)</option>
+                        <option value="flow">Flow Pack (Pillow)</option>
+                        <option value="box">Rectangular Box</option>
+                        <option value="cylinder">Cylindrical Container</option>
+                        <option value="tray">Tray with Lid</option>
+                        <option value="bag">Simple Bag</option>
+                    </select>
                 </div>
-                
-                <div class="form-group">
-                    <select class="form-input" id="sl-product" onchange="fillProductDefaults(this.value)">${prodOpts}</select>
-                </div>
-
-                <div class="grid grid-2" style="gap:0.5rem; margin-top:0.5rem;">
-                    <div class="form-group" style="margin:0"><label>Weight (g)</label><input type="number" id="sl-weight" value="100" class="form-input"></div>
-                    <div class="form-group" style="margin:0"><label>Init. Moisture (%)</label><input type="number" id="sl-minit" value="3" class="form-input" oninput="drawMoistureBar()"></div>
-                </div>
-
-                <!-- Safe Zone Bar -->
-                <div style="margin-top:0.8rem;">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:0.2rem;">
-                        <span style="font-size:0.7rem; font-weight:600;">Moisture Limit</span>
-                        <span id="sl-mcrit-val" style="font-size:0.7rem; color:var(--text-light);">6%</span>
-                    </div>
-                    <input type="number" id="sl-mcrit" value="6" step="0.5" style="width:100%; display:none;" oninput="drawMoistureBar()"> <!-- Hidden but used for logic -->
-                    <div style="position:relative; height:20px; background:#e2e8f0; border-radius:4px; overflow:hidden;">
-                        <!-- Safe Zone (Verde) -->
-                        <div id="safe-zone-bar" style="position:absolute; left:0; top:0; bottom:0; background:var(--success); width:33%; transition:width 0.3s;"></div>
-                        <!-- Marker Iniziale -->
-                        <div style="position:absolute; left:33%; top:0; bottom:0; width:2px; background:#fff; z-index:2;"></div>
-                        <div style="position:absolute; left:25%; top:20px; font-size:0.6rem; color:var(--success);">3% (Now)</div>
-                        <!-- Marker Critico -->
-                        <div id="crit-marker" style="position:absolute; right:0; top:0; bottom:0; width:2px; background:var(--danger); z-index:2;"></div>
-                    </div>
+                <div class="form-group" style="margin:0">
+                    <label>Welding Margin (cm)</label>
+                    <input type="number" id="sl-margin" value="2" step="0.5" class="form-input" onchange="calcPackageArea()">
                 </div>
             </div>
-
-            <!-- STEP 3: CONDITIONS -->
-            <div style="padding:1rem;">
-                <div style="display:flex;align-items:center;gap:0.5rem; margin-bottom:0.5rem; color:var(--purple); font-weight:600; font-size:0.85rem;">
-                    <span>🌍 3. CONDITIONS</span>
+            
+            <!-- Dimensioni (variabili in base allo shape) -->
+            <div id="dims-selector" class="grid grid-2" style="margin-top:0.5rem; gap:0.5rem;">
+                <div class="form-group" style="margin:0"><label>Width/Length (cm)</label><input type="number" id="sl-width-cm" value="12" step="0.1" class="form-input" oninput="calcPackageArea()"></div>
+                <div class="form-group" style="margin:0"><label>Height (cm)</label><input type="number" id="sl-height-cm" value="17" step="0.1" class="form-input" oninput="calcPackageArea()"></div>
+                <div class="form-group" style="margin:0; display:none;" id="depth-group"><label>Depth (cm)</label><input type="number" id="sl-depth-cm" value="5" step="0.1" class="form-input" oninput="calcPackageArea()"></div>
+                <div class="form-group" style="margin:0; display:none;" id="diameter-group"><label>Diameter (cm)</label><input type="number" id="sl-diameter-cm" value="8" step="0.1" class="form-input" oninput="calcPackageArea()"></div>
+            </div>
+            
+            <!-- Area Calcolata -->
+            <div style="margin-top:0.5rem; padding:0.4rem; background:var(--primary-light); border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:0.75rem; font-weight:500;">→ Calculated Area:</span>
+                <strong id="sl-area-display" style="color:var(--primary);">0.0408 m²</strong>
+            </div>
+            
+            <!-- Input Area Manuale (nascosto di default) -->
+            <div id="manual-area-input" style="display:none; margin-top:0.5rem;">
+                <div class="form-group" style="margin:0">
+                    <label>Total Package Surface Area (m²)</label>
+                    <input type="number" id="sl-area-manual" value="0.05" step="0.001" class="form-input" onchange="updateManualArea()">
+                    <span style="font-size:0.65rem; color:var(--text-light); margin-top:0.2rem; display:block;">Enter the total external surface area of your package</span>
                 </div>
-
-                <div style="display:flex; gap:0.5rem; margin-bottom:0.8rem;">
-                    <button class="btn btn-sm" id="btn-cond-single" style="flex:1; background:var(--primary); color:#fff;" onclick="toggleCondMode('single')">Single Condition</button>
-                    <button class="btn btn-sm" id="btn-cond-chain" style="flex:1; background:var(--bg); color:var(--text-light);" onclick="toggleCondMode('chain')">Logistics Chain</button>
+            </div>
+            
+            <!-- Input Area Nascosto (per logica esistente) -->
+            <input type="hidden" id="sl-area" value="0.0408">
+        </div>
+        
+        <!-- STEP 2: BARRIER PROPERTIES -->
+        <div style="padding:1rem; border-bottom:1px solid var(--border);">
+            <div style="display:flex;align-items:center;gap:0.5rem; margin-bottom:0.5rem; color:var(--warning); font-weight:600; font-size:0.85rem;">
+                <span>🛡️ 2. BARRIER PROPERTIES</span>
+            </div>
+            
+            <!-- Checkbox per usare WVTR calcolato o manuale -->
+            <div style="margin-bottom:0.8rem;">
+                <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size:0.8rem; font-weight:500; margin-bottom:0.4rem;">
+                    <input type="checkbox" id="sl-use-calculated" checked onchange="toggleWVTRInput()">
+                    Use calculated ${modeLabel} from laminate
+                </label>
+                <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size:0.8rem; font-weight:500;">
+                    <input type="checkbox" id="sl-use-manual" onchange="toggleWVTRInput()">
+                    Enter ${modeLabel} manually
+                </label>
+            </div>
+            
+            <!-- Input WVTR manuale (nascosto di default) -->
+            <div id="wvtr-manual-input" style="display:none;">
+                <div class="form-group" style="margin:0">
+                    <label>${modeLabel} Value (${unit})</label>
+                    <input type="number" id="sl-rate-manual" value="0.5" step="any" class="form-input">
+                    <span style="font-size:0.65rem; color:var(--text-light); margin-top:0.2rem; display:block;">Enter the permeability rate of your package</span>
                 </div>
-
-                <!-- Single Mode -->
-                <div id="cond-single">
-                    <div class="grid grid-2" style="gap:0.5rem;">
-                        <div class="form-group" style="margin:0"><label>Temp (°C)</label><input type="number" id="sl-temp" value="25" class="form-input"></div>
-                        <div class="form-group" style="margin:0"><label>Ext. RH (%)</label><input type="number" id="sl-rh-ext" value="65" class="form-input"></div>
-                    </div>
-                    <details style="margin-top:0.5rem; border:1px solid var(--border); border-radius:6px; padding:0.5rem; background:#fafbfc;">
-                        <summary style="cursor:pointer; font-size:0.8rem; font-weight:600;">⚙️ Thermal Scaling</summary>
-                        <div class="grid grid-2" style="margin-top:0.5rem; gap:0.5rem;">
-                            <div class="form-group" style="margin:0"><label>Q10</label><input type="number" id="sl-q10" value="2.0" step="0.1" class="form-input"></div>
-                            <div class="form-group" style="margin:0"><label>Eₐ (kJ/mol)</label><input type="number" id="sl-ea" value="60" class="form-input"></div>
-                        </div>
-                    </details>
+            </div>
+            
+            <!-- Visualizzazione WVTR calcolato -->
+            <div id="wvtr-calculated-display" style="padding:0.5rem; background:var(--success-light); border-radius:6px; border:1px solid var(--success);">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:0.75rem; font-weight:600; color:var(--success);">Calculated ${modeLabel}:</span>
+                    <strong style="color:var(--success); font-size:0.9rem;">${currentRate || '-'} ${unit}</strong>
                 </div>
-
-                <!-- Chain Mode (Hidden by default) -->
-                <div id="cond-chain" style="display:none;">
-                    <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
-                        <thead><tr style="background:var(--bg); text-align:left;"><th style="padding:0.4rem;">Step</th><th style="padding:0.4rem;">T°C</th><th style="padding:0.4rem;">RH%</th><th style="padding:0.4rem;">Days</th><th></th></tr></thead>
-                        <tbody id="chain-rows">
-                            <tr>
-                                <td style="padding:0.4rem;"><input type="text" value="Production" style="width:100%; border:1px solid var(--border); border-radius:4px; padding:2px;"></td>
-                                <td style="padding:0.4rem;"><input type="number" value="22" class="chain-t"></td>
-                                <td style="padding:0.4rem;"><input type="number" value="50" class="chain-rh"></td>
-                                <td style="padding:0.4rem;"><input type="number" value="1" class="chain-days"></td>
-                                <td></td>
-                            </tr>
-                            <tr>
-                                <td style="padding:0.4rem;"><input type="text" value="Transit" style="width:100%; border:1px solid var(--border); border-radius:4px; padding:2px;"></td>
-                                <td style="padding:0.4rem;"><input type="number" value="35" class="chain-t"></td>
-                                <td style="padding:0.4rem;"><input type="number" value="85" class="chain-rh"></td>
-                                <td style="padding:0.4rem;"><input type="number" value="14" class="chain-days"></td>
-                                <td style="padding:0.4rem;"><span style="cursor:pointer; color:var(--danger);">✕</span></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <button class="btn btn-sm btn-outline" style="width:100%; margin-top:0.5rem;" onclick="addChainRow()">+ Add Step</button>
-                    <div style="font-size:0.7rem; color:var(--text-light); margin-top:0.3rem;">⚠️ Beta factor uses average RH of chain</div>
-                </div>
-
-                <button class="btn btn-danger btn-full" onclick="calculateAdvancedShelfLife()" style="margin-top:1rem;">
-                    ▶ Calculate Shelf Life
-                </button>
+                ${currentRate ? `<div style="height:3px; background:var(--success); border-radius:2px; margin-top:4px; width:${Math.min(parseFloat(currentRate)*20, 100)}%"></div>` : ''}
             </div>
         </div>
-
-        <!-- === RISULTATI (UNCHANGED LOGIC, JUST ID REFERENCES) === -->
-        <div>
-            <div class="card" id="sl-result-panel">
-                <div style="text-align:center;padding:2rem;color:var(--text-light)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:48px;height:48px;margin-bottom:0.5rem;opacity:0.3"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    <p>Select parameters and calculate</p>
-                </div>
+        
+        <!-- STEP 3: PRODUCT -->
+        <div style="padding:1rem; border-bottom:1px solid var(--border);">
+            <div style="display:flex;align-items:center;gap:0.5rem; margin-bottom:0.5rem; color:var(--purple); font-weight:600; font-size:0.85rem;">
+                <span>🥐 3. PRODUCT</span>
             </div>
-            <div id="sl-charts-container" style="display:none;margin-top:1rem">
-                <div class="card" style="margin-bottom:1rem">
-                    <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.75rem;">Quality Decay Over Time</h3>
-                    <div class="chart-mini" style="height:280px"><canvas id="slDecayChart"></canvas></div>
-                </div>
-                <div class="card">
-                    <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.75rem;">Shelf Life vs Temperature</h3>
-                    <div class="chart-mini" style="height:280px"><canvas id="slTempChart"></canvas></div>
-                </div>
+            <div class="form-group">
+                <select class="form-input" id="sl-product" onchange="fillProductDefaults(this.value)">${prodOpts}</select>
+            </div>
+            <div class="grid grid-2" style="gap:0.5rem; margin-top:0.5rem;">
+                <div class="form-group" style="margin:0"><label>Weight (g)</label><input type="number" id="sl-weight" value="100" class="form-input"></div>
+                <div class="form-group" style="margin:0"><label>Initial Moisture (%)</label><input type="number" id="sl-minit" value="3" class="form-input"></div>
             </div>
         </div>
+        
+        <!-- STEP 4: CONDITIONS -->
+        <div style="padding:1rem;">
+            <div style="display:flex;align-items:center;gap:0.5rem; margin-bottom:0.5rem; color:var(--primary); font-weight:600; font-size:0.85rem;">
+                <span>🌍 4. STORAGE CONDITIONS</span>
+            </div>
+            <div class="grid grid-2" style="gap:0.5rem;">
+                <div class="form-group" style="margin:0"><label>Temperature (°C)</label><input type="number" id="sl-temp" value="25" class="form-input"></div>
+                <div class="form-group" style="margin:0"><label>External RH (%)</label><input type="number" id="sl-rh-ext" value="65" class="form-input"></div>
+            </div>
+            <details style="margin-top:0.5rem; border:1px solid var(--border); border-radius:6px; padding:0.5rem; background:#fafbfc;">
+                <summary style="cursor:pointer; font-size:0.8rem; font-weight:600;">⚙️ Advanced Settings</summary>
+                <div class="grid grid-2" style="margin-top:0.5rem; gap:0.5rem;">
+                    <div class="form-group" style="margin:0"><label>Q10 Factor</label><input type="number" id="sl-q10" value="2.0" step="0.1" class="form-input"></div>
+                    <div class="form-group" style="margin:0"><label>Activation Energy Eₐ (kJ/mol)</label><input type="number" id="sl-ea" value="60" class="form-input"></div>
+                </div>
+            </details>
+            
+            <button class="btn btn-danger btn-full" onclick="calculateAdvancedShelfLife()" style="margin-top:1rem;">
+                ▶ Calculate Shelf Life
+            </button>
+        </div>
+    </div>
+    
+    <!-- === RISULTATI === -->
+    <div>
+        <div class="card" id="sl-result-panel">
+            <div style="text-align:center;padding:2rem;color:var(--text-light)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:48px;height:48px;margin-bottom:0.5rem;opacity:0.3"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <p>Configure parameters and calculate to see predictions</p>
+            </div>
+        </div>
+        <div id="sl-charts-container" style="display:none;margin-top:1rem">
+            <div class="card" style="margin-bottom:1rem">
+                <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.75rem;">Quality Decay Over Time</h3>
+                <div class="chart-mini" style="height:280px"><canvas id="slDecayChart"></canvas></div>
+            </div>
+            <div class="card">
+                <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.75rem;">Shelf Life vs Temperature</h3>
+                <div class="chart-mini" style="height:280px"><canvas id="slTempChart"></canvas></div>
+            </div>
+        </div>
+    </div>
     </div>
     ${renderShelfLifeMethodology()}
     `;
@@ -2791,48 +2779,99 @@ const PRODUCTS_DB = {
 function togglePkgGeom(mode) {
     const geomDiv = document.getElementById('geom-selector');
     const dimsDiv = document.getElementById('dims-selector');
-    const areaInput = document.getElementById('sl-area');
+    const manualDiv = document.getElementById('manual-area-input');
     
     if(mode === 'auto') {
         geomDiv.style.display = 'grid';
         dimsDiv.style.display = 'grid';
+        manualDiv.style.display = 'none';
         calcPackageArea();
     } else {
         geomDiv.style.display = 'none';
         dimsDiv.style.display = 'none';
-        // Permetti edit manuale se necessario, qui resetto al default
-        // areaInput.type = 'number'; areaInput.style.display = 'block';
+        manualDiv.style.display = 'block';
     }
 }
-
-function calcPackageArea() {
-    const w = parseFloat(document.getElementById('sl-width-cm').value) || 0;
-    const h = parseFloat(document.getElementById('sl-height-cm').value) || 0;
-    const margin = parseFloat(document.getElementById('sl-margin').value) || 0;
-    const shape = document.getElementById('sl-shape').value;
+function toggleWVTRInput() {
+    const useCalc = document.getElementById('sl-use-calculated').checked;
+    const useManual = document.getElementById('sl-use-manual').checked;
+    const manualDiv = document.getElementById('wvtr-manual-input');
+    const calcDiv = document.getElementById('wvtr-calculated-display');
     
-    let areaCm2 = 0;
-    // Margine aggiuntivo per saldature (semplificato: +margin su ogni lato)
-    const wTotal = w + (margin * 2);
-    const hTotal = h + (margin * 2);
-    
-    if (shape === 'flat') {
-        // Flat pouch: 2 * L * H (fronte e retro) + small gusset approx
-        areaCm2 = 2 * wTotal * hTotal; 
-    } else if (shape === 'standup') {
-        // Standup: 2 * L * H + bottom gusset approx 30%
-        areaCm2 = (2 * wTotal * hTotal) * 1.3;
-    } else if (shape === 'flow') {
-        // Flow pack: Wrap around cylinder approx L * H * 2.2
-        areaCm2 = wTotal * hTotal * 2.2;
+    // Mutually exclusive
+    if(useManual && useCalc) {
+        document.getElementById('sl-use-calculated').checked = false;
     }
     
-    // Convert cm2 to m2
-    const areaM2 = areaCm2 / 10000;
+    if(useManual) {
+        manualDiv.style.display = 'block';
+        calcDiv.style.display = 'none';
+    } else {
+        manualDiv.style.display = 'none';
+        calcDiv.style.display = 'block';
+    }
+}
+function calcPackageArea() {
+    const shape = document.getElementById('sl-shape').value;
+    const margin = parseFloat(document.getElementById('sl-margin').value) || 0;
     
+    // Show/hide additional dimension fields based on shape
+    const depthGroup = document.getElementById('depth-group');
+    const diameterGroup = document.getElementById('diameter-group');
+    
+    if(shape === 'box' || shape === 'tray') {
+        depthGroup.style.display = 'block';
+        diameterGroup.style.display = 'none';
+    } else if(shape === 'cylinder') {
+        depthGroup.style.display = 'none';
+        diameterGroup.style.display = 'block';
+    } else {
+        depthGroup.style.display = 'none';
+        diameterGroup.style.display = 'none';
+    }
+    const w = parseFloat(document.getElementById('sl-width-cm').value) || 0;
+    const h = parseFloat(document.getElementById('sl-height-cm').value) || 0;
+    const d = parseFloat(document.getElementById('sl-depth-cm').value) || 0;
+    const diam = parseFloat(document.getElementById('sl-diameter-cm').value) || 0;
+    
+    let areaCm2 = 0;
+    const wTotal = w + (margin * 2);
+    const hTotal = h + (margin * 2);
+    const dTotal = d + (margin * 2);
+    switch(shape) {
+        case 'flat':
+            areaCm2 = 2 * wTotal * hTotal;
+            break;
+        case 'standup':
+            areaCm2 = (2 * wTotal * hTotal) * 1.3;
+            break;
+        case 'flow':
+            areaCm2 = wTotal * hTotal * 2.2;
+            break;
+        case 'box':
+            areaCm2 = 2 * (wTotal * hTotal + wTotal * dTotal + hTotal * dTotal);
+            break;
+        case 'cylinder':
+            const r = diam / 2;
+            areaCm2 = 2 * Math.PI * r * (r + hTotal);
+            break;
+        case 'tray':
+            areaCm2 = (wTotal * hTotal) + 2 * (wTotal * dTotal) + 2 * (hTotal * dTotal);
+            break;
+        case 'bag':
+            areaCm2 = 2 * wTotal * hTotal * 1.1;
+            break;
+    }
+    const areaM2 = areaCm2 / 10000;
     document.getElementById('sl-area-display').textContent = areaM2.toFixed(4) + ' m²';
     document.getElementById('sl-area').value = areaM2.toFixed(4);
 }
+function updateManualArea() {
+    const manualArea = document.getElementById('sl-area-manual').value;
+    document.getElementById('sl-area').value = manualArea;
+    document.getElementById('sl-area-display').textContent = manualArea + ' m²';
+}
+    
 
 // --- 🥐 PRODUCT SAFE ZONE BAR ---
 function drawMoistureBar() {
@@ -3014,45 +3053,31 @@ function calculateAdvancedShelfLife() {
     const prodId = document.getElementById('sl-product')?.value;
     const prod = PRODUCTS_DB[prodId];
     if (!prod) { alert("⚠️ Select a product type first"); return; }
-
-    // Get Values
+    
     const W = parseFloat(document.getElementById('sl-weight').value) || 100;
-    const A = parseFloat(document.getElementById('sl-area').value) || 0.1; // Ora usa l'area calcolata
-    const rateInput = parseFloat(document.getElementById('sl-rate')?.value) || (State.calcResult?.total || 0);
+    const A = parseFloat(document.getElementById('sl-area').value) || 0.1;
     
-    // --- GESTIONE LOGISTICS CHAIN ---
-    let effectiveRate = rateInput;
-    let effectiveRH = parseFloat(document.getElementById('sl-rh-ext').value) || 65;
-    let effectiveTemp = parseFloat(document.getElementById('sl-temp').value) || 25;
+    // Get WVTR value
+    let rateInput = 0;
+    const useManual = document.getElementById('sl-use-manual').checked;
     
-    const isChainMode = document.getElementById('cond-chain').style.display !== 'none';
-    
-    if (isChainMode) {
-        // Calcolo medio ponderato per T e RH
-        const rows = document.querySelectorAll('#chain-rows tr');
-        let totalDays = 0;
-        let weightedRH = 0;
-        let weightedTemp = 0;
-        
-        rows.forEach(row => {
-            const days = parseFloat(row.querySelector('.chain-days').value) || 0;
-            const rh = parseFloat(row.querySelector('.chain-rh').value) || 0;
-            const temp = parseFloat(row.querySelector('.chain-t').value) || 0;
-            
-            totalDays += days;
-            weightedRH += (rh * days);
-            weightedTemp += (temp * days);
-        });
-        
-        if (totalDays > 0) {
-            effectiveRH = weightedRH / totalDays;
-            effectiveTemp = weightedTemp / totalDays;
+    if(useManual) {
+        rateInput = parseFloat(document.getElementById('sl-rate-manual').value) || 0;
+        if(rateInput <= 0) {
+            alert("⚠️ Please enter a valid " + (State.mode === 'wvtr' ? 'WVTR' : 'OTR') + " value");
+            return;
         }
-        // Nota: Per la catena logistica ideale bisognerebbe simulare step-by-step,
-        // ma qui usiamo una media equivalente per mantenere il modello attuale.
+    } else {
+        rateInput = parseFloat(document.getElementById('sl-rate')?.value) || (State.calcResult?.total || 0);
+        if(!rateInput || rateInput <= 0) {
+            alert("⚠️ No " + (State.mode === 'wvtr' ? 'WVTR' : 'OTR') + " value available. Either calculate a laminate first or enter the value manually.");
+            return;
+        }
     }
-
-    // Thermal Accel (basato su T media se chain mode)
+    
+    // ... resto del calcolo esistente ...
+    const effectiveRH = parseFloat(document.getElementById('sl-rh-ext').value) || 65;
+    const effectiveTemp = parseFloat(document.getElementById('sl-temp').value) || 25;
     const Ea_kJ = parseFloat(document.getElementById('sl-ea').value) || 60;
     const Q10 = parseFloat(document.getElementById('sl-q10').value) || 2.0;
     const Ea_J = Ea_kJ * 1000;
@@ -3070,109 +3095,86 @@ function calculateAdvancedShelfLife() {
                 const isWVTR = (State.mode || 'wvtr') === 'wvtr';
                 const beta = isWVTR ? (mat.hygroscopicBetaWVTR || 0) : (mat.hygroscopicBetaOTR || 0);
                 const refRH = isWVTR ? (mat.hygroscopicRefRHWVTR || 50) : (mat.hygroscopicRefRHOTR || 50);
-                
                 if (beta > 0) {
                     const rhDiff = effectiveRH - refRH;
                     const factor = Math.exp(beta * rhDiff);
                     if (factor > 1) {
                         hygroFactor *= factor;
-                        hygroMsg.push(`${mat.name}: ×${factor.toFixed(2)} at avg ${effectiveRH.toFixed(0)}% RH`);
+                        hygroMsg.push(`${mat.name}: ×${factor.toFixed(2)} at ${effectiveRH.toFixed(0)}% RH`);
                     }
                 }
             }
         }
     }
-
-    effectiveRate = rateInput * accel * hygroFactor;
     
+    const effectiveRate = rateInput * accel * hygroFactor;
     
-  let result = { 
-    days: 0, 
-    history: [], 
-    mode: typeof State !== 'undefined' ? State.mode : 'wvtr', 
-    type: prod.type ,
-      hygroWarning: hygroMsg.length > 0 ? { message: 'Hygroscopic correction applied', details: hygroMsg } : null  // ← ✅ AGGIUNTA
-
-  };
-
-  if (prod.type === 'moisture') {
-    // === MODELLO UMIDITÀ (GAB + Fick) ===
-    const M_crit = getVal('sl-mcrit', prod.M_crit);
-    const M_init = getVal('sl-minit', prod.M_init);
+    let result = {
+        days: 0,
+        history: [],
+        mode: typeof State !== 'undefined' ? State.mode : 'wvtr',
+        type: prod.type,
+        hygroWarning: hygroMsg.length > 0 ? { message: 'Hygroscopic correction applied', details: hygroMsg } : null
+    };
     
-    if (M_crit <= M_init) {
-      alert("⚠️ Critical moisture must be greater than initial moisture");
-      return;
-    }
-    
-    const Psat = getPsat(T_store) * 1000; // kPa -> Pa
-    const dP_std = Psat * 0.5; // Gradiente di riferimento (~50% RH)
-    
-    let M = M_init;
-    let t = 0;
-    const dt = 1; // step temporale: 1 giorno
-    const history = [{ t: 0, M: M, aw: solveAwFromGAB(M/100, prod.GAB), quality: 100 }];
-
-    // Simulazione fino al raggiungimento di M_crit o timeout
-    while (M < M_crit && t < 5000) {
-      const a_w = solveAwFromGAB(M / 100, prod.GAB);
-      const RH_in = a_w * 100;
-      
-      // Forza gradiente minimo per evitare divisioni per zero
-      const dP_current = Psat * Math.max((RH_out - RH_in), 1) / 100;
-      const rate_scale = dP_current / dP_std;
-      
-      // Guadagno di umidità giornaliero (% sul peso prodotto)
-      const dM_day = (effectiveRate * rate_scale * A) / W * 100;
-      
-      M += dM_day; 
-      t += dt;
-      
-      // Qualità residua (100% → 0% quando M raggiunge M_crit)
-      const quality = Math.max(0, 100 - ((M - M_init) / (M_crit - M_init)) * 100);
-      
-      history.push({ 
-        t: t, 
-        M: Math.min(M, M_crit), 
-        aw: a_w, 
-        quality: quality 
-      });
-    }
-    
-    result.days = t; 
-    result.history = history; 
-    result.M_crit = M_crit; 
-    result.M_init = M_init;
-    
-  } else {
-    // === MODELLO OSSIDAZIONE LIPIDI ===
-    const fatKg = getVal('sl-fat', prod.fat_kg);
-    const O2_crit = getVal('sl-o2crit', prod.O2_crit);
-    
-    if (fatKg <= 0 || O2_crit <= 0) {
-      alert("⚠️ Fat content and O2 critical limit must be > 0");
-      return;
-    }
-    
-    const totalO2_allowed = O2_crit * fatKg; // ml O2 totali ammissibili
-    const dailyO2 = effectiveRate * A; // ml O2/giorno che entrano
-    
-    if (dailyO2 <= 0) {
-      result.days = Infinity;
+    if (prod.type === 'moisture') {
+        const M_crit = parseFloat(document.getElementById('sl-mcrit').value) || prod.M_crit;
+        const M_init = parseFloat(document.getElementById('sl-minit').value) || prod.M_init;
+        
+        if (M_crit <= M_init) {
+            alert("⚠️ Critical moisture must be greater than initial moisture");
+            return;
+        }
+        
+        const Psat = getPsat(effectiveTemp) * 1000;
+        const dP_std = Psat * 0.5;
+        let M = M_init;
+        let t = 0;
+        const dt = 1;
+        const history = [{ t: 0, M: M, aw: solveAwFromGAB(M/100, prod.GAB), quality: 100 }];
+        
+        while (M < M_crit && t < 5000) {
+            const a_w = solveAwFromGAB(M / 100, prod.GAB);
+            const RH_in = a_w * 100;
+            const dP_current = Psat * Math.max((effectiveRH - RH_in), 1) / 100;
+            const rate_scale = dP_current / dP_std;
+            const dM_day = (effectiveRate * rate_scale * A) / W * 100;
+            M += dM_day;
+            t += dt;
+            const quality = Math.max(0, 100 - ((M - M_init) / (M_crit - M_init)) * 100);
+            history.push({ t: t, M: Math.min(M, M_crit), aw: a_w, quality: quality });
+        }
+        
+        result.days = t;
+        result.history = history;
+        result.M_crit = M_crit;
+        result.M_init = M_init;
     } else {
-      const days = totalO2_allowed / dailyO2;
-      
-      // Genera storia qualità per il grafico
-      for (let d = 0; d <= Math.min(days * 1.2, 3650); d += 5) {
-        const quality = Math.max(0, 100 - ((dailyO2 * d) / totalO2_allowed) * 100);
-        result.history.push({ t: d, quality: quality });
-      }
-      result.days = Math.round(days);
+        const fatKg = parseFloat(document.getElementById('sl-fat').value) || prod.fat_kg;
+        const O2_crit = parseFloat(document.getElementById('sl-o2crit').value) || prod.O2_crit;
+        
+        if (fatKg <= 0 || O2_crit <= 0) {
+            alert("⚠️ Fat content and O2 critical limit must be > 0");
+            return;
+        }
+        
+        const totalO2_allowed = O2_crit * fatKg;
+        const dailyO2 = effectiveRate * A;
+        
+        if (dailyO2 <= 0) {
+            result.days = Infinity;
+        } else {
+            const days = totalO2_allowed / dailyO2;
+            for (let d = 0; d <= Math.min(days * 1.2, 3650); d += 5) {
+                const quality = Math.max(0, 100 - ((dailyO2 * d) / totalO2_allowed) * 100);
+                result.history.push({ t: d, quality: quality });
+            }
+            result.days = Math.round(days);
+        }
+        result.type = 'otx';
     }
-    result.type = 'otx';
-  }
-
-  renderShelfLifeResult(result);
+    
+    renderShelfLifeResult(result);
 }
 
 // ====================================================================
