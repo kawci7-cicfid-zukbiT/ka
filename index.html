@@ -3974,7 +3974,7 @@ function setCondMode(mode) {
     document.getElementById('btn-chain').style.color = mode === 'chain' ? '#fff' : 'var(--text-light)';
 }
 
-function onProductChange(key) {
+function legacyProductChange(key) {
     const p = PRODUCTS_DB[key];
     if(!p) return;
     const isMoisture = p.type === 'moisture';
@@ -4026,7 +4026,7 @@ function calcPackageArea() {
 setTimeout(() => {
     if(document.getElementById('sl-shape')) {
         toggleRateSource();
-        onProductChange(document.getElementById('sl-product')?.value || 'biscuits');
+        legacyProductChange(document.getElementById('sl-product')?.value || 'biscuits');
         calcPackageArea();
     }
 }, 100);
