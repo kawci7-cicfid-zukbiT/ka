@@ -3848,14 +3848,13 @@ function drawHygroscopicTimeChart() {
         for(var hi=0; hi<hygroLayers.length; hi++) {
             var hl = hygroLayers[hi];
             
-            // Fattore di saturazione: da 0 a 1 asintoticamente
-            var saturation = 1 - Math.exp(-t / 50);
-            
-            // RH effettiva nel materiale igroscopico
-            var effRH = hl.refRH + (extRH - hl.refRH) * saturation;
-            
-            // Applica correzione β: permeabilità aumenta con l'umidità
-            var corrFactor = Math.exp(hl.beta * (effRH - hl.refRH));
+            // ✅ NUOVO MODELLO FISICO: materiale parte secco (RH≈0%) e assorbe umidità
+// La velocità di assorbimento dipende dallo spessore (più spesso = più lento)
+var tau = 30 + hl.thickness * 0.2; // Costante di tempo in giorni
+var rhAvg = extRH * (1 - Math.exp(-t / tau)); // Da 0% a extRH
+
+// Applica correzione β: confronta RH media attuale con refRH
+var corrFactor = Math.exp(hl.beta * (rhAvg - hl.refRH));
             
             // Calcola resistenza del layer igroscopico al tempo t
             var product = hl.refValue * hl.refThick;
