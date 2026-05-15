@@ -5161,23 +5161,24 @@ var metallizedHTML =
 '</div>';
 
 // ✅ Sezione Hygroscopic Properties
-var hygroHTML =
-'<div class="form-group" style="margin-top:0.8rem">'+
-'<label>Hygroscopic Properties (Beta & Reference RH)</label>'+
-'<div style="background:#f8fafc; padding:0.5rem; border-radius:6px; border:1px solid var(--border); margin-bottom:0.5rem;">'+
-'<strong style="font-size:0.75rem; color:var(--primary);"> WVTR</strong>'+
-'<div class="grid grid-2" style="gap:0.5rem; margin-top:0.3rem">'+
-'<div class="form-group" style="margin:0"><label>β Coefficient (%/RH)</label><input type="number" step="0.001" class="form-input" id="mf-beta-wvtr" value="'+(mat && mat.hygroscopicBetaWVTR ? mat.hygroscopicBetaWVTR : '')+'" placeholder="0.034"></div>'+
-'<div class="form-group" style="margin:0"><label>Reference RH (%)</label><input type="number" class="form-input" id="mf-refrh-wvtr" value="'+(mat && mat.hygroscopicRefRHWVTR ? mat.hygroscopicRefRHWVTR : 50)+'" placeholder="50"></div>'+
-'</div></div>'+
-'<div style="background:#f8fafc; padding:0.5rem; border-radius:6px; border:1px solid var(--border);">'+
-'<strong style="font-size:0.75rem; color:var(--purple);"> OTR</strong>'+
-'<div class="grid grid-2" style="gap:0.5rem; margin-top:0.3rem">'+
-'<div class="form-group" style="margin:0"><label>β Coefficient (%/RH)</label><input type="number" step="0.001" class="form-input" id="mf-beta-otr" value="'+(mat && mat.hygroscopicBetaOTR ? mat.hygroscopicBetaOTR : '')+'" placeholder="0.015"></div>'+
-'<div class="form-group" style="margin:0"><label>Reference RH (%)</label><input type="number" class="form-input" id="mf-refrh-otr" value="'+(mat && mat.hygroscopicRefRHOTR ? mat.hygroscopicRefRHOTR : 50)+'" placeholder="50"></div>'+
-'</div></div>'+
-'<div style="font-size:0.65rem;color:var(--text-light);margin-top:0.3rem">Leave 0 to disable correction for that mode. OTR humidity sensitivity usually differs from WVTR.</div>'+
-'</div>';
+ar hygroHTML = '';
+if(currentMode === 'wvtr') {
+    hygroHTML = '<div class="form-group" style="margin-top:0.8rem">'+
+    '<label> Hygroscopic Properties (WVTR)</label>'+
+    '<div class="grid grid-2" style="gap:0.5rem">'+
+    '<div class="form-group" style="margin:0"><label>β Coefficient (%/RH)</label><input type="number" step="0.001" class="form-input" id="mf-beta-wvtr" value="'+(mat && mat.hygroscopicBetaWVTR ? mat.hygroscopicBetaWVTR : '')+'" placeholder="0.034"></div>'+
+    '<div class="form-group" style="margin:0"><label>Reference RH (%)</label><input type="number" class="form-input" id="mf-refrh-wvtr" value="'+(mat && mat.hygroscopicRefRHWVTR ? mat.hygroscopicRefRHWVTR : 50)+'" placeholder="50"></div>'+
+    '</div><div style="font-size:0.65rem;color:var(--text-light);margin-top:0.3rem">Only active in WVTR mode. OTR beta remains unchanged.</div>'+
+    '</div>';
+} else {
+    hygroHTML = '<div class="form-group" style="margin-top:0.8rem">'+
+    '<label> Hygroscopic Properties (OTR)</label>'+
+    '<div class="grid grid-2" style="gap:0.5rem">'+
+    '<div class="form-group" style="margin:0"><label>β Coefficient (%/RH)</label><input type="number" step="0.001" class="form-input" id="mf-beta-otr" value="'+(mat && mat.hygroscopicBetaOTR ? mat.hygroscopicBetaOTR : '')+'" placeholder="0.015"></div>'+
+    '<div class="form-group" style="margin:0"><label>Reference RH (%)</label><input type="number" class="form-input" id="mf-refrh-otr" value="'+(mat && mat.hygroscopicRefRHOTR ? mat.hygroscopicRefRHOTR : 50)+'" placeholder="50"></div>'+
+    '</div><div style="font-size:0.65rem;color:var(--text-light);margin-top:0.3rem">Only active in OTR mode. WVTR beta remains unchanged.</div>'+
+    '</div>';
+}
     
 // ✅ GENERA LE RIGHE DINAMICHE
 var rowsHTML = '';
@@ -5315,21 +5316,32 @@ var rowTM = testMethods[i] ? testMethods[i].value.trim() : '';
 
 var finalFamily = family || getFamily(name);
 // ✅ NUOVA LOGICA: auto-flag se β > 0 (nessuna checkbox)
-var betaVal = parseFloat(document.getElementById('mf-beta').value) || 0;
-var refRHVal = parseFloat(document.getElementById('mf-refrh').value) || 50;
-var isHygro = betaVal > 0;  // Flag automatico
+// ✅ LETTURA SICURA E MODALE-AWARE DEI CAMPI IGROSCOPICI
+var betaId = currentMode === 'wvtr' ? 'mf-beta-wvtr' : 'mf-beta-otr';
+var refRHId = currentMode === 'wvtr' ? 'mf-refrh-wvtr' : 'mf-refrh-otr';
 
-// 🔍 SOSTITUISCI IL BLOCCO CHE LEGGEVA isHygroscopic/hygroscopicBeta CON:
+var betaEl = document.getElementById(betaId);
+var refRHEl = document.getElementById(refRHId);
+
+var betaVal = betaEl ? (parseFloat(betaEl.value) || 0) : 0;
+var refRHVal = refRHEl ? (parseFloat(refRHEl.value) || 50) : 50;
+
+// ✅ COSTRUZIONE matData CON PRESERVAZIONE INCROCIATA
 var matData = {
     name: name,
     family: finalFamily,
     company: company,
     tdsLink: tdsLink,
     isMetallized: isMetallized,
-    hygroscopicBetaWVTR: parseFloat(document.getElementById('mf-beta-wvtr').value) || 0,
-    hygroscopicRefRHWVTR: parseFloat(document.getElementById('mf-refrh-wvtr').value) || 50,
-    hygroscopicBetaOTR: parseFloat(document.getElementById('mf-beta-otr').value) || 0,
-    hygroscopicRefRHOTR: parseFloat(document.getElementById('mf-refrh-otr').value) || 50,
+    // Aggiorna SOLO il campo della modalità attiva, mantieni l'altro intatto
+    hygroscopicBetaWVTR: currentMode === 'wvtr' ? betaVal : (mat ? mat.hygroscopicBetaWVTR : 0),
+    hygroscopicRefRHWVTR: currentMode === 'wvtr' ? refRHVal : (mat ? mat.hygroscopicRefRHWVTR : 50),
+    hygroscopicBetaOTR: currentMode === 'otr' ? betaVal : (mat ? mat.hygroscopicBetaOTR : 0),
+    hygroscopicRefRHOTR: currentMode === 'otr' ? refRHVal : (mat ? mat.hygroscopicRefRHOTR : 50),
+    // Legacy fallback (compatibilità con calcoli vecchi)
+    isHygroscopic: betaVal > 0,
+    hygroscopicBeta: betaVal,
+    hygroscopicRefRH: refRHVal,
     testMethodWVTR: testMethodWVTR,
     testMethodOTR: testMethodOTR,
     wvtrValues: currentMode === 'wvtr' ? valuesArray : (mat && mat.wvtrValues ? mat.wvtrValues : []),
