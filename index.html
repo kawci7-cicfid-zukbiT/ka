@@ -2580,27 +2580,27 @@ function renderShelfLife() {
   <!-- Bottle fields (hidden by default) -->
   <div id="dims-bottle" class="grid grid-2" style="gap:0.4rem; display:none;">
     <div class="form-group" style="margin:0">
-      <label>🔵 Body Radius (cm)</label>
+      <label> Body Radius (cm)</label>
       <input type="number" id="sl-bottle-body-r" value="3.5" step="0.1" class="form-input" oninput="SL.calcArea()" placeholder="e.g. 3.5">
     </div>
     <div class="form-group" style="margin:0">
-      <label>↕️ Body Height (cm)</label>
+      <label> Body Height (cm)</label>
       <input type="number" id="sl-bottle-body-h" value="16" step="0.1" class="form-input" oninput="SL.calcArea()" placeholder="e.g. 16">
     </div>
     <div class="form-group" style="margin:0">
-      <label>🔘 Neck Radius (cm)</label>
+      <label> Neck Radius (cm)</label>
       <input type="number" id="sl-bottle-neck-r" value="1.2" step="0.1" class="form-input" oninput="SL.calcArea()" placeholder="e.g. 1.2">
     </div>
     <div class="form-group" style="margin:0">
-      <label>↕️ Neck Height (cm)</label>
+      <label> Neck Height (cm)</label>
       <input type="number" id="sl-bottle-neck-h" value="4" step="0.1" class="form-input" oninput="SL.calcArea()" placeholder="e.g. 4">
     </div>
     <div class="form-group" style="margin:0; grid-column: 1 / -1;">
-      <label>〰️ Shoulder Height (cm)</label>
+      <label> Shoulder Height (cm)</label>
       <input type="number" id="sl-bottle-shoulder-h" value="2.5" step="0.1" class="form-input" oninput="SL.calcArea()" placeholder="Transition zone (default 2.5)">
     </div>
     <div style="grid-column:1/-1; font-size:0.65rem; color:var(--text-light); padding:0.2rem 0;">
-      💡 Approximates a real bottle: cylindrical body + conical shoulders + narrow neck + rounded bottom
+       Approximates a real bottle: cylindrical body + conical shoulders + narrow neck + rounded bottom
     </div>
   </div>
 </div>
@@ -2627,10 +2627,10 @@ function renderShelfLife() {
           <select id="sl-product" class="form-input" onchange="SL.onProductChange(this.value)">${prodOpts}</select>
         </div>
         <div class="grid grid-2" style="gap:0.5rem; margin-top:0.5rem;">
-          <div class="form-group" style="margin:0"><label>Weight (g)</label><input type="number" id="sl-weight" value="100" class="form-input"></div>
-          <div class="form-group" style="margin:0"><label>Initial Moisture (%)</label><input type="number" id="sl-minit" value="3" class="form-input"></div>
-          <div class="form-group" style="margin:0"><label>Critical Moisture (%)</label><input type="number" id="sl-mcrit" value="6" class="form-input"></div>
-        </div>
+  <div class="form-group" style="margin:0"><label>Weight (g)</label><input type="number" id="sl-weight" value="100" class="form-input"></div>
+  <div class="form-group" style="margin:0"><label>Initial Moisture (%)</label><input type="number" id="sl-minit" value="3" class="form-input" oninput="SL.drawSafeZone()"></div>
+  <div class="form-group" style="margin:0"><label>Critical Moisture (%)</label><input type="number" id="sl-mcrit" value="6" class="form-input" oninput="SL.drawSafeZone()"></div>
+</div>
         <div style="margin-top:0.8rem;">
           <div style="display:flex; justify-content:space-between; margin-bottom:0.2rem;">
             <span style="font-size:0.7rem; font-weight:600;">Moisture Limit</span>
@@ -3661,7 +3661,8 @@ drawMoistureAccumulationChart(res) {
   console.error('❌ Error creating Moisture Accumulation chart:', e);
  }
 },
- // ====================================================================
+
+    // ====================================================================
 // 📄 EXPORT TO PDF - CON FORMULE SPIEGATE
 // ====================================================================
 async exportToPDF() {
@@ -3760,7 +3761,7 @@ async exportToPDF() {
     // 3. Header del report
     reportDiv.innerHTML += `
       <div class="header-bar">
-        <h1> WVTR/OTR Calculator - Shelf Life Report</h1>
+        <h1>📦 WVTR/OTR Calculator - Shelf Life Report</h1>
         <p style="color:#64748b;margin:0">Generated: ${new Date().toLocaleString('it-IT')}</p>
         <p style="color:#64748b;margin:4px 0 0 0">Mode: <strong>${State.mode.toUpperCase()}</strong> • Unit: <strong>${State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day'}</strong></p>
       </div>
@@ -3782,7 +3783,7 @@ async exportToPDF() {
 
     reportDiv.innerHTML += `
       <div class="section no-break">
-        <h2> Laminate Structure</h2>
+        <h2>📦 Laminate Structure</h2>
         <table>
           <tr><td><strong>Name:</strong></td><td>${laminateName}</td></tr>
           <tr><td><strong>Structure:</strong></td><td>${structureStr}</td></tr>
@@ -3805,7 +3806,7 @@ async exportToPDF() {
 
     reportDiv.innerHTML += `
       <div class="section no-break">
-        <h2> Calculation Parameters</h2>
+        <h2>⚙️ Calculation Parameters</h2>
         <table>
           <tr><td><strong>Product Template:</strong></td><td>${prod?.name || '—'}</td></tr>
           <tr><td><strong>Product Weight:</strong></td><td>${W} g</td></tr>
@@ -3820,7 +3821,7 @@ async exportToPDF() {
     `;
 
     // 6. ✅ SEZIONE FORMULE E METODOLOGIA (NUOVA)
-    reportDiv.innerHTML += `
+  reportDiv.innerHTML += `
       <div class="section no-break">
         <h2> Formulas & Methodology</h2>
         
