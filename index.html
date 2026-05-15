@@ -2439,316 +2439,438 @@ Correction Factor = exp( β × (RH<sub>storage</sub> − RH<sub>reference</sub>)
 `;
 }
 function renderShelfLife() {
-  const modeLabel = State.mode === 'wvtr' ? 'WVTR' : 'OTR';
-  const unit = State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
-  const currentRate = (State.calcResult && State.calcResult.total) ? State.calcResult.total.toFixed(6) : '';
-
-  // Laminato
-  let laminateName = State.laminateName || 'No laminate calculated';
-  let structureStr = '';
-  if (State.layers && State.layers.length > 0) {
-    let layers = [];
-    for (let i = 0; i < State.layers.length; i++) {
-      if (State.layers[i].mid !== null && State.layers[i].thick > 0) {
-        let mat = DB.materials.find(m => m.id === State.layers[i].mid);
-        if (mat) layers.push(`${mat.name} (${State.layers[i].thick}µm)`);
-      }
+    const modeLabel = State.mode === 'wvtr' ? 'WVTR' : 'OTR';
+    const unit = State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
+    const currentRate = (State.calcResult && State.calcResult.total) ? State.calcResult.total.toFixed(6) : '';
+    
+    // --- LAMINATE INFO ---
+    let laminateName = State.laminateName || 'Nessun laminato caricato';
+    let structureStr = '';
+    if (State.layers && State.layers.length > 0) {
+        let layers = [];
+        for(let i=0; i<State.layers.length; i++) {
+            if(State.layers[i].mid !== null && State.layers[i].thick > 0) {
+                let mat = DB.materials.find(m => m.id === State.layers[i].mid);
+                if(mat) layers.push(`${mat.name} (${State.layers[i].thick}µm)`);
+            }
+        }
+        structureStr = layers.join(' / ') || 'Struttura non valida';
     }
-    structureStr = layers.join(' / ') || 'No layers configured';
-  }
 
-  // Prodotti
-  let prodOpts = '';
-  for (let k in PRODUCTS_DB) prodOpts += `<option value="${k}">${PRODUCTS_DB[k].name}</option>`;
+    // --- PRODUCTS DB OPTIONS ---
+    let prodOpts = '';
+    for(let k in PRODUCTS_DB) prodOpts += `<option value="${k}">${PRODUCTS_DB[k].name}</option>`;
 
-  // Tipi packaging con dimensioni default
-  const pkgTypes = [
-    { key: 'flat_pouch',   label: 'Flat Pouch',      w: 15, h: 20, d: 0  },
-    { key: 'standup_pouch', label: 'Stand-Up Pouch',  w: 13, h: 22, d: 6  },
-    { key: 'flow_pack',     label: 'Flow Pack',       w: 20, h: 12, d: 0  },
-    { key: 'box',           label: 'Rectangular Box', w: 10, h: 15, d: 5  },
-    { key: 'cylinder',      label: 'Cylindrical Jar', w: 8,  h: 12, d: 0  },
-    { key: 'tray',          label: 'Tray with Lid',   w: 18, h: 4,  d: 13 },
-    { key: 'cup',           label: 'Cup with Seal',   w: 7,  h: 8,  d: 0  },
-    { key: 'bottle_cap',    label: 'Bottle with Cap', w: 6,  h: 20, d: 0  },
-    { key: 'bag',           label: 'Simple Bag',      w: 25, h: 30, d: 0  }
-  ];
-  let pkgOpts = '';
-  for (let p of pkgTypes) {
-    pkgOpts += `<option value="${p.key}" data-w="${p.w}" data-h="${p.h}" data-d="${p.d}">${p.label}</option>`;
-  }
-
-  return `
-  <div class="grid grid-2">
-  <!-- === INPUT FORM === -->
-  <div class="card" style="padding:0;">
-    <div style="padding:1rem; border-bottom:1px solid var(--border); background:var(--bg);">
-      <h2 style="margin:0; font-size:1rem; display:flex;align-items:center;gap:0.4rem;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px">
-          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-        </svg>
-        Advanced Shelf Life Engine
-      </h2>
-    </div>
-
-    <!-- STEP 1: LAMINATE / BARRIER RATE -->
-    <div style="padding:1rem; border-bottom:1px solid var(--border);">
-      <div style="display:flex;align-items:center;gap:0.5rem; margin-bottom:0.5rem; color:var(--primary); font-weight:600; font-size:0.85rem;">
-        <span>📦 1. Barrier Rate & Laminated Structure</span>
-      </div>
-      <div style="background:#fff; border:1px solid var(--border); border-radius:6px; padding:0.5rem; margin-bottom:0.8rem; font-size:0.75rem;">
-        <div style="font-weight:700; margin-bottom:0.2rem;">${laminateName}</div>
-        <div style="color:var(--text-light); word-break:break-word;">${structureStr}</div>
-        <div style="margin-top:0.3rem; display:flex; justify-content:space-between; align-items:center;">
-          <span>Calculated ${modeLabel}:</span>
-          <strong style="color:var(--primary); font-size:0.9rem;">${currentRate || '-'} ${unit}</strong>
+    return `
+    <div class="grid grid-2">
+    <!-- === FORM DI INPUT === -->
+    <div class="card" style="padding:0; overflow:hidden;">
+        <div style="padding:1rem; background:var(--bg); border-bottom:1px solid var(--border);">
+            <h2 style="margin:0; font-size:1rem; display:flex;align-items:center;gap:0.4rem;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Advanced Shelf Life Engine
+            </h2>
         </div>
-      </div>
-
-      <div style="margin-bottom:0.5rem;">
-        <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size:0.8rem; font-weight:500;">
-          <input type="radio" name="sl-source" value="calc" checked onchange="SL.toggleSource()">
-          Use calculated ${modeLabel} from Calculator
-        </label>
-        <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size:0.8rem; font-weight:500; margin-top:0.2rem;">
-          <input type="radio" name="sl-source" value="manual" onchange="SL.toggleSource()">
-          Enter ${modeLabel} manually
-        </label>
-      </div>
-
-      <!-- Manual Rate + Temp + RH -->
-      <div id="sl-manual-block" style="display:none; background:#f8fafc; border:1px solid var(--border); border-radius:6px; padding:0.6rem; margin-top:0.4rem;">
-        <div class="grid grid-2" style="gap:0.5rem;">
-          <div class="form-group" style="margin:0">
-            <label>${modeLabel} Value (${unit})</label>
-            <input type="number" id="sl-rate-manual" value="0.5" step="any" class="form-input">
-          </div>
-          <div class="form-group" style="margin:0">
-            <label>Temperature (°C)</label>
-            <input type="number" id="sl-rate-temp" value="23" class="form-input">
-          </div>
+        
+        <!-- STEP 1: PACKAGE -->
+        <div style="padding:1rem; border-bottom:1px solid var(--border);">
+            <div style="display:flex;align-items:center;gap:0.5rem; margin-bottom:0.5rem; color:var(--primary); font-weight:600; font-size:0.85rem;">
+                <span>📦 1. Package & Material</span>
+            </div>
+            <div style="background:#fff; border:1px solid var(--border); border-radius:6px; padding:0.5rem; margin-bottom:0.8rem; font-size:0.75rem;">
+                <div style="font-weight:700; margin-bottom:0.2rem;">${laminateName}</div>
+                <div style="color:var(--text-light); word-break:break-word;">${structureStr}</div>
+                <div style="margin-top:0.3rem; display:flex; justify-content:space-between; align-items:center;">
+                    <span>Calculated ${modeLabel}:</span>
+                    <strong style="color:var(--primary); font-size:0.9rem;">${currentRate || '-'} ${unit}</strong>
+                </div>
+            </div>
+            
+            <div class="grid grid-2" style="gap:0.5rem;">
+                <div class="form-group" style="margin:0">
+                    <label>Width L (cm)</label>
+                    <input type="number" id="sl-w" value="12" step="0.1" class="form-input" oninput="calcPkgArea()">
+                </div>
+                <div class="form-group" style="margin:0">
+                    <label>Height H (cm)</label>
+                    <input type="number" id="sl-h" value="17" step="0.1" class="form-input" oninput="calcPkgArea()">
+                </div>
+            </div>
+            <div style="margin-top:0.5rem; display:flex; justify-content:space-between; align-items:center; background:var(--primary-light); padding:0.4rem; border-radius:6px;">
+                <span style="font-size:0.75rem; font-weight:500;">→ Effective Area:</span>
+                <strong id="sl-area-display" style="color:var(--primary);">0.0408 m²</strong>
+            </div>
         </div>
-        <div class="grid grid-2" style="gap:0.5rem; margin-top:0.4rem;">
-          <div class="form-group" style="margin:0">
-            <label>Humidity (%)</label>
-            <input type="number" id="sl-rate-rh" value="50" class="form-input">
-          </div>
-          <div class="form-group" style="margin:0">
-            <label>Test Standard</label>
-            <input type="text" id="sl-rate-std" value="" placeholder="e.g. ASTM F1249" class="form-input">
-          </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- STEP 2: PACKAGING TYPE & DIMENSIONS -->
-    <div style="padding:1rem; border-bottom:1px solid var(--border);">
-      <div style="display:flex;align-items:center;gap:0.5rem; margin-bottom:0.5rem; color:var(--warning); font-weight:600; font-size:0.85rem;">
-        <span>📐 2. Packaging Type & Dimensions</span>
-      </div>
-
-      <div style="margin-bottom:0.5rem;">
-        <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size:0.8rem; font-weight:500;">
-          <input type="radio" name="sl-pkg-mode" value="auto" checked onchange="SL.togglePkgMode()">
-          📐 Calculate from package type
-        </label>
-        <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size:0.8rem; font-weight:500; margin-top:0.2rem;">
-          <input type="radio" name="sl-pkg-mode" value="manual" onchange="SL.togglePkgMode()">
-          ✏️ Enter total area manually
-        </label>
-      </div>
-
-      <!-- Package selector -->
-      <div id="sl-pkg-auto" style="background:#f8fafc; border:1px solid var(--border); border-radius:6px; padding:0.6rem;">
-        <div class="form-group" style="margin:0">
-          <label>Package Type</label>
-          <select id="sl-pkg-type" class="form-input" onchange="SL.onPkgChange()">
-            ${pkgOpts}
-          </select>
-        </div>
-        <div class="grid grid-3" style="gap:0.4rem; margin-top:0.4rem;">
-          <div class="form-group" style="margin:0"><label>Width L (cm)</label><input type="number" id="sl-pkg-w" value="15" step="0.1" class="form-input" oninput="SL.calcArea()"></div>
-          <div class="form-group" style="margin:0"><label>Height H (cm)</label><input type="number" id="sl-pkg-h" value="20" step="0.1" class="form-input" oninput="SL.calcArea()"></div>
-          <div class="form-group" style="margin:0"><label>Depth / Dia (cm)</label><input type="number" id="sl-pkg-d" value="0" step="0.1" class="form-input" oninput="SL.calcArea()"></div>
-        </div>
-        <div style="margin-top:0.4rem;">
-          <label style="font-size:0.75rem; color:var(--text-light);">Seal margin (cm)</label>
-          <input type="number" id="sl-pkg-margin" value="2" step="0.5" class="form-input" oninput="SL.calcArea()" style="width:100px;">
-        </div>
-      </div>
-
-      <!-- Manual area -->
-      <div id="sl-pkg-manual" style="display:none; background:#f8fafc; border:1px solid var(--border); border-radius:6px; padding:0.6rem;">
-        <div class="form-group" style="margin:0">
-          <label>Total Surface Area (m²)</label>
-          <input type="number" id="sl-area-manual" value="0.06" step="0.001" class="form-input">
-        </div>
-      </div>
-
-      <!-- Area result -->
-      <div style="margin-top:0.5rem; padding:0.5rem; background:var(--primary-light); border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
-        <span style="font-size:0.8rem; font-weight:500;">→ Effective Area:</span>
-        <strong id="sl-area-display" style="color:var(--primary); font-size:1rem;">0.0640 m²</strong>
-      </div>
-
-      <!-- Visual preview -->
-      <div id="sl-pkg-preview" style="margin-top:0.5rem; text-align:center; padding:0.5rem; background:#f8fafc; border-radius:6px; font-size:0.75rem; color:var(--text-light);">
-        <svg id="sl-pkg-icon" viewBox="0 0 60 60" style="width:50px; height:50px;"></svg>
-        <div id="sl-pkg-desc" style="margin-top:0.3rem;">Flat Pouch · 2-sided</div>
-      </div>
-      <input type="hidden" id="sl-area" value="0.0640">
-    </div>
-
-    <!-- STEP 3: PRODUCT -->
-    <div style="padding:1rem; border-bottom:1px solid var(--border);">
-      <div style="display:flex;align-items:center;gap:0.5rem; margin-bottom:0.5rem; color:var(--purple); font-weight:600; font-size:0.85rem;">
-        <span>🥐 3. Product</span>
-      </div>
-      <div class="form-group">
-        <label>Product Template</label>
-        <select class="form-input" id="sl-product" onchange="SL.onProductChange()">${prodOpts}</select>
-      </div>
-      <div class="grid grid-2" style="gap:0.5rem;">
-        <div class="form-group" style="margin:0"><label>Net Weight (g)</label><input type="number" id="sl-weight" value="100" class="form-input"></div>
-        <div class="form-group" style="margin:0"><label>Initial Moisture (%)</label><input type="number" id="sl-minit" value="3" step="0.1" class="form-input"></div>
-      </div>
-      <!-- Safe zone bar -->
-      <div id="sl-safezone-bar" style="margin-top:0.6rem;">
-        <div style="display:flex; justify-content:space-between; margin-bottom:0.2rem;">
-          <span style="font-size:0.7rem; font-weight:600;">Moisture Limit</span>
-          <span id="sl-mcrit-val" style="font-size:0.7rem; color:var(--text-light);">6%</span>
-        </div>
-        <input type="number" id="sl-mcrit" value="6" step="0.5" style="width:100%; display:none;">
-        <div style="position:relative; height:20px; background:#e2e8f0; border-radius:4px; overflow:hidden;">
-          <div id="sl-safe-green" style="position:absolute; left:0; top:0; bottom:0; background:var(--success); width:33%;"></div>
-          <div id="sl-safe-now" style="position:absolute; left:16%; top:-2px; bottom:-2px; width:2px; background:#fff; z-index:2; box-shadow:0 0 3px rgba(0,0,0,0.3);"></div>
-          <div style="position:absolute; left:12%; top:20px; font-size:0.6rem; color:var(--success);">Now</div>
-          <div id="sl-safe-crit" style="position:absolute; right:0; top:-2px; bottom:-2px; width:2px; background:var(--danger); z-index:2;"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- STEP 4: STORAGE & THERMAL -->
-    <div style="padding:1rem;">
-      <div style="display:flex;align-items:center;gap:0.5rem; margin-bottom:0.5rem; color:var(--primary); font-weight:600; font-size:0.85rem;">
-        <span>🌍 4. Storage & Acceleration</span>
-      </div>
-
-      <!-- Single / Chain toggle -->
-      <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
-        <button class="btn btn-sm" id="btn-single" style="flex:1; background:var(--primary); color:#fff;" onclick="SL.toggleCond('single')">Single Condition</button>
-        <button class="btn btn-sm" id="btn-chain" style="flex:1; background:var(--bg); color:var(--text-light);" onclick="SL.toggleCond('chain')">Logistics Chain</button>
-      </div>
-
-      <!-- Single -->
-      <div id="sl-cond-single">
-        <div class="grid grid-2" style="gap:0.5rem;">
-          <div class="form-group" style="margin:0"><label>Storage Temp (°C)</label><input type="number" id="sl-temp" value="25" class="form-input"></div>
-          <div class="form-group" style="margin:0"><label>External RH (%)</label><input type="number" id="sl-rh-ext" value="65" class="form-input"></div>
-        </div>
-      </div>
-
-      <!-- Chain -->
-      <div id="sl-cond-chain" style="display:none;">
-        <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
-          <thead><tr style="background:var(--bg); text-align:left;">
-            <th style="padding:0.3rem;">Step</th><th style="padding:0.3rem;">°C</th><th style="padding:0.3rem;">RH%</th><th style="padding:0.3rem;">Days</th><th></th>
-          </tr></thead>
-          <tbody id="sl-chain-rows">
-            <tr>
-              <td style="padding:0.3rem;"><input type="text" value="Factory" style="width:100%;border:1px solid var(--border);border-radius:3px;padding:2px;"></td>
-              <td style="padding:0.3rem;"><input type="number" value="22" class="sl-ct"></td>
-              <td style="padding:0.3rem;"><input type="number" value="50" class="sl-cr"></td>
-              <td style="padding:0.3rem;"><input type="number" value="2" class="sl-cd"></td>
-              <td style="padding:0.3rem;"><span style="cursor:pointer;color:var(--danger);" onclick="this.closest('tr').remove()">✕</span></td>
-            </tr>
-            <tr>
-              <td style="padding:0.3rem;"><input type="text" value="Transit" style="width:100%;border:1px solid var(--border);border-radius:3px;padding:2px;"></td>
-              <td style="padding:0.3rem;"><input type="number" value="35" class="sl-ct"></td>
-              <td style="padding:0.3rem;"><input type="number" value="85" class="sl-cr"></td>
-              <td style="padding:0.3rem;"><input type="number" value="14" class="sl-cd"></td>
-              <td style="padding:0.3rem;"><span style="cursor:pointer;color:var(--danger);" onclick="this.closest('tr').remove()">✕</span></td>
-            </tr>
-          </tbody>
-        </table>
-        <button class="btn btn-sm btn-outline" style="width:100%; margin-top:0.4rem;" onclick="SL.addChainRow()">+ Add Step</button>
-      </div>
-
-      <!-- Ea / Q10 mutual exclusivity -->
-      <details style="margin-top:0.5rem; border:1px solid var(--border); border-radius:6px; padding:0.5rem; background:#fafbfc;">
-        <summary style="cursor:pointer; font-size:0.8rem; font-weight:600;">⚙️ Thermal Acceleration (Ea ↔ Q10)</summary>
-        <div style="margin-top:0.5rem;">
-          <label style="font-size:0.75rem; color:var(--text-light); display:block; margin-bottom:0.3rem;">
-            Enter either Ea <strong>or</strong> Q10 — not both. The unused field is disabled automatically.
-          </label>
-          <div class="grid grid-2" style="gap:0.5rem;">
-            <div class="form-group" style="margin:0">
-              <label>Activation Energy Eₐ (kJ/mol)</label>
-              <input type="number" id="sl-ea" value="" step="0.1" class="form-input" placeholder="Auto or 60" oninput="SL.onEaInput()">
+        <!-- STEP 2: PRODUCT -->
+        <div style="padding:1rem; border-bottom:1px solid var(--border);">
+            <div style="display:flex;align-items:center;gap:0.5rem; margin-bottom:0.5rem; color:var(--warning); font-weight:600; font-size:0.85rem;">
+                <span>🥐 2. Product</span>
             </div>
             <div class="form-group" style="margin:0">
-              <label>Q₁₀ Factor</label>
-              <input type="number" id="sl-q10" value="" step="0.1" class="form-input" placeholder="Auto or 2.0" oninput="SL.onQ10Input()">
+                <label>Food Template</label>
+                <select id="sl-product" class="form-input" onchange="SL.onProductChange(this.value)">${prodOpts}</select>
             </div>
-          </div>
-          <div style="font-size:0.65rem; color:var(--text-light); margin-top:0.3rem;" id="sl-ea-q10-hint">
-            Leave empty to use product default. If both are filled, Q10 is ignored.
-          </div>
+            <div class="grid grid-2" style="gap:0.5rem; margin-top:0.5rem;">
+                <div class="form-group" style="margin:0"><label>Weight (g)</label><input type="number" id="sl-weight" value="100" class="form-input"></div>
+                <div class="form-group" style="margin:0"><label>Init. Moisture (%)</label><input type="number" id="sl-minit" value="3" class="form-input"></div>
+                <div class="form-group" style="margin:0"><label>Critical Moisture (%)</label><input type="number" id="sl-mcrit" value="6" class="form-input"></div>
+            </div>
         </div>
-      </details>
 
-      <!-- Calculate -->
-      <button class="btn btn-danger btn-full" onclick="SL.calculate()" style="margin-top:1rem; padding:0.8rem; font-size:0.9rem;">
-        ▶ Calculate Shelf Life
-      </button>
+        <!-- STEP 3: LOGISTICS CHAIN -->
+        <div style="padding:1rem;">
+            <div style="display:flex;align-items:center;gap:0.5rem; margin-bottom:0.5rem; color:var(--purple); font-weight:600; font-size:0.85rem;">
+                <span>🚚 3. Logistics Chain</span>
+            </div>
+            <div id="sl-chain-container">
+                <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
+                    <thead>
+                        <tr style="background:var(--bg); text-align:left;">
+                            <th style="padding:4px;">Step</th>
+                            <th style="padding:4px;">T°C</th>
+                            <th style="padding:4px;">RH%</th>
+                            <th style="padding:4px;">Days</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sl-chain-rows">
+                        <tr>
+                            <td style="padding:4px;"><input type="text" value="Production" class="sl-step-name"></td>
+                            <td style="padding:4px;"><input type="number" value="22" class="sl-step-t"></td>
+                            <td style="padding:4px;"><input type="number" value="50" class="sl-step-rh"></td>
+                            <td style="padding:4px;"><input type="number" value="2" class="sl-step-days"></td>
+                        </tr>
+                        <tr>
+                            <td style="padding:4px;"><input type="text" value="Transit" class="sl-step-name"></td>
+                            <td style="padding:4px;"><input type="number" value="35" class="sl-step-t"></td>
+                            <td style="padding:4px;"><input type="number" value="90" class="sl-step-rh"></td>
+                            <td style="padding:4px;"><input type="number" value="14" class="sl-step-days"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <button class="btn btn-sm btn-outline" style="width:100%; margin-top:0.5rem;" onclick="SL.addChainRow()">+ Add Step</button>
+            </div>
+            
+            <button class="btn btn-danger btn-full" onclick="SL.calculate()" style="margin-top:1.2rem;">
+                ▶ Run Simulation
+            </button>
+        </div>
     </div>
-  </div>
 
-  <!-- === RESULTS === -->
-  <div>
-    <div class="card" id="sl-result-panel">
-      <div style="text-align:center;padding:2rem;color:var(--text-light)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:48px;height:48px;margin-bottom:0.5rem;opacity:0.3">
-          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-        </svg>
-        <p>Configure parameters and calculate to see predictions</p>
-      </div>
-    </div>
+    <!-- === RISULTATI === -->
+    <div id="sl-results-area">
+        <div class="card" id="sl-result-panel">
+            <div style="text-align:center;padding:2rem;color:var(--text-light)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:48px;height:48px;margin-bottom:0.5rem;opacity:0.3"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <p>Insert parameters and run simulation</p>
+            </div>
+        </div>
+        
+        <!-- 1. Step Impact Chart -->
+        <div class="card" style="margin-top:1rem; display:none;" id="card-step-impact">
+            <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;">📊 Impact per Step (Shelf Life Consumed %)</h3>
+            <div class="chart-mini" style="height:200px"><canvas id="slStepImpactChart"></canvas></div>
+        </div>
 
-    <!-- Logistics charts -->
-    <div id="sl-logistics-charts" style="display:none; margin-top:0.8rem;">
-      <div class="card">
-        <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;">📊 Logistics Chain Breakdown</h3>
-        <div class="chart-mini" style="height:220px"><canvas id="slChainChart"></canvas></div>
-      </div>
-      <div class="card" style="margin-top:0.5rem;">
-        <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;">📈 Cumulative Shelf Life Consumption</h3>
-        <div class="chart-mini" style="height:200px"><canvas id="slCumulativeChart"></canvas></div>
-      </div>
+        <!-- 2. Moisture Curve -->
+        <div class="card" style="margin-top:1rem; display:none;" id="card-moisture">
+            <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;">💧 Moisture Accumulation vs Critical Limit</h3>
+            <div class="chart-mini" style="height:250px"><canvas id="slMoistureCurveChart"></canvas></div>
+        </div>
+        
+        <!-- 3. Quality Decay -->
+        <div class="card" style="margin-top:1rem; display:none;" id="card-quality">
+            <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;">📉 Quality Decay</h3>
+            <div class="chart-mini" style="height:250px"><canvas id="slQualityChart"></canvas></div>
+        </div>
     </div>
-
-    <!-- Main charts -->
-    <div id="sl-charts-container" style="display:none; margin-top:1rem;">
-      <div class="card" style="margin-bottom:1rem">
-        <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;">Quality Decay Over Time</h3>
-        <div class="chart-mini" style="height:260px"><canvas id="slDecayChart"></canvas></div>
-      </div>
-      <div class="card">
-        <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;">Shelf Life vs Temperature</h3>
-        <div class="chart-mini" style="height:260px"><canvas id="slTempChart"></canvas></div>
-      </div>
     </div>
-  </div>
-  </div>
-  ${renderShelfLifeMethodology()}
-  `;
+    ${renderShelfLifeMethodology()}
+    `;
 }
     const SL = {
-  // --- Source toggle ---
-  toggleSource() {
-    const src = document.querySelector('input[name="sl-source"]:checked')?.value;
-    document.getElementById('sl-manual-block').style.display = src === 'manual' ? 'block' : 'none';
-  },
+    addChainRow() {
+        const tbody = document.getElementById('sl-chain-rows');
+        tbody.insertAdjacentHTML('beforeend', `
+            <tr>
+                <td style="padding:4px;"><input type="text" value="Storage" class="sl-step-name"></td>
+                <td style="padding:4px;"><input type="number" value="22" class="sl-step-t"></td>
+                <td style="padding:4px;"><input type="number" value="60" class="sl-step-rh"></td>
+                <td style="padding:4px;"><input type="number" value="30" class="sl-step-days"></td>
+            </tr>
+        `);
+    },
+
+    onProductChange(key) {
+        const p = PRODUCTS_DB[key];
+        if(!p) return;
+        const set = (id, val) => { const el = document.getElementById(id); if(el) el.value = val; };
+        set('sl-minit', p.M_init);
+        set('sl-mcrit', p.M_crit);
+    },
+
+    calculate() {
+        // 1. GET INPUTS
+        const prodKey = document.getElementById('sl-product').value;
+        const prod = PRODUCTS_DB[prodKey];
+        if(!prod) { alert("Select product"); return; }
+
+        const W = parseFloat(document.getElementById('sl-weight').value);
+        const A = getSlArea(); // Helper per area
+        
+        const initM = parseFloat(document.getElementById('sl-minit').value);
+        const critM = parseFloat(document.getElementById('sl-mcrit').value);
+
+        // Base Rate from Calculator or default
+        let baseRate = (State.calcResult && State.calcResult.total) ? State.calcResult.total : 1.0; 
+        // Nota: Qui potresti aggiungere un input manuale se necessario
+
+        // 2. SIMULATION STATE
+        let currentMoisture = initM;
+        let totalDays = 0;
+        let shelfLifeDays = 0; // Il giorno in cui tocca il critico
+        let finished = false;
+
+        let stepHistory = []; // Per il grafico Step Impact
+        let moistureHistory = []; // Per il grafico Moisture
+        let qualityHistory = []; // Per il grafico Quality
+
+        const maxAllowedMoisture = critM - initM;
+        let totalMoistureGained = 0;
+
+        // 3. RUN CHAIN
+        const rows = document.querySelectorAll('#sl-chain-rows tr');
+        let chainStepData = []; // Per grafico impatto
+
+        rows.forEach((row) => {
+            if(finished) return;
+
+            const name = row.querySelector('.sl-step-name').value;
+            const temp = parseFloat(row.querySelector('.sl-step-t').value);
+            const rh = parseFloat(row.querySelector('.sl-step-rh').value);
+            const days = parseInt(row.querySelector('.sl-step-days').value);
+
+            // Calculate Rate at this Step's Temp/RH
+            const accel = Math.pow(2.0, (temp - 25) / 10); // Q10 approx
+            // Hygro correction (Simplification: rate increases with external RH)
+            // Assuming Ref RH is 50%
+            const hygroFactor = Math.exp(0.04 * (rh - 50)); // Beta approx 0.04
+            
+            const stepRate = baseRate * accel * hygroFactor;
+
+            // Simulate day by day inside this step
+            let stepMoistureGain = 0;
+            let stepDaysSimulated = 0;
+
+            while(stepDaysSimulated < days) {
+                if(finished) break;
+
+                // Daily Moisture Gain formula: (Rate * Area / Weight) * 100
+                // Note: Rate is g/m2/day. Area is m2. Weight is g.
+                // Gain in % = (g/m2/day * m2 / g) * 100
+                const dailyGain = (stepRate * A / W) * 100;
+                
+                currentMoisture += dailyGain;
+                totalDays++;
+                stepDaysSimulated++;
+                stepMoistureGain += dailyGain;
+
+                // Record History
+                const quality = Math.max(0, 100 - ((currentMoisture - initM) / maxAllowedMoisture) * 100);
+                moistureHistory.push({ t: totalDays, M: currentMoisture, step: name });
+                qualityHistory.push({ t: totalDays, Q: quality });
+
+                // Check Limit
+                if(currentMoisture >= critM) {
+                    shelfLifeDays = totalDays;
+                    finished = true;
+                }
+            }
+
+            // Record Step Impact
+            // Impact = (Moisture gained in this step) / (Total Allowed Moisture) * 100
+            // If finished, the last step impact is clamped
+            const impactPct = Math.min(100, (stepMoistureGain / maxAllowedMoisture) * 100);
+            
+            // Calculate "Shelf Life Cost" in days
+            // How many "standard days" (at base conditions) did this step cost?
+            // Rate_ratio = stepRate / baseRate
+            // Days_cost = stepDaysSimulated * Rate_ratio
+            const rateRatio = stepRate / baseRate;
+            const daysCost = stepDaysSimulated * rateRatio;
+
+            chainStepData.push({
+                name: name,
+                impact: impactPct, // % of moisture limit reached
+                shelfLifeCost: daysCost // Equivalent days of shelf life burnt
+            });
+        });
+
+        // If loop finished without hitting limit, shelf life is totalDays (or more)
+        if(!finished) shelfLifeDays = totalDays + 100; // Extrapolation
+
+        // 4. UPDATE UI
+        document.getElementById('sl-result-panel').innerHTML = `
+            <div style="text-align:center;padding:1rem;">
+                <div style="font-size:2.5rem;font-weight:800;color:${finished?'var(--danger)':'var(--success)'}">
+                    ${shelfLifeDays} Days
+                </div>
+                <div style="font-size:0.9rem;color:var(--text-light)">
+                    ${finished ? 'Critical Moisture Limit Reached' : 'Safe within simulated timeframe'}
+                </div>
+            </div>
+        `;
+
+        document.getElementById('card-step-impact').style.display = 'block';
+        document.getElementById('card-moisture').style.display = 'block';
+        document.getElementById('card-quality').style.display = 'block';
+
+        // 5. DRAW CHARTS
+        this.drawStepImpactChart(chainStepData);
+        this.drawMoistureChart(moistureHistory, critM);
+        this.drawQualityChart(qualityHistory);
+    },
+
+    drawStepImpactChart(data) {
+        destroyChart('slStepImpact');
+        const ctx = document.getElementById('slStepImpactChart').getContext('2d');
+        
+        // We want to show "Shelf Life Cost" (how much time this step "burned")
+        const labels = data.map(d => d.name);
+        const values = data.map(d => d.shelfLifeCost.toFixed(1)); // Days equivalent
+
+        chartInstances.slStepImpact = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Equivalent Shelf Life Days Consumed',
+                    data: values,
+                    backgroundColor: ['#3b82f6', '#ef4444', '#f59e0b', '#10b981'],
+                    borderWidth: 0,
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                indexAxis: 'y', // Horizontal bars
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                return ctx.raw + ' days (weighted by temp/RH)';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { title: { display: true, text: 'Days of Shelf Life Consumed' } }
+                }
+            }
+        });
+    },
+
+    drawMoistureChart(history, limit) {
+        destroyChart('slMoistureCurve');
+        const ctx = document.getElementById('slMoistureCurveChart').getContext('2d');
+        
+        chartInstances.slMoistureCurve = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: history.map(h => h.t),
+                datasets: [
+                    {
+                        label: 'Internal Moisture (%)',
+                        data: history.map(h => h.M.toFixed(2)),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59,130,246,0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Critical Limit',
+                        data: Array(history.length).fill(limit),
+                        borderColor: '#ef4444',
+                        borderDash: [5, 5],
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: true, position: 'bottom' } },
+                scales: {
+                    x: { title: { display: true, text: 'Cumulative Days' } },
+                    y: { title: { display: true, text: 'Moisture (%)' }, beginAtZero: false }
+                }
+            }
+        });
+    },
+
+    drawQualityChart(history) {
+        destroyChart('slQuality');
+        const ctx = document.getElementById('slQualityChart').getContext('2d');
+
+        // Find the day quality hits 0
+        let shelfLifeDay = history.length;
+        for(let i=0; i<history.length; i++) {
+            if(history[i].Q <= 0) {
+                shelfLifeDay = i;
+                break;
+            }
+        }
+
+        chartInstances.slQuality = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: history.map(h => h.t),
+                datasets: [
+                    {
+                        label: 'Quality (%)',
+                        data: history.map(h => Math.max(0, h.Q.toFixed(2))),
+                        borderColor: '#10b981',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Shelf Life End',
+                        data: history.map((h, i) => i === shelfLifeDay ? 0 : null),
+                        pointBackgroundColor: '#ef4444',
+                        pointRadius: 8,
+                        pointHoverRadius: 10,
+                        showLine: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { title: { display: true, text: 'Days' } },
+                    y: { beginAtZero: true, max: 100, title: { display: true, text: 'Quality %' } }
+                }
+            }
+        });
+    }
+};
+
+// Helper to calculate area from inputs
+function getSlArea() {
+    const w = parseFloat(document.getElementById('sl-w').value) || 0;
+    const h = parseFloat(document.getElementById('sl-h').value) || 0;
+    return (w * h * 2) / 10000; // cm to m2, assuming 2 sides
+}
+function calcPkgArea() {
+    // Optional: Update display
+}
 
   // --- Package mode toggle ---
   togglePkgMode() {
