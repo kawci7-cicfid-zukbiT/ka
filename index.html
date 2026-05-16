@@ -1723,98 +1723,122 @@ var TABS = [
 var chartInstances = {};
 function destroyChart(id) { if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; } }
 
+// ====================================================================
+// 🧭 NAVIGATION & RENDERING
+// ====================================================================
+
 function renderNav() {
-  // Rimuovi active da tutti i link
-  document.querySelectorAll('.nav-link').forEach(link => {
-    link.classList.remove('active');
-  });
-  
-  // ✅ CORRETTO: Gli indici partono da 0 e saltano il separatore
-  const tabMap = {
-    'home': 0, 
-    'calc': 1, 
-    'sensitivity': 2, 
-    'shelflife': 3,
-    'arrhenius': 4, 
-    'compare': 5, 
-    'materials': 6, 
-    'laminates': 7
-  };
-  
-  const links = document.querySelectorAll('.nav-link');
-  const idx = tabMap[State.tab];
-  if (idx !== undefined && links[idx]) {
-    links[idx].classList.add('active');
-  }
+    // Rimuovi active da tutti i link
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('active');
+    });
+    
+    // Mappa corretta delle tab (salta il separatore)
+    const tabMap = {
+        'home': 0,
+        'calc': 1,
+        'sensitivity': 2,
+        'shelflife': 3,
+        'arrhenius': 4,
+        'compare': 5,
+        'materials': 6,
+        'laminates': 7
+    };
+    
+    const links = document.querySelectorAll('.nav-link');
+    const idx = tabMap[State.tab];
+    if (idx !== undefined && links[idx]) {
+        links[idx].classList.add('active');
+    }
 }
+
+function nav(tab) {
+    State.tab = tab;
+    renderNav();
+    renderContent();
+    
+    // Pulisci i grafici demo quando ESCI da Home
+    if(tab !== 'home') { 
+        if(typeof destroyChart === 'function') {
+            destroyChart('demo1'); 
+            destroyChart('demo2'); 
+        }
+    }
+    
+    // Riavvia il post-render in modo sincrono con il DOM
+    requestAnimationFrame(() => {
+        if(tab === 'home' && typeof initHomeAnimations === 'function') initHomeAnimations();
+        if(tab === 'calc' && State.calcResult && typeof postCalcRender === 'function') postCalcRender();
+        if(tab === 'arrhenius' && typeof postArrheniusRender === 'function') postArrheniusRender();
+        if(tab === 'sensitivity' && typeof postSensitivityRender === 'function') postSensitivityRender();
+        if(tab === 'compare' && typeof postCompareRender === 'function') postCompareRender();
+        if(tab === 'laminates' && DB.laminates.length >= 2 && typeof drawLamChart === 'function') drawLamChart();
+    });
+}
+
 function setMode(mode) {
-  State.mode = mode;
-  Engine.mode = mode;
-  
-  State.selectedTestMethod = ''; 
-  
-  State.calcResult = null;
-  State.calcError = null;
-  
-  var radios = document.querySelectorAll('input[name="mode"]');
-  for(var r = 0; r < radios.length; r++) {
-    radios[r].checked = radios[r].value === mode;
-  }
-  
-  DB.saveState(State);
-  
-  renderNav();
-  renderContent();
-  postNavRender();
+    State.mode = mode;
+    Engine.mode = mode;
+    State.selectedTestMethod = '';
+    State.calcResult = null;
+    State.calcError = null;
+    
+    var radios = document.querySelectorAll('input[name="mode"]');
+    for(var r = 0; r < radios.length; r++) {
+        radios[r].checked = radios[r].value === mode;
+    }
+    
+    DB.saveState(State);
+    renderNav();
+    renderContent();
+    if(typeof postNavRender === 'function') postNavRender();
 }
 
 function postNavRender() {
-  setTimeout(function() {
-    // ✅ AGGIUNTO: gestisci anche il tab home
-    if(State.tab === 'home') {
-      initHomeAnimations();
-    }
-    if(State.tab === 'calc' && State.calcResult) postCalcRender();
-    if(State.tab === 'arrhenius') postArrheniusRender();
-    if(State.tab === 'sensitivity') postSensitivityRender();
-    if(State.tab === 'compare') postCompareRender();
-    if(State.tab === 'laminates' && DB.laminates.length >= 2) drawLamChart();
-  }, 150);
+    setTimeout(function() {
+        if(State.tab === 'home' && typeof initHomeAnimations === 'function') {
+            initHomeAnimations();
+        }
+        if(State.tab === 'calc' && State.calcResult && typeof postCalcRender === 'function') postCalcRender();
+        if(State.tab === 'arrhenius' && typeof postArrheniusRender === 'function') postArrheniusRender();
+        if(State.tab === 'sensitivity' && typeof postSensitivityRender === 'function') postSensitivityRender();
+        if(State.tab === 'compare' && typeof postCompareRender === 'function') postCompareRender();
+        if(State.tab === 'laminates' && DB.laminates.length >= 2 && typeof drawLamChart === 'function') drawLamChart();
+    }, 150);
 }
 
 function renderContent() {
-  var c=document.getElementById('app-content');
-  try {
-    switch(State.tab) {
-      case 'home': c.innerHTML=renderHome(); break;
-      case 'calc': c.innerHTML=renderCalc(); break;
-      case 'arrhenius': c.innerHTML=renderArrhenius(); break;
-      case 'sensitivity': c.innerHTML=renderSensitivity(); break;
-      case 'compare': c.innerHTML=renderCompare(); break;
-      case 'shelflife': c.innerHTML=renderShelfLife(); break; 
-      case 'materials': c.innerHTML=renderMaterials(); break; 
-      case 'laminates': c.innerHTML=renderLaminates(); break;
-      default: c.innerHTML=renderHome();
+    var c = document.getElementById('app-content');
+    if(!c) return;
+    
+    try {
+        switch(State.tab) {
+            case 'home': c.innerHTML = renderHome(); break;
+            case 'calc': c.innerHTML = renderCalc(); break;
+            case 'arrhenius': c.innerHTML = renderArrhenius(); break;
+            case 'sensitivity': c.innerHTML = renderSensitivity(); break;
+            case 'compare': c.innerHTML = renderCompare(); break;
+            case 'shelflife': c.innerHTML = renderShelfLife(); break;
+            case 'materials': c.innerHTML = renderMaterials(); break;
+            case 'laminates': c.innerHTML = renderLaminates(); break;
+            default: c.innerHTML = renderHome();
+        }
+    } catch(e) {
+        console.error('Render error:', e);
+        c.innerHTML = '<div class="alert alert-error"><strong>Render Error:</strong> ' + e.message + '</div>';
     }
-  } catch(e) {
-    console.error('Render error:',e);
-    c.innerHTML='<div class="alert alert-error"><strong>Render Error:</strong> '+e.message+'</div>';
-  }
 }
 
-// ✅ MODIFICATA (con animazioni)
-function render() { 
-  renderNav(); 
-  renderContent(); 
-  
-  // ✅ Usa requestAnimationFrame per timing perfetto con il DOM
-  requestAnimationFrame(() => {
-    if(State.tab === 'home') {
-      initHomeAnimations();
-    }
-    postNavRender();
-    refreshAds();
-  });
+function render() {
+    renderNav();
+    renderContent();
+    requestAnimationFrame(() => {
+        if(State.tab === 'home' && typeof initHomeAnimations === 'function') {
+            initHomeAnimations();
+        }
+        postNavRender();
+        if(typeof refreshAds === 'function') refreshAds();
+    });
 }
   // === ANIMAZIONI POST-RENDER PER LA HOME ===
 // === ANIMAZIONI POST-RENDER PER LA HOME ===
