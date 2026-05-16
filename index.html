@@ -3700,22 +3700,25 @@ drawMoistureAccumulationChart(res) {
 },
 
 // ====================================================================
-// 📄 EXPORT TO PDF - VERSIONE FINALE (ZERO ERRORI, LAYOUT OTTIMIZZATO)
+// 📄 EXPORT TO PDF - VERSIONE BLINDATA (ZERO REFERENCEERROR)
 // ====================================================================
 async exportToPDF(event) {
-  // 1️⃣ VERIFICA DIPENDENZE ESTERNE
-  if (typeof window.jspdf?.jsPDF === 'undefined') {
-    console.error('❌ jsPDF non caricato');
-    alert('⚠️ Libreria PDF mancante. Ricarica la pagina.');
-    return;
-  }
-  if (typeof html2canvas === 'undefined') {
-    console.error('❌ html2canvas non caricato');
-    alert('⚠️ Libreria grafici mancante. Ricarica la pagina.');
+  // ✅ 1. RILEVAMENTO ROBUSTO DI JSPDF (compatibile con CDN v2.x, v1.x e bundler)
+  const PDFLib = window.jspdf?.jsPDF || window.jspdf?.default || window.jsPDF;
+  if (typeof PDFLib !== 'function') {
+    console.error('❌ jsPDF not loaded. Expected window.jspdf.jsPDF or window.jsPDF');
+    alert('⚠️ PDF engine missing. Check your <script> tags or reload.');
     return;
   }
 
-  // 2️⃣ DEFINIZIONE CONFIGURAZIONE GRAFICI (SEMPRE IN SCOPE)
+  // ✅ 2. RILEVAMENTO HTML2CANVAS
+  if (typeof html2canvas !== 'function') {
+    console.error('❌ html2canvas not loaded');
+    alert('⚠️ Chart export library missing. Please reload.');
+    return;
+  }
+
+  // ✅ 3. CONFIG GRAFICI (SEMPRE IN SCOPE LOCALE)
   const chartConfigs = [
     { id: 'slDecayChart',      title: 'Quality Decay Over Time',       desc: 'Product quality (%) vs. storage days.' },
     { id: 'slTempChart',       title: 'Shelf Life vs Temperature',      desc: 'Predicted shelf life across temperatures.' },
@@ -3725,7 +3728,7 @@ async exportToPDF(event) {
     { id: 'slCumulativeChart', title: 'Cumulative Timeline',            desc: 'Accumulated days across logistics steps.' }
   ];
 
-  // 3️⃣ GESTIONE BOTTONE
+  // ✅ 4. GESTIONE BOTTONE
   const btn = event?.target?.closest('button') || document.querySelector('button[data-action="export-pdf"]');
   if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Generating PDF...'; }
 
@@ -3758,7 +3761,7 @@ async exportToPDF(event) {
     const appVersion   = '3.1.2';
 
     // ==================== SETUP PDF (FIX ENCODING) ====================
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: false });
+    const pdf = new PDFLib({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: false });
     pdf.setFont('helvetica', 'normal'); pdf.setTextColor(0,0,0);
     
     const PW=210, PH=297, ML=14, MR=14, MT=14, MB=14, CW=PW-ML-MR;
@@ -3893,7 +3896,7 @@ async exportToPDF(event) {
 
     sectionHeader('∑', 'Core Shelf Life Equation', 'Fundamental mass transfer model');
     pdf.setFontSize(9); pdf.setFont('helvetica','normal'); pdf.setTextColor(60,60,60);
-    pdf.text(pdf.splitTextToSize('Shelf life is calculated by integrating the permeation rate over time, accounting for the decreasing driving force as product moisture approaches the critical threshold. The model assumes Fickian diffusion and steady-state permeation through the laminate.', CW), ML, y); y+= pdf.splitTextToSize('...', CW).length*4.5+4;
+    pdf.text(pdf.splitTextToSize('Shelf life is calculated by integrating the permeation rate over time, accounting for the decreasing driving force as product moisture approaches the critical threshold. The model assumes Fickian diffusion and steady-state permeation through the laminate.', CW), ML, y); y+=18;
 
     formulaBox('t = (W × ΔM) / (A × P × Δp × f(T,RH))', 't: shelf life [days] | W: weight [g] | ΔM: moisture change | A: area [m²] | P: permeability | Δp: partial pressure diff.');
 
@@ -3953,7 +3956,6 @@ async exportToPDF(event) {
           const labels = ci.data.labels, datasets = ci.data.datasets;
           const sampleEvery = labels.length > 20 ? 5 : 1;
           const maxRows = 25;
-          const rH=6;
           pdf.setDrawColor(200,200,200); pdf.setLineWidth(0.25); pdf.line(ML, y, PW-MR, y); y+=4;
           pdf.setFontSize(9.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(40,40,40); pdf.text('Data Points', ML, y); y+=6;
 
