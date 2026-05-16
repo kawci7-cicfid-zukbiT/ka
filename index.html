@@ -53,6 +53,7 @@ body {
 }
 
 /* ===== HEADER ===== */
+/* ===== HEADER - APPLE STYLE (IDENTICO AL MOCK) ===== */
 header {
   position: sticky;
   top: 0;
@@ -60,8 +61,8 @@ header {
   background: rgba(255, 255, 255, 0.82);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
-  border-bottom: 0.5px solid var(--border);
-  transition: var(--transition);
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .header-inner {
@@ -75,27 +76,37 @@ header {
   gap: 1rem;
 }
 
+/* Logo con icona quadrata viola (goccia piccola) */
 .logo {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   text-decoration: none;
-  color: var(--text);
+  color: #1d1d1f;
   flex-shrink: 0;
 }
 .logo-icon {
-  width: 32px; height: 32px;
-  background: linear-gradient(135deg, var(--primary), var(--purple));
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #007aff, #af52de);
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 8px rgba(0,122,255,0.3);
 }
-.logo-icon svg { width: 18px; height: 18px; color: #fff; }
-.logo-text { font-weight: 700; font-size: 0.95rem; letter-spacing: -0.015em; }
+.logo-icon svg {
+  width: 18px;
+  height: 18px;
+  color: #fff;
+}
+.logo-text {
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: -0.015em;
+}
 
-/* ===== NAVIGATION ===== */
+/* Navigation orizzontale pulita */
 .nav {
   display: flex;
   align-items: center;
@@ -111,16 +122,22 @@ header {
   padding: 0.4rem 0.6rem;
   font-size: 0.78rem;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: #6e6e73;
   text-decoration: none;
   border-radius: 8px;
-  transition: var(--transition);
+  transition: all 0.2s;
   white-space: nowrap;
   position: relative;
+  background: none;
+  border: none;
+  cursor: pointer;
 }
-.nav-link:hover { color: var(--text); background: rgba(0,0,0,0.04); }
+.nav-link:hover {
+  color: #1d1d1f;
+  background: rgba(0,0,0,0.04);
+}
 .nav-link.active {
-  color: var(--primary);
+  color: #007aff;
   background: rgba(0,122,255,0.08);
   font-weight: 600;
 }
@@ -131,16 +148,70 @@ header {
   left: 20%;
   right: 20%;
   height: 2px;
-  background: var(--primary);
+  background: #007aff;
   border-radius: 1px;
 }
 
+/* Separatore verticale tra gruppi nav */
 .nav-separator {
   width: 1px;
   height: 20px;
-  background: var(--border);
+  background: rgba(0, 0, 0, 0.1);
   margin: 0 0.4rem;
   flex-shrink: 0;
+}
+
+/* Toggle WVTR/OTR - pillola blu identica al mock */
+.mode-toggle-premium {
+  display: flex;
+  background: linear-gradient(135deg, #007aff, #0062cc);
+  border-radius: 9px;
+  padding: 3px;
+  margin-left: 0.8rem;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
+}
+.mode-btn {
+  padding: 0.35rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.7);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.03em;
+}
+.mode-btn:hover:not(.active) {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+}
+.mode-btn.active {
+  background: #ffffff;
+  color: #007aff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+
+/* Responsive header */
+@media (max-width: 900px) {
+  .header-inner {
+    height: auto;
+    padding: 0.8rem 1rem;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .nav {
+    width: 100%;
+    justify-content: center;
+    padding-bottom: 0.2rem;
+  }
+  .nav-separator { display: none; }
+  .nav-link { padding: 0.4rem 0.5rem; }
+  .mode-toggle-premium {
+    margin-left: 0;
+    margin-top: 0.2rem;
+  }
 }
 
 /* ===== MODE TOGGLE PREMIUM ===== */
@@ -1094,31 +1165,40 @@ window.loadFromCommunity = async function() {
 </script>
 
 <div class="app">
-  <header>
-    <div class="header-top">
-      <h1>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<header>
+  <div class="header-inner">
+    <!-- Logo -->
+    <a href="#" class="logo" onclick="nav('home'); return false;">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
         </svg>
-        WVTR/OTR
-      </h1>
-      <div class="mode-toggle">
-        <label>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
-          </svg>
-          <input type="radio" name="mode" value="wvtr" checked onchange="setMode('wvtr')">WVTR
-        </label>
-        <label>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8" stroke-dasharray="4 3"/>
-          </svg>
-          <input type="radio" name="mode" value="otr" onchange="setMode('otr')">OTR
-        </label>
       </div>
-    </div>
-    <div class="nav-tabs" id="nav-tabs"></div>
-  </header>
+      <span class="logo-text">BarrierCalc</span>
+    </a>
+
+    <!-- Navigation -->
+    <nav class="nav" id="main-nav">
+      <button class="nav-link active" onclick="nav('home')">Home</button>
+      <button class="nav-link" onclick="nav('calc')">Calculator</button>
+      <button class="nav-link" onclick="nav('sensitivity')">Sensitivity</button>
+      <button class="nav-link" onclick="nav('shelflife')">Shelf Life</button>
+      <button class="nav-link" onclick="nav('arrhenius')">Arrhenius</button>
+      <button class="nav-link" onclick="nav('compare')">Compare</button>
+      
+      <div class="nav-separator"></div>
+      
+      <button class="nav-link" onclick="nav('materials')">Materials DB</button>
+      <button class="nav-link" onclick="nav('laminates')">Laminates DB</button>
+
+      <!-- Toggle WVTR/OTR -->
+      <div class="mode-toggle-premium">
+        <button class="mode-btn active" onclick="setMode('wvtr')">WVTR</button>
+        <button class="mode-btn" onclick="setMode('otr')">OTR</button>
+      </div>
+    </nav>
+  </div>
+</header>
   <div class="ad-container">
   <ins class="adsbygoogle"
        style="display:block"
@@ -1565,18 +1645,23 @@ var chartInstances = {};
 function destroyChart(id) { if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; } }
 
 function renderNav() {
-  var html='';
-  for(var t=0;t<TABS.length;t++){
-    var cls = State.tab===TABS[t].id?'active':'';
-   html+='<button class="nav-tab '+cls+'" data-tab="'+TABS[t].id+'">'+TABS[t].label+'</button>';
-  }
-  document.getElementById('nav-tabs').innerHTML=html;
-  var btns=document.querySelectorAll('.nav-tab');
-  for(var b=0;b<btns.length;b++){
-    btns[b].onclick=(function(tabId){return function(){State.tab=tabId;renderNav();renderContent();postNavRender();};})(btns[b].dataset.tab);
+  // Aggiorna solo le classi active, non rigenerare tutto l'HTML
+  document.querySelectorAll('.nav-link').forEach(link => {
+    link.classList.remove('active');
+  });
+  
+  // Trova il link corrispondente alla tab attiva e aggiungilo
+  const tabMap = {
+    'home': 0, 'calc': 1, 'sensitivity': 2, 'shelflife': 3,
+    'arrhenius': 4, 'compare': 5, 'materials': 7, 'laminates': 8
+  };
+  
+  const links = document.querySelectorAll('.nav-link');
+  const idx = tabMap[State.tab];
+  if (idx !== undefined && links[idx]) {
+    links[idx].classList.add('active');
   }
 }
-
 function setMode(mode) {
   State.mode = mode;
   Engine.mode = mode;
