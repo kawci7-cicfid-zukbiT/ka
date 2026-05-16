@@ -447,31 +447,18 @@ main {
 /* ===== SECTIONS ===== */
 .section {
   margin-bottom: 4rem;
+  opacity: 1; /* ✅ VISIBILE DI DEFAULT */
+  transform: translateY(0);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.section.hidden-init {
   opacity: 0;
   transform: translateY(20px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
 }
 .section.visible {
   opacity: 1;
   transform: translateY(0);
 }
-.section-header {
-  margin-bottom: 1.5rem;
-  text-align: left;
-}
-.section-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text);
-  letter-spacing: -0.02em;
-  margin-bottom: 0.4rem;
-}
-.section-desc {
-  font-size: 0.95rem;
-  color: var(--text-secondary);
-  line-height: 1.5;
-}
-
 /* ===== WORKFLOW ===== */
 .workflow {
   display: grid;
@@ -1836,12 +1823,61 @@ function render() {
 // 🎨 ANIMAZIONI HOME PAGE (Apple-style mock compatible)
 // ====================================================================
 function initHomeAnimations() {
-    if(State.tab !== 'home') return;
-    
-    // === 1. AGGIORNA CLASSIFICA TOP 3 (Firebase/Community) ===
-    if (window.communityDB) {
-        updateTop3UI();
-    }
+  if(State.tab !== 'home') return;
+
+  // === 1. Top 3 & Community ===
+  if (window.communityDB) {
+    updateTop3UI();
+  }
+
+  // === 2. Scroll Reveal Sicuro (non nasconde mai il contenuto) ===
+  const sections = document.querySelectorAll('.section');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting) {
+        entry.target.classList.remove('hidden-init');
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+  sections.forEach(sec => {
+    sec.classList.add('hidden-init'); // Prepara per l'animazione
+    observer.observe(sec);
+  });
+
+  // === 3. Feature Cards Stagger ===
+  const featuresGrid = document.getElementById('features');
+  if(featuresGrid) {
+    const cards = featuresGrid.querySelectorAll('.feature-card-premium');
+    cards.forEach((c, i) => {
+      c.style.opacity = '0';
+      c.style.transform = 'translateY(15px)';
+      c.style.transition = `opacity 0.5s ease ${i * 0.1}s, transform 0.5s ease ${i * 0.1}s`;
+      setTimeout(() => {
+        c.style.opacity = '1';
+        c.style.transform = 'translateY(0)';
+      }, 300);
+    });
+  }
+
+  // === 4. Stats Bar Animation ===
+  const statPills = document.querySelectorAll('.stat-pill');
+  statPills.forEach((p, i) => {
+    p.style.opacity = '0';
+    p.style.transform = 'translateY(10px)';
+    p.style.transition = `all 0.4s ease ${i * 0.08}s`;
+    setTimeout(() => {
+      p.style.opacity = '1';
+      p.style.transform = 'translateY(0)';
+    }, 400);
+  });
+
+  // === 5. Init Charts & Counters ===
+  initDemoCharts();
+  initCountUp();
+}
     
     // Funzione interna: aggiorna UI Top 3 con nuovo design
     async function updateTop3UI() {
