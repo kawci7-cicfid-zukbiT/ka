@@ -7174,30 +7174,89 @@ function importFile(input){
 }
 
 
-// ✅ Avvio app corretto con Firebase
-// ✅ Avvio app con attesa per Firebase
+// ====================================================================
+// 📥 FUNZIONE: Carica materials.json esterno (DEFINITA PRIMA DELL'USO)
+// ====================================================================
+async function loadExternalMaterialsDB() {
+  try {
+    console.log('🔍 Tentativo di caricamento materials.json...');
+    const res = await fetch('materials.json');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    
+    const data = await res.json();
+    const externalMats = Array.isArray(data) ? data : (data.materials || []);
+    
+    if (!externalMats.length) {
+      console.log('⚠️ Nessun materiale trovato in materials.json');
+      return;
+    }
+    
+    // Merge: evita duplicati per nome (case-insensitive)
+    const existingNames = new Set(DB.materials.map(m => m.name.toLowerCase()));
+    let addedCount = 0;
+    
+    for (const em of externalMats) {
+      if (!em || !em.name) continue;
+      
+      const normalizedName = em.name.toLowerCase().trim();
+      if (existingNames.has(normalizedName)) {
+        console.log('⏭️ Skip duplicato:', em.name);
+        continue;
+      }
+      
+      // ✅ Assegna ID univoco sequenziale (CORRETTO)
+      const numericIds = DB.materials
+        .map(m => typeof m.id === 'number' ? m.id : 0)
+        .filter(id => id > 0);
+      const maxId = numericIds.length ? Math.max(...numericIds) : 0;
+      
+      em.id = maxId + 1 + addedCount;  // ID progressivo, non esponenziale!
+      em.family = em.family || getFamily(em.name);
+      em.isMetallized = em.isMetallized || false;
+      
+      // Campi opzionali con default sicuri
+      if (!em.reliabilityVotes) em.reliabilityVotes = { up: 0, down: 0 };
+      if (!em.company) em.company = '';
+      if (!em.tdsLink) em.tdsLink = '';
+      if (!em.testMethodWVTR) em.testMethodWVTR = '';
+      if (!em.testMethodOTR) em.testMethodOTR = '';
+      
+      DB.materials.push(em);
+      existingNames.add(normalizedName);  // ✅ Aggiorna set per evitare duplicati nello stesso batch
+      addedCount++;
+    }
+    
+    console.log('✅ External DB loaded:', addedCount, 'new materials');
+    console.log('📊 Totale materiali:', DB.materials.length);
+    
+    DB.save();  // Persisti in localStorage
+    render();   // Aggiorna UI
+    
+  } catch (e) {
+    // Silenzioso: materials.json è opzionale
+    console.log('ℹ️ materials.json non caricato (opzionale):', e.message);
+  }
+}
+
+// ====================================================================
+// 🚀 AVVIO APP (IIFE) - ORDINE CORRETTO DI CARICAMENTO
+// ====================================================================
 (async function initApp() {
   console.log("🚀 Avvio app...");
   
-  // ⏳ Attendi che Firebase si carichi (max 5 secondi)
+  // ⏳ Attendi Firebase (max 5s)
   let retries = 0;
   while(!window.communityDB && retries < 50) {
     await new Promise(resolve => setTimeout(resolve, 100));
     retries++;
   }
   
-  if(!window.communityDB) {
-    console.warn("⚠️ Firebase non caricato dopo 5 secondi");
-  } else {
-    console.log("✅ Firebase pronto!");
-  }
-  
   try {
-    // 1. Carica materiali locali (default + localStorage)
+    // 1️⃣ Carica materiali locali (default + localStorage)
     DB.load();
-    console.log("📦 Materiali locali caricati:", DB.materials.length);
+    console.log("📦 Materiali locali:", DB.materials.length);
     
-    // 2. Carica stato salvato
+    // 2️⃣ Carica stato salvato
     var savedState = DB.loadState();
     if(savedState){
       if(savedState.layers) State.layers = savedState.layers;
@@ -7205,47 +7264,40 @@ function importFile(input){
       if(savedState.mode) { State.mode = savedState.mode; Engine.mode = savedState.mode; }
     }
     
-    // 3. Carica materiali dalla community Firebase
+    // 3️⃣ ✅ CARICA MATERIALS.JSON ESTERNO (database statico di base)
+    await loadExternalMaterialsDB();
+    
+    // 4️⃣ Carica materiali Firebase (database community dinamico)
     if(window.communityDB) {
-      console.log("🔄 Caricamento materiali community da Firebase...");
+      console.log("🔄 Caricamento community da Firebase...");
       const fbMats = await window.loadFromCommunity();
-      console.log("📥 Materiali trovati su Firebase:", fbMats.length);
+      console.log("📥 Firebase materials:", fbMats.length);
       
-      // Merge: aggiungi solo materiali nuovi (evita duplicati per nome)
       const existingNames = new Set(DB.materials.map(m => m.name.toLowerCase()));
-     
-// ✅ Merge corretto: Firebase è la fonte di verità per i materiali Community
-// ✅ Merge corretto: Firebase è la fonte di verità per i materiali Community
-let addedCount = 0;
-for(const fm of fbMats) {
-    var localMat = DB.materials.find(m => m.name.toLowerCase() === fm.name.toLowerCase());
-    if (localMat) {
-        // 1. Salva l'ID locale originale (per non rompere i laminati salvati)
-        var oldId = localMat.id;
-        
-        // 2. SOVRASCRIVE i dati locali con quelli freschi da Firebase
-        // (Aggiorna voti, condizioni, valori, ecc.)
-        Object.assign(localMat, fm);
-        
-        // 3. Ripristina l'ID originale
-        localMat.id = oldId;
-        localMat.isCommunity = true;
-        if(fm.firebaseDocId) localMat.firebaseDocId = fm.firebaseDocId;
-    } else if (fm.name) {
-        // Nuovo materiale: aggiungi alla lista
-        fm.id = 'fb_' + fm.id;
-        fm.isCommunity = true;
-        DB.materials.push(fm);
-        addedCount++;
-    }
-}
+      let addedCount = 0;
       
-      console.log("✅ Materiali community aggiunti:", addedCount);
-      console.log("📊 Totale materiali disponibili:", DB.materials.length);
+      for(const fm of fbMats) {
+        var localMat = DB.materials.find(m => m.name.toLowerCase() === fm.name.toLowerCase());
+        if (localMat) {
+          // ✅ Materiale esiste già: aggiorna con dati Firebase (fonte di verità)
+          var oldId = localMat.id;  // Mantieni ID locale per compatibilità
+          Object.assign(localMat, fm);  // Sovrascrivi con dati freschi
+          localMat.id = oldId;  // Ripristina ID
+          localMat.isCommunity = true;
+          if(fm.firebaseDocId) localMat.firebaseDocId = fm.firebaseDocId;
+        } else if (fm.name) {
+          // ✅ Nuovo materiale: aggiungi con prefisso fb_
+          fm.id = 'fb_' + (fm.id || Date.now());
+          fm.isCommunity = true;
+          DB.materials.push(fm);
+          addedCount++;
+        }
+      }
+      console.log("✅ Community aggiunti:", addedCount);
     }
     
-    // 4. Renderizza l'app
-    console.log("🎨 Rendering app...");
+    // 5️⃣ Renderizza l'app con tutti i materiali caricati
+    console.log("🎨 Rendering...");
     render();
     
   } catch(e) {
@@ -7254,7 +7306,6 @@ for(const fm of fbMats) {
     render();
   }
 })();
-  
 </script>
 </body>
 </html>
