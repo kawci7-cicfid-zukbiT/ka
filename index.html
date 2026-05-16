@@ -5618,19 +5618,19 @@ return `
 <div class="card methodology-card" style="margin-top:1.5rem; border-left:4px solid var(--primary); background: var(--card);">
 <div style="padding:1.2rem 1.5rem;">
 <h2 style="font-family:Georgia, 'Times New Roman', serif; font-size:1.3rem; color:var(--text); border-bottom:1px solid var(--border); padding-bottom:0.5rem; margin-bottom:1rem;">
-Understanding the Calculations: Behind the Scenes
+Understanding the calculations
 </h2>
 <div style="font-size:0.95rem; line-height:1.8; color:#334155; font-family:Georgia, 'Times New Roman', serif;">
 
-<p>When engineers design packaging for food, pharmaceuticals, or sensitive products, they often combine several thin layers of different materials. Each layer plays a specific role: one might block moisture, another might block oxygen, and another might provide structural strength or heat-sealability. But how do we mathematically predict how well the whole structure will perform? This calculator answers that question using a classic physics principle: the <strong>series resistance model</strong>.</p>
+<p>When engineers design packaging for food, pharmaceuticals, or sensitive products, they often combine several thin layers of different materials. Each layer plays a specific role: one might block moisture, another might block oxygen, and another might provide structural strength or heat-sealability. But how do we mathematically predict how well the whole structure will perform? This calculator answers that question using a classic physics principle: the series resistance model.</p>
 
-<p>Think of it like building an insulated wall to keep out the cold. A single brick lets some heat through. Add a layer of foam insulation, then another brick, then a vapor barrier—and suddenly, the wall becomes incredibly effective. Each layer adds its own "resistance" to the thermal flow. Packaging works exactly the same way, except instead of blocking heat, we are blocking water vapor molecules (WVTR) or oxygen molecules (OTR).</p>
+<p>Think of it like building an insulated wall to keep out the cold. A single brick lets some heat through. Add a layer of foam insulation, then another brick, then a vapor barrier and suddenly, the wall becomes incredibly effective. Each layer adds its own "resistance" to the thermal flow. Packaging works exactly the same way, except instead of blocking heat, we are blocking water vapor molecules (WVTR) or oxygen molecules (OTR).</p>
 
 <div style="background:var(--primary-light); padding:0.8rem 1rem; border-radius:8px; border-left:3px solid var(--primary); margin:1rem 0; font-family:sans-serif; font-size:0.9rem;">
 <strong>The Core Rule:</strong> The total barrier resistance of a laminate is simply the sum of the individual resistances of each layer. Because permeability is the physical opposite (the inverse) of resistance, the final transmission rate is calculated by dividing 1 by the total accumulated resistance.
 </div>
 
-<h3 style="font-size:1.1rem; color:var(--text); margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">1. How Single-Layer Resistance is Calculated</h3>
+<h3 style="font-size:1.1rem; color:var(--text); margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">How single layer resistance is calculated</h3>
 <p>For any uniform polymer film, gas transport under steady conditions follows Fick's Law. This means a material's resistance depends linearly on the thickness you use versus its baseline performance measured in a laboratory. To find a single layer's resistance, the calculator uses this exact formula:</p>
 
 <div style="background:#f8fafc; padding:1.1rem; border-radius:6px; font-family:monospace; font-size:0.95rem; text-align:center; border:1px dashed var(--border); margin:1rem 0; color:#0f172a;">
@@ -5639,7 +5639,7 @@ R<sub>layer</sub> = Thickness<sub>input</sub> / (Permeability<sub>ref</sub> × T
 
 <p>In plain words: the term <em>(Permeability<sub>ref</sub> × Thickness<sub>ref</sub>)</em> is a constant value representing the material's intrinsic barrier quality (often called the Permeation Coefficient). If you double the thickness of your layer, you double its mathematical resistance, which effectively cuts the amount of gas leaking through in half.</p>
 
-<h3 style="font-size:1.1rem; color:var(--text); margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">2. Combining Layers (The Multilayer Math)</h3>
+<h3 style="font-size:1.1rem; color:var(--text); margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">Combining Layers (The Multilayer Math)</h3>
 <p>When you stack multiple materials together to form a laminate sheet, the calculator mathematically chains them together by adding up their calculated resistances:</p>
 
 <div style="background:#f8fafc; padding:1.1rem; border-radius:6px; font-family:monospace; font-size:0.95rem; text-align:center; border:1px dashed var(--border); margin:1rem 0; color:#0f172a;">
@@ -5648,7 +5648,7 @@ Final Permeability (WVTR or OTR) = 1 / R<sub>total</sub>
 </div>
 
 <div style="background:#f0fdf4; padding:1rem; border-radius:8px; border-left:3px solid var(--success); margin:1.2rem 0; font-family:sans-serif; font-size:0.9rem;">
-<strong style="color:#16a34a; font-size:0.95rem;">📊 A Step-by-Step Numerical Example:</strong><br>
+<strong style="color:#16a34a; font-size:0.95rem;"> A Step-by-Step example:</strong><br>
 Let's calculate the final WVTR of a simple two-layer pouch made of <strong>PET (12 µm)</strong> and <strong>LDPE (50 µm)</strong>:<br>
 <ul>
   <li><strong>Layer 1 (PET 12 µm):</strong> Laboratory reference says it has a WVTR of 30.0 at 12 µm. <br>
@@ -5661,8 +5661,8 @@ Let's calculate the final WVTR of a simple two-layer pouch made of <strong>PET (
 Notice how the LDPE layer is providing the vast majority of the moisture resistance (0.5000 out of 0.5333 total), making it the true moisture barrier in this structure!
 </div>
 
-<h3 style="font-size:1.1rem; color:var(--text); margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">3. Special Case: Hygroscopic Dynamics</h3>
-<p>Some premium barrier materials—like EVOH or Polyamides (Nylon)—are highly sensitive to water vapor. When environmental humidity rises, these polymers absorb water molecules, which act as plasticizers, loosening the polymer chains and accelerating gas leakage. To simulate this real-world risk, the calculator applies an exponential scaling factor to the material's resistance based on its experimental sensitivity coefficient (&beta;):</p>
+<h3 style="font-size:1.1rem; color:var(--text); margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">Special Case: Hygroscopic Dynamics</h3>
+<p>Some premium barrier materials, like EVOH or Polyamides (Nylon), are highly sensitive to water vapor. When environmental humidity rises, these polymers absorb water molecules, which act as plasticizers, loosening the polymer chains and accelerating gas leakage. To simulate this real-world risk, the calculator applies an exponential scaling factor to the material's resistance based on its experimental sensitivity coefficient (&beta;):</p>
 
 <div style="background:#f8fafc; padding:1.1rem; border-radius:6px; font-family:monospace; font-size:0.95rem; text-align:center; border:1px dashed var(--border); margin:1rem 0; color:#0f172a;">
 Corrected Permeability = Permeability<sub>base</sub> × e<sup>&beta; × (&Delta;RH)</sup>
@@ -5671,10 +5671,10 @@ Corrected Permeability = Permeability<sub>base</sub> × e<sup>&beta; × (&Delta;
 <p>Where <em>&Delta;RH</em> represents the difference between your current storage humidity and the original lab testing condition. If you test an EVOH-based material in tropical humidity without calculating this factor, your physical barrier will break down much faster than an uncorrected calculation would predict.</p>
 
 <div style="background:var(--warning-light); padding:0.8rem 1rem; border-radius:8px; border-left:3px solid var(--warning); margin:1rem 0; font-family:sans-serif; font-size:0.9rem;">
-<strong>Engineering Warning:</strong> If no &beta; (beta) coefficient is supplied in the database, the model assumes the material is completely immune to moisture damage. In tropical or high-condensation environments, this assumption will generate overly optimistic shelf-life estimates.
+<strong>Info:</strong> If no &beta; (beta) coefficient is supplied in the database, the model assumes the material is completely immune to moisture damage. In tropical or high-condensation environments, this assumption will generate overly optimistic shelf-life estimates.
 </div>
 
-<h3 style="font-size:1.1rem; color:var(--text); margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">4. Special Case: Metallized and Coated Shields</h3>
+<h3 style="font-size:1.1rem; color:var(--text); margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">Special Case: Metallized and Coated Shields</h3>
 <p>Metallized films (such as MET-PET) and nanometric ceramic coatings (like AlO<sub>x</sub> or SiO<sub>x</sub>) follow entirely different physical rules. Their barrier performance does not come from the bulk polymer thickness, but rather from an ultra-thin, atomic layer of aluminum or oxide deposited onto the surface. Because a thicker base film will not have a better aluminum layer, the calculator treats these specialty materials as having a fixed, constant permeability barrier, bypasssing the linear thickness division rule.</p>
 
 <h3 style="font-size:1.1rem; color:var(--text); margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">Reading Your Analysis Matrix</h3>
