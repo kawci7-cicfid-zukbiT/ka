@@ -1648,27 +1648,38 @@ function initHomeAnimations() {
     
     // Funzione interna aggiornata
     async function updateTop3UI() {
-        const top3 = await refreshGlobalRankings();
-        const container = document.getElementById('top3-ranking');
-        if (!container) return;
-        
-        if (top3.length === 0) {
-            container.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--text-light);font-size:0.78rem">Start calculating to see monthly rankings</div>';
-        } else {
-            // ✅ NUOVO DESIGN: Lista verticale (3 righe) - NO contatore
-            container.innerHTML = top3.map(m => `
-            <div style="background:#fff;border-radius:10px;padding:0.7rem 0.5rem;display:flex;align-items:center;gap:0.7rem;border:1px solid var(--border);transition:all 0.2s">
-                <div style="font-size:1.4rem;flex-shrink:0;">${m.icon}</div>
-                <div style="text-align:left;overflow:hidden;">
-                    <div style="font-weight:600;font-size:0.82rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${m.name}">${m.name}</div>
-                    ${m.company ? `<div style="font-size:0.68rem;color:var(--text-light);margin-top:0.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${m.company}</div>` : '<div style="height:1rem;"></div>'}
+    const top3 = await refreshGlobalRankings();
+    const container = document.getElementById('top3-ranking');
+    if (!container) return;
+
+    if (top3.length === 0) {
+        container.innerHTML = `
+            <div style="padding:1.5rem;text-align:center;color:#94a3b8;font-size:0.82rem">
+                Start calculating to see rankings
+            </div>`;
+    } else {
+        const medals = ['01', '02', '03'];
+        container.innerHTML = top3.map((m, idx) => `
+            <div style="display:flex;align-items:center;gap:1rem;padding:0.85rem 1.5rem;border-bottom:1px solid #f8fafc">
+                <div style="font-size:0.72rem;font-weight:700;color:#cbd5e1;font-family:monospace;width:20px;flex-shrink:0">
+                    ${medals[idx]}
+                </div>
+                <div style="flex:1;min-width:0">
+                    <div style="font-size:0.85rem;font-weight:600;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                        ${m.name}
+                    </div>
+                    <div style="font-size:0.72rem;color:#94a3b8;margin-top:0.1rem">
+                        ${m.company || 'Community · ' + m.count + ' uses'}
+                    </div>
+                </div>
+                <div style="font-size:0.72rem;font-weight:700;color:#2563eb">
+                    ${m.count}
                 </div>
             </div>
-            `).join('');
-            container.style.opacity = '0.6';
-            setTimeout(() => container.style.opacity = '1', 150);
-        }
+        `).join('');
     }
+}
+
     // Rendi accessibile globalmente per il refresh da recordMaterialUsage
     window.updateTop3UI = updateTop3UI;
 
@@ -2137,140 +2148,166 @@ function renderHome() {
     for(var i = 0; i < DB.materials.length; i++) {
         if(Engine.validateArrhenius(DB.materials[i]).valid) multiTempMats++;
     }
-    
     var commCount = getCommunityCount();
 
     return `
-    <div class="home-wrapper">
-        <!-- 1. HERO SECTION -->
-        <div class="hero" style="margin-bottom:1.5rem">
-            <div class="hero-content">
-                <h2 class="text-gradient" style="font-size:1.4rem">WVTR/OTR Calculator</h2>
-                <p style="font-size:0.85rem;opacity:0.9;margin-top:0.4rem">
-                    Professional permeability analysis for multilayer packaging
-                </p>
-            </div>
-        </div>
+    <div style="max-width:1100px;margin:0 auto;padding:0 0.5rem">
 
-        <!-- 2. RIGA SUPERIORE: Community & Top 3 -->
-        <div class="section-row top-row">
-            <!-- Box Community -->
-            <div class="card" style="margin:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; background:linear-gradient(135deg, var(--purple-light), #fff)">
-                <div style="font-size:2.5rem; margin-bottom:0.2rem">🌍</div>
-                <div style="font-size:2.5rem; font-weight:800; color:var(--purple)">${commCount}</div>
-                <div style="font-size:0.8rem; font-weight:600; color:var(--text); margin-bottom:0.8rem">Materials Shared</div>
-                <button class="btn btn-primary" style="width:100%;background:var(--purple)" onclick="document.getElementById('nav-tabs').querySelector('[data-tab=materials]').click()">
-                    Explore Database →
+        <!-- HERO -->
+        <div style="padding:3rem 2rem 2.5rem;margin-bottom:2rem;border-bottom:1px solid #e2e8f0">
+            <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+                <div>
+                    <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:#2563eb;text-transform:uppercase;margin-bottom:0.6rem">
+                        Packaging Engineering Tool
+                    </div>
+                    <h1 style="font-size:2.4rem;font-weight:800;color:#0f172a;line-height:1.15;margin:0 0 0.75rem 0;letter-spacing:-0.03em">
+                        WVTR / OTR<br>Calculator
+                    </h1>
+                    <p style="font-size:0.95rem;color:#64748b;margin:0;max-width:480px;line-height:1.6">
+                        Professional barrier analysis for multilayer packaging structures. 
+                        Resistance model, Arrhenius prediction, shelf life estimation.
+                    </p>
+                </div>
+                <button 
+                    onclick="document.getElementById('nav-tabs').querySelector('[data-tab=calc]').click()"
+                    style="background:#2563eb;color:#fff;border:none;padding:0.85rem 2rem;border-radius:8px;font-size:0.9rem;font-weight:600;cursor:pointer;letter-spacing:0.01em;transition:background 0.2s;white-space:nowrap"
+                    onmouseover="this.style.background='#1d4ed8'"
+                    onmouseout="this.style.background='#2563eb'">
+                    Start Calculation →
                 </button>
             </div>
-
-            <!-- Box Top 3 -->
-            <div class="card" style="margin:0; padding:1rem">
-                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.8rem">
-                    <h2 style="margin:0; font-size:1rem; display:flex; align-items:center; gap:0.4rem">
-                        <span></span> Most used materials of the month are
-                    </h2>
-                    <span class="badge badge-blue"></span>
-                </div>
-                <div id="top3-ranking" style="display:flex; flex-direction:column; gap:0.5rem">
-                    <div style="text-align:center; padding:1rem; color:var(--text-light); font-size:0.8rem">Start calculating...</div>
-                </div>
-            </div>
         </div>
 
-        <!-- ✅ STATS CARDS (PULITE, SENZA ICONE) -->
-<div class="grid grid-3" style="margin-bottom:1.5rem">
-    <!-- Materials Available -->
-    <div class="card" style="text-align:center;padding:1rem;animation:statEntrance 0.4s ease forwards;opacity:0">
-        <div style="font-size:1.8rem;font-weight:700;color:var(--primary)" class="count-up" data-target="${totalMats}">${totalMats}</div>
-        <div style="font-size:0.75rem;color:var(--text-light)">Materials Available</div>
-        <div class="progress-bar"><div class="progress-fill" style="--progress: ${Math.min(totalMats/50*100,100)}%"></div></div>
-    </div>
-    
-    <!-- Arrhenius Ready -->
-    <div class="card" style="text-align:center;padding:1rem;animation:statEntrance 0.4s ease forwards 0.15s;opacity:0">
-        <div style="font-size:1.8rem;font-weight:700;color:var(--success)" class="count-up" data-target="${multiTempMats}">0</div>
-        <div style="font-size:0.75rem;color:var(--text-light)">Arrhenius Ready</div>
-        <div class="progress-bar"><div class="progress-fill" style="--progress: ${Math.min(multiTempMats/20*100,100)}%;background:var(--success)"></div></div>
-    </div>
-    
-    <!-- Saved Laminates -->
-    <div class="card" style="text-align:center;padding:1rem;animation:statEntrance 0.4s ease forwards 0.3s;opacity:0">
-        <div style="font-size:1.8rem;font-weight:700;color:var(--purple)" class="count-up" data-target="${totalLams}">0</div>
-        <div style="font-size:0.75rem;color:var(--text-light)">Saved Laminates</div>
-        <div class="progress-bar"><div class="progress-fill" style="--progress: ${Math.min(totalLams/30*100,100)}%;background:var(--purple)"></div></div>
-    </div>
-</div>
-<!-- ✅ INSERISCI QUI IL BANNER HOME -->
-<div class="ad-container" style="margin:1.25rem auto; max-width:728px;">
-  <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="TEST" data-ad-format="auto" data-full-width-responsive="true"></ins>
-</div>
-        <!-- 4. FEATURES GRID -->
-        <div class="section-row features-grid" id="featuresSection">
-            <div class="card feature-card" style="margin:0; display:flex; align-items:start; gap:0.8rem">
-                <div style="background:var(--primary-light); padding:0.5rem; border-radius:12px; flex-shrink:0">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" style="width:24px;height:24px"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg>
-                </div>
-                <div>
-                    <h3 style="font-size:0.9rem; margin:0 0 0.2rem 0">Resistance Model</h3>
-                    <p style="font-size:0.75rem; color:var(--text-light); margin:0; line-height:1.4">Advanced algorithm based on layer resistances for accurate permeability prediction.</p>
-                </div>
-            </div>
+        <!-- KPI ROW -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#e2e8f0;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;margin-bottom:2rem">
             
-            <div class="card feature-card" style="margin:0; display:flex; align-items:start; gap:0.8rem">
-                <div style="background:var(--success-light); padding:0.5rem; border-radius:12px; flex-shrink:0">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" style="width:24px;height:24px"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            <!-- Community Materials -->
+            <div style="background:#fff;padding:1.75rem 1.5rem">
+                <div style="font-size:0.72rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#64748b;margin-bottom:0.5rem">
+                    Community Materials
                 </div>
-                <div>
-                    <h3 style="font-size:0.9rem; margin:0 0 0.2rem 0">Arrhenius Fit</h3>
-                    <p style="font-size:0.75rem; color:var(--text-light); margin:0; line-height:1.4">Automatic R² validation to predict barrier performance at untested temperatures.</p>
+                <div style="font-size:2.8rem;font-weight:800;color:#2563eb;line-height:1;margin-bottom:0.4rem">
+                    ${commCount}
+                </div>
+                <div style="font-size:0.78rem;color:#94a3b8">
+                    Shared by the community
+                </div>
+                <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid #f1f5f9">
+                    <button 
+                        onclick="document.getElementById('nav-tabs').querySelector('[data-tab=materials]').click()"
+                        style="font-size:0.78rem;color:#2563eb;background:none;border:none;cursor:pointer;padding:0;font-weight:600">
+                        Explore database →
+                    </button>
                 </div>
             </div>
 
-            <div class="card feature-card" style="margin:0; display:flex; align-items:start; gap:0.8rem">
-                <div style="background:var(--warning-light); padding:0.5rem; border-radius:12px; flex-shrink:0">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2" style="width:24px;height:24px"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-6"/></svg>
+            <!-- Arrhenius Ready -->
+            <div style="background:#fff;padding:1.75rem 1.5rem">
+                <div style="font-size:0.72rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#64748b;margin-bottom:0.5rem">
+                    Arrhenius Ready
                 </div>
-                <div>
-                    <h3 style="font-size:0.9rem; margin:0 0 0.2rem 0">Sensitivity</h3>
-                    <p style="font-size:0.75rem; color:var(--text-light); margin:0; line-height:1.4">Analyze how changing layer thickness affects total barrier to optimize costs.</p>
+                <div style="font-size:2.8rem;font-weight:800;color:#0f172a;line-height:1;margin-bottom:0.4rem">
+                    ${multiTempMats}
+                </div>
+                <div style="font-size:0.78rem;color:#94a3b8">
+                    Multi-temperature datasets
+                </div>
+                <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid #f1f5f9">
+                    <button 
+                        onclick="document.getElementById('nav-tabs').querySelector('[data-tab=arrhenius]').click()"
+                        style="font-size:0.78rem;color:#2563eb;background:none;border:none;cursor:pointer;padding:0;font-weight:600">
+                        Run analysis →
+                    </button>
                 </div>
             </div>
 
-            <div class="card feature-card" style="margin:0; display:flex; align-items:start; gap:0.8rem">
-                <div style="background:var(--purple-light); padding:0.5rem; border-radius:12px; flex-shrink:0">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" style="width:24px;height:24px"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+            <!-- Saved Laminates -->
+            <div style="background:#fff;padding:1.75rem 1.5rem">
+                <div style="font-size:0.72rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#64748b;margin-bottom:0.5rem">
+                    Saved Laminates
                 </div>
-                <div>
-                    <h3 style="font-size:0.9rem; margin:0 0 0.2rem 0">Community Cloud</h3>
-                    <p style="font-size:0.75rem; color:var(--text-light); margin:0; line-height:1.4">Share your materials with the community and access real-time global data.</p>
+                <div style="font-size:2.8rem;font-weight:800;color:#0f172a;line-height:1;margin-bottom:0.4rem">
+                    ${totalLams}
+                </div>
+                <div style="font-size:0.78rem;color:#94a3b8">
+                    Structures in your library
+                </div>
+                <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid #f1f5f9">
+                    <button 
+                        onclick="document.getElementById('nav-tabs').querySelector('[data-tab=laminates]').click()"
+                        style="font-size:0.78rem;color:#2563eb;background:none;border:none;cursor:pointer;padding:0;font-weight:600">
+                        View library →
+                    </button>
                 </div>
             </div>
         </div>
 
-        <!-- 5. GRAFICI -->
-        <div class="section-row">
-            <div class="card">
-                <h2 style="margin-bottom:1rem; font-size:1rem">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px; vertical-align:middle; margin-right:0.4rem"><path d="M3 3v18h18"/></svg>
-                    Live Preview
-                </h2>
-                <div class="demo-charts">
-                    <div class="demo-chart-card">
-                        <h4>WVTR vs Temperature</h4>
-                        <div class="chart-mini"><canvas id="demoChart1"></canvas></div>
+        <!-- TOP 3 + CAPABILITIES -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem">
+
+            <!-- Top 3 -->
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
+                <div style="padding:1.25rem 1.5rem;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between">
+                    <div>
+                        <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#64748b">
+                            This Month
+                        </div>
+                        <div style="font-size:0.95rem;font-weight:700;color:#0f172a;margin-top:0.15rem">
+                            Most Used Materials
+                        </div>
                     </div>
-                    <div class="demo-chart-card">
-                        <h4>Layer Resistance</h4>
-                        <div class="chart-mini"><canvas id="demoChart2"></canvas></div>
+                    <div style="width:8px;height:8px;border-radius:50%;background:#22c55e"></div>
+                </div>
+                <div id="top3-ranking" style="padding:0.5rem 0">
+                    <div style="padding:1.5rem;text-align:center;color:#94a3b8;font-size:0.82rem">
+                        Loading rankings...
                     </div>
                 </div>
+            </div>
+
+            <!-- Capabilities -->
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
+                <div style="padding:1.25rem 1.5rem;border-bottom:1px solid #f1f5f9">
+                    <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#64748b">
+                        Platform
+                    </div>
+                    <div style="font-size:0.95rem;font-weight:700;color:#0f172a;margin-top:0.15rem">
+                        Core Capabilities
+                    </div>
+                </div>
+                <div style="padding:0.5rem 0">
+                    ${[
+                        { label: 'Multilayer Resistance Model', desc: 'Series resistance calculation per ISO/ASTM' },
+                        { label: 'Arrhenius Temperature Fit', desc: 'R² validated prediction at untested temperatures' },
+                        { label: 'Shelf Life Engine', desc: 'GAB isotherm + oxidation kinetics' },
+                        { label: 'Sensitivity & Optimization', desc: 'Thickness sweep and cost optimizer' },
+                    ].map(f => `
+                        <div style="display:flex;align-items:center;gap:1rem;padding:0.75rem 1.5rem;border-bottom:1px solid #f8fafc">
+                            <div style="width:6px;height:6px;border-radius:50%;background:#2563eb;flex-shrink:0"></div>
+                            <div>
+                                <div style="font-size:0.82rem;font-weight:600;color:#0f172a">${f.label}</div>
+                                <div style="font-size:0.72rem;color:#94a3b8;margin-top:0.1rem">${f.desc}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER NOTE -->
+        <div style="padding:1.5rem 0;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
+            <div style="font-size:0.72rem;color:#94a3b8">
+                For R&D and engineering use · Results require laboratory validation per ASTM F1249 / ISO 15106
+            </div>
+            <div style="font-size:0.72rem;color:#94a3b8">
+                WVTR/OTR Calculator
             </div>
         </div>
 
     </div>
     `;
 }
+
   // ✅ Vota affidabilità materiale
 // ✅ Vota affidabilità (con controllo connessione Cloud)
 async function voteReliability(matId, voteType) {
