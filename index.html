@@ -954,6 +954,27 @@ main {
     padding-right: 1rem !important;
   }
 }
+    /* ✅ WORKFLOW RESPONSIVE */
+@media (max-width: 768px) {
+  .workflow-arrow { display: none !important; }
+  .home-wrapper > div:first-child { padding: 1.5rem 1rem 1rem; }
+}
+
+/* ✅ PULIZIA NAV TABS SU DESKTOP */
+@media (min-width: 1024px) {
+  .nav-tabs { gap: 0.2rem; padding: 0 1.5rem 0.5rem; }
+  .nav-tab { padding: 0.45rem 0.8rem; font-size: 0.78rem; }
+}
+
+/* ✅ ANIMAZIONE STATS PIÙ FLUIDA */
+@keyframes statEntrance {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.card .count-up { opacity: 0; animation: statEntrance 0.5s ease forwards; }
+.card:nth-child(1) .count-up { animation-delay: 0.1s; }
+.card:nth-child(2) .count-up { animation-delay: 0.2s; }
+.card:nth-child(3) .count-up { animation-delay: 0.3s; }
 </style>
   <!-- 📢 GOOGLE ADSENSE -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1234567890123456" crossorigin="anonymous"></script>
@@ -1555,15 +1576,34 @@ var chartInstances = {};
 function destroyChart(id) { if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; } }
 
 function renderNav() {
-  var html='';
-  for(var t=0;t<TABS.length;t++){
-    var cls = State.tab===TABS[t].id?'active':'';
-   html+='<button class="nav-tab '+cls+'" data-tab="'+TABS[t].id+'">'+TABS[t].label+'</button>';
+  var html = '';
+  var separatorAdded = false;
+  var coreTabs = ['home', 'calc', 'sensitivity', 'shelflife'];
+  
+  for (var t = 0; t < TABS.length; t++) {
+    var tab = TABS[t];
+    
+    // ✅ Inserisce separatore visivo dopo i tool core
+    if (tab.id === 'shelflife' && !separatorAdded) {
+      html += '<div style="flex:0 0 auto; width:1px; height:14px; background:rgba(255,255,255,0.4); margin:0 0.4rem; align-self:center; border-radius:1px;"></div>';
+      separatorAdded = true;
+    }
+    
+    var cls = State.tab === tab.id ? 'active' : '';
+    html += '<button class="nav-tab ' + cls + '" data-tab="' + tab.id + '">' + tab.label + '</button>';
   }
-  document.getElementById('nav-tabs').innerHTML=html;
-  var btns=document.querySelectorAll('.nav-tab');
-  for(var b=0;b<btns.length;b++){
-    btns[b].onclick=(function(tabId){return function(){State.tab=tabId;renderNav();renderContent();postNavRender();};})(btns[b].dataset.tab);
+  
+  document.getElementById('nav-tabs').innerHTML = html;
+  var btns = document.querySelectorAll('.nav-tab');
+  for (var b = 0; b < btns.length; b++) {
+    btns[b].onclick = (function(tabId) {
+      return function() {
+        State.tab = tabId;
+        renderNav();
+        renderContent();
+        postNavRender();
+      };
+    })(btns[b].dataset.tab);
   }
 }
 
@@ -2131,145 +2171,142 @@ function getCommunityCount() {
     return DB.materials.filter(m => m.isCommunity || String(m.id).startsWith('fb_')).length;
 }
 function renderHome() {
-    var totalMats = DB.materials.length;
-    var totalLams = DB.laminates.length;
-    var multiTempMats = 0;
-    for(var i = 0; i < DB.materials.length; i++) {
-        if(Engine.validateArrhenius(DB.materials[i]).valid) multiTempMats++;
-    }
+  var totalMats = DB.materials.length;
+  var totalLams = DB.laminates.length;
+  var multiTempMats = 0;
+  for(var i = 0; i < DB.materials.length; i++) {
+    if(Engine.validateArrhenius(DB.materials[i]).valid) multiTempMats++;
+  }
+  var commCount = getCommunityCount();
+
+  return `
+  <div class="home-wrapper" style="max-width:1100px; margin:0 auto; padding:0 0.5rem;">
     
-    var commCount = getCommunityCount();
-
-    return `
-    <div class="home-wrapper">
-        <!-- 1. HERO SECTION -->
-        <div class="hero" style="margin-bottom:1.5rem">
-            <div class="hero-content">
-                <h2 class="text-gradient" style="font-size:1.4rem">WVTR/OTR Calculator</h2>
-                <p style="font-size:0.85rem;opacity:0.9;margin-top:0.4rem">
-                    Professional permeability analysis for multilayer packaging
-                </p>
-            </div>
-        </div>
-
-        <!-- 2. RIGA SUPERIORE: Community & Top 3 -->
-        <div class="section-row top-row">
-            <!-- Box Community -->
-            <div class="card" style="margin:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; background:linear-gradient(135deg, var(--purple-light), #fff)">
-                <div style="font-size:2.5rem; margin-bottom:0.2rem">🌍</div>
-                <div style="font-size:2.5rem; font-weight:800; color:var(--purple)">${commCount}</div>
-                <div style="font-size:0.8rem; font-weight:600; color:var(--text); margin-bottom:0.8rem">Materials Shared</div>
-                <button class="btn btn-primary" style="width:100%;background:var(--purple)" onclick="document.getElementById('nav-tabs').querySelector('[data-tab=materials]').click()">
-                    Explore Database →
-                </button>
-            </div>
-
-            <!-- Box Top 3 -->
-            <div class="card" style="margin:0; padding:1rem">
-                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.8rem">
-                    <h2 style="margin:0; font-size:1rem; display:flex; align-items:center; gap:0.4rem">
-                        <span></span> Most used materials of the month are
-                    </h2>
-                    <span class="badge badge-blue"></span>
-                </div>
-                <div id="top3-ranking" style="display:flex; flex-direction:column; gap:0.5rem">
-                    <div style="text-align:center; padding:1rem; color:var(--text-light); font-size:0.8rem">Start calculating...</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ✅ STATS CARDS (PULITE, SENZA ICONE) -->
-<div class="grid grid-3" style="margin-bottom:1.5rem">
-    <!-- Materials Available -->
-    <div class="card" style="text-align:center;padding:1rem;animation:statEntrance 0.4s ease forwards;opacity:0">
-        <div style="font-size:1.8rem;font-weight:700;color:var(--primary)" class="count-up" data-target="${totalMats}">${totalMats}</div>
-        <div style="font-size:0.75rem;color:var(--text-light)">Materials Available</div>
-        <div class="progress-bar"><div class="progress-fill" style="--progress: ${Math.min(totalMats/50*100,100)}%"></div></div>
+    <!-- 🟦 ZONA 1: HERO + CTA (Sopra la piega) -->
+    <div style="text-align:center; padding: 2.5rem 1rem 1.5rem; max-width: 800px; margin: 0 auto;">
+      <h2 style="font-size: clamp(1.5rem, 4vw, 2rem); font-weight: 800; margin-bottom: 0.8rem; line-height: 1.25; color: var(--text);">
+        Calculate barrier performance of your multilayer film in 3 steps
+      </h2>
+      <p style="color: var(--text-light); margin-bottom: 2rem; font-size: 1.05rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+        Predict WVTR/OTR, optimize laminate structures, and estimate shelf life with professional-grade accuracy.
+      </p>
+      <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+        <button class="btn btn-primary" style="padding: 0.85rem 1.6rem; font-size: 1rem; border-radius: 10px; box-shadow: 0 4px 12px rgba(37,99,235,0.25);" onclick="nav('calc')">
+          ▶ Start Calculation
+        </button>
+        <button class="btn btn-outline" style="padding: 0.85rem 1.6rem; font-size: 1rem; border-radius: 10px; border-width: 2px;" onclick="nav('materials')">
+          📚 Browse Materials
+        </button>
+      </div>
     </div>
-    
-    <!-- Arrhenius Ready -->
-    <div class="card" style="text-align:center;padding:1rem;animation:statEntrance 0.4s ease forwards 0.15s;opacity:0">
-        <div style="font-size:1.8rem;font-weight:700;color:var(--success)" class="count-up" data-target="${multiTempMats}">0</div>
-        <div style="font-size:0.75rem;color:var(--text-light)">Arrhenius Ready</div>
-        <div class="progress-bar"><div class="progress-fill" style="--progress: ${Math.min(multiTempMats/20*100,100)}%;background:var(--success)"></div></div>
-    </div>
-    
-    <!-- Saved Laminates -->
-    <div class="card" style="text-align:center;padding:1rem;animation:statEntrance 0.4s ease forwards 0.3s;opacity:0">
-        <div style="font-size:1.8rem;font-weight:700;color:var(--purple)" class="count-up" data-target="${totalLams}">0</div>
-        <div style="font-size:0.75rem;color:var(--text-light)">Saved Laminates</div>
-        <div class="progress-bar"><div class="progress-fill" style="--progress: ${Math.min(totalLams/30*100,100)}%;background:var(--purple)"></div></div>
-    </div>
-</div>
-<!-- ✅ INSERISCI QUI IL BANNER HOME -->
-<div class="ad-container" style="margin:1.25rem auto; max-width:728px;">
-  <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="TEST" data-ad-format="auto" data-full-width-responsive="true"></ins>
-</div>
-        <!-- 4. FEATURES GRID -->
-        <div class="section-row features-grid" id="featuresSection">
-            <div class="card feature-card" style="margin:0; display:flex; align-items:start; gap:0.8rem">
-                <div style="background:var(--primary-light); padding:0.5rem; border-radius:12px; flex-shrink:0">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" style="width:24px;height:24px"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg>
-                </div>
-                <div>
-                    <h3 style="font-size:0.9rem; margin:0 0 0.2rem 0">Resistance Model</h3>
-                    <p style="font-size:0.75rem; color:var(--text-light); margin:0; line-height:1.4">Advanced algorithm based on layer resistances for accurate permeability prediction.</p>
-                </div>
-            </div>
-            
-            <div class="card feature-card" style="margin:0; display:flex; align-items:start; gap:0.8rem">
-                <div style="background:var(--success-light); padding:0.5rem; border-radius:12px; flex-shrink:0">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" style="width:24px;height:24px"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-                </div>
-                <div>
-                    <h3 style="font-size:0.9rem; margin:0 0 0.2rem 0">Arrhenius Fit</h3>
-                    <p style="font-size:0.75rem; color:var(--text-light); margin:0; line-height:1.4">Automatic R² validation to predict barrier performance at untested temperatures.</p>
-                </div>
-            </div>
 
-            <div class="card feature-card" style="margin:0; display:flex; align-items:start; gap:0.8rem">
-                <div style="background:var(--warning-light); padding:0.5rem; border-radius:12px; flex-shrink:0">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2" style="width:24px;height:24px"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-6"/></svg>
-                </div>
-                <div>
-                    <h3 style="font-size:0.9rem; margin:0 0 0.2rem 0">Sensitivity</h3>
-                    <p style="font-size:0.75rem; color:var(--text-light); margin:0; line-height:1.4">Analyze how changing layer thickness affects total barrier to optimize costs.</p>
-                </div>
-            </div>
-
-            <div class="card feature-card" style="margin:0; display:flex; align-items:start; gap:0.8rem">
-                <div style="background:var(--purple-light); padding:0.5rem; border-radius:12px; flex-shrink:0">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" style="width:24px;height:24px"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-                </div>
-                <div>
-                    <h3 style="font-size:0.9rem; margin:0 0 0.2rem 0">Community Cloud</h3>
-                    <p style="font-size:0.75rem; color:var(--text-light); margin:0; line-height:1.4">Share your materials with the community and access real-time global data.</p>
-                </div>
-            </div>
+    <!-- 🟦 ZONA 2: WORKFLOW VISIVO (3 Passi) -->
+    <div class="card" style="padding: 1.5rem; margin-bottom: 2rem; background: linear-gradient(180deg, #fff 0%, var(--bg) 100%); border-top: 3px solid var(--primary);">
+      <h3 style="text-align:center; font-size: 1.1rem; margin-bottom: 1.5rem; color: var(--text); font-weight: 700;">How it works</h3>
+      <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; align-items: stretch;">
+        <div style="flex: 1; min-width: 240px; text-align: center; padding: 1.2rem 1rem; background: #fff; border-radius: 14px; border: 1px solid var(--border); box-shadow: var(--shadow);">
+          <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">🔍</div>
+          <h4 style="font-size: 1rem; margin-bottom: 0.5rem; font-weight: 700;">1. Select Materials</h4>
+          <p style="font-size: 0.85rem; color: var(--text-light); margin: 0; line-height: 1.4;">Choose from our curated database or add custom WVTR/OTR values with test conditions.</p>
         </div>
-
-        <!-- 5. GRAFICI -->
-        <div class="section-row">
-            <div class="card">
-                <h2 style="margin-bottom:1rem; font-size:1rem">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px; vertical-align:middle; margin-right:0.4rem"><path d="M3 3v18h18"/></svg>
-                    Live Preview
-                </h2>
-                <div class="demo-charts">
-                    <div class="demo-chart-card">
-                        <h4>WVTR vs Temperature</h4>
-                        <div class="chart-mini"><canvas id="demoChart1"></canvas></div>
-                    </div>
-                    <div class="demo-chart-card">
-                        <h4>Layer Resistance</h4>
-                        <div class="chart-mini"><canvas id="demoChart2"></canvas></div>
-                    </div>
-                </div>
-            </div>
+        <div class="workflow-arrow" style="display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 1.8rem; font-weight: bold;">→</div>
+        <div style="flex: 1; min-width: 240px; text-align: center; padding: 1.2rem 1rem; background: #fff; border-radius: 14px; border: 1px solid var(--border); box-shadow: var(--shadow);">
+          <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">📐</div>
+          <h4 style="font-size: 1rem; margin-bottom: 0.5rem; font-weight: 700;">2. Stack Layers</h4>
+          <p style="font-size: 0.85rem; color: var(--text-light); margin: 0; line-height: 1.4;">Define thickness and order to simulate real laminate structures with hygroscopic correction.</p>
         </div>
+        <div class="workflow-arrow" style="display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 1.8rem; font-weight: bold;">→</div>
+        <div style="flex: 1; min-width: 240px; text-align: center; padding: 1.2rem 1rem; background: #fff; border-radius: 14px; border: 1px solid var(--border); box-shadow: var(--shadow);">
+          <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">📊</div>
+          <h4 style="font-size: 1rem; margin-bottom: 0.5rem; font-weight: 700;">3. Get Results</h4>
+          <p style="font-size: 0.85rem; color: var(--text-light); margin: 0; line-height: 1.4;">Instant WVTR/OTR calculation, sensitivity analysis, shelf-life prediction & PDF export.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🟦 ZONA 3: SOCIAL PROOF + STATS (In fondo) -->
+    <div style="border-top: 1px solid var(--border); padding-top: 1.5rem; margin-top: 1rem;">
+      
+      <!-- Stats Cards -->
+      <div class="grid grid-3" style="margin-bottom:1.5rem">
+        <div class="card" style="text-align:center;padding:1rem;animation:statEntrance 0.4s ease forwards;opacity:0">
+          <div style="font-size:1.8rem;font-weight:700;color:var(--primary)" class="count-up" data-target="${totalMats}">${totalMats}</div>
+          <div style="font-size:0.75rem;color:var(--text-light)">Materials Available</div>
+          <div class="progress-bar"><div class="progress-fill" style="--progress: ${Math.min(totalMats/50*100,100)}%"></div></div>
+        </div>
+        <div class="card" style="text-align:center;padding:1rem;animation:statEntrance 0.4s ease forwards 0.15s;opacity:0">
+          <div style="font-size:1.8rem;font-weight:700;color:var(--success)" class="count-up" data-target="${multiTempMats}">0</div>
+          <div style="font-size:0.75rem;color:var(--text-light)">Arrhenius Ready</div>
+          <div class="progress-bar"><div class="progress-fill" style="--progress: ${Math.min(multiTempMats/20*100,100)}%;background:var(--success)"></div></div>
+        </div>
+        <div class="card" style="text-align:center;padding:1rem;animation:statEntrance 0.4s ease forwards 0.3s;opacity:0">
+          <div style="font-size:1.8rem;font-weight:700;color:var(--purple)" class="count-up" data-target="${totalLams}">0</div>
+          <div style="font-size:0.75rem;color:var(--text-light)">Saved Laminates</div>
+          <div class="progress-bar"><div class="progress-fill" style="--progress: ${Math.min(totalLams/30*100,100)}%;background:var(--purple)"></div></div>
+        </div>
+      </div>
+
+      <!-- Ad Container (Posizionato strategicamente tra stats e social) -->
+      <div class="ad-container" style="margin:1.25rem auto; max-width:728px;">
+        <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="TEST" data-ad-format="auto" data-full-width-responsive="true"></ins>
+      </div>
+
+      <!-- Features Grid -->
+      <div class="section-row features-grid" id="featuresSection">
+        <div class="card feature-card" style="margin:0; display:flex; align-items:start; gap:0.8rem">
+          <div style="background:var(--primary-light); padding:0.5rem; border-radius:12px; flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" style="width:24px;height:24px"><path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/></svg></div>
+          <div><h3 style="font-size:0.9rem; margin:0 0 0.2rem 0">Resistance Model</h3><p style="font-size:0.75rem; color:var(--text-light); margin:0; line-height:1.4">Advanced algorithm based on layer resistances for accurate permeability prediction.</p></div>
+        </div>
+        <div class="card feature-card" style="margin:0; display:flex; align-items:start; gap:0.8rem">
+          <div style="background:var(--success-light); padding:0.5rem; border-radius:12px; flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" style="width:24px;height:24px"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+          <div><h3 style="font-size:0.9rem; margin:0 0 0.2rem 0">Arrhenius Fit</h3><p style="font-size:0.75rem; color:var(--text-light); margin:0; line-height:1.4">Automatic R² validation to predict barrier performance at untested temperatures.</p></div>
+        </div>
+        <div class="card feature-card" style="margin:0; display:flex; align-items:start; gap:0.8rem">
+          <div style="background:var(--warning-light); padding:0.5rem; border-radius:12px; flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2" style="width:24px;height:24px"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-6"/></svg></div>
+          <div><h3 style="font-size:0.9rem; margin:0 0 0.2rem 0">Sensitivity</h3><p style="font-size:0.75rem; color:var(--text-light); margin:0; line-height:1.4">Analyze how changing layer thickness affects total barrier to optimize costs.</p></div>
+        </div>
+        <div class="card feature-card" style="margin:0; display:flex; align-items:start; gap:0.8rem">
+          <div style="background:var(--purple-light); padding:0.5rem; border-radius:12px; flex-shrink:0"><svg viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" style="width:24px;height:24px"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>
+          <div><h3 style="font-size:0.9rem; margin:0 0 0.2rem 0">Community Cloud</h3><p style="font-size:0.75rem; color:var(--text-light); margin:0; line-height:1.4">Share your materials with the community and access real-time global data.</p></div>
+        </div>
+      </div>
+
+      <!-- Demo Charts -->
+      <div class="section-row" style="margin-top:1.5rem;">
+        <div class="card">
+          <h2 style="margin-bottom:1rem; font-size:1rem; display:flex; align-items:center; gap:0.4rem">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px; vertical-align:middle"><path d="M3 3v18h18"/></svg>
+            Live Preview
+          </h2>
+          <div class="demo-charts">
+            <div class="demo-chart-card"><h4>WVTR vs Temperature</h4><div class="chart-mini"><canvas id="demoChart1"></canvas></div></div>
+            <div class="demo-chart-card"><h4>Layer Resistance</h4><div class="chart-mini"><canvas id="demoChart2"></canvas></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Community & Top 3 (Social Proof finale) -->
+      <div class="section-row top-row" style="margin-top:1.5rem;">
+        <div class="card" style="margin:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; background:linear-gradient(135deg, var(--purple-light), #fff)">
+          <div style="font-size:2.5rem; margin-bottom:0.2rem">🌍</div>
+          <div style="font-size:2.5rem; font-weight:800; color:var(--purple)">${commCount}</div>
+          <div style="font-size:0.8rem; font-weight:600; color:var(--text); margin-bottom:0.8rem">Materials Shared</div>
+          <button class="btn btn-primary" style="width:100%;background:var(--purple)" onclick="nav('materials')">Explore Database →</button>
+        </div>
+        <div class="card" style="margin:0; padding:1rem">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.8rem">
+            <h2 style="margin:0; font-size:1rem; display:flex; align-items:center; gap:0.4rem"><span></span> Most used materials of the month</h2>
+            <span class="badge badge-blue"></span>
+          </div>
+          <div id="top3-ranking" style="display:flex; flex-direction:column; gap:0.5rem">
+            <div style="text-align:center; padding:1rem; color:var(--text-light); font-size:0.8rem">Start calculating...</div>
+          </div>
+        </div>
+      </div>
 
     </div>
-    `;
+  </div>
+  `;
 }
   // ✅ Vota affidabilità materiale
 // ✅ Vota affidabilità (con controllo connessione Cloud)
