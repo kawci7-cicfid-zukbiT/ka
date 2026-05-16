@@ -3698,47 +3698,42 @@ drawMoistureAccumulationChart(res) {
   console.error('❌ Error creating Moisture Accumulation chart:', e);
  }
 },
-
 // ====================================================================
-// 📄 EXPORT TO PDF - VERSIONE BLINDATA (ZERO REFERENCEERROR)
+// 📄 EXPORT TO PDF - 2 GRAFICI PER PAGINA, NO TABELLE, LAYOUT PULITO
 // ====================================================================
 async exportToPDF(event) {
-  // ✅ 1. RILEVAMENTO ROBUSTO DI JSPDF (compatibile con CDN v2.x, v1.x e bundler)
+  // ✅ RILEVAMENTO LIBRERIE
   const PDFLib = window.jspdf?.jsPDF || window.jspdf?.default || window.jsPDF;
   if (typeof PDFLib !== 'function') {
-    console.error('❌ jsPDF not loaded. Expected window.jspdf.jsPDF or window.jsPDF');
-    alert('⚠️ PDF engine missing. Check your <script> tags or reload.');
+    console.error('jsPDF not loaded');
+    alert('PDF library missing. Reload page.');
     return;
   }
-
-  // ✅ 2. RILEVAMENTO HTML2CANVAS
   if (typeof html2canvas !== 'function') {
-    console.error('❌ html2canvas not loaded');
-    alert('⚠️ Chart export library missing. Please reload.');
+    console.error('html2canvas not loaded');
+    alert('Chart library missing. Reload page.');
     return;
   }
 
-  // ✅ 3. CONFIG GRAFICI (SEMPRE IN SCOPE LOCALE)
   const chartConfigs = [
-    { id: 'slDecayChart',      title: 'Quality Decay Over Time',       desc: 'Product quality (%) vs. storage days.' },
-    { id: 'slTempChart',       title: 'Shelf Life vs Temperature',      desc: 'Predicted shelf life across temperatures.' },
-    { id: 'slChainChart',      title: 'Logistics Conditions',           desc: 'Temperature and RH profile across supply chain.' },
-    { id: 'slStepImpactChart', title: 'Shelf Life Consumed per Step',   desc: '% of shelf life used in each logistics phase.' },
-    { id: 'slMoistureAccChart',title: 'Moisture Accumulation',         desc: 'Internal moisture growth along the chain.' },
-    { id: 'slCumulativeChart', title: 'Cumulative Timeline',            desc: 'Accumulated days across logistics steps.' }
+    { id: 'slDecayChart',      title: 'Quality Decay Over Time',       desc: 'Product quality vs storage days' },
+    { id: 'slTempChart',       title: 'Shelf Life vs Temperature',      desc: 'Predicted shelf life across temperatures' },
+    { id: 'slChainChart',      title: 'Logistics Conditions',           desc: 'Temperature and RH profile' },
+    { id: 'slStepImpactChart', title: 'Shelf Life Consumed per Step',   desc: 'Percentage used in each phase' },
+    { id: 'slMoistureAccChart',title: 'Moisture Accumulation',         desc: 'Internal moisture growth' },
+    { id: 'slCumulativeChart', title: 'Cumulative Timeline',            desc: 'Accumulated days across steps' }
   ];
 
-  // ✅ 4. GESTIONE BOTTONE
   const btn = event?.target?.closest('button') || document.querySelector('button[data-action="export-pdf"]');
-  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Generating PDF...'; }
+  if (btn) { btn.disabled = true; btn.innerHTML = 'Generating PDF...'; }
 
   try {
-    // ==================== RACCOLTA DATI SICURA ====================
+    // ==================== RACCOLTA DATI ====================
     const lamName   = State?.laminateName || 'Unnamed Laminate';
     const layers    = (State?.layers || []).filter(l => l?.mid != null);
     const structureStr = layers.length
-      ? layers.map(l => { const m = DB?.materials?.find(x => x?.id === l.mid); return m ? `${m.name} (${l.thick}µm)` : null; }).filter(Boolean).join(' / ')
-      : '—';
+      ? layers.map(l => { const m = DB?.materials?.find(x => x?.id === l.mid); return m ? `${m.name} (${l.thick}um)` : null; }).filter(Boolean).join(' / ')
+      : 'N/A';
 
     const prodKey  = document.getElementById('sl-product')?.value;
     const prod     = (typeof PRODUCTS_DB !== 'undefined') ? PRODUCTS_DB[prodKey] : null;
@@ -3755,249 +3750,362 @@ async exportToPDF(event) {
 
     const resultDays   = (State?.calcResult && isFinite(State.calcResult.days)) ? Math.round(State.calcResult.days) : null;
     const hygroDetails = State?.calcResult?.hygroWarning?.details || [];
-    const barrierRate  = isFinite(State?.calcResult?.total) ? State.calcResult.total.toFixed(6) : '—';
-    const unit         = State?.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day·atm';
-    const genDate      = new Date().toLocaleDateString('it-IT', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+    const barrierRate  = isFinite(State?.calcResult?.total) ? State.calcResult.total.toFixed(6) : 'N/A';
+    const unit         = State?.mode === 'wvtr' ? 'g/m2/day' : 'cc/m2/day/atm';
+    const genDate      = new Date().toLocaleDateString('it-IT');
     const appVersion   = '3.1.2';
 
-    // ==================== SETUP PDF (FIX ENCODING) ====================
+    // ==================== SETUP PDF ====================
     const pdf = new PDFLib({ orientation: 'portrait', unit: 'mm', format: 'a4', compress: false });
-    pdf.setFont('helvetica', 'normal'); pdf.setTextColor(0,0,0);
+    pdf.setFont('helvetica', 'normal');
     
-    const PW=210, PH=297, ML=14, MR=14, MT=14, MB=14, CW=PW-ML-MR;
+    const PW=210, PH=297, ML=15, MR=15, MT=15, MB=15, CW=PW-ML-MR;
     let y = MT;
 
     // ==================== HELPERS ====================
-    const newPage = () => { pdf.addPage(); y = MT; drawPageFooter(); };
-    const getAvailable = () => PH - MB - y;
-    const ensureSpace = (n) => { if (y + n > PH - MB - 5) newPage(); };
+    const newPage = () => { pdf.addPage(); y = MT; drawFooter(); };
     
-    const sanitize = (t) => t ? String(t).replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200D\uFEFF]/g,'').replace(/\s+/g,' ').trim() : '—';
-
-    const addText = (txt, x, fs, col=[40,40,40], st='normal', mw=CW) => {
-      pdf.setFontSize(fs); pdf.setTextColor(...col); pdf.setFont('helvetica', st);
-      const lines = pdf.splitTextToSize(sanitize(txt), mw);
-      const lh = fs * 0.38; ensureSpace(lines.length*lh+3);
-      pdf.text(lines, x, y); y += lines.length*lh+2; return lines.length*lh+2;
+    // Testo semplice senza simboli strani
+    const addText = (txt, x, fs, bold=false, maxW=CW) => {
+      pdf.setFontSize(fs);
+      pdf.setFont('helvetica', bold ? 'bold' : 'normal');
+      const safeTxt = String(txt).replace(/[^\x20-\x7E]/g, ''); // Solo ASCII stampabili
+      const lines = pdf.splitTextToSize(safeTxt, maxW);
+      const lh = fs * 0.4;
+      pdf.text(lines, x, y);
+      y += lines.length * lh + 2;
     };
 
-    const sectionHeader = (icon, title, sub=null) => {
-      ensureSpace(sub?16:12); y+=3;
-      pdf.setFillColor(245,247,250); pdf.roundedRect(ML, y-(sub?5:4), CW, sub?13:10, 2,2,'F');
-      pdf.setFontSize(11); pdf.setFont('helvetica','bold'); pdf.setTextColor(25,25,25);
-      pdf.text(`${icon}  ${sanitize(title)}`, ML+4, y+(sub?2:3));
-      if(sub){ pdf.setFontSize(8.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(90,90,90); pdf.text(sanitize(sub), ML+4, y+7); }
-      y += sub?14:11;
+    const addLine = () => {
+      pdf.setDrawColor(200, 200, 200);
+      pdf.setLineWidth(0.3);
+      pdf.line(ML, y, PW-MR, y);
+      y += 3;
     };
 
-    const addTable2Col = (rows) => {
-      const rH=7, c1=CW*0.45, c2=CW-c1-5;
-      rows.forEach((r,i)=>{
-        ensureSpace(rH+2);
-        if(i%2===0){ pdf.setFillColor(250,251,253); pdf.rect(ML, y-5, CW, rH, 'F'); }
-        pdf.setFontSize(9); pdf.setFont('helvetica','normal'); pdf.setTextColor(80,80,80); pdf.text(sanitize(r[0]), ML+4, y);
-        pdf.setFont('helvetica','bold'); pdf.setTextColor(30,30,30);
-        pdf.text(pdf.splitTextToSize(sanitize(r[1]!=''?String(r[1]):'—'), c2), ML+c1+3, y);
-        y+=rH;
-      }); y+=3;
+    const addSectionTitle = (title) => {
+      y += 5;
+      pdf.setFillColor(240, 240, 240);
+      pdf.rect(ML, y-2, CW, 7, 'F');
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(title, ML+2, y+3);
+      y += 8;
     };
 
-    const addTableMultiCol = (headers, rows, colW, opts={}) => {
-      const {sampleEvery=1, maxRows=30} = opts;
-      const rH=6, totW=colW.reduce((a,b)=>a+b,0);
-      ensureSpace(rH+3);
-      pdf.setFillColor(45,55,75); pdf.rect(ML, y-5, totW, rH, 'F');
-      pdf.setFontSize(8.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(255,255,255);
-      let cx=ML+3; headers.forEach((h,i)=>{ pdf.text(pdf.splitTextToSize(sanitize(h), colW[i]-4)[0], cx, y); cx+=colW[i]; });
-      y+=rH;
-
-      const show = rows.length>maxRows ? rows.filter((_,i)=>i%sampleEvery===0).slice(0,maxRows) : rows;
-      if(show.length<rows.length){ ensureSpace(8); pdf.setFontSize(7.5); pdf.setFont('helvetica','italic'); pdf.setTextColor(120,120,120);
-        pdf.text(`* Showing 1 of every ${sampleEvery} steps (${show.length}/${rows.length} rows)`, ML+3, y+2); y+=8; }
-
-      show.forEach((r,ri)=>{
-        ensureSpace(rH+1);
-        if(ri%2===0){ pdf.setFillColor(248,249,251); pdf.rect(ML, y-5, totW, rH, 'F'); }
-        pdf.setFontSize(8); pdf.setFont('helvetica','normal'); pdf.setTextColor(50,50,50); cx=ML+3;
-        r.forEach((c,ci)=>{
-          const s = c!=null ? (typeof c==='number'?c.toFixed(2):String(c)) : '—';
-          pdf.text(pdf.splitTextToSize(sanitize(s), colW[ci]-4)[0], cx, y); cx+=colW[ci];
-        }); y+=rH;
-      }); y+=4;
+    const addKeyValue = (key, value) => {
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(key, ML, y);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(String(value).replace(/[^\x20-\x7E]/g, ''), ML+80, y);
+      y += 5;
     };
 
-    const resultBox = (days) => {
-      const bH=32; ensureSpace(bH+5);
-      pdf.setDrawColor(52,152,219); pdf.setLineWidth(1); pdf.roundedRect(ML, y, CW, bH, 3,3,'D');
-      pdf.setFillColor(240,248,255); pdf.roundedRect(ML+1, y+1, CW-2, bH-2, 2.5,2.5,'F');
-      pdf.setFontSize(10.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(41,128,185);
-      pdf.text('✓ Predicted Shelf Life', ML+CW/2, y+8, {align:'center'});
-      pdf.setFontSize(26); pdf.setTextColor(35,35,35); pdf.text(`${days} Days`, ML+CW/2, y+19, {align:'center'});
-      pdf.setFontSize(9); pdf.setFont('helvetica','normal'); pdf.setTextColor(100,100,100);
-      pdf.text(`≈ ${(days/30.44).toFixed(1)} months  •  ≈ ${(days/365.25).toFixed(2)} years  •  ${Math.round(days*24)}h`, ML+CW/2, y+27, {align:'center'});
-      y+=bH+5;
-    };
-
-    const warningBox = (lines) => {
-      const bH=10+lines.length*5.5; ensureSpace(bH+6);
-      pdf.setFillColor(255,248,225); pdf.setDrawColor(255,193,7); pdf.setLineWidth(0.6);
-      pdf.roundedRect(ML, y, CW, bH, 2.5,2.5,'FD');
-      pdf.setFontSize(9); pdf.setFont('helvetica','bold'); pdf.setTextColor(180,110,0);
-      pdf.text('⚠ Hygroscopic Correction Applied', ML+4, y+7);
-      pdf.setFont('helvetica','normal'); pdf.setTextColor(90,90,90);
-      lines.forEach((l,i)=> pdf.text(pdf.splitTextToSize(`• ${sanitize(l)}`, CW-12), ML+6, y+13+i*5.5));
-      y+=bH+6;
-    };
-
-    const formulaBox = (formula, desc=null) => {
-      const bH=desc?18:14; ensureSpace(bH+4);
-      pdf.setFillColor(248,249,251); pdf.setDrawColor(220,225,235); pdf.setLineWidth(0.4);
-      pdf.roundedRect(ML, y, CW, bH, 2,2,'FD');
-      pdf.setFontSize(9.5); pdf.setFont('courier','normal'); pdf.setTextColor(33,100,180);
-      pdf.text(sanitize(formula), ML+CW/2, y+8, {align:'center'});
-      if(desc){ pdf.setFontSize(8); pdf.setFont('helvetica','italic'); pdf.setTextColor(100,100,100);
-        pdf.text(pdf.splitTextToSize(sanitize(desc), CW-8), ML+4, y+14); }
-      y+=bH+4;
-    };
-
-    const drawPageFooter = () => {
+    const drawFooter = () => {
       const pg = pdf.internal.getNumberOfPages();
-      pdf.setFontSize(7.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(130,130,130);
-      pdf.text(`WVTR/OTR Calculator v${appVersion} • R&D Use Only`, ML, PH-8);
-      pdf.text(`Page ${pg} of ${pg}`, PW-MR, PH-8, {align:'right'});
-      pdf.setDrawColor(230,230,230); pdf.setLineWidth(0.25); pdf.line(ML, PH-11, PW-MR, PH-11);
+      pdf.setFontSize(7);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(150, 150, 150);
+      pdf.text(`WVTR/OTR Calculator v${appVersion} - R&D Use Only`, ML, PH-8);
+      pdf.text(`Page ${pg}`, PW-MR, PH-8, { align: 'right' });
+      pdf.setTextColor(0, 0, 0);
     };
 
     // ==================== PAGINA 1: HEADER + DATI ====================
-    pdf.setFillColor(45,85,165); pdf.rect(0,0,PW,35,'F');
-    pdf.setFontSize(16); pdf.setFont('helvetica','bold'); pdf.setTextColor(255,255,255);
+    // Header blu
+    pdf.setFillColor(50, 100, 180);
+    pdf.rect(0, 0, PW, 30, 'F');
+    pdf.setFontSize(16);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(255, 255, 255);
     pdf.text('WVTR/OTR Shelf Life Calculator', ML, 15);
-    pdf.setFontSize(12); pdf.text('Predictive Packaging Analysis Report', ML, 23);
-    pdf.setFontSize(8); pdf.setFont('helvetica','normal'); pdf.setTextColor(200,220,255);
-    pdf.text(`Generated: ${genDate}`, PW-MR, 28, {align:'right'});
-    pdf.text(`Mode: ${(State?.mode||'N/A').toUpperCase()} | Unit: ${unit}`, PW-MR, 32, {align:'right'});
-    y = 43;
+    pdf.setFontSize(11);
+    pdf.text('Predictive Packaging Analysis', ML, 22);
+    pdf.setFontSize(8);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(220, 230, 255);
+    pdf.text(`Generated: ${genDate}`, PW-MR, 26, { align: 'right' });
+    pdf.text(`Mode: ${(State?.mode||'N/A').toUpperCase()} | Unit: ${unit}`, PW-MR, 29, { align: 'right' });
+    
+    y = 38;
+    pdf.setTextColor(0, 0, 0);
 
-    sectionHeader('□', 'Laminate Structure', 'Layer composition and thickness');
-    addTable2Col([['Laminate Name', sanitize(lamName)],['Structure', sanitize(structureStr)],['Total Layers', layers.length],['Total Thickness', layers.reduce((s,l)=>s+(l.thick||0),0)+' µm']]);
+    // Laminate Structure
+    addSectionTitle('Laminate Structure');
+    addKeyValue('Name:', lamName);
+    addKeyValue('Structure:', structureStr);
+    addKeyValue('Layers:', layers.length);
+    addKeyValue('Total Thickness:', layers.reduce((s,l)=>s+(l.thick||0),0) + ' um');
+    addLine();
 
-    sectionHeader('□', 'Packaging & Product Data', 'Physical parameters for calculation');
-    addTable2Col([['Product Template', prod?.name||'—'],['Product Category', prod?.category||'—'],['Net Weight', `${W} g`],['Surface Area', `${A.toFixed(4)} m²`],['Volume (est.)', `${(A*0.05).toFixed(3)} m³`],['Moisture Range', `${M_init}% → ${M_crit}%`],['Δ Moisture', `${(M_crit-M_init).toFixed(1)}%`]]);
+    // Product Data
+    addSectionTitle('Packaging and Product Data');
+    addKeyValue('Product:', prod?.name || 'N/A');
+    addKeyValue('Weight:', W + ' g');
+    addKeyValue('Surface Area:', A.toFixed(4) + ' m2');
+    addKeyValue('Moisture Range:', M_init + '% to ' + M_crit + '%');
+    addKeyValue('Delta M:', (M_crit - M_init).toFixed(1) + '%');
+    addLine();
 
-    sectionHeader('□', 'Logistics & Storage Conditions', 'Environmental parameters');
-    addTable2Col([['Storage Temperature', `${T_store.toFixed(1)} °C`],['External RH', `${RH_ext.toFixed(0)} % RH`],['Activation Energy (Ea)', `${Ea} kJ/mol`],['Q₁₀ Factor', Q10.toFixed(2)],['Hygroscopic Coeff. (β)', `${beta}`],['Logistics Mode', isChain?'Supply Chain (Weighted)':'Single Condition'],['Reference RH', '65% RH (standard)']]);
-    drawPageFooter();
+    // Conditions
+    addSectionTitle('Storage Conditions');
+    addKeyValue('Temperature:', T_store.toFixed(1) + ' C');
+    addKeyValue('External RH:', RH_ext.toFixed(0) + ' %');
+    addKeyValue('Activation Energy:', Ea + ' kJ/mol');
+    addKeyValue('Q10 Factor:', Q10.toFixed(2));
+    addKeyValue('Beta Coeff:', beta);
+    addKeyValue('Mode:', isChain ? 'Supply Chain' : 'Single Condition');
 
-    // ==================== PAGINA 2: MODELLI MATEMATICI ====================
+    drawFooter();
+
+    // ==================== PAGINA 2: FORMULE ====================
     newPage();
-    pdf.setFillColor(245,247,250); pdf.rect(0,0,PW,16,'F');
-    pdf.setFontSize(12); pdf.setFont('helvetica','bold'); pdf.setTextColor(35,35,35);
-    pdf.text('Mathematical Models & Calculation Methodology', ML, 10); y=24;
+    
+    pdf.setFillColor(245, 245, 245);
+    pdf.rect(0, 0, PW, 12, 'F');
+    pdf.setFontSize(12);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(0, 0, 0);
+    pdf.text('Mathematical Models and Methodology', ML, 8);
+    y = 20;
 
-    sectionHeader('∑', 'Core Shelf Life Equation', 'Fundamental mass transfer model');
-    pdf.setFontSize(9); pdf.setFont('helvetica','normal'); pdf.setTextColor(60,60,60);
-    pdf.text(pdf.splitTextToSize('Shelf life is calculated by integrating the permeation rate over time, accounting for the decreasing driving force as product moisture approaches the critical threshold. The model assumes Fickian diffusion and steady-state permeation through the laminate.', CW), ML, y); y+=18;
+    // Core Equation
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Core Shelf Life Equation', ML, y);
+    y += 6;
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    addText('Shelf life is calculated by integrating permeation rate over time, accounting for decreasing driving force as product moisture approaches critical threshold.', ML, 9, false, CW);
+    y += 3;
+    
+    // Formula box
+    pdf.setFillColor(250, 250, 250);
+    pdf.setDrawColor(180, 180, 180);
+    pdf.roundedRect(ML, y, CW, 12, 2, 2, 'FD');
+    pdf.setFontSize(9);
+    pdf.setFont('courier', 'normal');
+    pdf.setTextColor(0, 100, 180);
+    pdf.text('t = (W x DeltaM) / (A x P x Deltap x f(T,RH))', ML + CW/2, y+7, { align: 'center' });
+    pdf.setFontSize(7);
+    pdf.setFont('helvetica', 'italic');
+    pdf.setTextColor(100, 100, 100);
+    pdf.text('t: shelf life [days] | W: weight [g] | A: area [m2] | P: permeability', ML + CW/2, y+11, { align: 'center' });
+    y += 16;
+    pdf.setTextColor(0, 0, 0);
 
-    formulaBox('t = (W × ΔM) / (A × P × Δp × f(T,RH))', 't: shelf life [days] | W: weight [g] | ΔM: moisture change | A: area [m²] | P: permeability | Δp: partial pressure diff.');
+    // Temperature Correction
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Temperature Correction (Arrhenius)', ML, y);
+    y += 6;
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Models exponential increase in permeation with temperature.', ML, y);
+    y += 5;
+    
+    pdf.setFillColor(250, 250, 250);
+    pdf.roundedRect(ML, y, CW, 10, 2, 2, 'FD');
+    pdf.setFont('courier', 'normal');
+    pdf.setTextColor(0, 100, 180);
+    pdf.text('k(T) = k0 * exp(-Ea / (R * (T + 273.15)))', ML + CW/2, y+6, { align: 'center' });
+    y += 13;
+    pdf.setTextColor(0, 0, 0);
 
-    sectionHeader('🌡', 'Environmental Correction Factors', 'Temperature and humidity adjustments');
-    pdf.setFontSize(9); pdf.setFont('helvetica','bold'); pdf.setTextColor(45,45,45); pdf.text('1. Temperature Correction (Arrhenius):', ML, y); y+=5;
-    pdf.setFont('helvetica','normal'); pdf.setTextColor(70,70,70);
-    pdf.text(pdf.splitTextToSize('Models exponential increase in permeation with temperature. Ea = energy barrier for gas/vapor transport.', CW), ML, y); y+=12;
-    formulaBox('k(T) = k₀ × exp[-Ea / (R × (T + 273.15))]', 'k: rate constant | Ea: activation energy [J/mol] | R: 8.314 J/(mol·K)');
+    // Q10
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Q10 Approximation', ML, y);
+    y += 6;
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Permeation rate doubles per 10C increase (when Q10=2)', ML, y);
+    y += 5;
+    
+    pdf.setFillColor(250, 250, 250);
+    pdf.roundedRect(ML, y, CW, 8, 2, 2, 'FD');
+    pdf.setFont('courier', 'normal');
+    pdf.setTextColor(0, 100, 180);
+    pdf.text('P2 = P1 * Q10^((T2-T1)/10)', ML + CW/2, y+5, { align: 'center' });
+    y += 12;
+    pdf.setTextColor(0, 0, 0);
 
-    pdf.setFont('helvetica','bold'); pdf.setTextColor(45,45,45); pdf.text('2. Practical Q₁₀ Approximation:', ML, y); y+=5;
-    pdf.setFont('helvetica','normal'); pdf.setTextColor(70,70,70); pdf.text('Permeation rate doubles per 10°C increase (when Q₁₀≈2).', ML, y); y+=6;
-    formulaBox('P₂ = P₁ × Q₁₀^((T₂-T₁)/10)', 'P: permeability | T: temperature [°C]');
+    // Humidity
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('Humidity Correction', ML, y);
+    y += 6;
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('For moisture-sensitive products, driving force depends on RH', ML, y);
+    y += 5;
+    
+    pdf.setFillColor(250, 250, 250);
+    pdf.roundedRect(ML, y, CW, 8, 2, 2, 'FD');
+    pdf.setFont('courier', 'normal');
+    pdf.setTextColor(0, 100, 180);
+    pdf.text('CF = exp(beta * (RH_storage - RH_ref))', ML + CW/2, y+5, { align: 'center' });
+    y += 12;
 
-    pdf.setFont('helvetica','bold'); pdf.setTextColor(45,45,45); pdf.text('3. Humidity Correction (Hygroscopic):', ML, y); y+=5;
-    pdf.setFont('helvetica','normal'); pdf.setTextColor(70,70,70);
-    pdf.text(pdf.splitTextToSize('For moisture-sensitive products, Δp depends on RH. β captures exponential RH ↔ moisture relationship.', CW), ML, y); y+=12;
-    formulaBox('CF = exp[β × (RH_storage - RH_ref)]', 'CF: correction factor | β: material coefficient | RH: relative humidity [%]');
-
-    sectionHeader('□', 'Multi-Layer Barrier Calculation', 'Series resistance model for laminates');
-    pdf.setFontSize(9); pdf.setFont('helvetica','normal'); pdf.setTextColor(70,70,70);
-    pdf.text(pdf.splitTextToSize('Total permeability uses series resistance: each layer contributes inversely to overall barrier. Thickness & intrinsic P considered.', CW), ML, y); y+=14;
-    formulaBox('1/P_total = Σ (thickness_i / P_i)', 'P: permeability | thickness: µm | sum over all layers');
-
-    sectionHeader('⚙', 'Active Calculation Parameters');
-    addTable2Col([['Activation Energy (Ea)', `${Ea} kJ/mol`],['Q₁₀ Factor', Q10.toFixed(2)],['Hygroscopic β', beta],['Gas Constant (R)', '8.314 J/(mol·K)'],['Reference Temperature', '25°C'],['Reference RH', '65%'],['Effective Barrier Rate', `${barrierRate} ${unit}`]]);
-
-    if(resultDays) resultBox(resultDays);
-    if(hygroDetails?.length) warningBox(hygroDetails.map(sanitize));
-    drawPageFooter();
-
-    // ==================== PAGINE GRAFICI (LAYOUT CONTROLLATO) ====================
-    for (const cfg of chartConfigs) {
-      const canvas = document.getElementById(cfg.id);
-      if (!canvas || canvas.offsetParent === null || canvas.width === 0) continue;
-
-      try {
-        await new Promise(r => setTimeout(r, 100));
-        const chartCanvas = await html2canvas(canvas, { scale: 2.5, useCORS: true, backgroundColor: '#ffffff', logging: false, allowTaint: true, removeContainer: true });
-        const imgData = chartCanvas.toDataURL('image/png');
-        const imgRatio = chartCanvas.height / chartCanvas.width;
-        const imgW = CW, imgH = Math.min(imgW * imgRatio, 85);
-        const tableMin = 25, totalNeeded = imgH + 35 + tableMin;
-        if (getAvailable() < totalNeeded) newPage();
-
-        pdf.setFillColor(245,247,250); pdf.rect(0, y-2, PW, 14, 'F');
-        pdf.setFontSize(11); pdf.setFont('helvetica','bold'); pdf.setTextColor(35,35,35); pdf.text(sanitize(cfg.title), ML, y+8); y+=16;
-        pdf.setFontSize(8.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(90,90,90);
-        const dl = pdf.splitTextToSize(sanitize(cfg.desc), CW); pdf.text(dl, ML, y); y += dl.length*4.5+5;
-
-        pdf.addImage(imgData, 'PNG', ML, y, imgW, imgH); y += imgH+8;
-
-        let ci = null;
-        if (typeof window.Chart !== 'undefined' && typeof window.Chart.getChart === 'function') ci = window.Chart.getChart(cfg.id);
-        if (!ci && typeof chartInstances !== 'undefined') ci = chartInstances[cfg.id.replace('Chart','')] || chartInstances[cfg.id];
-
-        if (ci?.data?.labels?.length > 0 && ci?.data?.datasets?.length > 0) {
-          const labels = ci.data.labels, datasets = ci.data.datasets;
-          const sampleEvery = labels.length > 20 ? 5 : 1;
-          const maxRows = 25;
-          pdf.setDrawColor(200,200,200); pdf.setLineWidth(0.25); pdf.line(ML, y, PW-MR, y); y+=4;
-          pdf.setFontSize(9.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(40,40,40); pdf.text('Data Points', ML, y); y+=6;
-
-          const headers = ['Step', ...datasets.map(d=>sanitize(d.label||'Value'))];
-          const nC = headers.length, stepW=12, dataW=(CW-stepW)/Math.max(1,nC-1), colW=[stepW, ...Array(Math.max(1,nC-1)).fill(dataW)];
-          const rows = [];
-          for(let i=0; i<labels.length; i+=sampleEvery){
-            if(rows.length>=maxRows) break;
-            const lv = typeof labels[i]==='number' ? labels[i].toFixed(1) : sanitize(String(labels[i]).slice(0,15));
-            rows.push([lv, ...datasets.map(d=> d.data?.[i]!=null ? (typeof d.data[i]==='number'?d.data[i]:String(d.data[i]).slice(0,12)) : '—')]);
-          }
-          addTableMultiCol(headers, rows, colW, {sampleEvery, maxRows});
-        }
-        drawPageFooter();
-      } catch(e) { console.warn(`⚠️ Chart ${cfg.id} skipped:`, e.message); continue; }
+    // Result
+    if (resultDays) {
+      pdf.setFillColor(230, 245, 255);
+      pdf.setDrawColor(50, 150, 220);
+      pdf.setLineWidth(0.5);
+      pdf.roundedRect(ML, y, CW, 15, 3, 3, 'FD');
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(0, 100, 160);
+      pdf.text('Predicted Shelf Life', ML + CW/2, y+7, { align: 'center' });
+      pdf.setFontSize(20);
+      pdf.text(resultDays + ' Days', ML + CW/2, y+13, { align: 'center' });
+      y += 18;
+      pdf.setTextColor(0, 0, 0);
     }
 
-    // ==================== ULTIMA PAGINA: METADATI + DISCLAIMER ====================
+    drawFooter();
+
+    // ==================== PAGINE CON 2 GRAFICI ====================
+    // Raggruppa grafici in coppie
+    for (let i = 0; i < chartConfigs.length; i += 2) {
+      newPage();
+      
+      const firstChart = chartConfigs[i];
+      const secondChart = chartConfigs[i + 1];
+      
+      // Spazio per ogni grafico: circa 120mm ciascuno (con margine)
+      const chartHeight = 110;
+      const gap = 10;
+      
+      // === PRIMO GRAFICO (META SUPERIORE) ===
+      pdf.setFillColor(245, 245, 245);
+      pdf.rect(ML, y-2, CW, 8, 'F');
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(firstChart.title.replace(/[^\x20-\x7E]/g, ''), ML+2, y+4);
+      y += 10;
+      
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(100, 100, 100);
+      pdf.text(firstChart.desc.replace(/[^\x20-\x7E]/g, ''), ML, y);
+      y += 6;
+      
+      // Cattura e inserisci primo grafico
+      try {
+        const canvas1 = document.getElementById(firstChart.id);
+        if (canvas1 && canvas1.offsetParent !== null && canvas1.width > 0) {
+          const chartCanvas1 = await html2canvas(canvas1, { 
+            scale: 2, useCORS: true, backgroundColor: '#ffffff', 
+            logging: false, allowTaint: true 
+          });
+          const imgData1 = chartCanvas1.toDataURL('image/png');
+          const ratio1 = chartCanvas1.height / chartCanvas1.width;
+          const imgW1 = CW;
+          const imgH1 = Math.min(imgW1 * ratio1, chartHeight);
+          
+          pdf.addImage(imgData1, 'PNG', ML, y, imgW1, imgH1);
+          y += imgH1 + gap;
+        }
+      } catch (e) {
+        console.warn('Chart 1 skipped:', e.message);
+        y += chartHeight;
+      }
+      
+      // === SECONDO GRAFICO (META INFERIORE) - se esiste ===
+      if (secondChart) {
+        // Linea separatore
+        pdf.setDrawColor(220, 220, 220);
+        pdf.setLineWidth(0.5);
+        pdf.line(ML, y, PW-MR, y);
+        y += 8;
+        
+        pdf.setFillColor(245, 245, 245);
+        pdf.rect(ML, y-2, CW, 8, 'F');
+        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(secondChart.title.replace(/[^\x20-\x7E]/g, ''), ML+2, y+4);
+        y += 10;
+        
+        pdf.setFontSize(8);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(100, 100, 100);
+        pdf.text(secondChart.desc.replace(/[^\x20-\x7E]/g, ''), ML, y);
+        y += 6;
+        
+        try {
+          const canvas2 = document.getElementById(secondChart.id);
+          if (canvas2 && canvas2.offsetParent !== null && canvas2.width > 0) {
+            const chartCanvas2 = await html2canvas(canvas2, { 
+              scale: 2, useCORS: true, backgroundColor: '#ffffff', 
+              logging: false, allowTaint: true 
+            });
+            const imgData2 = chartCanvas2.toDataURL('image/png');
+            const ratio2 = chartCanvas2.height / chartCanvas2.width;
+            const imgW2 = CW;
+            const imgH2 = Math.min(imgW2 * ratio2, chartHeight);
+            
+            pdf.addImage(imgData2, 'PNG', ML, y, imgW2, imgH2);
+            y += imgH2;
+          }
+        } catch (e) {
+          console.warn('Chart 2 skipped:', e.message);
+        }
+      }
+      
+      drawFooter();
+    }
+
+    // ==================== ULTIMA PAGINA: DISCLAIMER ====================
     newPage();
-    pdf.setFillColor(45,55,75); pdf.rect(0,0,PW,18,'F');
-    pdf.setFontSize(12); pdf.setFont('helvetica','bold'); pdf.setTextColor(255,255,255); pdf.text('Technical Notes & Disclaimer', ML, 11); y=28;
+    pdf.setFillColor(50, 60, 80);
+    pdf.rect(0, 0, PW, 15, 'F');
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(255, 255, 255);
+    pdf.text('Important Notes and Disclaimer', ML, 9);
+    y = 25;
+    pdf.setTextColor(0, 0, 0);
 
-    sectionHeader('📋', 'Report Metadata');
-    addTable2Col([['Calculator Version', `v${appVersion}`],['Export Timestamp', new Date().toISOString()],['PDF Format', 'A4 Portrait, 210×297 mm'],['Font Engine', 'jsPDF Standard Fonts'],['Chart Resolution', '2.5x scale (PNG)'],['Data Sampling', '1:5 for tables >20 rows']]);
+    const notes = [
+      'This report is for R&D and internal use only.',
+      'Shelf-life predictions are model-based estimates.',
+      'Always validate with real-world testing per ASTM F1249 or ISO 15106.',
+      '',
+      'Model assumptions:',
+      '- Steady-state permeation',
+      '- Ideal laminate adhesion',
+      '- Constant storage conditions',
+      '- Uniform product distribution',
+      '',
+      'Not modeled: seal integrity, physical damage, temperature cycling.',
+      'For regulatory submissions, consult a qualified packaging engineer.',
+      '',
+      'Copyright 2026 WVTR/OTR Calculator. All rights reserved.'
+    ];
 
-    y+=5; pdf.setDrawColor(200,200,200); pdf.setLineWidth(0.25); pdf.line(ML, y, PW-MR, y); y+=6;
-    pdf.setFontSize(9.5); pdf.setFont('helvetica','bold'); pdf.setTextColor(40,40,40); pdf.text('Important Limitations & Usage Guidelines', ML, y); y+=7;
-    pdf.setFontSize(8.5); pdf.setFont('helvetica','normal'); pdf.setTextColor(70,70,70);
-    ['• R&D/internal use only. NOT a substitute for real-world validation.','• Confirm claims with ASTM F1249, ISO 15106-3, or ASTM D3985.','• Assumes: steady-state permeation, ideal adhesion, uniform product, constant conditions.','• Not modeled: seal variations, physical damage, temp cycling, microbial growth.','• Permeability is T-dependent; match inputs to actual storage profile.','• For regulatory submissions, consult a qualified packaging engineer.','© 2026 WVTR/OTR Calculator. All rights reserved.'].forEach(l=>{
-      const w = pdf.splitTextToSize(sanitize(l), CW-2); pdf.text(w, ML+2, y); y+=w.length*5+1;
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    notes.forEach(line => {
+      if (line === '') { y += 4; }
+      else {
+        const safeLine = line.replace(/[^\x20-\x7E]/g, '');
+        pdf.text(safeLine, ML, y);
+        y += 5;
+      }
     });
-    drawPageFooter();
+
+    drawFooter();
 
     // ==================== DOWNLOAD ====================
-    const safeName = sanitize(lamName).replace(/[^a-z0-9]+/gi,'_').replace(/^_|_$/g,'').slice(0,40)||'Report';
+    const safeName = lamName.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '').slice(0, 30) || 'Report';
     pdf.save(`ShelfLife_${safeName}_${new Date().toISOString().slice(0,10)}.pdf`);
 
   } catch(error) {
-    console.error('❌ PDF export failed:', error);
-    alert('⚠️ PDF generation failed. Check console for details.');
+    console.error('PDF export failed:', error);
+    alert('PDF generation failed. Check console.');
   } finally {
-    if(btn){ btn.disabled=false; btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:middle;margin-right:6px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Full Report (PDF)'; }
+    if(btn){ 
+      btn.disabled=false; 
+      btn.innerHTML='Export Full Report (PDF)'; 
+    }
   }
 }
     };
