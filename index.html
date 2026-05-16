@@ -979,6 +979,332 @@ main {
     padding-right: 1rem !important;
   }
 }
+  /* === ✨ PREMIUM HOME LAYOUT CSS === */
+.hero-section {
+  position: relative;
+  overflow: hidden;
+  padding: 3rem 1.5rem 2.5rem;
+  text-align: center;
+  background: linear-gradient(180deg, #ffffff 0%, var(--bg) 100%);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2rem;
+}
+.hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 700px;
+  margin: 0 auto;
+}
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, rgba(0,122,255,0.08), rgba(175,82,222,0.08));
+  border: 1px solid rgba(0,122,255,0.12);
+  padding: 0.4rem 1rem;
+  border-radius: 50px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 1rem;
+  letter-spacing: 0.02em;
+}
+.hero-dot {
+  width: 6px; height: 6px;
+  background: var(--success);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{ opacity:1; } 50%{ opacity:0.3; } }
+.hero-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.8rem;
+}
+.hero-title .accent {
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-subtitle {
+  font-size: 1.1rem;
+  color: var(--text-light);
+  max-width: 600px;
+  margin: 0 auto 1.5rem;
+  line-height: 1.6;
+}
+.hero-actions {
+  display: flex;
+  gap: 0.8rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.btn-glass-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.6rem;
+  border-radius: 99px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--primary);
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+.btn-glass-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35); }
+.btn-glass {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.6rem;
+  border-radius: 99px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-glass:hover { background: var(--bg); border-color: var(--text-light); }
+.btn-glass-dark {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 0.8rem 1.8rem;
+  border-radius: 99px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-glass-dark:hover { background: rgba(255,255,255,0.2); }
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+.stat-pill {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.2rem 1rem;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+  transition: transform 0.2s;
+}
+.stat-pill:hover { transform: translateY(-3px); }
+.stat-value {
+  font-size: 2.2rem;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 0.3rem;
+}
+.stat-value.blue { color: var(--primary); }
+.stat-value.green { color: var(--success); }
+.stat-value.purple { color: var(--purple); }
+.stat-value.orange { color: var(--warning); }
+.stat-label { font-size: 0.75rem; color: var(--text-light); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+.stat-trend { font-size: 0.7rem; color: var(--success); font-weight: 600; margin-top: 0.3rem; }
+.section-header {
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.4rem;
+}
+.section-desc {
+  font-size: 0.95rem;
+  color: var(--text-light);
+  line-height: 1.5;
+}
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.2rem;
+  margin-bottom: 3rem;
+}
+.feature-card-premium {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  transition: all 0.2s;
+}
+.feature-card-premium:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+  border-color: var(--primary-light);
+}
+.feature-icon-premium {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  background: var(--primary-light);
+  color: var(--primary);
+}
+.feature-card-premium h4 { font-size: 1rem; font-weight: 700; margin-bottom: 0.4rem; }
+.feature-card-premium p { font-size: 0.85rem; color: var(--text-light); line-height: 1.5; margin: 0; }
+.top3-section {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 4rem;
+}
+.card-premium {
+  background: var(--card);
+  border-radius: 18px;
+  border: 0.5px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  overflow: hidden;
+  transition: all 0.2s;
+}
+.card-premium:hover { box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
+.card-header {
+  padding: 1rem 1.2rem;
+  border-bottom: 0.5px solid var(--border);
+  background: rgba(242,242,247,0.4);
+}
+.card-header h3 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+.card-body { padding: 0.5rem 1.2rem; }
+.top3-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.75rem 0;
+  border-bottom: 0.5px solid var(--border);
+  transition: background 0.2s;
+}
+.top3-item:last-child { border-bottom: none; padding-bottom: 1rem; }
+.top3-item:hover { background: rgba(0,122,255,0.03); border-radius: 8px; padding-left: 0.5rem; margin-left: -0.5rem; }
+.top3-rank { font-size: 1.1rem; width: 28px; text-align: center; flex-shrink: 0; }
+.top3-info { flex: 1; }
+.top3-name { font-weight: 600; font-size: 0.88rem; color: var(--text); margin-bottom: 0.1rem; }
+.top3-company { font-size: 0.72rem; color: var(--text-muted); }
+.top3-uses {
+  font-size: 0.75rem;
+  color: var(--primary);
+  font-weight: 700;
+  background: var(--primary-light);
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+.community-card { text-align: center; }
+.community-card .card-body {
+  padding: 2.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: radial-gradient(ellipse 200px 150px at 50% 20%, rgba(175,82,222,0.08), transparent), var(--card);
+}
+.community-number {
+  font-size: 3.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--primary), var(--purple), var(--pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+  line-height: 1;
+}
+.community-label { font-size: 0.9rem; color: var(--text-light); margin-bottom: 1.5rem; }
+.btn-glass-community {
+  background: rgba(0, 122, 255, 0.08);
+  color: var(--primary);
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.6rem 1.4rem;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-glass-community:hover { background: rgba(0, 122, 255, 0.15); transform: scale(1.02); }
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+.chart-card-premium {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 1.2rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+.chart-card-premium .card-header {
+  margin-bottom: 1rem;
+  border-bottom: none;
+  padding: 0;
+  background: transparent;
+}
+.chart-card-premium h3 { font-size: 1rem; font-weight: 700; }
+.chart-container { min-height: 260px; }
+.cta-banner {
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  border-radius: 24px;
+  padding: 3.5rem 2rem;
+  text-align: center;
+  margin-top: 4rem;
+  position: relative;
+  overflow: hidden;
+}
+.cta-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 40%), radial-gradient(circle at 50% 0%, rgba(255,255,255,0.05), transparent 50%);
+  pointer-events: none;
+}
+.cta-banner-content { position: relative; z-index: 2; }
+.cta-banner h2 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 0.6rem;
+  letter-spacing: -0.02em;
+}
+.cta-banner h2 .accent {
+  background: linear-gradient(135deg, #5ac8fa, var(--primary), var(--purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.cta-banner p { font-size: 1rem; color: rgba(255,255,255,0.6); margin-bottom: 2rem; max-width: 500px; margin-left: auto; margin-right: auto; }
+.cta-banner-actions { display: flex; gap: 0.8rem; justify-content: center; flex-wrap: wrap; }
+@media (max-width: 900px) {
+  .top3-section, .features-grid, .charts-grid { grid-template-columns: 1fr; }
+  .stats-bar { grid-template-columns: repeat(2, 1fr); }
+  .hero-section { padding: 2rem 1rem 1.5rem; }
+  .hero-title { font-size: 1.8rem; }
+}
+@media (max-width: 480px) {
+  .stats-bar { grid-template-columns: 1fr; }
+  .hero-actions { flex-direction: column; }
+  .btn-glass-primary, .btn-glass, .btn-glass-dark { width: 100%; }
+  .cta-banner-actions { flex-direction: column; align-items: center; }
+}
 </style>
   <!-- 📢 GOOGLE ADSENSE -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1234567890123456" crossorigin="anonymous"></script>
@@ -1106,6 +1432,7 @@ window.loadFromCommunity = async function() {
         return [];
     }
 };
+  
 </script>
 
 <div class="app">
@@ -2172,145 +2499,46 @@ function getCommunityCount() {
     return DB.materials.filter(m => m.isCommunity || String(m.id).startsWith('fb_')).length;
 }
 function renderHome() {
-  // ✅ Mantieni i calcoli per i dati dinamici
   var totalMats = DB.materials.length;
   var totalLams = DB.laminates.length;
   var multiTempMats = DB.materials.filter(m => Engine.validateArrhenius(m).valid).length;
   var commCount = getCommunityCount();
   
-  // ✅ HTML premium con integrazione dinamica
   return `
-  <!-- HERO SECTION -->
-  <section class="hero-section">
-    <div class="hero-content">
-      <div class="hero-eyebrow">
-        <span class="hero-dot"></span>
-        Trusted by ${Math.floor(totalMats/10)+50}+ packaging engineers
-      </div>
-      <h1 class="hero-title">
-        Calculate barrier performance of<br>your <span class="accent">multilayer film</span> in 3 steps
-      </h1>
-      <p class="hero-subtitle">
-        Professional ${State.mode.toUpperCase()} analysis powered by resistance modeling, 
-        Arrhenius predictions, and hygroscopic corrections.
-      </p>
-      <div class="hero-actions">
-        <button class="btn btn-glass-primary" onclick="nav('calc')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M5 12h14M12 5l7 7-7 7"/>
-          </svg>
-          Start Calculation
-        </button>
-        <button class="btn btn-glass" onclick="nav('materials')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
-          </svg>
-          Browse Materials
-        </button>
-      </div>
+  <!-- STATS GRID -->
+  <div class="stats-grid-premium">
+    <div class="stat-card-premium">
+      <div class="stat-label-premium">Materials Matrix</div>
+      <div class="stat-value-premium">${totalMats}</div>
+      <div class="stat-trend-premium">+${Math.floor(totalMats/14)} this month</div>
     </div>
-  </section>
-
-  <main>
-    <!-- STATS BAR (dati dinamici) -->
-    <section class="stats-bar section">
-      <div class="stat-pill">
-        <div class="stat-label">Materials Matrix</div>
-        <div class="stat-value blue count-up" data-target="${totalMats}">${totalMats}</div>
-        <div class="stat-trend">+${Math.floor(totalMats/14)} this month</div>
-      </div>
-      <div class="stat-pill">
-        <div class="stat-label">Kinetic Fits</div>
-        <div class="stat-value green count-up" data-target="${multiTempMats}">${multiTempMats}</div>
-        <div class="stat-trend">+${Math.floor(multiTempMats/9)} this month</div>
-      </div>
-      <div class="stat-pill">
-        <div class="stat-label">Laminates</div>
-        <div class="stat-value purple count-up" data-target="${totalLams}">${totalLams}</div>
-        <div class="stat-trend">+${Math.floor(totalLams/5)} this month</div>
-      </div>
-      <div class="stat-pill">
-        <div class="stat-label">Completions</div>
-        <div class="stat-value orange">156</div>
-        <div class="stat-trend">+28 this week</div>
-      </div>
-    </section>
-
-    <!-- TOP 3 + COMMUNITY -->
-    <section class="top3-section">
-      <div class="card-premium section">
-        <div class="card-header"><h3>🏆 Most Used Materials</h3></div>
-        <div class="card-body" id="top3-ranking">
-          <!-- Viene popolato da updateTop3UI() -->
-          <div style="text-align:center;padding:1rem;color:var(--text-light)">Loading...</div>
-        </div>
-      </div>
-      <div class="card-premium community-card section">
-        <div class="card-header"><h3>🌍 Global Exchange</h3></div>
-        <div class="card-body">
-          <div class="community-number">${commCount}</div>
-          <div class="community-label">Shared materials compiled</div>
-          <button class="btn-glass-community" onclick="nav('materials')">
-            Join Registry
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- FEATURES (con animazioni esistenti) -->
-    <section class="section" id="featuresSection">
-      <div class="section-header">
-        <h2 class="section-title">Core Analytical Architecture</h2>
-      </div>
-      <div class="features-grid">
-        <div class="feature-card-premium feature-card">
-          <div class="feature-icon-premium">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
-            </svg>
-          </div>
-          <div>
-            <h4>Resistance Mechanics</h4>
-            <p>Iterative series-resistance computations utilizing Fickian diffusion profiles.</p>
-          </div>
-        </div>
-        <!-- ... altre 3 feature card con classe "feature-card" per le animazioni ... -->
-      </div>
-    </section>
-
-    <!-- CHARTS (mantieni gli ID originali) -->
-    <section class="section">
-      <div class="section-header">
-        <h2 class="section-title">Diagnostic Visualizations</h2>
-      </div>
-      <div class="charts-grid">
-        <div class="chart-card-premium">
-          <div class="card-header"><h3>${State.mode.toUpperCase()} vs Temperature</h3></div>
-          <div class="card-body">
-            <div class="chart-container"><canvas id="demoChart1"></canvas></div>
-          </div>
-        </div>
-        <div class="chart-card-premium">
-          <div class="card-header"><h3>Laminate Resistance Balance</h3></div>
-          <div class="card-body">
-            <div class="chart-container"><canvas id="demoChart2"></canvas></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- CTA BANNER -->
-    <section class="cta-banner section">
-      <div class="cta-banner-content">
-        <h2>Initiate <span class="accent">Packaging Evaluation</span></h2>
-        <p>Run analytical calculations, test structural variables, and forecast model stability.</p>
-        <div class="cta-banner-actions">
-          <button class="btn btn-glass-primary" onclick="nav('calc')">Launch Workbook</button>
-          <button class="btn btn-glass-dark" onclick="nav('materials')">Browse Materials</button>
-        </div>
-      </div>
-    </section>
-  </main>
+    
+    <div class="stat-card-premium">
+      <div class="stat-label-premium">Kinetic Fits</div>
+      <div class="stat-value-premium" style="color: var(--success)">${multiTempMats}</div>
+      <div class="stat-trend-premium">+${Math.floor(multiTempMats/9)} this month</div>
+    </div>
+    
+    <div class="stat-card-premium">
+      <div class="stat-label-premium">Laminates</div>
+      <div class="stat-value-premium" style="color: var(--purple)">${totalLams}</div>
+      <div class="stat-trend-premium">+${Math.floor(totalLams/5)} this month</div>
+    </div>
+    
+    <div class="stat-card-premium">
+      <div class="stat-label-premium">Completions</div>
+      <div class="stat-value-premium" style="color: var(--warning)">156</div>
+      <div class="stat-trend-premium">+28 this week</div>
+    </div>
+  </div>
+  
+  <!-- RESTO DEL CONTENUTO... -->
+  <div class="card" style="margin-top: 2rem;">
+    <h2>Welcome to WVTR/OTR Calculator</h2>
+    <p style="color: var(--text-light); line-height: 1.6;">
+      Professional barrier analytics for multilayer packaging. Select a tab above to get started.
+    </p>
+  </div>
   `;
 }
   // ✅ Vota affidabilità materiale
