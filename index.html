@@ -5425,21 +5425,16 @@ function drawLaminateCurveChart(){
     }
 }
 
-// ====================================================================
-// 📈 GRAFICO SATURAZIONE IGROSCOPICA NEL TEMPO (MODELLO FISICO - FICK)
-// ====================================================================
 function drawHygroscopicTimeChart() {
     var canvas = document.getElementById('hygroTimeChart');
     var hygroCard = document.getElementById('hygro-card');
     if(!canvas) return;
     destroyChart('hygroTime');
 
-    // ✅ 1. MODALITÀ ATTIVA E CHIAVI CORRETTE
     var currentMode = State.mode || 'wvtr';
     var betaKey = currentMode === 'wvtr' ? 'hygroscopicBetaWVTR' : 'hygroscopicBetaOTR';
     var refKey = currentMode === 'wvtr' ? 'hygroscopicRefRHWVTR' : 'hygroscopicRefRHOTR';
     
-    // ✅ 2. CONTROLLA SE C'È ALMENO UN MATERIALE IGROSCOPICO
     var hasHygro = State.layers.some(function(l){
         if(l.mid === null) return false;
         var mat = DB.materials.find(function(m){ return m.id === l.mid; });
@@ -5458,19 +5453,11 @@ function drawHygroscopicTimeChart() {
     var extRH = State.selCond.humidity;
     var timePoints = [], wvtrPoints = [];
     
-    // ✅ 3. DIFFUSIVITÀ TIPICHE DEI MATERIALI (m²/s) - VALORI DA LETTERATURA
     var diffusivityMap = {
-        'EVOH': 1.5e-13,      // Molto barriera, lento
-        'Nylon': 2.0e-12,     // Igroscopico, più veloce
-        'PA': 2.0e-12,
-        'PET': 5.0e-13,
-        'PP': 1.0e-13,
-        'PE': 1.0e-13,
-        'PVA': 3.0e-12,
-        'default': 1.0e-12
+        'EVOH': 1.0e-14, 'PET': 3.0e-13, 'Nylon': 1.5e-12, 'PA': 1.5e-12,
+        'PVA': 2.0e-12, 'PP': 3.0e-11, 'PE': 8.0e-11, 'default': 1.0e-12
     };
     
-    // ✅ 4. CALCOLA RESISTENZA BASE E RACCOGLI LAYER IGROSCOPICI
     var fixedResistance = 0;
     var hygroLayers = [];
     
@@ -5495,30 +5482,21 @@ function drawHygroscopicTimeChart() {
         var modeRefRH = mat[refKey] || mat.hygroscopicRefRH || 50;
         
         if(modeBeta > 0) {
-            // ✅ CALCOLA tau CON LEGGE DI FICK: τ ∝ L²/D
             var D_base = diffusivityMap[mat.family] || diffusivityMap['default'];
             var T_K = State.selCond.temperature + 273.15;
-            var T_ref = 298.15; // 25°C
-            var Ea = 45000; // J/mol tipico per diffusione acqua in polimeri
+            var T_ref = 298.15;
+            var Ea = 45000;
             var R = 8.314;
-            // Correzione Arrhenius per temperatura
             var D_corrected = D_base * Math.exp(-(Ea/R) * (1/T_K - 1/T_ref));
-            // Legge di Fick: tau = 0.5 * L² / D (tempo per ~63% saturazione)
-            var L_m = layer.thick * 1e-6; // µm → metri
+            var L_m = layer.thick * 1e-6;
             var tau_sec = 0.5 * Math.pow(L_m, 2) / D_corrected;
-            var tau_days = tau_sec / 86400; // secondi → giorni
-            // Fattore umidità: RH più alta = saturazione più veloce
+            var tau_days = tau_sec / 86400;
             var rhFactor = 1 + (extRH / 100) * 1.5;
             tau_days = tau_days / rhFactor;
             
             hygroLayers.push({
-                mat: mat,
-                thickness: layer.thick,
-                refValue: wd.value,
-                refThick: wd.thickness,
-                beta: modeBeta,
-                refRH: modeRefRH,
-                tau: tau_days // ✅ tau calcolato fisicamente
+                mat: mat, thickness: layer.thick, refValue: wd.value,
+                refThick: wd.thickness, beta: modeBeta, refRH: modeRefRH, tau: tau_days
             });
         } else {
             var product = wd.value * wd.thickness;
@@ -5526,64 +5504,69 @@ function drawHygroscopicTimeChart() {
         }
     }
     
-    // ✅ 5. SIMULA EVOLUZIONE NEL TEMPO (fino a 3x tau del layer più lento)
-    var maxTau = 0;
-    for(var h=0; h<hygroLayers.length; h++) {
-        if(hygroLayers[h].tau > maxTau) maxTau = hygroLayers[h].tau;
-    }
-    var satTime = Math.min(300, Math.ceil(maxTau * 3)); // Max 300 giorni
-    
-    for(var t=0; t<=satTime; t+=2) {
-        var totalR = fixedResistance;
-        for(var hi=0; hi<hygroLayers.length; hi++) {
-            var hl = hygroLayers[hi];
-            // Modello esponenziale di saturazione con tau fisico
-            var rhAvg = extRH * (1 - Math.exp(-t / hl.tau));
-            var corrFactor = Math.exp(hl.beta * (rhAvg - hl.refRH));
-            var product = hl.refValue * hl.refThick;
-            var baseR = hl.thickness / product;
-            var dynamicR = baseR / corrFactor;
-            totalR += dynamicR;
+    // ✅ FIX: Se non ci sono layer igroscopici validi, mostra comunque il valore base
+    if(hygroLayers.length === 0) {
+        var baseWVTR = fixedResistance > 0.000001 ? 1 / fixedResistance : 0.000001;
+        timePoints = [0, 10, 20, 30];
+        wvtrPoints = [baseWVTR, baseWVTR, baseWVTR, baseWVTR];
+    } else {
+        var maxTau = 0;
+        for(var h=0; h<hygroLayers.length; h++) {
+            if(hygroLayers[h].tau > maxTau) maxTau = hygroLayers[h].tau;
         }
-        var totalWVTR = totalR > 0 ? 1 / totalR : 0;
-        timePoints.push(t);
-        wvtrPoints.push(totalWVTR);
+        var satTime = Math.min(300, Math.ceil(maxTau * 3));
+        if(satTime < 10) satTime = 10;
+        
+        var minPoints = 30;
+        var step = Math.max(1, Math.floor(satTime / minPoints));
+        
+        for(var t=0; t<=satTime; t+=step) {
+            var totalR = fixedResistance;
+            for(var hi=0; hi<hygroLayers.length; hi++) {
+                var hl = hygroLayers[hi];
+                var rhAvg = extRH * (1 - Math.exp(-t / hl.tau));
+                var corrFactor = Math.exp(hl.beta * (rhAvg - hl.refRH));
+                var product = hl.refValue * hl.refThick;
+                var baseR = hl.thickness / product;
+                var dynamicR = baseR / corrFactor;
+                totalR += dynamicR;
+            }
+            // ✅ FIX: Evita divisione per zero o valori troppo piccoli
+            var totalWVTR = totalR > 0.000001 ? 1 / totalR : 0.000001;
+            timePoints.push(t);
+            wvtrPoints.push(totalWVTR);
+        }
     }
     
-    // ✅ 6. CALCOLA VALORI PER LEGENDA
     var initialWVTR = wvtrPoints[0];
     var finalWVTR = wvtrPoints[wvtrPoints.length-1];
     var increasePct = initialWVTR > 0 ? ((finalWVTR - initialWVTR) / initialWVTR * 100).toFixed(1) : 0;
     
-    // ✅ 7. DISEGNA IL GRAFICO
+    // ✅ FIX: Calcola yMax dinamico per evitare grafico compresso
+    var yMax = Math.max(initialWVTR, finalWVTR) * 1.5;
+    if(yMax < 0.1) yMax = 0.1; // Minimo visibile
+    
     chartInstances.hygroTime = new Chart(ctx, {
         type: 'line',
         data: {
             labels: timePoints,
             datasets: [
                 {
-                    label: 'Effective '+getLabel()+' (hygroscopic)',
+                    label: 'Effective ' + getLabel() + ' (hygroscopic)',
                     data: wvtrPoints,
                     borderColor: '#ef4444',
                     backgroundColor: 'rgba(239,68,68,0.1)',
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 0,
-                    borderWidth: 2
+                    fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2
                 },
                 {
                     label: 'Initial (t=0)',
                     data: new Array(timePoints.length).fill(initialWVTR),
-                    borderColor: '#22c55e',
-                    borderDash: [4,3],
-                    pointRadius: 0,
-                    borderWidth: 1
+                    borderColor: '#22c55e', borderDash: [4,3], pointRadius: 0, borderWidth: 1
                 }
             ]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
+            responsive: true, maintainAspectRatio: false,
             plugins: {
                 legend: { position: 'bottom', labels: { font: { size: 9 } } },
                 tooltip: {
@@ -5603,22 +5586,28 @@ function drawHygroscopicTimeChart() {
                 }
             },
             scales: {
-                x: {
-                    title: { display: true, text: 'Days', font: { size: 10 } },
-                    grid: { display: false }
-                },
+                x: { title: { display: true, text: 'Days', font: { size: 10 } }, grid: { display: false } },
                 y: {
                     title: { display: true, text: getLabel() + ' (' + getUnit() + ')', font: { size: 10 } },
                     beginAtZero: true,
+                    suggestedMax: yMax,  // ✅ FIX: Scala dinamica
                     ticks: {
                         callback: function(value) {
                             var prec = getDisplayPrecision();
-                            return value < 0.01 ? formatWithSigFigs(value, prec) : formatWithSigFigs(value, prec);
+                            return formatWithSigFigs(value, prec);
                         }
                     }
                 }
             }
         }
+    });
+    
+    // 🐛 DEBUG: Conferma che i dati sono stati generati
+    console.log("✅ Grafico generato:", {
+        points: timePoints.length,
+        initial: initialWVTR,
+        final: finalWVTR,
+        yMax: yMax
     });
 }
 // ====================================================================
