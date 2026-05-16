@@ -1436,31 +1436,37 @@ window.loadFromCommunity = async function() {
 </script>
 
 <div class="app">
-  <header>
-    <div class="header-top">
-      <h1>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  <header id="header">
+  <div class="header-inner">
+    <a href="#" class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
         </svg>
-        WVTR/OTR
-      </h1>
-      <div class="mode-toggle">
-        <label>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
-          </svg>
-          <input type="radio" name="mode" value="wvtr" checked onchange="setMode('wvtr')">WVTR
-        </label>
-        <label>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8" stroke-dasharray="4 3"/>
-          </svg>
-          <input type="radio" name="mode" value="otr" onchange="setMode('otr')">OTR
-        </label>
+      </div>
+      <span class="logo-text">BarrierCalc</span>
+    </a>
+
+    <div class="nav">
+      <a href="#" class="nav-link active" onclick="navTab(this)">Home</a>
+      <a href="#" class="nav-link" onclick="navTab(this)">Calculator</a>
+      <a href="#" class="nav-link" onclick="navTab(this)">Sensitivity</a>
+      <a href="#" class="nav-link" onclick="navTab(this)">Shelf Life</a>
+      <a href="#" class="nav-link" onclick="navTab(this)">Arrhenius</a>
+      <a href="#" class="nav-link" onclick="navTab(this)">Compare</a>
+      
+      <div class="nav-separator"></div>
+      
+      <a href="#" class="nav-link" onclick="navTab(this)">Materials DB</a>
+      <a href="#" class="nav-link" onclick="navTab(this)">Laminates DB</a>
+
+      <div class="mode-toggle-premium">
+        <button class="mode-btn active" onclick="setMode('wvtr')">WVTR</button>
+        <button class="mode-btn" onclick="setMode('otr')">OTR</button>
       </div>
     </div>
-    <div class="nav-tabs" id="nav-tabs"></div>
-  </header>
+  </div>
+</header>
   <div class="ad-container">
   <ins class="adsbygoogle"
        style="display:block"
@@ -2505,40 +2511,168 @@ function renderHome() {
   var commCount = getCommunityCount();
   
   return `
-  <!-- STATS GRID -->
-  <div class="stats-grid-premium">
-    <div class="stat-card-premium">
-      <div class="stat-label-premium">Materials Matrix</div>
-      <div class="stat-value-premium">${totalMats}</div>
-      <div class="stat-trend-premium">+${Math.floor(totalMats/14)} this month</div>
+  <!-- HERO SECTION -->
+  <section class="hero-section">
+    <div class="hero-content">
+      <div class="hero-eyebrow">
+        <span class="hero-dot"></span>
+        Trusted by ${Math.floor(totalMats/10)+50}+ packaging engineers
+      </div>
+      <h1 class="hero-title">
+        Calculate barrier performance of<br>your <span class="accent">multilayer film</span> in 3 steps
+      </h1>
+      <p class="hero-subtitle">
+        Professional ${State.mode.toUpperCase()} analysis powered by resistance modeling, 
+        Arrhenius predictions, and hygroscopic corrections.
+      </p>
+      <div class="hero-actions">
+        <button class="btn btn-glass-primary" onclick="nav('calc')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+          Start Calculation
+        </button>
+        <button class="btn btn-glass" onclick="nav('materials')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>
+          </svg>
+          Browse Materials
+        </button>
+      </div>
     </div>
-    
-    <div class="stat-card-premium">
-      <div class="stat-label-premium">Kinetic Fits</div>
-      <div class="stat-value-premium" style="color: var(--success)">${multiTempMats}</div>
-      <div class="stat-trend-premium">+${Math.floor(multiTempMats/9)} this month</div>
-    </div>
-    
-    <div class="stat-card-premium">
-      <div class="stat-label-premium">Laminates</div>
-      <div class="stat-value-premium" style="color: var(--purple)">${totalLams}</div>
-      <div class="stat-trend-premium">+${Math.floor(totalLams/5)} this month</div>
-    </div>
-    
-    <div class="stat-card-premium">
-      <div class="stat-label-premium">Completions</div>
-      <div class="stat-value-premium" style="color: var(--warning)">156</div>
-      <div class="stat-trend-premium">+28 this week</div>
-    </div>
-  </div>
-  
-  <!-- RESTO DEL CONTENUTO... -->
-  <div class="card" style="margin-top: 2rem;">
-    <h2>Welcome to WVTR/OTR Calculator</h2>
-    <p style="color: var(--text-light); line-height: 1.6;">
-      Professional barrier analytics for multilayer packaging. Select a tab above to get started.
-    </p>
-  </div>
+  </section>
+
+  <main>
+    <!-- STATS BAR -->
+    <section class="stats-bar section">
+      <div class="stat-pill">
+        <div class="stat-label">Materials Matrix</div>
+        <div class="stat-value blue">${totalMats}</div>
+        <div class="stat-trend">+${Math.floor(totalMats/14)} this month</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-label">Kinetic Fits</div>
+        <div class="stat-value green">${multiTempMats}</div>
+        <div class="stat-trend">+${Math.floor(multiTempMats/9)} this month</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-label">Laminates</div>
+        <div class="stat-value purple">${totalLams}</div>
+        <div class="stat-trend">+${Math.floor(totalLams/5)} this month</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-label">Completions</div>
+        <div class="stat-value orange">156</div>
+        <div class="stat-trend">+28 this week</div>
+      </div>
+    </section>
+
+    <!-- TOP 3 + COMMUNITY -->
+    <section class="top3-section">
+      <div class="card-premium section">
+        <div class="card-header"><h3>🏆 Most Used Materials</h3></div>
+        <div class="card-body" id="top3-ranking">
+          <div style="text-align:center;padding:1rem;color:var(--text-light)">Loading...</div>
+        </div>
+      </div>
+      <div class="card-premium community-card section">
+        <div class="card-header"><h3>🌍 Global Exchange</h3></div>
+        <div class="card-body">
+          <div class="community-number">${commCount}</div>
+          <div class="community-label">Shared materials compiled</div>
+          <button class="btn-glass-community" onclick="nav('materials')">
+            Join Registry
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="section" id="featuresSection">
+      <div class="section-header">
+        <h2 class="section-title">Core Analytical Architecture</h2>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card-premium">
+          <div class="feature-icon-premium">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
+            </svg>
+          </div>
+          <div>
+            <h4>Resistance Mechanics</h4>
+            <p>Iterative series-resistance computations utilizing Fickian diffusion profiles.</p>
+          </div>
+        </div>
+        <div class="feature-card-premium">
+          <div class="feature-icon-premium" style="background:rgba(52,199,89,0.1);color:var(--success);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+          </div>
+          <div>
+            <h4>Thermal Scaling</h4>
+            <p>Real-time activation energy evaluations tracking target matrix performance.</p>
+          </div>
+        </div>
+        <div class="feature-card-premium">
+          <div class="feature-icon-premium" style="background:rgba(255,149,0,0.1);color:var(--warning);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-6"/>
+            </svg>
+          </div>
+          <div>
+            <h4>Hygroscopic Correction</h4>
+            <p>Exponential adjustment curves addressing humidity shifts for sensitive polymers.</p>
+          </div>
+        </div>
+        <div class="feature-card-premium">
+          <div class="feature-icon-premium" style="background:rgba(175,82,222,0.1);color:var(--purple);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+            </svg>
+          </div>
+          <div>
+            <h4>Community Cloud</h4>
+            <p>Share and access global material data in real-time.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHARTS -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">Diagnostic Visualizations</h2>
+      </div>
+      <div class="charts-grid">
+        <div class="chart-card-premium">
+          <div class="card-header"><h3>${State.mode.toUpperCase()} vs Temperature</h3></div>
+          <div class="card-body">
+            <div class="chart-container"><canvas id="demoChart1"></canvas></div>
+          </div>
+        </div>
+        <div class="chart-card-premium">
+          <div class="card-header"><h3>Laminate Resistance Balance</h3></div>
+          <div class="card-body">
+            <div class="chart-container"><canvas id="demoChart2"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA BANNER -->
+    <section class="cta-banner section">
+      <div class="cta-banner-content">
+        <h2>Initiate <span class="accent">Packaging Evaluation</span></h2>
+        <p>Run analytical calculations, test structural variables, and forecast model stability.</p>
+        <div class="cta-banner-actions">
+          <button class="btn btn-glass-primary" onclick="nav('calc')">Launch Workbook</button>
+          <button class="btn btn-glass-dark" onclick="nav('materials')">Browse Materials</button>
+        </div>
+      </div>
+    </section>
+  </main>
   `;
 }
   // ✅ Vota affidabilità materiale
@@ -7720,6 +7854,24 @@ async function loadExternalMaterialsDB() {
     // Silenzioso: materials.json è opzionale
     console.log('ℹ️ materials.json non caricato (opzionale):', e.message);
   }
+}
+// === NAV TAB TOGGLE ===
+function navTab(el) {
+  document.querySelectorAll('.nav-link').forEach(function(link) { 
+    link.classList.remove('active'); 
+  });
+  el.classList.add('active');
+}
+
+// === MODE TOGGLE ===
+function setMode(mode) {
+  document.querySelectorAll('.mode-btn').forEach(function(b) { 
+    b.classList.remove('active'); 
+  });
+  event.target.classList.add('active');
+  State.mode = mode;
+  Engine.mode = mode;
+  renderContent();
 }
 
 // ====================================================================
