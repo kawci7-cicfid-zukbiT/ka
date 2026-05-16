@@ -5241,6 +5241,7 @@ if(!hasMats) {
     }
     // ✅ FILTRA e ORDINA i materiali alfabeticamente
 // ✅ FILTRA e ORDINA i materiali alfabeticamente
+// ✅ FILTRA e ORDINA i materiali alfabeticamente
 var filteredMats = DB.materials.filter(function(mat){
     return passesTestMethodFilter(mat);
 });
@@ -5248,11 +5249,49 @@ filteredMats.sort(function(a, b){
     return a.name.localeCompare(b.name, 'en', {sensitivity: 'base'});
 });
 
-// ✅ GENERA LE OPZIONI DAL LISTINO ORDINATO
+// ✅ NUOVO: FILTRO COMPATIBILITÀ CONDIZIONI CON GLI ALTRI LAYER
+var otherMats = [];
+for(var k=0; k<State.layers.length; k++){
+    if(k !== i && State.layers[k].mid !== null){
+         var matOther = DB.materials.find(function(m){return m.id === State.layers[k].mid;});
+         if(matOther) otherMats.push(matOther);
+    }
+}
+
+var reqConds = [];
+if(otherMats.length > 0){
+    // Calcola l'intersezione delle condizioni degli altri layer
+    reqConds = [].concat(otherMats[0].validConditions || []);
+    for(var om=1; om<otherMats.length; om++){
+        var nc = otherMats[om].validConditions || [];
+        reqConds = reqConds.filter(function(c){
+            return nc.some(function(n){
+                return Math.abs(n.temperature-c.temperature)<0.01 && Math.abs(n.humidity-c.humidity)<0.01;
+            });
+        });
+    }
+}
+
+// Filtra i materiali visualizzabili in base alla compatibilità
+var displayMats = filteredMats;
+if(reqConds.length > 0){
+    displayMats = filteredMats.filter(function(mat){
+        var vc = mat.validConditions || [];
+        return vc.some(function(v){
+             return reqConds.some(function(r){
+                 return Math.abs(v.temperature - r.temperature) < 0.01 && 
+                        Math.abs(v.humidity - r.humidity) < 0.01;
+             });
+        });
+    });
+    // Se la lista filtrata è vuota (nessun compatibile), mostra tutti per permettere correzioni
+    if(displayMats.length === 0) displayMats = filteredMats; 
+}
+
+// ✅ GENERA LE OPZIONI DAL LISTINO (USANDO displayMats)
 var matOpts = '<option value="">Select...</option>';
-for(var j=0; j<filteredMats.length; j++){
-    var mat = filteredMats[j];  // ← Usa filteredMats invece di DB.materials
-    
+for(var j=0; j<displayMats.length; j++){
+    var mat = displayMats[j]; // Usa la lista filtrata
     var label = mat.name;
     if(mat.isMetallized){
         label += ' <span style="color:var(--warning);font-size:0.7em">[⚙️ Metallized]</span>';
