@@ -13,7 +13,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 header{background:linear-gradient(135deg,#0f172a,var(--primary),#38bdf8);color:#fff;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-lg)}
 .header-top{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.5rem;gap:1rem}
 .header-top h1{font-size:1.15rem;font-weight:700;display:flex;align-items:center;gap:.5rem;white-space:nowrap}
-.header-top h1 svg{width:22px;height:22px}
+.-top h1 svg{width:22px;height:22px}
 
 /* === MODE TOGGLE === */
 .mode-toggle{display:flex;align-items:center;gap:0.3rem;background:rgba(255,255,255,0.95);padding:0.4rem 0.8rem;border-radius:24px;font-size:0.8rem;font-weight:600;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.15);border:2px solid transparent;transition:all 0.2s ease;position:relative}
@@ -263,41 +263,190 @@ select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csv
   box-shadow: 0 12px 40px rgba(37, 99, 235, 0.15);
 }
 
-/* Header */
-.mat-header {
+/* === 🎨 HEADER PROFESSIONALE STILE MINIMAL === */
+header {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: none;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.25rem;
-  background: linear-gradient(135deg, #f8fafc 0%, #fff 100%);
-  border-bottom: 1px solid var(--border);
-  cursor: pointer;
-  user-select: none;
+  padding: 0;
+  gap: 0;
+  background: transparent;
+  border-bottom: none;
+  min-height: 64px;
 }
-.mat-header h3 {
-  font-size: 0.95rem;
+
+.header-top h1 {
+  font-size: 1.25rem;
   font-weight: 600;
-  color: var(--text);
-  margin: 0;
+  color: #111827;
+  letter-spacing: -0.025em;
+  margin-left: 1.5rem;
+}
+
+.header-top h1 svg {
+  width: 24px;
+  height: 24px;
+  color: #3b82f6;
+  margin-right: 0.5rem;
+  vertical-align: -2px;
+}
+
+/* === NAV TABS MINIMALISTA === */
+.nav-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0 1.5rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  align-items: center;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.nav-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-tab {
+  padding: 0.875rem 1rem;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  position: relative;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.nav-tab:hover {
+  color: #111827;
+  background: transparent;
+}
+
+.nav-tab.active {
+  color: #3b82f6;
+  background: transparent;
+  border-bottom-color: #3b82f6;
+  font-weight: 600;
+}
+
+/* === TOGGLE WVTR/OTR STILE PILLOLA === */
+.mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: #dbeafe;
+  padding: 0.25rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  margin-right: 1.5rem;
+  box-shadow: none;
+  border: none;
+}
+
+.mode-toggle label {
+  cursor: pointer;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  flex-wrap: wrap;
-  line-height: 1.4;
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+  color: #6b7280;
+  font-size: 0.813rem;
+  font-weight: 600;
+  position: relative;
 }
-.mat-header .chevron {
-  width: 18px;
-  height: 18px;
-  color: var(--text-light);
-  transition: transform 0.25s ease, color 0.2s;
+
+.mode-toggle label:hover {
+  color: #1e40af;
+}
+
+.mode-toggle input[type="radio"] {
+  display: none;
+}
+
+.mode-toggle label:has(input[type="radio"]:checked),
+.mode-toggle input[type="radio"]:checked + span {
+  background: #ffffff;
+  color: #2563eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.mode-toggle svg {
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
 }
-.material-item.expanded .mat-header .chevron {
-  transform: rotate(180deg);
-  color: var(--primary);
+
+/* === SEPARATORE VISIVO TRA TAB CORE E AVANZATI === */
+.nav-tab[data-tab="materials"]::before {
+  content: '';
+  position: absolute;
+  left: -0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 24px;
+  width: 1px;
+  background: #d1d5db;
 }
-.material-item:hover .mat-header .chevron {
-  color: var(--primary);
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .header-top h1 {
+    margin-left: 1rem;
+    font-size: 1.125rem;
+  }
+  
+  .nav-tabs {
+    padding: 0 1rem;
+  }
+  
+  .nav-tab {
+    padding: 0.875rem 0.75rem;
+    font-size: 0.813rem;
+  }
+  
+  .mode-toggle {
+    margin-right: 1rem;
+  }
+  
+  .mode-toggle label {
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* === ANIMAZIONI SOTTILI === */
+.nav-tab {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Badges */
@@ -1748,14 +1897,12 @@ function destroyChart(id) { if (chartInstances[id]) { chartInstances[id].destroy
 function renderNav() {
   var html = '';
   var separatorAdded = false;
-  var coreTabs = ['home', 'calc', 'sensitivity', 'shelflife'];
   
-  for (var t = 0; t < TABS.length; t++) {
+  for(var t = 0; t < TABS.length; t++) {
     var tab = TABS[t];
     
-    // ✅ Inserisce separatore visivo dopo i tool core
-    if (tab.id === 'shelflife' && !separatorAdded) {
-      html += '<div style="flex:0 0 auto; width:1px; height:14px; background:rgba(255,255,255,0.4); margin:0 0.4rem; align-self:center; border-radius:1px;"></div>';
+    // Aggiungi separatore visivo prima di "Materials DB"
+    if (tab.id === 'materials' && !separatorAdded) {
       separatorAdded = true;
     }
     
@@ -1764,8 +1911,9 @@ function renderNav() {
   }
   
   document.getElementById('nav-tabs').innerHTML = html;
+  
   var btns = document.querySelectorAll('.nav-tab');
-  for (var b = 0; b < btns.length; b++) {
+  for(var b = 0; b < btns.length; b++) {
     btns[b].onclick = (function(tabId) {
       return function() {
         State.tab = tabId;
@@ -1776,7 +1924,7 @@ function renderNav() {
     })(btns[b].dataset.tab);
   }
 }
-
+    
 function setMode(mode) {
   State.mode = mode;
   Engine.mode = mode;
