@@ -5639,7 +5639,7 @@ R<sub>layer</sub> = Thickness<sub>input</sub> / (Permeability<sub>ref</sub> × T
 
 <p>In plain words: the term <em>(Permeability<sub>ref</sub> × Thickness<sub>ref</sub>)</em> is a constant value representing the material's intrinsic barrier quality (often called the Permeation Coefficient). If you double the thickness of your layer, you double its mathematical resistance, which effectively cuts the amount of gas leaking through in half.</p>
 
-<h3 style="font-size:1.1rem; color:var(--text); margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">Combining Layers (The Multilayer Math)</h3>
+<h3 style="font-size:1.1rem; color:var(--text); margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">Combining layers (the multilayer math)</h3>
 <p>When you stack multiple materials together to form a laminate sheet, the calculator mathematically chains them together by adding up their calculated resistances:</p>
 
 <div style="background:#f8fafc; padding:1.1rem; border-radius:6px; font-family:monospace; font-size:0.95rem; text-align:center; border:1px dashed var(--border); margin:1rem 0; color:#0f172a;">
@@ -5661,7 +5661,7 @@ Let's calculate the final WVTR of a simple two-layer pouch made of <strong>PET (
 Notice how the LDPE layer is providing the vast majority of the moisture resistance (0.5000 out of 0.5333 total), making it the true moisture barrier in this structure!
 </div>
 
-<h3 style="font-size:1.1rem; color:var(--text); margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">Special Case: Hygroscopic Dynamics</h3>
+<h3 style="font-size:1.1rem; color:var(--text); margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">Hygroscopic dynamics</h3>
 <p>Some premium barrier materials, like EVOH or Polyamides (Nylon), are highly sensitive to water vapor. When environmental humidity rises, these polymers absorb water molecules, which act as plasticizers, loosening the polymer chains and accelerating gas leakage. To simulate this real-world risk, the calculator applies an exponential scaling factor to the material's resistance based on its experimental sensitivity coefficient (&beta;):</p>
 
 <div style="background:#f8fafc; padding:1.1rem; border-radius:6px; font-family:monospace; font-size:0.95rem; text-align:center; border:1px dashed var(--border); margin:1rem 0; color:#0f172a;">
@@ -5674,10 +5674,10 @@ Corrected Permeability = Permeability<sub>base</sub> × e<sup>&beta; × (&Delta;
 <strong>Info:</strong> If no &beta; (beta) coefficient is supplied in the database, the model assumes the material is completely immune to moisture damage. In tropical or high-condensation environments, this assumption will generate overly optimistic shelf-life estimates.
 </div>
 
-<h3 style="font-size:1.1rem; color:var(--text); margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">Special Case: Metallized and Coated Shields</h3>
+<h3 style="font-size:1.1rem; color:var(--text); margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">Metallized and coated chields</h3>
 <p>Metallized films (such as MET-PET) and nanometric ceramic coatings (like AlO<sub>x</sub> or SiO<sub>x</sub>) follow entirely different physical rules. Their barrier performance does not come from the bulk polymer thickness, but rather from an ultra-thin, atomic layer of aluminum or oxide deposited onto the surface. Because a thicker base film will not have a better aluminum layer, the calculator treats these specialty materials as having a fixed, constant permeability barrier, bypasssing the linear thickness division rule.</p>
 
-<h3 style="font-size:1.1rem; color:var(--text); margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">Reading Your Analysis Matrix</h3>
+<h3 style="font-size:1.1rem; color:var(--text); margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">Reading your analysis matrix</h3>
 <p>The percentage contribution shown for each layer helps you pinpoint exactly where your money and material thickness are being effectively used:</p>
 
 <table style="width:100%; border-collapse:collapse; margin:1rem 0; font-family:sans-serif; font-size:0.88rem;">
@@ -6473,37 +6473,88 @@ function doOptimize(){
 // ====================================================================
 function renderSensitivityMethodology() {
 return `
-<div class="card methodology-card" style="margin-top:1.5rem; border-left:4px solid var(--primary);">
+<div class="card methodology-card" style="margin-top:1.5rem; border-left:4px solid var(--primary); background: var(--card);">
 <div style="padding:1.2rem 1.5rem;">
-<h2 style="font-family:Georgia, 'Times New Roman', serif; font-size:1.2rem; color:var(--text); border-bottom:1px solid var(--border); padding-bottom:0.5rem; margin-bottom:1rem;">
-Understanding Sensitivity Analysis
+<h2 style="font-family:Georgia, 'Times New Roman', serif; font-size:1.3rem; color:var(--text); border-bottom:1px solid var(--border); padding-bottom:0.5rem; margin-bottom:1rem;">
+Methodology: Mechanics of Sensitivity Analysis
 </h2>
-<div style="font-size:0.92rem; line-height:1.75; color:#334155; font-family:Georgia, 'Times New Roman', serif;">
+<div style="font-size:0.95rem; line-height:1.8; color:#334155; font-family:Georgia, 'Times New Roman', serif;">
 
-<p>Sensitivity analysis helps you see how small changes in one layer's thickness affect the overall barrier performance of your laminate. In packaging design, not all layers contribute equally to protection. By varying one layer at a time while keeping others fixed, you can identify which materials give you the most "bang for your buck" and where you might safely reduce thickness to save cost.</p>
+<p>In packaging optimization, a common question arises: <em>"What happens if we make this specific layer thinner to save money, or thicker to extend shelf life?"</em> Not all layers impact the final structure equally. <strong>Sensitivity Analysis</strong> is a powerful mathematical stress-test that answers this question. By sweeping the thickness of a single selected layer across a wide range while keeping all other layers locked, the model plots a dynamic trajectory showing exactly where you get the most "bang for your buck."</p>
 
-<div style="background:var(--primary-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--primary); margin:0.8rem 0; font-family:sans-serif;">
-<strong>Key idea:</strong> Barrier performance follows a series resistance model. Just like electrical resistors in series, each layer adds its own resistance to permeation. The total resistance is the sum of individual layer resistances, and the total permeability is the inverse of that sum.
+<div style="background:var(--primary-light); padding:0.8rem 1rem; border-radius:8px; border-left:3px solid var(--primary); margin:1rem 0; font-family:sans-serif; font-size:0.9rem;">
+<strong>The Mathematical Phenomenon:</strong> Even though a single layer's resistance scales linearly with its thickness, the final transmission rate (WVTR/OTR) of the laminate changes <strong>non-linearly</strong>. This creates a distinct curve because the variable layer is constantly shifting its percentage share of the global resistance pool.
 </div>
 
-<p>When you increase the thickness of a high-barrier layer like EVOH or metallized film, the total resistance rises sharply at first, then gradually levels off. This diminishing return happens because other layers eventually become the limiting factor. Conversely, thinning a critical barrier layer can cause permeability to jump dramatically once that layer's resistance drops below a certain threshold.</p>
+<h3 style="font-size:1.1rem; color:var(--text); margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">The Math Under the Hood</h3>
+<p>To plot your sensitivity curve, the calculator isolates the chosen layer and executes an iterative loops calculation. It samples multiple thickness points (ranging from thin to thick) and for every step, it re-computes Fick's resistance formula and recombines it into the global series model:</p>
 
-<div style="background:#f8fafc; padding:0.9rem; border-radius:6px; font-family:monospace; font-size:0.9rem; text-align:center; border:1px dashed var(--border); margin:0.8rem 0;">
-<strong>Core relationship:</strong><br>
-R<sub>total</sub> = R<sub>1</sub> + R<sub>2</sub> + ... + R<sub>n</sub><br>
-WVTR<sub>total</sub> = 1 / R<sub>total</sub>
+<div style="background:#f8fafc; padding:1.1rem; border-radius:6px; font-family:monospace; font-size:0.95rem; text-align:center; border:1px dashed var(--border); margin:1rem 0; color:#0f172a;">
+R<sub>variable</sub>(t) = Thickness<sub>sampled</sub> / (Permeability<sub>ref</sub> × Thickness<sub>ref</sub>)<br><br>
+R<sub>total</sub>(t) = R<sub>fixed_layers</sub> + R<sub>variable</sub>(t)<br><br>
+Laminate Permeability(t) = 1 / R<sub>total</sub>(t)
 </div>
 
-<p>The calculator uses your material's reference WVTR or OTR value—measured at a specific thickness and condition—to estimate resistance per micron. It then scales that resistance linearly with thickness for non-metallized materials. For metallized or coated films, barrier performance is treated as a surface property independent of substrate thickness, reflecting how these ultra-thin coatings actually work in practice.</p>
-
-<p>When interpreting your sensitivity curve, look for the "knee" of the curve: the point where adding more thickness yields progressively smaller improvements. This is often the optimal balance between performance and material cost. If your curve is nearly flat, that layer is not the limiting factor; focus your attention elsewhere in the structure.</p>
-
-<div style="background:var(--success-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--success); margin:0.8rem 0; font-family:sans-serif;">
-<strong>Practical tip:</strong> Always run sensitivity analysis at the same temperature and humidity conditions you plan to use for final calculations. Barrier properties can shift significantly with environment, and comparing curves across different conditions may lead to misleading conclusions.
+<div style="background:#f0fdf4; padding:1rem; border-radius:8px; border-left:3px solid var(--success); margin:1.2rem 0; font-family:sans-serif; font-size:0.9rem;">
+<strong style="color:#16a34a; font-size:0.95rem;">📊 Step-by-Step Simulation Example:</strong><br>
+Let's look at what the algorithm does behind the scenes when you run a sensitivity sweep on a high-barrier <strong>EVOH layer</strong> inside a structure that already has a fixed structural support of PE (giving a fixed resistance of <strong>R<sub>fixed</sub> = 0.50</strong>). Let's assume the EVOH has a reference permeation constant of 30.<br>
+<ul>
+  <li><strong>Step 1: Testing an ultra-thin layer (t = 5 µm)</strong><br>
+  The algorithm calculates: R<sub>EVOH</sub> = 5 / 30 = 0.166 &rarr; R<sub>total</sub> = 0.50 + 0.166 = 0.666<br>
+  <strong>Resulting Permeability:</strong> 1 / 0.666 = <strong style="color:#111;">1.50 g/m²·day</strong></li>
+  
+  <li><strong>Step 2: Testing a standard layer (t = 15 µm)</strong><br>
+  The algorithm calculates: R<sub>EVOH</sub> = 15 / 30 = 0.500 &rarr; R<sub>total</sub> = 0.50 + 0.500 = 1.000<br>
+  <strong>Resulting Permeability:</strong> 1 / 1.000 = <strong style="color:#111;">1.00 g/m²·day</strong> <span style="color:#16a34a;">(Gain: -0.50)</span></li>
+  
+  <li><strong>Step 3: Testing an extra-thick layer (t = 30 µm)</strong><br>
+  The algorithm calculates: R<sub>EVOH</sub> = 30 / 30 = 1.000 &rarr; R<sub>total</sub> = 0.50 + 1.000 = 1.500<br>
+  <strong>Resulting Permeability:</strong> 1 / 1.500 = <strong style="color:#111;">0.66 g/m²·day</strong> <span style="color:#d97706;">(Gain: -0.34)</span></li>
+</ul>
+<strong>The Textbook Lesson:</strong> Notice the diminishing returns! Tripling the EVOH from 5 µm to 15 µm dropped the permeability by <strong>0.50</strong>. But doubling it again from 15 µm to 30 µm only dropped it by <strong>0.34</strong>. Why? Because as EVOH gets thicker, the fixed PE layer (0.50 resistance) increasingly becomes the dominant bottleneck.
 </div>
+
+<h3 style="font-size:1.1rem; color:var(--text); margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">How to Read the Sensitivity Chart</h3>
+<p>When you analyze the generated curve, your eyes should look for specific geometric patterns that dictate engineering decisions:</p>
+
+<table style="width:100%; border-collapse:collapse; margin:1rem 0; font-family:sans-serif; font-size:0.88rem;">
+  <thead>
+    <tr style="background:#f1f5f9; border-bottom:2px solid var(--border);">
+      <th style="padding:0.6rem; text-align:left;">Curve Topography</th>
+      <th style="padding:0.6rem; text-align:left;">Physical Meaning</th>
+      <th style="padding:0.6rem; text-align:left;">Industrial Diagnostic Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:0.6rem; font-weight:bold; color:var(--danger);">The Steep Cliff</td>
+      <td>Critical Threshold Zone</td>
+      <td>Reducing thickness even by 1 or 2 microns here will cause a catastrophic spike in gas transmission. This is a high-risk zone for product shelf life.</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:0.6rem; font-weight:bold; color:var(--warning);">The "Knee" (Inflection)</td>
+      <td>Thermodynamic Optimum</td>
+      <td>The sweet spot. This is the exact point of cost-performance optimization where you achieve maximum barrier protection before the curve begins to flatten.</td>
+    </tr>
+    <tr>
+      <td style="padding:0.6rem; font-weight:bold; color:var(--success);">The Flat Plateau</td>
+      <td>System Bottleneck</td>
+      <td>Adding more material is a waste of money. The variable layer is no longer the limiting factor; another layer in the structure is bottlenecking the performance. Focus on optimizing other materials.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 style="font-size:1.1rem; color:var(--text); margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">Special Case: Why Metallized or Coated Layers Stay Flat</h3>
+<p>If you run a sensitivity sweep on a metallized film (like MET-PET) or an oxide-coated material (AlO<sub>x</sub>/SiO<sub>x</sub>), you will notice that the resulting graph line is completely flat. This is physical proof that the model is working correctly. The calculator treats these structures as surface shields: their gas-blocking properties are dictated entirely by the quality of the nanometric vacuum deposition, not by the thickness of the plastic carrier underneath. Changing a carrier film from 12 µm to 20 µm changes mechanical properties, but leaves the barrier resistance unchanged.</p>
+
+<div style="background:var(--warning-light); padding:0.8rem 1rem; border-radius:8px; border-left:3px solid var(--warning); margin:1rem 0; font-family:sans-serif; font-size:0.9rem;">
+<strong>Environmental Reminder:</strong> Barrier profiles alter with changing atmospheres. Always run your sensitivity matrix calculations using the exact temperature and humidity configurations your real pouch will face during distribution. A material's inflection knee can shift radically if a polymer plasticizes under high moisture.
+</div>
+
+<p>Use these graphic slopes to streamline your packaging specifications. By identifying structural plateaus, you can eliminate over-engineered components, reduce polymer plastic weights, minimize your eco-tax footprints, and cut production costs without risking standard food safety or chemical shelf-life metrics.</p>
 
 <div style="margin-top:1.5rem; padding:0.9rem; background:var(--bg); border-radius:8px; font-size:0.88rem; color:var(--text-light); border-left:4px solid var(--primary); font-family:sans-serif;">
-<strong>Note:</strong> This sensitivity tool supports research and development workflows. For regulatory submissions or commercial claims, always corroborate model predictions with empirical barrier testing according to ASTM F1249, ASTM D3985, or equivalent standards.
+<strong>R&D Protocol Note:</strong> This sensitivity framework serves as a rapid screening asset for early-stage structural conceptualization. Commercial specifications, safety certifications, or legal regulatory filings must always be cross-examined and validated with direct laboratory measurements according to standard methods like ASTM F1249 or ASTM D3985.
 </div>
 
 </div>
