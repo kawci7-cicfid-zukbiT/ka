@@ -1109,30 +1109,57 @@ window.loadFromCommunity = async function() {
 
 <div class="app">
   <header>
-    <div class="header-top">
-      <h1>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
-        </svg>
-        WVTR/OTR
-      </h1>
-      <div class="mode-toggle">
-        <label>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
-          </svg>
-          <input type="radio" name="mode" value="wvtr" checked onchange="setMode('wvtr')">WVTR
-        </label>
-        <label>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8" stroke-dasharray="4 3"/>
-          </svg>
-          <input type="radio" name="mode" value="otr" onchange="setMode('otr')">OTR
-        </label>
-      </div>
+    <div class="header-top" style="padding:0.9rem 1.5rem">
+
+        <!-- LOGO -->
+        <div style="display:flex;align-items:center;gap:0.75rem">
+            <div style="width:28px;height:28px;background:rgba(255,255,255,0.12);border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;color:#fff">
+                    <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
+                </svg>
+            </div>
+            <div>
+                <div style="font-size:0.88rem;font-weight:700;color:#fff;letter-spacing:-0.01em;line-height:1.1">
+                    WVTR/OTR
+                </div>
+                <div style="font-size:0.62rem;color:rgba(255,255,255,0.45);letter-spacing:0.06em;text-transform:uppercase;line-height:1">
+                    Calculator
+                </div>
+            </div>
+        </div>
+
+        <!-- MODE TOGGLE -->
+        <div style="display:flex;align-items:center;gap:1.5rem">
+
+            <!-- Label contestuale -->
+            <div style="font-size:0.72rem;color:rgba(255,255,255,0.4);letter-spacing:0.04em;display:none" id="mode-label-desktop">
+                MODE
+            </div>
+
+            <div class="mode-toggle">
+                <label>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z"/>
+                    </svg>
+                    <input type="radio" name="mode" value="wvtr" checked onchange="setMode('wvtr')">
+                    WVTR
+                </label>
+                <label>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <circle cx="12" cy="12" r="8" stroke-dasharray="4 3"/>
+                    </svg>
+                    <input type="radio" name="mode" value="otr" onchange="setMode('otr')">
+                    OTR
+                </label>
+            </div>
+        </div>
+
     </div>
+
+    <!-- NAV TABS -->
     <div class="nav-tabs" id="nav-tabs"></div>
-  </header>
+</header>
   <div class="ad-container">
   <ins class="adsbygoogle"
        style="display:block"
