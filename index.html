@@ -6868,76 +6868,75 @@ function renderMaterials(){
   
   // ✅ FILTRO SEMPLICE: mostra tutti i materiali
 // ✅ ✅ ✅ RICERCA SMART AVANZATA ✅ ✅ ✅
+// Dentro renderMaterials():
+// ✅ ✅ ✅ RICERCA SMART AVANZATA + NUMERICA ✅ ✅ ✅
 for(var i = 0; i < DB.materials.length; i++){
   var m = DB.materials[i];
   if(!q) {
     filtered.push(m);
     continue;
   }
-  
   var qLower = q.toLowerCase();
   var found = false;
   var matchType = [];
+
+  // 🆕 1. CONTROLLO FILTRO NUMERICO (es. wvtr < 2, otr > 100, thick <= 50)
+  var numRegex = /^\s*(wvtr|otr|thickness|thick)\s*(<=|>=|<|>|==|=)\s*([\d.]+)\s*$/i;
+  var numMatch = q.match(numRegex);
   
-  // 1. Cerca nel NOME
-  if(m.name.toLowerCase().indexOf(qLower) >= 0) {
-    found = true;
-    matchType.push('name');
-  }
-  
-  // 2. Cerca nella FAMIGLIA
-  if(m.family && m.family.toLowerCase().indexOf(qLower) >= 0) {
-    found = true;
-    matchType.push('family');
-  }
-  
-  // 3. Cerca nell'AZIENDA (company)
-  if(m.company && m.company.toLowerCase().indexOf(qLower) >= 0) {
-    found = true;
-    matchType.push('company');
-  }
-  
-  // 4. Cerca nel TEST METHOD (WVTR o OTR in base alla modalità)
-  var tm = State.mode === 'wvtr' ? (m.testMethodWVTR || m.testMethod || '') : (m.testMethodOTR || m.testMethod || '');
-  if(tm && tm.toLowerCase().indexOf(qLower) >= 0) {
-    found = true;
-    matchType.push('testmethod');
-  }
-  
-  // 5. Cerca nei VALORI WVTR/OTR (cerca il numero nel testo)
-  var vals = State.mode === 'wvtr' ? m.wvtrValues : m.otrValues;
-  if(vals) {
-    for(var v = 0; v < vals.length; v++) {
-      var valStr = String(vals[v].value);
-      if(valStr.indexOf(q) >= 0 || valStr.toLowerCase().indexOf(qLower) >= 0) {
-        found = true;
-        matchType.push('value');
-        break;
-      }
+  if(numMatch) {
+    var type = numMatch[1].toLowerCase();
+    var op = numMatch[2];
+    var threshold = parseFloat(numMatch[3]);
+    
+    // Seleziona l'array da controllare
+    var targets = (type === 'wvtr' || type === 'otr') 
+      ? (type === 'wvtr' ? (m.wvtrValues||[]) : (m.otrValues||[]))
+      : (m.wvtrValues||[]).concat(m.otrValues||[]); // Per thickness controlla entrambi
+      
+    for(var v = 0; v < targets.length; v++) {
+      var val = (type === 'thick' || type === 'thickness') ? targets[v].thickness : targets[v].value;
+      var pass = false;
+      if(op === '<') pass = val < threshold;
+      else if(op === '>') pass = val > threshold;
+      else if(op === '<=') pass = val <= threshold;
+      else if(op === '>=') pass = val >= threshold;
+      else if(op === '==' || op === '=') pass = val == threshold;
+      
+      if(pass) { found = true; matchType.push('numeric-filter'); break; }
     }
   }
   
-  // 6. Cerca nelle CONDIZIONI (temperatura/umidità)
-  if(m.validConditions) {
-    for(var c = 0; c < m.validConditions.length; c++) {
-      var condStr = m.validConditions[c].temperature + '/' + m.validConditions[c].humidity;
-      if(condStr.indexOf(q) >= 0) {
-        found = true;
-        matchType.push('condition');
-        break;
+  // 🆕 2. FALLBACK: Ricerca testuale standard (se non è un filtro numerico o non ha matchato)
+  if(!found) {
+    if(m.name.toLowerCase().indexOf(qLower) >= 0) { found = true; matchType.push('name'); }
+    if(m.family && m.family.toLowerCase().indexOf(qLower) >= 0) { found = true; matchType.push('family'); }
+    if(m.company && m.company.toLowerCase().indexOf(qLower) >= 0) { found = true; matchType.push('company'); }
+    
+    var tm = State.mode === 'wvtr' ? (m.testMethodWVTR || m.testMethod || '') : (m.testMethodOTR || m.testMethod || '');
+    if(tm && tm.toLowerCase().indexOf(qLower) >= 0) { found = true; matchType.push('testmethod'); }
+    
+    if(!found && (m.wvtrValues || m.otrValues)) {
+      var allVals = (m.wvtrValues||[]).concat(m.otrValues||[]);
+      for(var vi=0; vi<allVals.length; vi++) {
+        if(String(allVals[vi].value).indexOf(q) >= 0) { found = true; matchType.push('value'); break; }
+      }
+    }
+    
+    if(!found && m.validConditions) {
+      for(var ci=0; ci<m.validConditions.length; ci++) {
+        if((m.validConditions[ci].temperature + '/' + m.validConditions[ci].humidity).indexOf(q) >= 0) { 
+          found = true; matchType.push('condition'); break; 
+        }
       }
     }
   }
-  
+
   if(found) {
-    filtered.push({
-      mat: m,
-      matchType: matchType,  // Salva quali campi hanno matchato
-      highlight: q  // Salva la query per evidenziare
-    });
+    filtered.push({ mat: m, matchType: matchType, highlight: q });
   }
 }
-
+    
  // ✅ ✅ ✅ ORDINAMENTO ALFABETICO (CORRETTO PER SMART SEARCH) ✅ ✅ ✅
 filtered.sort(function(a, b){
   // Se a/b sono oggetti {mat: ...}, usa a.mat.name, altrimenti usa a.name
