@@ -3700,187 +3700,275 @@ drawMoistureAccumulationChart(res) {
 },
 
 // ====================================================================
-// 📄 EXPORT TO PDF - PROFESSIONAL, READABLE, CHARTS INTACT
+// 📄 EXPORT TO PDF - GRAFICI + TABELLE DATI + LAYOUT PROFESSIONALE
 // ====================================================================
 async exportToPDF() {
   const { jsPDF } = window.jspdf;
+  
+  // ✅ DICHIARAZIONE UNICA DI chartConfigs
+  const chartConfigs = [
+    { id: 'slDecayChart', title: 'Quality Decay Over Time', desc: 'Product quality (%) vs. storage days.', type: 'decay' },
+    { id: 'slTempChart', title: 'Shelf Life vs Temperature', desc: 'Predicted shelf life across temperatures.', type: 'temp' },
+    { id: 'slChainChart', title: 'Logistics Conditions', desc: 'Temperature and RH profile across supply chain.', type: 'chain' },
+    { id: 'slStepImpactChart', title: 'Shelf Life Consumed per Step', desc: '% of shelf life used in each logistics phase.', type: 'impact' },
+    { id: 'slMoistureAccChart', title: 'Moisture Accumulation', desc: 'Internal moisture growth along the chain.', type: 'moisture' },
+    { id: 'slCumulativeChart', title: 'Cumulative Timeline', desc: 'Accumulated days across logistics steps.', type: 'cumulative' }
+  ];
+
   const btn = event?.target?.closest('button');
   if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Generating PDF...'; }
 
   try {
-    // ===== 1. BUILD HTML REPORT (what you see is what you get) =====
-    const report = document.createElement('div');
-    report.style.cssText = `
-      position:fixed; left:-9999px; top:0; width:794px;
-      background:#fff; color:#0f172a; padding:30px;
-      font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-size:13px; line-height:1.5;
+    // ==================== 1. COSTRUISCI REPORT HTML ====================
+    const reportDiv = document.createElement('div');
+    reportDiv.id = 'pdf-full-report';
+    reportDiv.style.cssText = `
+      position: fixed; left: -9999px; top: 0; width: 794px;
+      background: #ffffff !important; color: #0f172a !important;
+      padding: 0 !important; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+      font-size: 13px !important; line-height: 1.4 !important; box-shadow: none !important;
     `;
 
-    // Dati di base
+    const styleBlock = document.createElement('style');
+    styleBlock.textContent = `
+      .pdf-section { padding: 25px; border-bottom: 1px solid #e2e8f0; }
+      .pdf-page-break { page-break-before: always; }
+      .section-title { font-size: 15px; font-weight: 700; color: #1e293b; margin: 0 0 10px 0; padding-bottom: 6px; border-bottom: 2px solid #e2e8f0; display: flex; align-items: center; gap: 6px; }
+      .data-table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 11px; }
+      .data-table th { background: #f1f5f9; padding: 6px 8px; text-align: left; font-weight: 600; color: #475569; border-bottom: 1px solid #cbd5e1; }
+      .data-table td { padding: 5px 8px; border-bottom: 1px solid #f1f5f9; color: #334155; }
+      .data-table tr:last-child td { border-bottom: none; }
+      .chart-wrapper { margin: 12px 0; page-break-inside: avoid; }
+      .chart-wrapper h3 { font-size: 13px; font-weight: 600; margin: 0 0 4px 0; color: #334155; }
+      .chart-wrapper p { font-size: 10px; color: #64748b; margin: 0 0 8px 0; }
+      .chart-wrapper img { width: 100%; border: 1px solid #e2e8f0; border-radius: 4px; display: block; }
+      .result-card { text-align: center; padding: 14px; background: #f0f9ff; border-radius: 8px; border: 1px solid #bae6fd; margin: 10px 0; }
+      .footer { text-align: center; font-size: 10px; color: #64748b; padding: 18px; border-top: 1px dashed #cbd5e1; margin-top: 18px; }
+      .formula-block { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; margin: 8px 0; font-family: monospace; font-size: 11px; text-align: center; color: #2563eb; }
+      .alert-hygro { background: #fef3c7; border: 1px solid #fde68a; border-radius: 6px; padding: 8px; margin: 10px 0; font-size: 11px; color: #92400e; }
+    `;
+    reportDiv.appendChild(styleBlock);
+
+    // ==================== RACCOLTA DATI ====================
     const lamName = State.laminateName || 'Unnamed Laminate';
-    let structure = '—';
+    let structureStr = '—';
     if (State.layers?.length) {
       const layers = State.layers.filter(l => l.mid !== null).map(l => {
-        const m = DB.materials.find(x => x.id === l.mid);
-        return m ? `${m.name} (${l.thick}µm)` : null;
+        const mat = DB.materials.find(m => m.id === l.mid);
+        return mat ? `${mat.name} (${l.thick}µm)` : null;
       }).filter(Boolean);
-      structure = layers.join(' / ') || '—';
+      structureStr = layers.join(' / ') || '—';
     }
-    const prod = PRODUCTS_DB[document.getElementById('sl-product')?.value];
+    const prodKey = document.getElementById('sl-product')?.value;
+    const prod = PRODUCTS_DB[prodKey];
     const A = parseFloat(document.getElementById('sl-area')?.value) || 0.1;
     const W = parseFloat(document.getElementById('sl-weight')?.value) || 100;
     const M_crit = parseFloat(document.getElementById('sl-mcrit')?.value) || (prod?.M_crit || 6);
     const M_init = parseFloat(document.getElementById('sl-minit')?.value) || (prod?.M_init || 3);
     const T_store = parseFloat(document.getElementById('sl-temp')?.value) || 25;
     const RH_ext = parseFloat(document.getElementById('sl-rh-ext')?.value) || 65;
+    const isChain = document.getElementById('sl-cond-chain')?.style.display !== 'none';
     const Ea = parseFloat(document.getElementById('sl-ea')?.value) || 60;
     const Q10 = parseFloat(document.getElementById('sl-q10')?.value) || 2.0;
-    const days = State.calcResult?.days;
 
-    // ===== SEZIONE 1: DATI =====
-    report.innerHTML += `
-      <div style="margin-bottom:25px; padding-bottom:15px; border-bottom:3px solid #2563eb">
-        <div style="font-size:18px; font-weight:700; margin-bottom:5px">📦 WVTR/OTR Calculator - Shelf Life Report</div>
-        <div style="font-size:11px; color:#64748b">Generated: ${new Date().toLocaleString('it-IT')} • Mode: ${State.mode.toUpperCase()}</div>
-      </div>
+    // ==================== SEZIONE 1: DATI ====================
+    reportDiv.innerHTML += `
+      <div class="pdf-section">
+        <div style="border-bottom: 3px solid #2563eb; padding-bottom: 10px; margin-bottom: 14px;">
+          <div style="font-size: 18px; font-weight: 700; color: #0f172a;">📦 WVTR/OTR Calculator - Shelf Life Report</div>
+          <div style="font-size: 11px; color: #64748b; margin-top: 3px;">Generated: ${new Date().toLocaleString('it-IT')}</div>
+          <div style="font-size: 11px; color: #64748b;">Mode: <strong>${State.mode.toUpperCase()}</strong> • Unit: <strong>${State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day'}</strong></div>
+        </div>
 
-      <div style="margin-bottom:20px">
-        <div style="font-size:14px; font-weight:600; color:#1e293b; margin-bottom:8px; border-left:4px solid #2563eb; padding-left:10px">📦 Laminate Structure</div>
-        <table style="width:100%; border-collapse:collapse; font-size:12px">
-          <tr><td style="padding:6px 0; color:#64748b; width:40%">Name</td><td style="padding:6px 0; font-weight:500">${lamName}</td></tr>
-          <tr><td style="padding:6px 0; color:#64748b">Structure</td><td style="padding:6px 0; font-weight:500">${structure}</td></tr>
-          <tr><td style="padding:6px 0; color:#64748b">Layers</td><td style="padding:6px 0; font-weight:500">${State.layers.filter(l=>l.mid!==null).length}</td></tr>
+        <div class="section-title">📦 Laminate Structure</div>
+        <table class="data-table">
+          <tr><td>Name</td><td>${lamName}</td></tr>
+          <tr><td>Structure</td><td>${structureStr}</td></tr>
+          <tr><td>Layers Count</td><td>${State.layers.filter(l => l.mid !== null).length}</td></tr>
         </table>
-      </div>
 
-      <div style="margin-bottom:20px">
-        <div style="font-size:14px; font-weight:600; color:#1e293b; margin-bottom:8px; border-left:4px solid #2563eb; padding-left:10px">📦 Packaging & Product</div>
-        <table style="width:100%; border-collapse:collapse; font-size:12px">
-          <tr><td style="padding:6px 0; color:#64748b; width:40%">Product</td><td style="padding:6px 0; font-weight:500">${prod?.name || '—'}</td></tr>
-          <tr><td style="padding:6px 0; color:#64748b">Weight / Area</td><td style="padding:6px 0; font-weight:500">${W} g • ${A.toFixed(4)} m²</td></tr>
-          <tr><td style="padding:6px 0; color:#64748b">Moisture Range</td><td style="padding:6px 0; font-weight:500">${M_init}% → ${M_crit}%</td></tr>
+        <div class="section-title" style="margin-top: 16px;">📦 Packaging & Product Data</div>
+        <table class="data-table">
+          <tr><td>Product Template</td><td>${prod?.name || '—'}</td></tr>
+          <tr><td>Weight / Area</td><td>${W} g • ${A.toFixed(4)} m²</td></tr>
+          <tr><td>Moisture Range</td><td>${M_init}% → ${M_crit}%</td></tr>
         </table>
-      </div>
 
-      <div style="margin-bottom:20px">
-        <div style="font-size:14px; font-weight:600; color:#1e293b; margin-bottom:8px; border-left:4px solid #2563eb; padding-left:10px">🚚 Storage Conditions</div>
-        <table style="width:100%; border-collapse:collapse; font-size:12px">
-          <tr><td style="padding:6px 0; color:#64748b; width:40%">Temperature</td><td style="padding:6px 0; font-weight:500">${T_store.toFixed(1)}°C</td></tr>
-          <tr><td style="padding:6px 0; color:#64748b">External RH</td><td style="padding:6px 0; font-weight:500">${RH_ext.toFixed(0)}% RH</td></tr>
+        <div class="section-title" style="margin-top: 16px;">🚚 Logistics & Storage</div>
+        <table class="data-table">
+          <tr><td>Storage Temperature</td><td>${T_store.toFixed(1)}°C</td></tr>
+          <tr><td>External Humidity</td><td>${RH_ext.toFixed(0)}% RH</td></tr>
+          <tr><td>Logistics Mode</td><td>${isChain ? 'Supply Chain (Weighted)' : 'Single Condition'}</td></tr>
         </table>
       </div>
     `;
 
-    // ===== SEZIONE 2: FORMULE & RISULTATI (nuova pagina) =====
-    report.innerHTML += `<div style="page-break-before:always; margin-top:30px">`;
-    report.innerHTML += `
-      <div style="margin-bottom:20px">
-        <div style="font-size:14px; font-weight:600; color:#1e293b; margin-bottom:8px; border-left:4px solid #2563eb; padding-left:10px">🧮 Key Formulas</div>
-        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:12px; margin:8px 0; font-family:monospace; font-size:12px; text-align:center; color:#2563eb">
-          t = (W × ΔM) ÷ (A × WVTR × f(RH, T))
-        </div>
-        <div style="font-size:11px; color:#475569; margin:8px 0">
+    // ==================== SEZIONE 2: FORMULE E RISULTATI ====================
+    const resultDays = (State.calcResult && isFinite(State.calcResult.days)) ? Math.round(State.calcResult.days) : null;
+    const hygroDetails = State.calcResult?.hygroWarning?.details || [];
+
+    reportDiv.innerHTML += `
+      <div class="pdf-section pdf-page-break">
+        <div class="section-title">🧮 Key Formulas & Methodology</div>
+        <p style="color:#475569; font-size:12px; margin-bottom:8px;">
+          Shelf life integrates permeation over time. Driving force decreases as product moisture rises.
+        </p>
+        <div class="formula-block">t = (W × ΔM) ÷ (A × WVTR × f(RH, T))</div>
+        <p style="font-size:11px; color:#475569; margin: 6px 0;">
           <strong>Thermal:</strong> Arrhenius k = A·exp(-Eₐ/RT) &nbsp;|&nbsp; Q₁₀: k₂ = k₁·Q₁₀^((T₂-T₁)/10)<br>
           <strong>Hygroscopic:</strong> CF = exp(β × (RH_storage − RH_reference))
-        </div>
-      </div>
+        </p>
 
-      <div style="margin-bottom:20px">
-        <div style="font-size:14px; font-weight:600; color:#1e293b; margin-bottom:8px; border-left:4px solid #2563eb; padding-left:10px">⚙️ Parameters</div>
-        <table style="width:100%; border-collapse:collapse; font-size:12px">
-          <tr><td style="padding:6px 0; color:#64748b; width:40%">Activation Energy (Eₐ)</td><td style="padding:6px 0; font-weight:500">${Ea} kJ/mol</td></tr>
-          <tr><td style="padding:6px 0; color:#64748b">Q₁₀ Factor</td><td style="padding:6px 0; font-weight:500">${Q10}</td></tr>
+        <div class="section-title" style="margin-top: 16px;">⚙️ Calculation Parameters</div>
+        <table class="data-table">
+          <tr><td>Activation Energy (Eₐ)</td><td>${Ea} kJ/mol</td></tr>
+          <tr><td>Q₁₀ Factor</td><td>${Q10}</td></tr>
+          <tr><td>Effective Barrier Rate</td><td>${isFinite(State.calcResult?.total) ? State.calcResult.total.toFixed(6) : '—'} ${State.mode==='wvtr'?'g/m²·day':'cc/m²·day'}</td></tr>
         </table>
+
+        ${resultDays ? `
+          <div class="result-card">
+            <div style="font-size: 13px; font-weight: 700; color: #2563eb; margin-bottom: 3px;">✅ Predicted Shelf Life</div>
+            <div style="font-size: 22px; font-weight: 800; color: #2563eb;">${resultDays} Days</div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 3px;">≈ ${(resultDays/30.44).toFixed(1)} Months • ≈ ${(resultDays/365.25).toFixed(2)} Years</div>
+          </div>
+        ` : ''}
+
+        ${hygroDetails.length > 0 ? `
+          <div class="alert-hygro">
+            <strong>⚠️ Hygroscopic correction applied:</strong><br>
+            ${hygroDetails.map(d => `• ${d}`).join('<br>')}
+          </div>
+        ` : ''}
       </div>
-
-      ${days && isFinite(days) ? `
-      <div style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:16px; text-align:center; margin:15px 0">
-        <div style="font-size:13px; font-weight:600; color:#2563eb; margin-bottom:4px">✅ Predicted Shelf Life</div>
-        <div style="font-size:22px; font-weight:800; color:#2563eb">${Math.round(days)} Days</div>
-        <div style="font-size:11px; color:#64748b; margin-top:4px">≈ ${(days/30.44).toFixed(1)} Months • ≈ ${(days/365.25).toFixed(2)} Years</div>
-      </div>` : ''}
-
-      ${State.calcResult?.hygroWarning?.details?.length ? `
-      <div style="background:#fef3c7; border:1px solid #fde68a; border-radius:6px; padding:10px; margin-top:10px; font-size:11px; color:#92400e">
-        <strong>⚠️ Hygroscopic correction applied:</strong><br>
-        ${State.calcResult.hygroWarning.details.map(d => `• ${d}`).join('<br>')}
-      </div>` : ''}
     `;
-    report.innerHTML += `</div>`; // chiudi page-break section
 
-    // ===== SEZIONE 3: GRAFICI (ognuno su pagina nuova) =====
-    const charts = [
-      { id: 'slDecayChart', title: 'Quality Decay Over Time', desc: 'Product quality (%) vs. storage days.' },
-      { id: 'slTempChart', title: 'Shelf Life vs Temperature', desc: 'Predicted shelf life across temperatures.' },
-      { id: 'slChainChart', title: 'Logistics Conditions', desc: 'Temperature and RH profile across supply chain.' },
-      { id: 'slStepImpactChart', title: 'Shelf Life Consumed per Step', desc: '% of shelf life used in each logistics phase.' },
-      { id: 'slMoistureAccChart', title: 'Moisture Accumulation', desc: 'Internal moisture growth along the chain.' },
-      { id: 'slCumulativeChart', title: 'Cumulative Timeline', desc: 'Accumulated days across logistics steps.' }
-    ];
+    // ==================== FUNZIONE HELPER: GENERA TABELLA DATI PER GRAFICO ====================
+    function generateChartDataHTML(cfg, chartInstance) {
+      if (!chartInstance || !chartInstance.data) return '';
+      
+      const labels = chartInstance.data.labels || [];
+      const datasets = chartInstance.data.datasets || [];
+      if (labels.length === 0) return '';
 
-    for (const c of charts) {
-      const canvas = document.getElementById(c.id);
+      // Header tabella
+      let headers = 'Day';
+      datasets.forEach(ds => {
+        if (ds.label) headers += ` | ${ds.label}`;
+      });
+      
+      // Righe tabella
+      let rows = '';
+      for (let i = 0; i < labels.length; i++) {
+        let row = `<tr><td><strong>${labels[i]}</strong></td>`;
+        datasets.forEach(ds => {
+          const val = ds.data[i];
+          row += `<td>${val != null ? (typeof val === 'number' ? val.toFixed(2) : val) : '—'}</td>`;
+        });
+        row += '</tr>';
+        rows += row;
+      }
+      
+      return `
+        <div style="margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 8px;">
+          <div style="font-size: 11px; font-weight: 600; color: #334155; margin-bottom: 4px;">📊 Data Points</div>
+          <table class="data-table">
+            <thead><tr>${headers.split('|').map(h => `<th>${h.trim()}</th>`).join('')}</tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    // ==================== SEZIONE 3+: GRAFICI CON TABELLE ====================
+    let chartsHTML = '<div class="pdf-section pdf-page-break">';
+    
+    for (const cfg of chartConfigs) {
+      const canvas = document.getElementById(cfg.id);
       if (!canvas || canvas.offsetParent === null || canvas.width === 0) continue;
+
       try {
-        await new Promise(r => setTimeout(r, 50));
-        const cc = await html2canvas(canvas, { scale: 2, useCORS: true, backgroundColor: '#fff', logging: false });
-        const img = cc.toDataURL('image/png');
-        report.innerHTML += `
-          <div style="page-break-before:always; margin-top:30px">
-            <div style="font-size:13px; font-weight:600; color:#1e293b; margin-bottom:5px">${c.title}</div>
-            <div style="font-size:10px; color:#64748b; margin-bottom:12px">${c.desc}</div>
-            <img src="${img}" style="width:100%; max-width:734px; height:auto; border:1px solid #e2e8f0; border-radius:4px; display:block">
+        await new Promise(r => setTimeout(r, 60));
+        
+        // Cattura grafico
+        const chartCanvas = await html2canvas(canvas, { 
+          scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false 
+        });
+        const imgData = chartCanvas.toDataURL('image/png');
+        
+        // Recupera istanza Chart.js per estrarre dati
+        const chartInstance = chartInstances[cfg.id.replace('Chart', '')] || 
+                             chartInstances[cfg.id] || 
+                             window.Chart?.getChart?.(cfg.id);
+        
+        // Genera tabella dati
+        const tableHTML = generateChartDataHTML(cfg, chartInstance);
+        
+        chartsHTML += `
+          <div class="chart-wrapper">
+            <h3>${cfg.title}</h3>
+            <p style="font-size:10px;color:#64748b;margin-bottom:6px">${cfg.desc}</p>
+            <img src="${imgData}" style="width:100%;max-width:734px;height:auto;border:1px solid #e2e8f0;border-radius:4px;display:block">
+            ${tableHTML}
           </div>
         `;
-      } catch (e) { console.warn('Chart skipped:', c.id, e); }
+      } catch (e) {
+        console.warn(`⚠️ Chart ${cfg.id} skipped:`, e);
+      }
     }
-
-    // Footer
-    report.innerHTML += `
-      <div style="page-break-before:always; margin-top:40px; text-align:center; font-size:10px; color:#64748b; padding-top:15px; border-top:1px dashed #cbd5e1">
-        <strong>WVTR/OTR Calculator v3.0</strong><br>
-        For R&D use only. Validate with ASTM/ISO testing.
+    
+    chartsHTML += `
+        <div class="footer">
+          <strong>WVTR/OTR Calculator v3.0</strong><br>
+          For R&D and predictive modeling purposes only.<br>
+          Validate critical shelf-life claims with real-time testing per ASTM/ISO standards.
+        </div>
       </div>
     `;
+    reportDiv.innerHTML += chartsHTML;
 
-    // ===== 2. CAPTURE & BUILD PDF =====
-    document.body.appendChild(report);
-    await new Promise(r => setTimeout(r, 300));
+    // ==================== 2. RENDER & CAPTURA FINALE ====================
+    document.body.appendChild(reportDiv);
+    await new Promise(r => setTimeout(r, 350));
 
-    const canvas = await html2canvas(report, {
-      scale: 2, useCORS: true, backgroundColor: '#fff', logging: false,
-      windowWidth: 794, windowHeight: report.scrollHeight
+    const reportCanvas = await html2canvas(reportDiv, {
+      scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false,
+      windowWidth: 794, windowHeight: reportDiv.scrollHeight
     });
-    document.body.removeChild(report);
+    document.body.removeChild(reportDiv);
 
+    // ==================== 3. GENERAZIONE PDF MULTI-PAGINA ====================
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const pw = pdf.internal.pageSize.getWidth();
-    const ph = pdf.internal.pageSize.getHeight();
-    const imgW = pw;
-    const imgH = (canvas.height * imgW) / canvas.width;
-    let pos = 0;
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+    
+    const imgWidth = pdfWidth;
+    const imgHeight = (reportCanvas.height * imgWidth) / reportCanvas.width;
+    let heightLeft = imgHeight;
+    let position = 0;
 
-    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, pos, imgW, imgH);
-    let left = imgH - ph;
-    while (left > 0.5) {
-      pos = left - imgH;
+    pdf.addImage(reportCanvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+    heightLeft -= pdfHeight;
+
+    while (heightLeft > 0.5) {
+      position = heightLeft - imgHeight;
       pdf.addPage();
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, pos, imgW, imgH);
-      left -= ph;
+      pdf.addImage(reportCanvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pdfHeight;
     }
 
-    // ===== 3. DOWNLOAD =====
-    const safe = lamName.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '');
-    pdf.save(`ShelfLife_${safe}_${new Date().toISOString().slice(0,10)}.pdf`);
+    // ==================== 4. DOWNLOAD ====================
+    const safeName = lamName.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '');
+    const fileName = `ShelfLife_${safeName}_${new Date().toISOString().slice(0,10)}.pdf`;
+    pdf.save(fileName);
 
-  } catch (e) {
-    console.error('PDF error:', e);
-    alert('⚠️ Could not generate PDF');
+  } catch (error) {
+    console.error('❌ PDF export failed:', error);
+    alert('⚠️ Could not generate PDF. Check console for details.');
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:middle;margin-right:6px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Full Report (PDF)`;
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:middle;margin-right:6px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Full Report (PDF)`;
     }
   }
 }
