@@ -3806,7 +3806,7 @@ async exportToPDF() {
 
     reportDiv.innerHTML += `
       <div class="section no-break">
-        <h2>⚙️ Calculation Parameters</h2>
+        <h2> Calculation Parameters</h2>
         <table>
           <tr><td><strong>Product Template:</strong></td><td>${prod?.name || '—'}</td></tr>
           <tr><td><strong>Product Weight:</strong></td><td>${W} g</td></tr>
@@ -5615,48 +5615,102 @@ function drawHygroscopicTimeChart() {
 // ====================================================================
 function renderCalcMethodology() {
 return `
-<div class="card methodology-card" style="margin-top:1.5rem; border-left:4px solid var(--primary);">
+<div class="card methodology-card" style="margin-top:1.5rem; border-left:4px solid var(--primary); background: var(--card);">
 <div style="padding:1.2rem 1.5rem;">
-<h2 style="font-family:Georgia, 'Times New Roman', serif; font-size:1.2rem; color:var(--text); border-bottom:1px solid var(--border); padding-bottom:0.5rem; margin-bottom:1rem;">
-Understanding the Calculator
+<h2 style="font-family:Georgia, 'Times New Roman', serif; font-size:1.3rem; color:var(--text); border-bottom:1px solid var(--border); padding-bottom:0.5rem; margin-bottom:1rem;">
+Understanding the Calculations: Behind the Scenes
 </h2>
-<div style="font-size:0.92rem; line-height:1.75; color:#334155; font-family:Georgia, 'Times New Roman', serif;">
+<div style="font-size:0.95rem; line-height:1.8; color:#334155; font-family:Georgia, 'Times New Roman', serif;">
 
-<p>When you build a multilayer packaging structure, each material contributes to the overall barrier performance in a predictable way. This calculator uses a <strong>series resistance model</strong>, the same physical principle that governs electrical circuits or heat transfer through walls. Just as resistors in series add up to create total resistance, each packaging layer adds its own resistance to gas or vapor transmission.</p>
+<p>When engineers design packaging for food, pharmaceuticals, or sensitive products, they often combine several thin layers of different materials. Each layer plays a specific role: one might block moisture, another might block oxygen, and another might provide structural strength or heat-sealability. But how do we mathematically predict how well the whole structure will perform? This calculator answers that question using a classic physics principle: the <strong>series resistance model</strong>.</p>
 
-<div style="background:var(--primary-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--primary); margin:0.8rem 0; font-family:sans-serif;">
-<strong>Key idea:</strong> The total barrier resistance is simply the sum of individual layer resistances. The overall permeability (WVTR or OTR) is then the inverse of that total resistance. This elegant relationship lets us predict laminate performance from individual material data.
+<p>Think of it like building an insulated wall to keep out the cold. A single brick lets some heat through. Add a layer of foam insulation, then another brick, then a vapor barrier—and suddenly, the wall becomes incredibly effective. Each layer adds its own "resistance" to the thermal flow. Packaging works exactly the same way, except instead of blocking heat, we are blocking water vapor molecules (WVTR) or oxygen molecules (OTR).</p>
+
+<div style="background:var(--primary-light); padding:0.8rem 1rem; border-radius:8px; border-left:3px solid var(--primary); margin:1rem 0; font-family:sans-serif; font-size:0.9rem;">
+<strong>The Core Rule:</strong> The total barrier resistance of a laminate is simply the sum of the individual resistances of each layer. Because permeability is the physical opposite (the inverse) of resistance, the final transmission rate is calculated by dividing 1 by the total accumulated resistance.
 </div>
 
-<p>Each material in the database carries reference permeability values measured under specific temperature and humidity conditions. When you select a material and enter its thickness, the calculator scales that reference value proportionally: doubling the thickness roughly doubles the resistance, halving the permeability. This linear scaling holds well for most homogeneous polymer films within typical packaging thickness ranges.</p>
+<h3 style="font-size:1.1rem; color:var(--text); margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">1. How Single-Layer Resistance is Calculated</h3>
+<p>For any uniform polymer film, gas transport under steady conditions follows Fick's Law. This means a material's resistance depends linearly on the thickness you use versus its baseline performance measured in a laboratory. To find a single layer's resistance, the calculator uses this exact formula:</p>
 
-<div style="background:#f8fafc; padding:0.9rem; border-radius:6px; font-family:monospace; font-size:0.9rem; text-align:center; border:1px dashed var(--border); margin:0.8rem 0;">
-<strong>Core relationship:</strong><br>
-R<sub>layer</sub> = thickness / (WVTR<sub>ref</sub> × thickness<sub>ref</sub>)<br>
-R<sub>total</sub> = R<sub>1</sub> + R<sub>2</sub> + ... + R<sub>n</sub><br>
-WVTR<sub>total</sub> = 1 / R<sub>total</sub>
+<div style="background:#f8fafc; padding:1.1rem; border-radius:6px; font-family:monospace; font-size:0.95rem; text-align:center; border:1px dashed var(--border); margin:1rem 0; color:#0f172a;">
+R<sub>layer</sub> = Thickness<sub>input</sub> / (Permeability<sub>ref</sub> × Thickness<sub>ref</sub>)
 </div>
 
-<p>Some materials, such as EVOH, nylon, or certain biopolymers, are <strong>hygroscopic</strong>: their barrier properties change with the humidity of their environment. For these materials, the calculator applies a humidity correction based on the material's hygroscopic coefficient (β) and its reference relative humidity. The correction follows an exponential relationship: permeability increases as the external humidity rises above the reference condition, and decreases when it falls below. This behavior is captured by the factor exp(β × ΔRH), where ΔRH is the difference between the storage humidity and the material's reference humidity.</p>
+<p>In plain words: the term <em>(Permeability<sub>ref</sub> × Thickness<sub>ref</sub>)</em> is a constant value representing the material's intrinsic barrier quality (often called the Permeation Coefficient). If you double the thickness of your layer, you double its mathematical resistance, which effectively cuts the amount of gas leaking through in half.</p>
 
-<div style="background:var(--warning-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--warning); margin:0.8rem 0; font-family:sans-serif;">
-<strong>Practical note:</strong> If you do not provide a β value for a hygroscopic material, the calculator treats it as humidity‑independent. This may lead to optimistic shelf‑life estimates in humid environments. When possible, enter the manufacturer's β coefficient or a literature value for more accurate predictions.
+<h3 style="font-size:1.1rem; color:var(--text); margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">2. Combining Layers (The Multilayer Math)</h3>
+<p>When you stack multiple materials together to form a laminate sheet, the calculator mathematically chains them together by adding up their calculated resistances:</p>
+
+<div style="background:#f8fafc; padding:1.1rem; border-radius:6px; font-family:monospace; font-size:0.95rem; text-align:center; border:1px dashed var(--border); margin:1rem 0; color:#0f172a;">
+R<sub>total</sub> = R<sub>layer1</sub> + R<sub>layer2</sub> + ... + R<sub>layerN</sub><br><br>
+Final Permeability (WVTR or OTR) = 1 / R<sub>total</sub>
 </div>
 
-<p>Metallized films and certain coated substrates behave differently. Their barrier function comes from an ultra‑thin surface layer—often just nanometers thick—deposited onto a carrier film. Because this coating's performance does not scale with the substrate thickness, the calculator treats metallized materials as having a fixed permeability value, independent of the thickness you enter for the base film.</p>
-
-<p>Temperature and humidity matter. Permeability typically increases with temperature because molecules move faster and find pathways more easily. For hygroscopic materials like EVOH or nylon, humidity can dramatically affect barrier performance. That is why the calculator requires you to select matching test conditions: it only combines materials that share common measurement environments, ensuring physically meaningful results.</p>
-
-<div style="background:var(--success-light); padding:0.7rem; border-radius:8px; border-left:3px solid var(--success); margin:0.8rem 0; font-family:sans-serif;">
-<strong>Practical tip:</strong> When comparing laminate options, focus on the layer contributing the largest percentage of total resistance. Improving that "weakest link" yields the greatest performance gain. If resistance is evenly distributed, consider whether simplifying the structure could reduce cost without sacrificing protection.
+<div style="background:#f0fdf4; padding:1rem; border-radius:8px; border-left:3px solid var(--success); margin:1.2rem 0; font-family:sans-serif; font-size:0.9rem;">
+<strong style="color:#16a34a; font-size:0.95rem;">📊 A Step-by-Step Numerical Example:</strong><br>
+Let's calculate the final WVTR of a simple two-layer pouch made of <strong>PET (12 µm)</strong> and <strong>LDPE (50 µm)</strong>:<br>
+<ul>
+  <li><strong>Layer 1 (PET 12 µm):</strong> Laboratory reference says it has a WVTR of 30.0 at 12 µm. <br>
+  <em>R<sub>PET</sub> = 12 / (30.0 × 12) = 1 / 30.0 = <strong>0.0333</strong></em></li>
+  <li><strong>Layer 2 (LDPE 50 µm):</strong> Laboratory reference says it has a WVTR of 4.0 at 25 µm.<br>
+  <em>R<sub>LDPE</sub> = 50 / (4.0 × 25) = 50 / 100 = <strong>0.5000</strong></em></li>
+  <li><strong>Total Combined Resistance:</strong> R<sub>total</sub> = 0.0333 + 0.5000 = <strong>0.5333</strong></li>
+  <li><strong>Final Laminate WVTR:</strong> 1 / 0.5333 = <strong style="color:#111;">1.87 g/m²·day</strong></li>
+</ul>
+Notice how the LDPE layer is providing the vast majority of the moisture resistance (0.5000 out of 0.5333 total), making it the true moisture barrier in this structure!
 </div>
 
-<p>The resistance percentage shown for each layer helps you visualize this balance. A layer showing 70% of total resistance is doing most of the barrier work; a layer at 5% may be serving a different purpose, such as sealability or printability. Use these insights to guide material selection and thickness optimization.</p>
+<h3 style="font-size:1.1rem; color:var(--text); margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">3. Special Case: Hygroscopic Dynamics</h3>
+<p>Some premium barrier materials—like EVOH or Polyamides (Nylon)—are highly sensitive to water vapor. When environmental humidity rises, these polymers absorb water molecules, which act as plasticizers, loosening the polymer chains and accelerating gas leakage. To simulate this real-world risk, the calculator applies an exponential scaling factor to the material's resistance based on its experimental sensitivity coefficient (&beta;):</p>
 
-<p>Finally, remember that calculated values are estimates based on idealized assumptions: perfect layer adhesion, uniform thickness, and defect‑free films. Real‑world performance can vary due to processing conditions, handling, and aging. Treat the calculator as a powerful screening tool for early‑stage design, then validate critical structures with physical barrier testing under actual use conditions.</p>
+<div style="background:#f8fafc; padding:1.1rem; border-radius:6px; font-family:monospace; font-size:0.95rem; text-align:center; border:1px dashed var(--border); margin:1rem 0; color:#0f172a;">
+Corrected Permeability = Permeability<sub>base</sub> × e<sup>&beta; × (&Delta;RH)</sup>
+</div>
+
+<p>Where <em>&Delta;RH</em> represents the difference between your current storage humidity and the original lab testing condition. If you test an EVOH-based material in tropical humidity without calculating this factor, your physical barrier will break down much faster than an uncorrected calculation would predict.</p>
+
+<div style="background:var(--warning-light); padding:0.8rem 1rem; border-radius:8px; border-left:3px solid var(--warning); margin:1rem 0; font-family:sans-serif; font-size:0.9rem;">
+<strong>Engineering Warning:</strong> If no &beta; (beta) coefficient is supplied in the database, the model assumes the material is completely immune to moisture damage. In tropical or high-condensation environments, this assumption will generate overly optimistic shelf-life estimates.
+</div>
+
+<h3 style="font-size:1.1rem; color:var(--text); margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">4. Special Case: Metallized and Coated Shields</h3>
+<p>Metallized films (such as MET-PET) and nanometric ceramic coatings (like AlO<sub>x</sub> or SiO<sub>x</sub>) follow entirely different physical rules. Their barrier performance does not come from the bulk polymer thickness, but rather from an ultra-thin, atomic layer of aluminum or oxide deposited onto the surface. Because a thicker base film will not have a better aluminum layer, the calculator treats these specialty materials as having a fixed, constant permeability barrier, bypasssing the linear thickness division rule.</p>
+
+<h3 style="font-size:1.1rem; color:var(--text); margin:1.2rem 0 0.5rem 0; font-family:sans-serif;">Reading Your Analysis Matrix</h3>
+<p>The percentage contribution shown for each layer helps you pinpoint exactly where your money and material thickness are being effectively used:</p>
+
+<table style="width:100%; border-collapse:collapse; margin:1rem 0; font-family:sans-serif; font-size:0.88rem;">
+  <thead>
+    <tr style="background:#f1f5f9; border-bottom:2px solid var(--border);">
+      <th style="padding:0.6rem; text-align:left;">Layer Resistance %</th>
+      <th style="padding:0.6rem; text-align:left;">Physical Meaning</th>
+      <th style="padding:0.6rem; text-align:left;">Design Optimization Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:0.6rem; font-weight:bold; color:var(--danger);">&gt; 50%</td>
+      <td>Primary Line of Defense</td>
+      <td>This is your "weakest link". Tweaking this material or increasing its thickness yields the maximum performance return.</td>
+    </tr>
+    <tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:0.6rem; font-weight:bold; color:var(--warning);">20% – 50%</td>
+      <td>Significant Contributor</td>
+      <td>Provides active support. Balance its thickness to manage overall roll-stock costs.</td>
+    </tr>
+    <tr>
+      <td style="padding:0.6rem; font-weight:bold; color:var(--success);">&lt; 10%</td>
+      <td>Minor Barrier Role</td>
+      <td>This layer is doing almost no barrier work. It is likely there for mechanical strength, sealing, or printing. Do not waste money increasing its thickness for barrier reasons.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Finally, remember that simulations assume a perfect universe: uniform film gauges, zero pinholes, and flawless industrial lamination. In the actual manufacturing plant, converting stresses and thermal sealing will slightly shift these properties. Treat this tool as a high-velocity screening application for early-stage R&D, and always validate your definitive structures with physical laboratory testing.</p>
 
 <div style="margin-top:1.5rem; padding:0.9rem; background:var(--bg); border-radius:8px; font-size:0.88rem; color:var(--text-light); border-left:4px solid var(--primary); font-family:sans-serif;">
-<strong>Note:</strong> This calculator supports research, development, and educational workflows. For regulatory submissions, commercial specifications, or shelf‑life claims, always corroborate model predictions with empirical testing according to ASTM F1249, ASTM D3985, ISO 15106, or equivalent standards.
+<strong>Industrial Protocol Disclaimer:</strong> This methodology is built to support engineering design and educational workflows. For commercial legal specifications or regulatory packaging claims, model predictions must always be verified by empirical testing executed under international standards such as ASTM F1249, ASTM D3985, or ISO 15106.
 </div>
 
 </div>
