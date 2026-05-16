@@ -3700,12 +3700,12 @@ drawMoistureAccumulationChart(res) {
 },
 
 // ====================================================================
-// 📄 EXPORT TO PDF - CON FORMULE SPIEGATE E FIX GRAFICI
+// 📄 EXPORT TO PDF - CON FORMULE SPIEGATE E FIX GRAFICI (CORRETTO)
 // ====================================================================
 async exportToPDF() {
   const { jsPDF } = window.jspdf;
   
-  // ✅ DICHIARAZIONE UNICA DI chartConfigs (all'inizio della funzione)
+  // ✅ DICHIARAZIONE UNICA DI chartConfigs (ALL'INIZIO DELLA FUNZIONE)
   const chartConfigs = [
     { id: 'slDecayChart', title: 'Quality Decay Over Time', desc: 'Product quality (%) vs. storage days. Red dashed line = critical limit (0% quality).' },
     { id: 'slTempChart', title: 'Shelf Life vs Temperature', desc: 'Predicted shelf life (days) across storage temperatures. Shows sensitivity to temperature variations.' },
@@ -3926,16 +3926,7 @@ async exportToPDF() {
       `;
     }
 
-    // 9. Sezione: Grafici
-    const chartConfigs = [
-      { id: 'slDecayChart', title: ' Quality Decay Over Time', desc: 'Product quality (%) vs. storage days. Red dashed line = critical limit (0% quality).' },
-      { id: 'slTempChart', title: ' Shelf Life vs Temperature', desc: 'Predicted shelf life (days) across storage temperatures. Shows sensitivity to temperature variations.' },
-      { id: 'slChainChart', title: ' Logistics Conditions', desc: 'Temperature (blue) and RH (red) profile across supply chain steps.' },
-      { id: 'slStepImpactChart', title: ' Shelf Life Consumed per Step', desc: 'Horizontal bars: % of total shelf life consumed in each logistics phase. Red ≥30%, Orange 15-30%, Blue <15%.' },
-      { id: 'slMoistureAccChart', title: ' Moisture Accumulation', desc: 'Internal moisture content (%) along the chain. Red zone = above critical limit.' },
-      { id: 'slCumulativeChart', title: ' Cumulative Timeline', desc: 'Accumulated days across configured logistics steps.' }
-    ];
-
+    // 9. Sezione: Grafici (USA chartConfigs già dichiarata)
     for (const cfg of chartConfigs) {
       const canvas = document.getElementById(cfg.id);
       if (canvas && canvas.offsetParent !== null && canvas.width > 0) {
@@ -3993,7 +3984,7 @@ async exportToPDF() {
 
     document.body.removeChild(reportDiv);
 
-    // 11. Genera PDF con jsPDF - VERSIONE CORRETTA (element-by-element)
+    // 12. Genera PDF con jsPDF - VERSIONE CORRETTA (element-by-element)
     const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -4107,16 +4098,7 @@ async exportToPDF() {
         currentY += 8;
     }
 
-    // ✅ 2. Aggiungi i grafici uno per uno con page-break handling MIGLIORATO
-    const chartConfigs = [
-        { id: 'slDecayChart', title: 'Quality Decay Over Time', desc: 'Product quality (%) vs. storage days.' },
-        { id: 'slTempChart', title: 'Shelf Life vs Temperature', desc: 'Predicted shelf life across temperatures.' },
-        { id: 'slChainChart', title: 'Logistics Conditions', desc: 'Temperature and RH profile across supply chain.' },
-        { id: 'slStepImpactChart', title: 'Shelf Life Consumed per Step', desc: '% of shelf life used in each logistics phase.' },
-        { id: 'slMoistureAccChart', title: 'Moisture Accumulation', desc: 'Internal moisture growth along the chain.' },
-        { id: 'slCumulativeChart', title: 'Cumulative Timeline', desc: 'Accumulated days across logistics steps.' }
-    ];
-
+    // ✅ 2. Aggiungi i grafici uno per uno con page-break handling MIGLIORATO (USA chartConfigs già dichiarata)
     for (const cfg of chartConfigs) {
         const canvas = document.getElementById(cfg.id);
         // Salta se canvas non esiste o è nascosto
@@ -4191,7 +4173,6 @@ async exportToPDF() {
     pdf.setTextColor(100, 100, 100);
     pdf.text('WVTR/OTR Calculator v3.0 — For R&D use only. Validate with ASTM/ISO testing.', margin, pdfHeight - 15);
 
-
     // 13. Download
     const safeName = laminateName.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '');
     const fileName = `ShelfLife_${safeName}_${new Date().toISOString().slice(0,10)}.pdf`;
@@ -4207,7 +4188,7 @@ async exportToPDF() {
     }
   }
 }
-};
+    };
     // --- UI TOGGLES & HELPERS ---
 function toggleRateSource() {
     const src = document.querySelector('input[name="sl-rate-source"]:checked')?.value;
