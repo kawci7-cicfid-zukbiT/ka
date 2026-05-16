@@ -16,15 +16,39 @@ header{background:linear-gradient(135deg,#0f172a,var(--primary),#38bdf8);color:#
 .header-top h1 svg{width:22px;height:22px}
 
 /* === MODE TOGGLE === */
-.mode-toggle{display:flex;align-items:center;gap:0.3rem;background:rgba(255,255,255,0.95);padding:0.4rem 0.8rem;border-radius:24px;font-size:0.8rem;font-weight:600;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.15);border:2px solid transparent;transition:all 0.2s ease;position:relative}
-.mode-toggle:hover{border-color:var(--primary);transform:translateY(-1px)}
-.mode-toggle label{cursor:pointer;display:flex;align-items:center;gap:0.3rem;padding:0.3rem 0.6rem;border-radius:16px;transition:all 0.15s;color:var(--text-light)}
-.mode-toggle label:hover{background:var(--primary-light);color:var(--primary)}
-.mode-toggle input[type="radio"]{display:none}
-.mode-toggle label:has(input[type="radio"]:checked),.mode-toggle input[type="radio"]:checked+span{background:var(--primary);color:#fff}
-.mode-toggle svg{width:16px;height:16px;flex-shrink:0}
-.mode-toggle::after{content:"Select calculation mode";position:absolute;bottom:-35px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;font-size:0.65rem;padding:0.3rem 0.6rem;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity 0.2s;z-index:10}
-.mode-toggle:hover::after{opacity:1}
+    display: flex;
+    align-items: center;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 6px;
+    padding: 0.25rem;
+    gap: 0;
+}
+.mode-toggle label {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 4px;
+    transition: all 0.15s;
+    color: rgba(255,255,255,0.55);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+}
+.mode-toggle label:hover {
+    color: rgba(255,255,255,0.85);
+    background: rgba(255,255,255,0.06);
+}
+.mode-toggle label:has(input[type="radio"]:checked) {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+}
+.mode-toggle input[type="radio"] { display: none; }
+.mode-toggle svg { width: 13px; height: 13px; flex-shrink: 0; }
+.mode-toggle::after { display: none; }
+
 @media(max-width:600px){.mode-toggle::after{display:none}}
 
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(37,99,235,0.4)}50%{box-shadow:0 0 0 12px rgba(37,99,235,0)}}
