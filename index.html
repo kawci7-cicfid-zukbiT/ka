@@ -2483,7 +2483,7 @@ function renderShelfLife() {
   const currentRate = (State.calcResult && State.calcResult.total) ? State.calcResult.total.toFixed(6) : '';
 
   // Info laminato
-  let laminateName = State.laminateName || 'Nessun laminato';
+  let laminateName = State.laminateName || 'No laminate';
   let structureStr = '';
   if (State.layers && State.layers.length > 0) {
     let layers = [];
@@ -2698,29 +2698,37 @@ function renderShelfLife() {
           </div>
         </div>
         <div id="sl-cond-chain" style="display:none;">
-          <table style="width:100%; border-collapse:collapse; font-size:0.75rem;">
-            <thead><tr style="background:var(--bg); text-align:left;">
-              <th style="padding:0.3rem;">Step</th><th style="padding:0.3rem;">°C</th><th style="padding:0.3rem;">RH%</th><th style="padding:0.3rem;">Days</th><th></th>
-            </tr></thead>
-            <tbody id="sl-chain-rows">
-              <tr>
-                <td style="padding:0.3rem;"><input type="text" value="Factory" style="width:100%;border:1px solid var(--border);border-radius:3px;padding:2px;"></td>
-                <td style="padding:0.3rem;"><input type="number" value="22" class="sl-ct"></td>
-                <td style="padding:0.3rem;"><input type="number" value="50" class="sl-cr"></td>
-                <td style="padding:0.3rem;"><input type="number" value="2" class="sl-cd"></td>
-                <td style="padding:0.3rem;"><span style="cursor:pointer;color:var(--danger);" onclick="this.closest('tr').remove()">✕</span></td>
-              </tr>
-              <tr>
-                <td style="padding:0.3rem;"><input type="text" value="Transit" style="width:100%;border:1px solid var(--border);border-radius:3px;padding:2px;"></td>
-                <td style="padding:0.3rem;"><input type="number" value="35" class="sl-ct"></td>
-                <td style="padding:0.3rem;"><input type="number" value="85" class="sl-cr"></td>
-                <td style="padding:0.3rem;"><input type="number" value="14" class="sl-cd"></td>
-                <td style="padding:0.3rem;"><span style="cursor:pointer;color:var(--danger);" onclick="this.closest('tr').remove()">✕</span></td>
-              </tr>
-            </tbody>
-          </table>
-          <button class="btn btn-sm btn-outline" style="width:100%; margin-top:0.4rem;" onclick="SL.addChainRow()">+ Add Step</button>
-        </div>
+  <div style="overflow-x:auto;">
+    <table style="width:100%; border-collapse:separate; border-spacing:0 5px; font-size:0.9rem;">
+      <thead>
+        <tr>
+          <th style="padding:0.6rem 0.5rem; text-align:left; font-weight:600; color:var(--text); width:35%;">Step</th>
+          <th style="padding:0.6rem 0.3rem; text-align:center; font-weight:600; color:var(--text); width:18%;">°C</th>
+          <th style="padding:0.6rem 0.3rem; text-align:center; font-weight:600; color:var(--text); width:18%;">RH%</th>
+          <th style="padding:0.6rem 0.3rem; text-align:center; font-weight:600; color:var(--text); width:18%;">Days</th>
+          <th style="padding:0.6rem 0.3rem; width:40px;"></th>
+        </tr>
+      </thead>
+      <tbody id="sl-chain-rows">
+        <tr style="background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+          <td style="padding:0.5rem;"><input type="text" value="Factory" style="width:100%; padding:0.55rem 0.6rem; border:1.5px solid var(--border); border-radius:6px; font-size:0.9rem; background:#fafbfc;"></td>
+          <td style="padding:0.5rem;"><input type="number" value="22" class="sl-ct" style="width:100%; padding:0.55rem 0.4rem; border:1.5px solid var(--border); border-radius:6px; font-size:0.9rem; text-align:center;"></td>
+          <td style="padding:0.5rem;"><input type="number" value="50" class="sl-cr" style="width:100%; padding:0.55rem 0.4rem; border:1.5px solid var(--border); border-radius:6px; font-size:0.9rem; text-align:center;"></td>
+          <td style="padding:0.5rem;"><input type="number" value="2" class="sl-cd" style="width:100%; padding:0.55rem 0.4rem; border:1.5px solid var(--border); border-radius:6px; font-size:0.9rem; text-align:center;"></td>
+          <td style="padding:0.5rem; text-align:center;"><span style="cursor:pointer; color:var(--danger); font-size:1.2rem; line-height:1;" onclick="this.closest('tr').remove()"></span></td>
+        </tr>
+        <tr style="background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+          <td style="padding:0.5rem;"><input type="text" value="Transit" style="width:100%; padding:0.55rem 0.6rem; border:1.5px solid var(--border); border-radius:6px; font-size:0.9rem; background:#fafbfc;"></td>
+          <td style="padding:0.5rem;"><input type="number" value="35" class="sl-ct" style="width:100%; padding:0.55rem 0.4rem; border:1.5px solid var(--border); border-radius:6px; font-size:0.9rem; text-align:center;"></td>
+          <td style="padding:0.5rem;"><input type="number" value="85" class="sl-cr" style="width:100%; padding:0.55rem 0.4rem; border:1.5px solid var(--border); border-radius:6px; font-size:0.9rem; text-align:center;"></td>
+          <td style="padding:0.5rem;"><input type="number" value="14" class="sl-cd" style="width:100%; padding:0.55rem 0.4rem; border:1.5px solid var(--border); border-radius:6px; font-size:0.9rem; text-align:center;"></td>
+          <td style="padding:0.5rem; text-align:center;"><span style="cursor:pointer; color:var(--danger); font-size:1.2rem; line-height:1;" onclick="this.closest('tr').remove()">✕</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <button class="btn btn-outline btn-full" style="margin-top:0.6rem; padding:0.6rem; font-size:0.85rem;" onclick="SL.addChainRow()">+ Add Step</button>
+</div>
         <button class="btn btn-danger btn-full" onclick="SL.calculate()" style="margin-top:1rem; padding:0.8rem; font-size:0.9rem;">▶ Calculate Shelf Life</button>
       </div>
     </div>
@@ -3061,17 +3069,17 @@ calcArea() {
 
     // --- Add chain row dynamically ---
     addChainRow() {
-        const tbody = document.getElementById('sl-chain-rows');
-        if (!tbody) return;
-        tbody.insertAdjacentHTML('beforeend', `
-        <tr>
-            <td style="padding:0.3rem;"><input type="text" value="Storage" style="width:100%;border:1px solid var(--border);border-radius:3px;padding:2px;"></td>
-            <td style="padding:0.3rem;"><input type="number" value="22" class="sl-ct"></td>
-            <td style="padding:0.3rem;"><input type="number" value="60" class="sl-cr"></td>
-            <td style="padding:0.3rem;"><input type="number" value="30" class="sl-cd"></td>
-            <td style="padding:0.3rem;"><span style="cursor:pointer;color:var(--danger);" onclick="this.closest('tr')?.remove()">✕</span></td>
-        </tr>`);
-    },
+  const tbody = document.getElementById('sl-chain-rows');
+  if (!tbody) return;
+  tbody.insertAdjacentHTML('beforeend', `
+  <tr style="background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.04); animation: fadeIn 0.2s ease;">
+    <td style="padding:0.5rem;"><input type="text" value="Storage" style="width:100%; padding:0.55rem 0.6rem; border:1.5px solid var(--border); border-radius:6px; font-size:0.9rem; background:#fafbfc;"></td>
+    <td style="padding:0.5rem;"><input type="number" value="22" class="sl-ct" style="width:100%; padding:0.55rem 0.4rem; border:1.5px solid var(--border); border-radius:6px; font-size:0.9rem; text-align:center;"></td>
+    <td style="padding:0.5rem;"><input type="number" value="60" class="sl-cr" style="width:100%; padding:0.55rem 0.4rem; border:1.5px solid var(--border); border-radius:6px; font-size:0.9rem; text-align:center;"></td>
+    <td style="padding:0.5rem;"><input type="number" value="30" class="sl-cd" style="width:100%; padding:0.55rem 0.4rem; border:1.5px solid var(--border); border-radius:6px; font-size:0.9rem; text-align:center;"></td>
+    <td style="padding:0.5rem; text-align:center;"><span style="cursor:pointer; color:var(--danger); font-size:1.2rem; line-height:1;" onclick="this.closest('tr').remove()">✕</span></td>
+  </tr>`);
+},
 
     // =====================
     // === MAIN CALCULATE ===
