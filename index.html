@@ -3705,6 +3705,16 @@ drawMoistureAccumulationChart(res) {
 async exportToPDF() {
   const { jsPDF } = window.jspdf;
   
+  // ✅ DICHIARAZIONE UNICA DI chartConfigs (all'inizio della funzione)
+  const chartConfigs = [
+    { id: 'slDecayChart', title: 'Quality Decay Over Time', desc: 'Product quality (%) vs. storage days. Red dashed line = critical limit (0% quality).' },
+    { id: 'slTempChart', title: 'Shelf Life vs Temperature', desc: 'Predicted shelf life (days) across storage temperatures. Shows sensitivity to temperature variations.' },
+    { id: 'slChainChart', title: 'Logistics Conditions', desc: 'Temperature (blue) and RH (red) profile across supply chain steps.' },
+    { id: 'slStepImpactChart', title: 'Shelf Life Consumed per Step', desc: 'Horizontal bars: % of total shelf life consumed in each logistics phase. Red ≥30%, Orange 15-30%, Blue <15%.' },
+    { id: 'slMoistureAccChart', title: 'Moisture Accumulation', desc: 'Internal moisture content (%) along the chain. Red zone = above critical limit.' },
+    { id: 'slCumulativeChart', title: 'Cumulative Timeline', desc: 'Accumulated days across configured logistics steps.' }
+  ];
+  
   // Feedback visivo sul pulsante
   const btn = event?.target?.closest('button');
   if (btn) {
