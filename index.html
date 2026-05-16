@@ -354,11 +354,12 @@ select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csv
   max-width: 100%;
 }
 .mat-header .chevron {
+    margin-left: auto; /* Questo è il segreto per allineare a destra in flexbox */
+    flex-shrink: 0; 
   width: 18px;
   height: 18px;
   color: var(--text-light);
   transition: transform 0.25s ease, color 0.2s;
-  flex-shrink: 0;
 }
 .material-item.expanded .mat-header .chevron {
   transform: rotate(180deg);
