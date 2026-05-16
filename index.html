@@ -3700,9 +3700,21 @@ drawMoistureAccumulationChart(res) {
 },
 
 // ====================================================================
-// 📄 EXPORT TO PDF - LAYOUT PROFESSIONALE SENZA TAGLI
+// 📄 EXPORT TO PDF - LAYOUT PROFESSIONALE SENZA TAGLI (VERSIONE CORRETTA)
 // ====================================================================
-async exportToPDF() {
+async exportToPDF(event) {
+  // ✅ Verifica dipendenze esterne
+  if (typeof window.jspdf?.jsPDF === 'undefined') {
+    console.error('❌ jsPDF library not loaded');
+    alert('⚠️ PDF library not available. Please reload the page.');
+    return;
+  }
+  if (typeof html2canvas === 'undefined') {
+    console.error('❌ html2canvas library not loaded');
+    alert('⚠️ Chart export library not available. Please reload the page.');
+    return;
+  }
+
   const { jsPDF } = window.jspdf;
 
   const chartConfigs = [
@@ -3710,23 +3722,34 @@ async exportToPDF() {
     { id: 'slTempChart',       title: 'Shelf Life vs Temperature',      desc: 'Predicted shelf life across temperatures.' },
     { id: 'slChainChart',      title: 'Logistics Conditions',           desc: 'Temperature and RH profile across supply chain.' },
     { id: 'slStepImpactChart', title: 'Shelf Life Consumed per Step',   desc: '% of shelf life used in each logistics phase.' },
-    { id: 'slMoistureAccChart','title: 'Moisture Accumulation',         desc: 'Internal moisture growth along the chain.' },
+    { id: 'slMoistureAccChart',title: 'Moisture Accumulation',         desc: 'Internal moisture growth along the chain.' },
     { id: 'slCumulativeChart', title: 'Cumulative Timeline',            desc: 'Accumulated days across logistics steps.' }
   ];
 
-  const btn = event?.target?.closest('button');
-  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Generating PDF...'; }
+  // ✅ Gestione sicura del button (parametro esplicito + fallback)
+  const btn = event?.target?.closest('button') 
+           || document.querySelector('button[data-action="export-pdf"]');
+  
+  if (btn) { 
+    btn.disabled = true; 
+    btn.innerHTML = '⏳ Generating PDF...'; 
+  }
 
   try {
     // ==================== RACCOLTA DATI ====================
-    const lamName   = State.laminateName || 'Unnamed Laminate';
-    const layers    = (State.layers || []).filter(l => l.mid !== null);
+    const lamName   = State?.laminateName || 'Unnamed Laminate';
+    const layers    = (State?.layers || []).filter(l => l?.mid !== null && l?.mid !== undefined);
+    
     const structureStr = layers.length
-      ? layers.map(l => { const m = DB.materials.find(x => x.id === l.mid); return m ? `${m.name} (${l.thick}µm)` : null; }).filter(Boolean).join(' / ')
+      ? layers.map(l => { 
+          const m = DB?.materials?.find(x => x?.id === l.mid); 
+          return m ? `${m.name} (${l.thick}µm)` : null; 
+        }).filter(Boolean).join(' / ')
       : '—';
 
     const prodKey  = document.getElementById('sl-product')?.value;
-    const prod     = PRODUCTS_DB[prodKey];
+    const prod     = (typeof PRODUCTS_DB !== 'undefined') ? PRODUCTS_DB[prodKey] : null;
+    
     const A        = parseFloat(document.getElementById('sl-area')?.value)   || 0.1;
     const W        = parseFloat(document.getElementById('sl-weight')?.value) || 100;
     const M_crit   = parseFloat(document.getElementById('sl-mcrit')?.value)  || (prod?.M_crit || 6);
@@ -3735,12 +3758,14 @@ async exportToPDF() {
     const RH_ext   = parseFloat(document.getElementById('sl-rh-ext')?.value) || 65;
     const Ea       = parseFloat(document.getElementById('sl-ea')?.value)     || 60;
     const Q10      = parseFloat(document.getElementById('sl-q10')?.value)    || 2.0;
-    const isChain  = document.getElementById('sl-cond-chain')?.style.display !== 'none';
+    
+    const condChainEl = document.getElementById('sl-cond-chain');
+    const isChain  = condChainEl ? condChainEl.style.display !== 'none' : false;
 
-    const resultDays   = (State.calcResult && isFinite(State.calcResult.days)) ? Math.round(State.calcResult.days) : null;
-    const hygroDetails = State.calcResult?.hygroWarning?.details || [];
-    const barrierRate  = isFinite(State.calcResult?.total) ? State.calcResult.total.toFixed(6) : '—';
-    const unit         = State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
+    const resultDays   = (State?.calcResult && isFinite(State.calcResult.days)) ? Math.round(State.calcResult.days) : null;
+    const hygroDetails = State?.calcResult?.hygroWarning?.details || [];
+    const barrierRate  = isFinite(State?.calcResult?.total) ? State.calcResult.total.toFixed(6) : '—';
+    const unit         = State?.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day·atm';
     const genDate      = new Date().toLocaleString('it-IT');
 
     // ==================== SETUP PDF ====================
@@ -3757,19 +3782,20 @@ async exportToPDF() {
 
     // ==================== HELPERS ====================
 
-    // Aggiunge nuova pagina e resetta il cursore
     const newPage = () => {
       pdf.addPage();
       y = MT;
       drawPageFooter();
     };
 
-    // Verifica se c'è spazio sufficiente, altrimenti nuova pagina
+    // ✅ ensureSpace migliorato: gestisce contenuti più grandi della pagina
     const ensureSpace = (needed) => {
-      if (y + needed > PH - MB) newPage();
+      const availableSpace = PH - MB - y;
+      if (needed > availableSpace || needed > PH - MB - MT) {
+        newPage();
+      }
     };
 
-    // Riga orizzontale
     const hLine = (color = [226, 232, 240]) => {
       pdf.setDrawColor(...color);
       pdf.setLineWidth(0.3);
@@ -3777,20 +3803,18 @@ async exportToPDF() {
       y += 3;
     };
 
-    // Testo con wrap automatico, ritorna altezza usata
     const addText = (text, x, fontSize, color = [51, 65, 85], style = 'normal', maxW = CW) => {
       pdf.setFontSize(fontSize);
       pdf.setTextColor(...color);
       pdf.setFont('helvetica', style);
       const lines = pdf.splitTextToSize(String(text), maxW);
-      const lineH = fontSize * 0.4;
+      const lineH = fontSize * 0.35; // ✅ Coefficiente più preciso
       ensureSpace(lines.length * lineH + 2);
       pdf.text(lines, x, y);
       y += lines.length * lineH + 1;
       return lines.length * lineH + 1;
     };
 
-    // Header sezione con sfondo
     const sectionHeader = (icon, title) => {
       ensureSpace(10);
       y += 2;
@@ -3803,11 +3827,11 @@ async exportToPDF() {
       y += 7;
     };
 
-    // Tabella a 2 colonne (label | value) con righe alternate
     const addTable2Col = (rows) => {
       const rowH = 6;
       const col1W = CW * 0.42;
       const col2W = CW - col1W;
+      
       rows.forEach((row, i) => {
         ensureSpace(rowH + 1);
         if (i % 2 === 0) {
@@ -3818,16 +3842,17 @@ async exportToPDF() {
         pdf.setTextColor(71, 85, 105);
         pdf.setFont('helvetica', 'normal');
         pdf.text(String(row[0]), ML + 3, y);
+        
         pdf.setTextColor(51, 65, 85);
         pdf.setFont('helvetica', 'bold');
-        const valLines = pdf.splitTextToSize(String(row[1]), col2W - 4);
+        const valStr = row[1] != null ? String(row[1]) : '—';
+        const valLines = pdf.splitTextToSize(valStr, col2W - 4);
         pdf.text(valLines, ML + col1W + 2, y);
         y += rowH;
       });
       y += 2;
     };
 
-    // Tabella multi-colonna (header + righe)
     const addTableMultiCol = (headers, rows, colWidths) => {
       const rowH = 5.5;
       const totalW = colWidths.reduce((a, b) => a + b, 0);
@@ -3841,7 +3866,8 @@ async exportToPDF() {
       pdf.setTextColor(255, 255, 255);
       let cx = ML + 2;
       headers.forEach((h, i) => {
-        pdf.text(String(h), cx, y);
+        const headerText = pdf.splitTextToSize(String(h), colWidths[i] - 4)[0];
+        pdf.text(headerText, cx, y);
         cx += colWidths[i];
       });
       y += rowH;
@@ -3858,9 +3884,13 @@ async exportToPDF() {
         pdf.setTextColor(51, 65, 85);
         cx = ML + 2;
         row.forEach((cell, ci) => {
-          const cellStr = cell != null ? (typeof cell === 'number' ? cell.toFixed(2) : String(cell)) : '—';
-          const clipped = pdf.splitTextToSize(cellStr, colWidths[ci] - 3)[0]; // no wrap, solo clip
-          pdf.text(clipped, cx, y);
+          const cellStr = cell != null 
+            ? (typeof cell === 'number' ? cell.toFixed(2) : String(cell)) 
+            : '—';
+          // ✅ Testo completo con wrap invece di clipping
+          const cellLines = pdf.splitTextToSize(cellStr, colWidths[ci] - 3);
+          pdf.text(cellLines[0], cx, y); // Prima riga allineata
+          // Se ci sono più righe, le aggiungiamo sotto (opzionale per tabelle dense)
           cx += colWidths[ci];
         });
         y += rowH;
@@ -3868,7 +3898,6 @@ async exportToPDF() {
       y += 3;
     };
 
-    // Box risultato evidenziato
     const resultBox = (days) => {
       ensureSpace(28);
       pdf.setFillColor(239, 246, 255);
@@ -3888,7 +3917,6 @@ async exportToPDF() {
       y += 28;
     };
 
-    // Avviso giallo hygroscopic
     const warningBox = (lines) => {
       const bH = 8 + lines.length * 5;
       ensureSpace(bH + 4);
@@ -3907,7 +3935,6 @@ async exportToPDF() {
       y += bH + 4;
     };
 
-    // Formula box monospace
     const formulaBox = (text) => {
       ensureSpace(12);
       pdf.setFillColor(248, 250, 252);
@@ -3915,13 +3942,14 @@ async exportToPDF() {
       pdf.setLineWidth(0.3);
       pdf.roundedRect(ML, y, CW, 10, 2, 2, 'FD');
       pdf.setFontSize(9);
-      pdf.setFont('courier', 'bold');
+      // ✅ Fallback su helvetica se courier bold non disponibile
+      const fontFace = pdf.getFontList?.().courier ? 'courier' : 'helvetica';
+      pdf.setFont(fontFace, 'normal');
       pdf.setTextColor(37, 99, 235);
       pdf.text(text, ML + CW / 2, y + 6.5, { align: 'center' });
       y += 14;
     };
 
-    // Footer pagina
     const drawPageFooter = () => {
       const pageNum = pdf.internal.getNumberOfPages();
       pdf.setFontSize(7.5);
@@ -3935,8 +3963,6 @@ async exportToPDF() {
     };
 
     // ==================== PAGINA 1: COVER + DATI ====================
-
-    // Header blu
     pdf.setFillColor(37, 99, 235);
     pdf.rect(0, 0, PW, 30, 'F');
     pdf.setFontSize(15);
@@ -3947,10 +3973,9 @@ async exportToPDF() {
     pdf.setFontSize(8);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(186, 230, 253);
-    pdf.text(`Generated: ${genDate}   •   Mode: ${State.mode.toUpperCase()}   •   Unit: ${unit}`, PW - MR, 26, { align: 'right' });
+    pdf.text(`Generated: ${genDate}   •   Mode: ${(State?.mode || 'N/A').toUpperCase()}   •   Unit: ${unit}`, PW - MR, 26, { align: 'right' });
     y = 38;
 
-    // Laminate Structure
     sectionHeader('□', 'Laminate Structure');
     addTable2Col([
       ['Name',         lamName],
@@ -3958,7 +3983,6 @@ async exportToPDF() {
       ['Layer Count',  layers.length],
     ]);
 
-    // Packaging & Product
     sectionHeader('□', 'Packaging & Product Data');
     addTable2Col([
       ['Product Template', prod?.name || '—'],
@@ -3967,7 +3991,6 @@ async exportToPDF() {
       ['Moisture Range',   `${M_init}% → ${M_crit}%`],
     ]);
 
-    // Logistics
     sectionHeader('□', 'Logistics & Storage Conditions');
     addTable2Col([
       ['Storage Temperature', `${T_store.toFixed(1)} °C`],
@@ -3982,7 +4005,6 @@ async exportToPDF() {
     // ==================== PAGINA 2: FORMULE + RISULTATI ====================
     newPage();
 
-    // Header pagina 2
     pdf.setFillColor(241, 245, 249);
     pdf.rect(0, 0, PW, 14, 'F');
     pdf.setFontSize(11);
@@ -4027,18 +4049,21 @@ async exportToPDF() {
       try {
         await new Promise(r => setTimeout(r, 80));
 
-        // Cattura grafico come immagine
         const chartCanvas = await html2canvas(canvas, {
-          scale: 2.5, useCORS: true, backgroundColor: '#ffffff', logging: false
+          scale: 2.5, 
+          useCORS: true, 
+          backgroundColor: '#ffffff', 
+          logging: false,
+          allowTaint: true
         });
+        
         const imgData  = chartCanvas.toDataURL('image/png');
         const imgRatio = chartCanvas.height / chartCanvas.width;
         const imgW     = CW;
-        const imgH     = Math.min(imgW * imgRatio, 90); // max 90mm di altezza
+        const imgH     = Math.min(imgW * imgRatio, 90);
 
         newPage();
 
-        // Header pagina grafico
         pdf.setFillColor(241, 245, 249);
         pdf.rect(0, 0, PW, 14, 'F');
         pdf.setFontSize(11);
@@ -4047,55 +4072,60 @@ async exportToPDF() {
         pdf.text(cfg.title, ML, 9);
         y = 22;
 
-        // Descrizione
         pdf.setFontSize(8.5);
         pdf.setFont('helvetica', 'normal');
         pdf.setTextColor(100, 116, 139);
         pdf.text(cfg.desc, ML, y);
         y += 7;
 
-        // Immagine grafico
         pdf.addImage(imgData, 'PNG', ML, y, imgW, imgH);
         y += imgH + 6;
 
-        // Tabella dati del grafico
-        const chartInstance = (chartInstances && (chartInstances[cfg.id.replace('Chart', '')] || chartInstances[cfg.id])) 
-                              || window.Chart?.getChart?.(cfg.id);
+        // ✅ Recupero Chart instance sicuro
+        let chartInstance = null;
+        if (typeof window.Chart !== 'undefined' && typeof window.Chart.getChart === 'function') {
+          chartInstance = window.Chart.getChart(cfg.id);
+        }
+        // Fallback: cerca in chartInstances se definito globalmente
+        if (!chartInstance && typeof chartInstances !== 'undefined' && chartInstances) {
+          chartInstance = chartInstances[cfg.id.replace('Chart', '')] || chartInstances[cfg.id];
+        }
 
-        if (chartInstance?.data) {
+        if (chartInstance?.data?.labels?.length > 0 && chartInstance?.data?.datasets?.length > 0) {
+          hLine();
+          pdf.setFontSize(9);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(51, 65, 85);
+          pdf.text('Data Points', ML, y);
+          y += 5;
+
           const labels   = chartInstance.data.labels || [];
           const datasets = chartInstance.data.datasets || [];
+          
+          const headers   = ['Label', ...datasets.map(d => d.label || '—')];
+          const nCols     = headers.length;
+          const labelW    = 30;
+          const dataW     = (CW - labelW) / Math.max(1, nCols - 1);
+          const colWidths = [labelW, ...Array(Math.max(1, nCols - 1)).fill(dataW)];
 
-          if (labels.length > 0 && datasets.length > 0) {
-            hLine();
-            pdf.setFontSize(9);
-            pdf.setFont('helvetica', 'bold');
-            pdf.setTextColor(51, 65, 85);
-            pdf.text('Data Points', ML, y);
-            y += 5;
-
-            // Calcola colonne: prima colonna "Label", poi una per ogni dataset
-            const headers   = ['Label', ...datasets.map(d => d.label || '—')];
-            const nCols     = headers.length;
-            const labelW    = 30;
-            const dataW     = (CW - labelW) / (nCols - 1);
-            const colWidths = [labelW, ...Array(nCols - 1).fill(dataW)];
-
-            // Limita a 40 righe per non sforare (campionamento)
-            const maxRows  = 40;
-            const step     = labels.length > maxRows ? Math.ceil(labels.length / maxRows) : 1;
-            const dataRows = [];
-            for (let i = 0; i < labels.length; i += step) {
-              dataRows.push([labels[i], ...datasets.map(d => d.data[i] ?? '—')]);
-            }
-
-            addTableMultiCol(headers, dataRows, colWidths);
+          const maxRows  = 40;
+          const step     = labels.length > maxRows ? Math.ceil(labels.length / maxRows) : 1;
+          const dataRows = [];
+          for (let i = 0; i < labels.length; i += step) {
+            const rowValues = [labels[i], ...datasets.map(d => {
+              const val = d.data?.[i];
+              return val != null ? (typeof val === 'number' ? val : String(val)) : '—';
+            })];
+            dataRows.push(rowValues);
           }
+
+          addTableMultiCol(headers, dataRows, colWidths);
         }
 
         drawPageFooter();
       } catch (e) {
-        console.warn(`⚠️ Chart ${cfg.id} skipped:`, e);
+        console.warn(`⚠️ Chart ${cfg.id} skipped:`, e.message || e);
+        // Continua con il prossimo grafico invece di bloccare tutto
       }
     }
 
@@ -4119,10 +4149,11 @@ async exportToPDF() {
       'The model assumes steady-state permeation and idealized packaging geometry.',
       'Actual performance may vary based on sealing quality, physical damage, and real-world storage variability.',
     ];
+    
     disclaimerLines.forEach(l => {
       if (l === '') { y += 3; return; }
       pdf.setFontSize(9);
-      pdf.setFont('helvetica', l.startsWith('This') || l.startsWith('Shelf') ? 'normal' : 'normal');
+      pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(71, 85, 105);
       const wrapped = pdf.splitTextToSize(l, CW);
       pdf.text(wrapped, ML, y);
@@ -4132,13 +4163,15 @@ async exportToPDF() {
     drawPageFooter();
 
     // ==================== DOWNLOAD ====================
-    const safeName = lamName.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '');
-    pdf.save(`ShelfLife_${safeName}_${new Date().toISOString().slice(0, 10)}.pdf`);
+    const safeName = lamName.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '').slice(0, 50);
+    const dateStr = new Date().toISOString().slice(0, 10);
+    pdf.save(`ShelfLife_${safeName || 'Report'}_${dateStr}.pdf`);
 
   } catch (error) {
     console.error('❌ PDF export failed:', error);
-    alert('⚠️ Could not generate PDF. Check console for details.');
+    alert('⚠️ Could not generate PDF. Details in console.');
   } finally {
+    // ✅ Ripristino button anche in caso di errore
     if (btn) {
       btn.disabled = false;
       btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:middle;margin-right:6px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export Full Report (PDF)`;
