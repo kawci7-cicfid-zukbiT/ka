@@ -79,14 +79,17 @@ header{background:linear-gradient(135deg,#0f172a,var(--primary),#38bdf8);color:#
     content: attr(title);
     position: absolute;
     bottom: -35px;
-    left: 50%;
-    transform: translateX(-50%);
+    left: auto;
+    right: 0; /* Si allinea al bordo destro dell'icona */
+    transform: none;
+    max-width: 200px; /* Mai più largo di 200px */
+    white-space: normal; /* Permette il ritorno a capo */
+    text-align: right;
     background: rgba(15,23,42,0.95);
     color: #fff;
     padding: 0.4rem 0.6rem;
     border-radius: 6px;
     font-size: 0.68rem;
-    white-space: nowrap;
     z-index: 1000;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     pointer-events: none;
@@ -2641,7 +2644,7 @@ function renderShelfLife() {
   const currentRate = (State.calcResult && State.calcResult.total) ? State.calcResult.total.toFixed(6) : '';
 
   // Info laminato
-  let laminateName = State.laminateName || 'No laminate';
+  let laminateName = State.laminateName || ;
   let structureStr = '';
   if (State.layers && State.layers.length > 0) {
     let layers = [];
@@ -5164,12 +5167,10 @@ function renderCalc() {
       'Laminate Structure'+
     '</h2>'+
     // ✅ PULSANTE CANCEL SPOSTATO QUI
-    '<button class="btn btn-sm btn-danger" onclick="clearProject()" title="Cancel current calculation and clear all layers" style="display:inline-flex;align-items:center;gap:0.3rem">'+
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">'+
-        '<path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m-6 12v-4m-4 4h8"/>'+
-      '</svg>'+
-      'Cancel'+
-    '</button>'+
+   // ✅ PULSANTE CANCEL (senza icona)
+'<button class="btn btn-sm btn-danger" onclick="clearProject()" title="Cancel current calculation and clear all layers" style="display:inline-flex;align-items:center">'+
+'Cancel'+
+'</button>'+
   '</div>';
 
 var testMethods = {};
