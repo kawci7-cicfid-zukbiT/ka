@@ -6156,17 +6156,35 @@ function renderArrheniusMethodology() {
 // 🧪 FUNZIONE PRINCIPALE: renderArrhenius()
 // ====================================================================
 function renderArrhenius() {
-  var opts = '<option value="">Select...</option>';
-  for (var i = 0; i < DB.materials.length; i++) {
-    var v = Engine.validateArrhenius(DB.materials[i]);
-    opts += '<option value="' + DB.materials[i].id + '"' + (v.valid ? '' : ' disabled') + '>' + 
-            DB.materials[i].name + (v.valid ? ' ✓ Arrhenius' : ' (single temp)') + '</option>';
-  }
+  var validCount = 0;
+  var opts = '<option value="">Select a multi-temp material...</option>';
   
+  for (var i = 0; i < DB.materials.length; i++) {
+    var mat = DB.materials[i];
+    var v = Engine.validateArrhenius(mat);
+    
+    // ✅ MOSTRA SOLO SE VALIDO PER ARRHENIUS (2+ temperature diverse)
+    if(v.valid) {
+      var r = Engine.calcArrheniusParams(mat);
+      var r2 = r.valid ? r.rSquared.toFixed(3) : '-';
+      opts += '<option value="' + mat.id + '">' +
+              mat.name + ' [R²=' + r2 + ']</option>';
+      validCount++;
+    }
+  }
+
+  // ✅ Contatore materiali validi
+  var infoText = validCount > 0 
+    ? validCount + ' materials available for prediction' 
+    : 'No materials with multi-temperature data found';
+
   return '<div class="card"><h2>Arrhenius Analysis</h2>' +
-    '<p style="font-size:.78rem;color:var(--text-light);margin-bottom:.75rem">Predict ' + getLabel() + ' at unmeasured temperatures. Requires 2+ data points at different temperatures.</p>' +
+    '<p style="font-size:.78rem;color:var(--text-light);margin-bottom:.75rem">' +
+    'Predict ' + getLabel() + ' at unmeasured temperatures using the Arrhenius equation. ' +
+    '<span style="color:' + (validCount > 0 ? 'var(--success)' : 'var(--danger)') + ';font-weight:600">' + infoText + '</span>' +
+    '</p>' +
     '<div class="grid grid-2">' +
-      '<div class="form-group"><label>Material</label><select class="form-input" id="arr-mat" onchange="onArrChange()">' + opts + '</select></div>' +
+      '<div class="form-group"><label>Material (multi-temp only)</label><select class="form-input" id="arr-mat" onchange="onArrChange()">' + opts + '</select></div>' +
       '<div class="form-group"><label>Target Temperature (°C)</label><input type="number" step="any" class="form-input" id="arr-temp" value="25" oninput="onArrChange()"></div>' +
     '</div>' +
     // ✅ NUOVO: Campo Ea modificabile manualmente
@@ -6183,9 +6201,8 @@ function renderArrhenius() {
       '<div class="card"><h2>' + getLabel() + ' vs Temperature</h2><div class="chart-container"><canvas id="arrTempCanvas"></canvas></div></div>' +
       '<div class="card"><h2>Arrhenius Plot (ln(' + getLabel() + ') vs 1/T)</h2><div class="chart-container"><canvas id="arrLinCanvas"></canvas></div></div>' +
     '</div>' +
-  '</div>' + renderArrheniusMethodology();
+    '</div>' + renderArrheniusMethodology();
 }
-
 // ====================================================================
 // 🎯 HANDLERS & FUNZIONI DI SUPPORTO
 // ====================================================================
