@@ -3699,13 +3699,13 @@ drawMoistureAccumulationChart(res) {
  }
 },
 
-// ====================================================================
-// 📄 EXPORT TO PDF - CON FORMULE SPIEGATE E FIX GRAFICI (CORRETTO)
+// ====================================================================// ====================================================================
+// 📄 EXPORT TO PDF - LAYOUT ORIGINALE + FIX GRAFICI
 // ====================================================================
 async exportToPDF() {
   const { jsPDF } = window.jspdf;
   
-  // ✅ DICHIARAZIONE UNICA DI chartConfigs (ALL'INIZIO DELLA FUNZIONE)
+  // ✅ DICHIARAZIONE UNICA DI chartConfigs (ALL'INIZIO)
   const chartConfigs = [
     { id: 'slDecayChart', title: 'Quality Decay Over Time', desc: 'Product quality (%) vs. storage days. Red dashed line = critical limit (0% quality).' },
     { id: 'slTempChart', title: 'Shelf Life vs Temperature', desc: 'Predicted shelf life (days) across storage temperatures. Shows sensitivity to temperature variations.' },
@@ -3714,7 +3714,7 @@ async exportToPDF() {
     { id: 'slMoistureAccChart', title: 'Moisture Accumulation', desc: 'Internal moisture content (%) along the chain. Red zone = above critical limit.' },
     { id: 'slCumulativeChart', title: 'Cumulative Timeline', desc: 'Accumulated days across configured logistics steps.' }
   ];
-  
+
   // Feedback visivo sul pulsante
   const btn = event?.target?.closest('button');
   if (btn) {
@@ -3724,7 +3724,7 @@ async exportToPDF() {
   }
 
   try {
-    // 1. Crea container temporaneo per il report
+    // 1. Crea container temporaneo per il report (LAYOUT ORIGINALE)
     const reportDiv = document.createElement('div');
     reportDiv.id = 'pdf-report-container';
     reportDiv.style.cssText = `
@@ -3867,24 +3867,21 @@ async exportToPDF() {
       </div>
     `;
 
-    // 6. ✅ SEZIONE FORMULE E METODOLOGIA (NUOVA)
+    // 6. SEZIONE FORMULE E METODOLOGIA
     reportDiv.innerHTML += `
       <div class="section no-break">
         <h2> Formulas & Methodology</h2>
-        
         <h3>Moisture Gain Model (GAB + Fick)</h3>
         <p>Shelf life is calculated by integrating moisture ingress over time, accounting for decreasing driving force as product moisture increases.</p>
         <div class="formula-block">
           t = (W × ΔM) ÷ (A × WVTR × f(RH, T))
         </div>
         <p><strong>Where:</strong> W=weight(g), ΔM=allowed moisture increase(%), A=area(m²), WVTR=permeability, f=hygroscopic/thermal correction</p>
-        
         <h3>Thermal Acceleration</h3>
         <p>Temperature effect modeled via Arrhenius or Q₁₀:</p>
         <div class="formula-block">
           Arrhenius: k = A·exp(-Eₐ/RT) &nbsp;&nbsp;|&nbsp;&nbsp; Q₁₀: k₂ = k₁·Q₁₀^((T₂-T₁)/10)
         </div>
-        
         <h3>Hygroscopic Correction</h3>
         <p>For humidity-sensitive materials (EVOH, nylon, etc.):</p>
         <div class="formula-block">
@@ -3926,7 +3923,7 @@ async exportToPDF() {
       `;
     }
 
-    // 9. Sezione: Grafici (USA chartConfigs già dichiarata)
+    // 9. Sezione: Grafici (con FIX page-break)
     for (const cfg of chartConfigs) {
       const canvas = document.getElementById(cfg.id);
       if (canvas && canvas.offsetParent !== null && canvas.width > 0) {
@@ -3972,7 +3969,7 @@ async exportToPDF() {
     document.body.appendChild(reportDiv);
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    // 11. Cattura l'intero report
+    // 11. Cattura l'intero report con html2canvas
     const pdfCanvas = await html2canvas(reportDiv, {
       scale: 2,
       useCORS: true,
@@ -3984,194 +3981,31 @@ async exportToPDF() {
 
     document.body.removeChild(reportDiv);
 
-    // 12. Genera PDF con jsPDF - VERSIONE CORRETTA (element-by-element)
+    // 12. Genera PDF con jsPDF (approccio originale: immagine unica)
     const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
     });
 
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    const margin = 10;
-    const maxImgWidth = pdfWidth - (margin * 2);
+    const imgData = pdfCanvas.toDataURL('image/png');
+    const imgWidth = 210; // A4 width in mm
+    const pageHeight = 297; // A4 height in mm
+    const imgHeight = (pdfCanvas.height * imgWidth) / pdfCanvas.width;
+    let heightLeft = imgHeight;
+    let position = 0;
 
-    // ✅ Funzione helper: aggiungi immagine rispettando i page-break
-    function addImageWithPageBreak(imgData, imgWidth, imgHeight, startY) {
-        const availableHeight = pdfHeight - startY - margin;
-        
-        // Se l'immagine entra nella pagina corrente, aggiungila intera
-        if (imgHeight <= availableHeight) {
-            pdf.addImage(imgData, 'PNG', margin, startY, imgWidth, imgHeight);
-            return startY + imgHeight + margin;
-        }
-        
-        // Se l'immagine è troppo alta, SCALALA proporzionalmente per farla entrare
-        const scaledHeight = availableHeight;
-        const scaledWidth = (imgWidth * scaledHeight) / imgHeight;
-        pdf.addImage(imgData, 'PNG', margin, startY, scaledWidth, scaledHeight);
-        return pdfHeight - margin; // Prossima posizione: fine pagina
+    // Aggiungi la prima pagina
+    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+
+    // Aggiungi pagine aggiuntive se necessario
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
     }
-
-    let currentY = margin;
-
-    // ✅ 1. Aggiungi testo introduttivo (Header + Struttura + Parametri + Formule)
-    pdf.setFontSize(16);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('📦 WVTR/OTR Calculator - Shelf Life Report', margin, currentY);
-    currentY += 8;
-
-    pdf.setFontSize(10);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(100, 100, 100);
-    pdf.text(`Generated: ${new Date().toLocaleString('it-IT')}`, margin, currentY);
-    currentY += 6;
-    pdf.text(`Mode: ${State.mode.toUpperCase()} • Unit: ${State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day'}`, margin, currentY);
-    currentY += 12;
-
-    // Struttura laminato
-    pdf.setFontSize(12);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(0, 0, 0);
-    pdf.text('📦 Laminate Structure', margin, currentY);
-    currentY += 6;
-    pdf.setFontSize(10);
-    pdf.setFont('helvetica', 'normal');
-    pdf.text(`Name: ${laminateName}`, margin, currentY); currentY += 5;
-    pdf.text(`Structure: ${structureStr}`, margin, currentY); currentY += 5;
-    pdf.text(`Layers: ${State.layers.filter(l => l.mid !== null).length}`, margin, currentY);
-    currentY += 10;
-
-    // Parametri di calcolo
-    pdf.setFontSize(12);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('⚙️ Calculation Parameters', margin, currentY);
-    currentY += 6;
-    pdf.setFontSize(10);
-    pdf.setFont('helvetica', 'normal');
-    const params = [
-        `Product: ${prod?.name || '—'}`,
-        `Weight: ${W} g • Area: ${A.toFixed(4)} m²`,
-        `Moisture: ${M_init}% → ${M_crit}%`,
-        `Storage: ${T_store}°C / ${RH_ext}% RH`,
-        `Eₐ: ${Ea} kJ/mol • Q₁₀: ${Q10}`
-    ];
-    params.forEach(p => { pdf.text(p, margin, currentY); currentY += 5; });
-    currentY += 10;
-
-    // Formule (semplificate per PDF)
-    pdf.setFontSize(12);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text('🧮 Key Formulas', margin, currentY);
-    currentY += 6;
-    pdf.setFontSize(9);
-    pdf.setFont('courier', 'normal');
-    pdf.text('t = (W × ΔM) ÷ (A × WVTR × f(RH,T))', margin, currentY); currentY += 5;
-    pdf.text('Correction = exp(β × ΔRH)', margin, currentY); currentY += 5;
-    pdf.text('Arrhenius: k = A·exp(-Eₐ/RT)', margin, currentY);
-    currentY += 12;
-
-    // Risultato shelf life
-    if (State.calcResult && isFinite(State.calcResult?.days)) {
-        const days = Math.round(State.calcResult.days);
-        pdf.setFontSize(14);
-        pdf.setFont('helvetica', 'bold');
-        pdf.setTextColor(37, 99, 235);
-        pdf.text(`✅ Predicted Shelf Life: ${days} Days`, margin, currentY);
-        currentY += 12;
-        pdf.setTextColor(100, 100, 100);
-        pdf.setFontSize(10);
-        pdf.text(`≈ ${(days/30.44).toFixed(1)} Months • ≈ ${(days/365.25).toFixed(2)} Years`, margin, currentY);
-        currentY += 12;
-    }
-
-    // Avviso igroscopico se presente
-    if (State.calcResult?.hygroWarning?.details?.length > 0) {
-        pdf.setFontSize(10);
-        pdf.setFont('helvetica', 'bold');
-        pdf.setTextColor(146, 64, 14);
-        pdf.text('⚠️ Hygroscopic correction applied:', margin, currentY); currentY += 5;
-        pdf.setFont('helvetica', 'normal');
-        State.calcResult.hygroWarning.details.forEach(d => {
-            pdf.text(`• ${d}`, margin + 3, currentY); currentY += 5;
-        });
-        currentY += 8;
-    }
-
-    // ✅ 2. Aggiungi i grafici uno per uno con page-break handling MIGLIORATO (USA chartConfigs già dichiarata)
-    for (const cfg of chartConfigs) {
-        const canvas = document.getElementById(cfg.id);
-        // Salta se canvas non esiste o è nascosto
-        if (!canvas || canvas.offsetParent === null || canvas.width === 0) continue;
-        
-        try {
-            // Piccolo delay per rendere il canvas
-            await new Promise(resolve => setTimeout(resolve, 100));
-            
-            // Cattura il singolo canvas
-            const chartCanvas = await html2canvas(canvas, {
-                scale: 2,
-                useCORS: true,
-                backgroundColor: '#ffffff',
-                logging: false
-            });
-            
-            const imgData = chartCanvas.toDataURL('image/png');
-            const imgProps = pdf.getImageProperties(imgData);
-            const ratio = maxImgWidth / imgProps.width;
-            const finalWidth = maxImgWidth;
-            const finalHeight = imgProps.height * ratio;
-            
-            // 🚀 FIX GRAFICO DIVISO: Calcolo preventivo dello spazio totale (Titolo + Desc + Img + Margini)
-            const titleHeight = 7;    // Altezza stimata titolo
-            const descHeight = 6;     // Altezza stimata descrizione
-            const buffer = 15;        // Spaziatura extra di sicurezza
-            const totalBlockHeight = titleHeight + descHeight + finalHeight + buffer;
-            
-            // ✅ Se il blocco intero non entra, vai a nuova pagina PRIMA di disegnare qualsiasi cosa
-            if (currentY + totalBlockHeight > pdfHeight - margin) {
-                pdf.addPage();
-                currentY = margin;
-            }
-            
-            // Titolo sezione
-            pdf.setFontSize(11);
-            pdf.setFont('helvetica', 'bold');
-            pdf.setTextColor(0, 0, 0);
-            pdf.text(cfg.title, margin, currentY);
-            currentY += 6;
-            
-            // Descrizione
-            pdf.setFontSize(9);
-            pdf.setFont('helvetica', 'normal');
-            pdf.setTextColor(100, 100, 100);
-            pdf.text(cfg.desc, margin, currentY, { maxWidth: maxImgWidth });
-            currentY += 10;
-            
-            // ✅ Gestione avanzata: Se l'immagine è più alta di una pagina intera (caso raro ma possibile)
-            const maxPageImgHeight = pdfHeight - (margin * 2) - 20; // Spazio per testo
-            if (finalHeight > maxPageImgHeight) {
-                // Fallback: ridimensiona l'immagine per farla entrare in una singola pagina
-                const safeRatio = maxPageImgHeight / finalHeight;
-                pdf.addImage(imgData, 'PNG', margin, currentY, finalWidth * safeRatio, maxPageImgHeight);
-                currentY = pdfHeight - margin; // Spostati a fine pagina
-            } else {
-                // ✅ Comportamento normale: Aggiungi immagine con gestione page-break standard
-                currentY = addImageWithPageBreak(imgData, finalWidth, finalHeight, currentY);
-            }
-            currentY += 8; // Spazio dopo il grafico
-            
-        } catch (e) {
-            console.warn(`⚠️ Chart ${cfg.id} skipped:`, e);
-        }
-    }
-
-    // Footer
-    pdf.addPage();
-    pdf.setFontSize(10);
-    pdf.setFont('helvetica', 'italic');
-    pdf.setTextColor(100, 100, 100);
-    pdf.text('WVTR/OTR Calculator v3.0 — For R&D use only. Validate with ASTM/ISO testing.', margin, pdfHeight - 15);
 
     // 13. Download
     const safeName = laminateName.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '');
