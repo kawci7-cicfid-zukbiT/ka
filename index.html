@@ -6869,73 +6869,78 @@ function renderMaterials(){
   // ✅ FILTRO SEMPLICE: mostra tutti i materiali
 // ✅ ✅ ✅ RICERCA SMART AVANZATA ✅ ✅ ✅
 // Dentro renderMaterials():
-// ✅ ✅ ✅ RICERCA SMART AVANZATA + NUMERICA ✅ ✅ ✅
-for(var i = 0; i < DB.materials.length; i++){
-  var m = DB.materials[i];
-  if(!q) {
-    filtered.push(m);
-    continue;
-  }
-  var qLower = q.toLowerCase();
-  var found = false;
-  var matchType = [];
+  // ✅ ✅ ✅ RICERCA SMART AVANZATA + FILTRI MATEMATICI ✅ ✅ ✅
+  for(var i = 0; i < DB.materials.length; i++){
+    var m = DB.materials[i];
+    if(!q) {
+      filtered.push(m);
+      continue;
+    }
+    
+    var qLower = q.toLowerCase();
+    var found = false;
+    var matchType = [];
 
-  // 🆕 1. CONTROLLO FILTRO NUMERICO (es. wvtr < 2, otr > 100, thick <= 50)
-  var numRegex = /^\s*(wvtr|otr|thickness|thick)\s*(<=|>=|<|>|==|=)\s*([\d.]+)\s*$/i;
-  var numMatch = q.match(numRegex);
-  
-  if(numMatch) {
-    var type = numMatch[1].toLowerCase();
-    var op = numMatch[2];
-    var threshold = parseFloat(numMatch[3]);
+    // 🆕 1. CONTROLLO FILTRO NUMERICO (es. "wvtr < 2", "otr > 100")
+    // Riconosce: wvtr o otr, seguito da < > <= >=, seguito da un numero
+    var numRegex = /^\s*(wvtr|otr|thickness)\s*(<=|>=|<|>|==|=)\s*([\d.]+)\s*$/i;
+    var numMatch = q.match(numRegex);
     
-    // Seleziona l'array da controllare
-    var targets = (type === 'wvtr' || type === 'otr') 
-      ? (type === 'wvtr' ? (m.wvtrValues||[]) : (m.otrValues||[]))
-      : (m.wvtrValues||[]).concat(m.otrValues||[]); // Per thickness controlla entrambi
+    if(numMatch) {
+      var type = numMatch[1].toLowerCase();
+      var op = numMatch[2];
+      var threshold = parseFloat(numMatch[3]);
       
-    for(var v = 0; v < targets.length; v++) {
-      var val = (type === 'thick' || type === 'thickness') ? targets[v].thickness : targets[v].value;
-      var pass = false;
-      if(op === '<') pass = val < threshold;
-      else if(op === '>') pass = val > threshold;
-      else if(op === '<=') pass = val <= threshold;
-      else if(op === '>=') pass = val >= threshold;
-      else if(op === '==' || op === '=') pass = val == threshold;
+      // Prendi i dati corretti in base a cosa ha scritto l'utente
+      var targets = (type === 'wvtr' || type === 'otr') 
+        ? (type === 'wvtr' ? (m.wvtrValues||[]) : (m.otrValues||[]))
+        : (m.wvtrValues||[]).concat(m.otrValues||[]); // Fallback
       
-      if(pass) { found = true; matchType.push('numeric-filter'); break; }
-    }
-  }
-  
-  // 🆕 2. FALLBACK: Ricerca testuale standard (se non è un filtro numerico o non ha matchato)
-  if(!found) {
-    if(m.name.toLowerCase().indexOf(qLower) >= 0) { found = true; matchType.push('name'); }
-    if(m.family && m.family.toLowerCase().indexOf(qLower) >= 0) { found = true; matchType.push('family'); }
-    if(m.company && m.company.toLowerCase().indexOf(qLower) >= 0) { found = true; matchType.push('company'); }
-    
-    var tm = State.mode === 'wvtr' ? (m.testMethodWVTR || m.testMethod || '') : (m.testMethodOTR || m.testMethod || '');
-    if(tm && tm.toLowerCase().indexOf(qLower) >= 0) { found = true; matchType.push('testmethod'); }
-    
-    if(!found && (m.wvtrValues || m.otrValues)) {
-      var allVals = (m.wvtrValues||[]).concat(m.otrValues||[]);
-      for(var vi=0; vi<allVals.length; vi++) {
-        if(String(allVals[vi].value).indexOf(q) >= 0) { found = true; matchType.push('value'); break; }
-      }
-    }
-    
-    if(!found && m.validConditions) {
-      for(var ci=0; ci<m.validConditions.length; ci++) {
-        if((m.validConditions[ci].temperature + '/' + m.validConditions[ci].humidity).indexOf(q) >= 0) { 
-          found = true; matchType.push('condition'); break; 
+      for(var v = 0; v < targets.length; v++) {
+        var val = targets[v].value; // Il valore di permeabilità
+        var pass = false;
+        
+        // Confronto matematico
+        if(op === '<') pass = val < threshold;
+        else if(op === '>') pass = val > threshold;
+        else if(op === '<=') pass = val <= threshold;
+        else if(op === '>=') pass = val >= threshold;
+        else if(op === '==' || op === '=') pass = val == threshold;
+        
+        if(pass) { 
+          found = true; 
+          matchType.push('numeric-filter'); 
+          break; 
         }
       }
     }
-  }
+    // 🆕 2. SE NON È UN FILTRO, USA LA RICERCA TESTUALE NORMALE
+    else {
+      // Cerca nel NOME
+      if(m.name.toLowerCase().indexOf(qLower) >= 0) { found = true; matchType.push('name'); }
+      // Cerca nella FAMIGLIA
+      if(m.family && m.family.toLowerCase().indexOf(qLower) >= 0) { found = true; matchType.push('family'); }
+      // Cerca nell'AZIENDA
+      if(m.company && m.company.toLowerCase().indexOf(qLower) >= 0) { found = true; matchType.push('company'); }
+      
+      // Cerca nei VALORI (testo semplice, es. cerca "0.5")
+      var vals = State.mode === 'wvtr' ? m.wvtrValues : m.otrValues;
+      if(vals) {
+        for(var v = 0; v < vals.length; v++) {
+          if(String(vals[v].value).indexOf(q) >= 0) { found = true; matchType.push('value'); break; }
+        }
+      }
+    }
 
-  if(found) {
-    filtered.push({ mat: m, matchType: matchType, highlight: q });
+    // Se trovato, aggiungi alla lista
+    if(found) {
+      filtered.push({
+        mat: m,
+        matchType: matchType,
+        highlight: q
+      });
+    }
   }
-}
     
  // ✅ ✅ ✅ ORDINAMENTO ALFABETICO (CORRETTO PER SMART SEARCH) ✅ ✅ ✅
 filtered.sort(function(a, b){
