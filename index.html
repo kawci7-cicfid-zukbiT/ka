@@ -3631,7 +3631,9 @@ const dayO2 = effectiveRate * A * O2_fraction;
                     const Mc = res.M_crit || 8, Mi = res.M_init || 3;
                     return ((Mc - Mi) / 100 * W) / (rate * A);
                 } else {
-                    return (400 * 0.3) / (rate * A);
+                    const fatKg = prod?.fat_kg || 0.3;
+const O2_crit = prod?.O2_crit || 400;
+return (O2_crit * fatKg * 0.21) / (rate * A);
                 }
             });
             chartInstances.slTemp = new Chart(ctx2, {
@@ -3787,7 +3789,8 @@ if (State.layers) {
     }
 }
             const effectiveRate = baseRate * accel * hygroFactor;
-            const transferred = effectiveRate * A * days;
+            const O2_fraction = 0.21;
+const transferred = effectiveRate * A * days * (res && res.type === 'otx' ? O2_fraction : 1);
             const pct = totalAllowed > 0 ? (transferred / totalAllowed) * 100 : 0;
 
             labels.push(name);
