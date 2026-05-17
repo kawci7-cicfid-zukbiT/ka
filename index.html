@@ -1319,7 +1319,7 @@ window.loadFromCommunity = async function() {
 <script>
 const Engine={
   R_GAS:8.314,
-    calcHygroscopicCorrection: function(mat, condition, mode) {
+   calcHygroscopicCorrection: function(mat, condition, mode) {
     mode = mode || Engine.mode;
     var betaKey = mode === 'wvtr' ? 'hygroscopicBetaWVTR' : 'hygroscopicBetaOTR';
     var refKey = mode === 'wvtr' ? 'hygroscopicRefRHWVTR' : 'hygroscopicRefRHOTR';
@@ -1327,7 +1327,6 @@ const Engine={
     var beta = mat[betaKey];
     var refRH = mat[refKey];
 
-    // 🔄 Fallback per materiali salvati con il vecchio formato
     if (!beta && mat.hygroscopicBeta > 0) {
         beta = mat.hygroscopicBeta;
         refRH = mat.hygroscopicRefRH || 50;
@@ -1339,12 +1338,19 @@ const Engine={
     if (!refRH) refRH = 50;
 
     var rhDiff = condition.humidity - refRH;
+    
+    // ✅ NUOVA RIGA: se la differenza è trascurabile, non correggere
+    if (Math.abs(rhDiff) < 1) {
+        return { factor: 1, correction: 0, message: null };
+    }
+    
     var factor = Math.exp(beta * rhDiff);
     var correctionPct = (factor - 1) * 100;
     return {
         factor: factor,
         correction: correctionPct,
-        message: mat.name + ': +' + correctionPct.toFixed(1) + '% permeability at ' + condition.humidity + '% RH vs ' + refRH + '% RH reference',
+        message: mat.name + ': +' + correctionPct.toFixed(1) + '% permeability at ' + 
+                 condition.humidity + '% RH vs ' + refRH + '% RH reference',
         isSignificant: Math.abs(correctionPct) > 10
     };
 },
