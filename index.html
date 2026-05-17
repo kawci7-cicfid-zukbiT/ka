@@ -2607,7 +2607,7 @@ t<sub>shelf_life</sub> = [ Mass<sub>fat</sub> &times; Threshold<sub>O2_limit</su
 <p><em>Note on advanced chemical behaviors:</em> In real industrial settings, lipid oxidation follows an autocatalytic pathway—moving slowly during an initial induction phase before accelerating violently via free-radical chain reactions. Because a zero-order model simplifies this into a steady average, this tool provides a highly reliable conservative baseline, perfect for fast-moving goods or early-stage packaging iterations.</p>
 
 <div style="background:#f0fdf4; padding:1rem; border-radius:8px; border-left:3px solid var(--success); margin:1.2rem 0; font-family:sans-serif; font-size:0.9rem;">
-<strong style="color:#16a34a; font-size:0.95rem;">📊 Oxygen Calculation Example:</strong><br>
+<strong style="color:#16a34a; font-size:0.95rem;"> Oxygen Calculation Example:</strong><br>
 Let's analyze a <strong>100g pack of roasted peanuts</strong> containing <strong>50g of pure fat</strong>. The bag surface area is <strong>0.04 m²</strong>, and the laminate OTR is <strong>20 cc/m²·day</strong>.
 <ul>
   <li><strong>The Degradation Target:</strong> Literature states that peanuts become rancid when they absorb <strong>2.0 mg of O₂ per gram of fat</strong>. Total allowable oxygen capacity = 50g &times; 2.0 mg = <strong>100 mg of O₂</strong>.</li>
@@ -2740,26 +2740,26 @@ let laminateName = State.laminateName || '';
       </div>
 
       // STEP 2: THERMAL ACCELERATION (Eₐ ↔ Q₁₀)
-'<div style="padding:1rem; border-bottom:1px solid var(--border);">'+
-  '<div style="display:flex;align-items:center;gap:0.5rem; margin-bottom:0.5rem; color:var(--primary); font-weight:600; font-size:0.85rem;">'+
-    '<span>▼ 2. Thermal Acceleration</span>'+
-  '</div>'+
-  '<div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:0.75rem;">'+
-    '<div class="grid grid-2 thermal-grid" style="gap:0.5rem;">'+
-      '<div class="form-group" style="margin:0">'+
-        '<label>Activation Energy Eₐ (kJ/mol)</label>'+
-        '<input type="number" id="sl-ea" value="" step="0.1" class="form-input" placeholder="Auto or 60" oninput="SL.onEaInput()">'+
-      '</div>'+
-      '<div class="form-group" style="margin:0">'+
-        '<label>Q₁₀ Factor</label>'+
-        '<input type="number" id="sl-q10" value="" step="0.1" class="form-input" placeholder="Auto or 2.0" oninput="SL.onQ10Input()">'+
-      '</div>'+
-    '</div>'+
-    '<div style="font-size:0.65rem; color:var(--text-light); margin-top:0.3rem;" id="sl-ea-q10-hint">'+
-      'Leave empty to use product default.'+
-    '</div>'+
-  '</div>'+
-'</div>'+
+'<div style="padding:1rem; border-bottom:1px solid var(--border);">'
+  '<div style="display:flex;align-items:center;gap:0.5rem; margin-bottom:0.5rem; color:var(--primary); font-weight:600; font-size:0.85rem;">'
+    '<span>▼ 2. Thermal Acceleration</span>'
+  '</div>'
+  '<div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:0.75rem;">'
+    '<div class="grid grid-2 thermal-grid" style="gap:0.5rem;">'
+      '<div class="form-group" style="margin:0">'
+        '<label>Activation Energy Eₐ (kJ/mol)</label>'
+        '<input type="number" id="sl-ea" value="" step="0.1" class="form-input" placeholder="Auto or 60" oninput="SL.onEaInput()">'
+      '</div>'
+      '<div class="form-group" style="margin:0">'
+        '<label>Q₁₀ Factor</label>'
+        '<input type="number" id="sl-q10" value="" step="0.1" class="form-input" placeholder="Auto or 2.0" oninput="SL.onQ10Input()">'
+      '</div>'
+    '</div>'
+    '<div style="font-size:0.65rem; color:var(--text-light); margin-top:0.3rem;" id="sl-ea-q10-hint">'
+      'Leave empty to use product default.'
+    '</div>'
+  '</div>'
+'</div>'
 
       <!-- STEP 3: PACKAGING DIMENSIONS -->
       <div style="padding:1rem; border-bottom:1px solid var(--border);">
