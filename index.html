@@ -3461,8 +3461,13 @@ if (State.layers && State.selCond) {
             const M_init = parseFloat(document.getElementById('sl-minit')?.value) || prod.M_init;
             if (M_crit <= M_init) { alert('⚠️ Critical moisture must be > initial'); return; }
             
-            const Psat = 0.61094 * Math.exp((17.625 * T_store) / (T_store + 243.04)) * 1000;
-            const dP_std = Psat * 0.5;
+           const Psat = 0.61094 * Math.exp((17.625 * T_store) / (T_store + 243.04)) * 1000;
+// ✅ dP_std calcolato alle condizioni di test del materiale (23°C, 50% RH)
+// non fisso a 50% della Psat corrente
+const T_test_std = 23;
+const Psat_std = 0.61094 * Math.exp((17.625 * T_test_std) / (T_test_std + 243.04)) * 1000;
+const RH_test_std = 50; // condizioni standard ASTM F1249
+const dP_std = Psat_std * (RH_test_std / 100);
             let M = M_init;
             let t = 0;
             result.history = [{ t: 0, M: M, quality: 100 }];
@@ -3485,7 +3490,8 @@ if (State.layers && State.selCond) {
             const fatKg = prod.fat_kg || 0.3;
             const O2_crit = prod.O2_crit || 400;
             const totalO2 = O2_crit * fatKg;
-            const dayO2 = effectiveRate * A;
+            const O2_fraction = 0.21;
+const dayO2 = effectiveRate * A * O2_fraction;
             if (dayO2 <= 0) {
                 result.days = Infinity;
             } else {
@@ -3756,19 +3762,30 @@ if (State.layers && State.selCond) {
             }
 
             let hygroFactor = 1;
-            if (State.layers) {
-                for (let li = 0; li < State.layers.length; li++) {
-                    const layer = State.layers[li];
-                    if (!layer.mid) continue;
-                    const mat = DB.materials.find(m => m.id === layer.mid);
-                    if (!mat) continue;
-                    const isWVTR = (State.mode || 'wvtr') === 'wvtr';
-                    const beta = isWVTR ? (mat.hygroscopicBetaWVTR || 0) : (mat.hygroscopicBetaOTR || 0);
-                    const refRH = isWVTR ? (mat.hygroscopicRefRHWVTR || 50) : (mat.hygroscopicRefRHOTR || 50);
-                    if (beta > 0) hygroFactor *= Math.exp(beta * (RH - refRH));
+if (State.layers) {
+    for (let li = 0; li < State.layers.length; li++) {
+        const layer = State.layers[li];
+        if (!layer.mid) continue;
+        const mat = DB.materials.find(m => m.id === layer.mid);
+        if (!mat) continue;
+        const isWVTR = (State.mode || 'wvtr') === 'wvtr';
+        const beta = isWVTR ? (mat.hygroscopicBetaWVTR || 0) : (mat.hygroscopicBetaOTR || 0);
+        if (beta > 0) {
+            // ✅ Trova RH di test del materiale alla temperatura più vicina a T
+            let testRH = 50;
+            if (mat.validConditions && mat.validConditions.length > 0) {
+                let bestCond = mat.validConditions[0];
+                let minDiff = Math.abs(mat.validConditions[0].temperature - T);
+                for (let ci = 0; ci < mat.validConditions.length; ci++) {
+                    const diff = Math.abs(mat.validConditions[ci].temperature - T);
+                    if (diff < minDiff) { minDiff = diff; bestCond = mat.validConditions[ci]; }
                 }
+                testRH = bestCond.humidity;
             }
-
+            hygroFactor *= Math.exp(beta * (RH - testRH));
+        }
+    }
+}
             const effectiveRate = baseRate * accel * hygroFactor;
             const transferred = effectiveRate * A * days;
             const pct = totalAllowed > 0 ? (transferred / totalAllowed) * 100 : 0;
@@ -3836,8 +3853,9 @@ drawMoistureAccumulationChart(res) {
   const labels = [], moisturePoints = [], pointDetails = [];
   let M_current = M_init;
   let dayCounter = 0;
-  const Psat_ref = 0.61094 * Math.exp((17.625 * 25) / (25 + 243.04)) * 1000;
-  const dP_std = Psat_ref * 0.5;
+  const T_test_std = 23;
+const Psat_std = 0.61094 * Math.exp((17.625 * T_test_std) / (T_test_std + 243.04)) * 1000;
+const dP_std = Psat_std * 0.50; // 50% RH standard ASTM F1249
 
   rows.forEach((r, idx) => {
     const name = r.querySelector('input[type="text"]')?.value || `Step ${idx+1}`;
@@ -4999,7 +5017,8 @@ function calculateAdvancedShelfLife() {
     const fatKg = prod.fat_kg || 0.3;
     const O2_crit = prod.O2_crit || 400;
     const totalO2 = O2_crit * fatKg;
-    const dayO2 = effectiveRate * A;
+    const O2_fraction = 0.21;
+const dayO2 = effectiveRate * A * O2_fraction;
     
     if (dayO2 <= 0) {
       result.days = Infinity;
@@ -5909,17 +5928,22 @@ function drawHygroscopicTimeChart() {
         var beta2 = mat2[betaKey] || 0;
         if(beta2 <= 0) continue;
         if(mat2.validConditions && mat2.validConditions.length > 0) {
-            var bestCond = mat2.validConditions[0];
-            var minD = Math.abs(mat2.validConditions[0].temperature - State.selCond.temperature);
-            for(var ci3=0; ci3<mat2.validConditions.length; ci3++) {
-                var d2 = Math.abs(mat2.validConditions[ci3].temperature - State.selCond.temperature);
-                if(d2 < minD) { minD = d2; bestCond = mat2.validConditions[ci3]; }
-            }
-            if(Math.abs(bestCond.humidity - extRH) > 2) {
-                allSameRH = false;
-                break;
-            }
-        }
+    let bestCond = mat2.validConditions[0];
+    let minD = Math.abs(mat2.validConditions[0].temperature - State.selCond.temperature);
+    for(let ci3 = 0; ci3 < mat2.validConditions.length; ci3++) {
+        const d2 = Math.abs(mat2.validConditions[ci3].temperature - State.selCond.temperature);
+        if(d2 < minD) { minD = d2; bestCond = mat2.validConditions[ci3]; }
+    }
+    if(Math.abs(bestCond.humidity - extRH) > 2) {
+        allSameRH = false;
+        break;
+    }
+} else {
+    // ✅ Se validConditions è vuoto non possiamo sapere la RH di test
+    // → assumiamo che le condizioni siano diverse → mostra il grafico
+    allSameRH = false;
+    break;
+}
     }
 
     // ✅ NASCONDI se condizioni identiche, MOSTRA solo se diverse
@@ -5970,7 +5994,7 @@ function drawHygroscopicTimeChart() {
     var R = 8.314;
     var D_corrected = D_base * Math.exp(-(Ea/R) * (1/T_K - 1/T_ref));
     var L_m = layer.thick * 1e-6;
-    var tau_sec = 0.5 * Math.pow(L_m, 2) / D_corrected;
+    var tau_sec = Math.pow(L_m, 2) / (6 * D_corrected);
     var tau_days = tau_sec / 86400;
     var rhFactor = 1 + (extRH / 100) * 1.5;
     tau_days = tau_days / rhFactor;
