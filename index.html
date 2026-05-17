@@ -5910,23 +5910,35 @@ function drawHygroscopicTimeChart() {
         var modeBeta = mat[betaKey] || mat.hygroscopicBeta || 0;
         var modeRefRH = mat[refKey] || mat.hygroscopicRefRH || 50;
         
-        if(modeBeta > 0) {
-            var D_base = diffusivityMap[mat.family] || diffusivityMap['default'];
-            var T_K = State.selCond.temperature + 273.15;
-            var T_ref = 298.15;
-            var Ea = 45000;
-            var R = 8.314;
-            var D_corrected = D_base * Math.exp(-(Ea/R) * (1/T_K - 1/T_ref));
-            var L_m = layer.thick * 1e-6;
-            var tau_sec = 0.5 * Math.pow(L_m, 2) / D_corrected;
-            var tau_days = tau_sec / 86400;
-            var rhFactor = 1 + (extRH / 100) * 1.5;
-            tau_days = tau_days / rhFactor;
-            
-            hygroLayers.push({
-                mat: mat, thickness: layer.thick, refValue: wd.value,
-                refThick: wd.thickness, beta: modeBeta, refRH: modeRefRH, tau: tau_days
-            });
+       if(modeBeta > 0) {
+    var D_base = diffusivityMap[mat.family] || diffusivityMap['default'];
+    var T_K = State.selCond.temperature + 273.15;
+    var T_ref = 298.15;
+    var Ea = 45000;
+    var R = 8.314;
+    var D_corrected = D_base * Math.exp(-(Ea/R) * (1/T_K - 1/T_ref));
+    var L_m = layer.thick * 1e-6;
+    var tau_sec = 0.5 * Math.pow(L_m, 2) / D_corrected;
+    var tau_days = tau_sec / 86400;
+    var rhFactor = 1 + (extRH / 100) * 1.5;
+    tau_days = tau_days / rhFactor;
+    
+    // ✅ TROVA LA RH DI TEST DEL MATERIALE
+    var matTestRH = modeRefRH;
+    if(mat.validConditions && mat.validConditions.length > 0) {
+        var bestMatch = mat.validConditions[0];
+        var minDiff = Math.abs(mat.validConditions[0].temperature - State.selCond.temperature);
+        for(var ci2=0; ci2<mat.validConditions.length; ci2++) {
+            var diff = Math.abs(mat.validConditions[ci2].temperature - State.selCond.temperature);
+            if(diff < minDiff) { minDiff = diff; bestMatch = mat.validConditions[ci2]; }
+        }
+        matTestRH = bestMatch.humidity;
+    }
+    
+    hygroLayers.push({
+        mat: mat, thickness: layer.thick, refValue: wd.value,
+        refThick: wd.thickness, beta: modeBeta, refRH: matTestRH, tau: tau_days
+    });
         } else {
             var product = wd.value * wd.thickness;
             fixedResistance += layer.thick / product;
@@ -5949,12 +5961,12 @@ function drawHygroscopicTimeChart() {
         var minPoints = 30;
         var step = Math.max(1, Math.floor(satTime / minPoints));
         
-        for(var t=0; t<=satTime; t+=step) {
-            var totalR = fixedResistance;
-            for(var hi=0; hi<hygroLayers.length; hi++) {
-                var hl = hygroLayers[hi];
-                var rhAvg = extRH * (1 - Math.exp(-t / hl.tau));
-                var corrFactor = Math.exp(hl.beta * (rhAvg - hl.refRH));
+       for(var t=0; t<=satTime; t+=step) {
+    var totalR = fixedResistance;
+    for(var hi=0; hi<hygroLayers.length; hi++) {
+        var hl = hygroLayers[hi];
+        var rhAvg = hl.refRH + (extRH - hl.refRH) * (1 - Math.exp(-t / hl.tau));
+        var corrFactor = Math.exp(hl.beta * (rhAvg - hl.refRH));
                 var product = hl.refValue * hl.refThick;
                 var baseR = hl.thickness / product;
                 var dynamicR = baseR / corrFactor;
