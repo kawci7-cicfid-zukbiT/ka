@@ -1335,15 +1335,44 @@ const Engine={
     if (!beta || beta <= 0) {
         return { factor: 1, correction: 0, message: null };
     }
+
+    // ✅ SE refRH NON È SPECIFICATO, USA LA RH DELLE CONDIZIONI DI TEST DEL MATERIALE
+    // Questo evita la doppia correzione quando il dato è già misurato alla RH target
+    if (!refRH || refRH === 50) {
+        // Cerca la RH delle condizioni di test del materiale
+        var testRH = null;
+        if (mat.validConditions && mat.validConditions.length > 0) {
+            // Usa la RH della condizione più vicina alla condizione attuale per temperatura
+            var bestMatch = mat.validConditions[0];
+            var minTempDiff = Math.abs(mat.validConditions[0].temperature - condition.temperature);
+            for (var i = 1; i < mat.validConditions.length; i++) {
+                var diff = Math.abs(mat.validConditions[i].temperature - condition.temperature);
+                if (diff < minTempDiff) {
+                    minTempDiff = diff;
+                    bestMatch = mat.validConditions[i];
+                }
+            }
+            testRH = bestMatch.humidity;
+        }
+        // Se la RH di test è uguale alla condizione attuale, NON correggere
+        if (testRH !== null && Math.abs(testRH - condition.humidity) < 2) {
+            return { factor: 1, correction: 0, message: null };
+        }
+        // Altrimenti usa testRH come riferimento
+        if (testRH !== null) {
+            refRH = testRH;
+        }
+    }
+
     if (!refRH) refRH = 50;
 
     var rhDiff = condition.humidity - refRH;
-    
-    // ✅ NUOVA RIGA: se la differenza è trascurabile, non correggere
-    if (Math.abs(rhDiff) < 1) {
+
+    // ✅ SE LA DIFFERENZA È MINIMA, NON CORREGGERE
+    if (Math.abs(rhDiff) < 2) {
         return { factor: 1, correction: 0, message: null };
     }
-    
+
     var factor = Math.exp(beta * rhDiff);
     var correctionPct = (factor - 1) * 100;
     return {
