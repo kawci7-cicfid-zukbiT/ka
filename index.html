@@ -2748,7 +2748,7 @@ let laminateName = State.laminateName || '';
           <label style="font-size:0.75rem; color:var(--text-light); display:block; margin-bottom:0.4rem; font-weight:600;">
             
           </label>
-          <div class="grid grid-2" style="gap:0.5rem;">
+          <div class="grid grid-2" style="gap:0.5rem; align-items: start;">
             <div class="form-group" style="margin:0">
               <label>Activation Energy Eₐ (kJ/mol)</label>
               <input type="number" id="sl-ea" value="" step="0.1" class="form-input" placeholder="Auto or 60" oninput="SL.onEaInput()">
@@ -2780,7 +2780,7 @@ let laminateName = State.laminateName || '';
             Enter area manually
           </label>
         </div>
-        <div id="geom-selector" class="grid grid-2" style="margin-top:0.5rem; gap:0.4rem;">
+        <div id="geom-selector" class="grid grid-2" style="margin-top:0.5rem; gap:0.4rem; align-items: start;">
   <div class="form-group" style="margin:0">
     <label>Shape Type</label>
     <select class="form-input" id="sl-shape" onchange="SL.onPkgChange()">
