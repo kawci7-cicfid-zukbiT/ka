@@ -7123,8 +7123,8 @@ var downTitle = userVote === 'down' ? 'Click to unvote' : 'Mark as unreliable';
       'value': 'badge-yellow', 'family': 'badge-blue', 'condition': 'badge-purple'
     };
     var badgeLabels = {
-      'name': '📝 Name', 'company': '🏢 Supplier', 'testmethod': '📋 Method',
-      'value': '📊 Value', 'family': '🔖 Family', 'condition': '🌡️ Cond.'
+      'name': ' Name', 'company': ' Supplier', 'testmethod': ' Method',
+      'value': ' Value', 'family': ' Family', 'condition': ' Cond.'
     };
     searchBadges = '<div style="display:flex;gap:0.3rem;flex-wrap:wrap;margin-bottom:0.4rem">';
     for(var bt=0; bt<matchType.length; bt++) {
@@ -7152,8 +7152,8 @@ var downTitle = userVote === 'down' ? 'Click to unvote' : 'Mark as unreliable';
         '<span style="font-weight:400;color:var(--text-light);font-size:0.75rem">['+(m.family||'?')+']</span>'+
         (v.valid ? '<span class="badge badge-green">✓ Arrhenius</span>' : '')+
       '</h3>'+
-      '<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>'+
-    '</div>'+
+      '<svg class="chevron" style="margin-left:auto; flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>'+
+'</div>'+
     
     // === EXPANDABLE BODY ===
     '<div class="mat-body">'+
