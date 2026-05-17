@@ -7704,10 +7704,24 @@ async function loadExternalMaterialsDB() {
       if (!em || !em.name) continue;
       
       const normalizedName = em.name.toLowerCase().trim();
-      if (existingNames.has(normalizedName)) {
-        console.log('⏭️ Skip duplicato:', em.name);
-        continue;
-      }
+      // Sostituisci questo blocco:
+if (existingNames.has(normalizedName)) {
+    console.log('⏭️ Skip duplicato:', em.name);
+    continue;
+}
+
+// Con questo:
+if (existingNames.has(normalizedName)) {
+    // ✅ Aggiorna i campi hygroscopic anche sui duplicati
+    var existing = DB.materials.find(m => m.name.toLowerCase() === em.name.toLowerCase());
+    if (existing && em.hygroscopicRefRHWVTR !== undefined) {
+        existing.hygroscopicRefRHWVTR = em.hygroscopicRefRHWVTR;
+        existing.hygroscopicRefRHOTR = em.hygroscopicRefRHOTR;
+        existing.hygroscopicBetaWVTR = em.hygroscopicBetaWVTR;
+        existing.hygroscopicBetaOTR = em.hygroscopicBetaOTR;
+    }
+    continue;
+}
       
       // ✅ Assegna ID univoco sequenziale (CORRETTO)
       const numericIds = DB.materials
