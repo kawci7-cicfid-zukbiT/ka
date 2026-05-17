@@ -1061,6 +1061,42 @@ main {
   display: flex;
   align-items: flex-end;
 }
+    /* === 📱 FIX COMPLETO HEADER & MENU MOBILE === */
+@media (max-width: 768px) {
+  /* 1. Permette all'header di andare a capo */
+  .header-top {
+    flex-wrap: wrap !important;
+    padding: 0.5rem 0.8rem !important;
+    gap: 0.4rem;
+    justify-content: space-between;
+  }
+  /* Logo a sinistra, Toggle a destra (stessa riga) */
+  .header-top > div:first-child { flex: 0 1 auto; }
+  .header-top > div:nth-child(2) { flex: 0 1 auto; margin-left: auto; }
+  
+  /* 2. Menu: occupa tutta la riga sotto, scroll orizzontale fluido */
+  .nav-tabs {
+    flex-basis: 100% !important;
+    width: 100% !important;
+    padding: 0.3rem 0.2rem 0.6rem !important;
+    justify-content: flex-start !important;
+    -webkit-overflow-scrolling: touch !important; /* Scroll "magnetico" su iOS */
+    scrollbar-width: none !important;
+    touch-action: pan-x !important; /* Previene zoom accidentale durante lo scroll */
+  }
+  .nav-tabs::-webkit-scrollbar { display: none !important; }
+  
+  /* 3. Tab ottimizzati per il touch (minimo 44px Apple/Android) */
+  .nav-tab {
+    flex-shrink: 0 !important; /* Impedisce la compressione dei tab */
+    min-height: 44px !important;
+    padding: 0.5rem 0.9rem !important;
+    font-size: 0.85rem !important;
+    white-space: nowrap !important;
+    border-radius: 10px !important;
+    touch-action: manipulation !important; /* Rimuove delay 300ms al tap */
+  }
+}
 </style>
   <!-- 📢 GOOGLE ADSENSE -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1234567890123456" crossorigin="anonymous"></script>
