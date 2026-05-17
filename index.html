@@ -3404,27 +3404,45 @@ calcArea() {
             accel = Math.pow(Q10_val, (T_store - 25) / 10);
         }
 
-        // 5. Hygroscopic Correction
-        let hygroFactor = 1;
-        const hygroMsg = [];
-        if (State.layers && State.selCond) {
-            for (let li = 0; li < State.layers.length; li++) {
-                const layer = State.layers[li];
-                if (!layer.mid) continue;
-                const mat = DB.materials.find(m => m.id === layer.mid);
-                if (!mat) continue;
-                const isWVTR = (State.mode || 'wvtr') === 'wvtr';
-                const beta = isWVTR ? (mat.hygroscopicBetaWVTR || 0) : (mat.hygroscopicBetaOTR || 0);
-                const refRH = isWVTR ? (mat.hygroscopicRefRHWVTR || 50) : (mat.hygroscopicRefRHOTR || 50);
-                if (beta > 0) {
-                    const f = Math.exp(beta * (RH_out - refRH));
-                    if (f > 1) {
-                        hygroFactor *= f;
-                        hygroMsg.push(`${mat.name}: ×${f.toFixed(2)} @ ${RH_out.toFixed(0)}% RH`);
-                    }
-                }
+       // ✅ 5. Hygroscopic Correction
+let hygroFactor = 1;
+const hygroMsg = [];
+if (State.layers && State.selCond) {
+    for (let li = 0; li < State.layers.length; li++) {
+        const layer = State.layers[li];
+        if (!layer.mid) continue;
+        const mat = DB.materials.find(m => m.id === layer.mid);
+        if (!mat) continue;
+        const isWVTR = (State.mode || 'wvtr') === 'wvtr';
+        const beta = isWVTR ? (mat.hygroscopicBetaWVTR || 0) : (mat.hygroscopicBetaOTR || 0);
+        if (beta <= 0) continue;
+        
+        // ✅ Trova la RH di test del materiale (stessa logica del Calculator)
+        let testRH = 50;
+        if (mat.validConditions && mat.validConditions.length > 0) {
+            let bestCond = mat.validConditions[0];
+            let minDiff = Math.abs(mat.validConditions[0].temperature - RH_out);
+            for (let ci = 0; ci < mat.validConditions.length; ci++) {
+                const diff = Math.abs(mat.validConditions[ci].temperature - (parseFloat(document.getElementById('sl-temp')?.value) || 25));
+                if (diff < minDiff) { minDiff = diff; bestCond = mat.validConditions[ci]; }
             }
+            testRH = bestCond.humidity;
         }
+        
+        const rhDiff = RH_out - testRH;
+        const f = Math.exp(beta * rhDiff);
+        
+        // ✅ Mostra avviso se beta > 0, indipendentemente dal fattore
+        if (Math.abs(rhDiff) > 2) {
+            hygroFactor *= f;
+            hygroMsg.push(`${mat.name}: ×${f.toFixed(2)} @ ${RH_out.toFixed(0)}% RH vs ${testRH}% RH test`);
+        } else {
+            // Stesse condizioni: segnala comunque che il materiale è igroscopico
+            hygroMsg.push(`${mat.name}: ⚠ hygroscopic (β=${beta}) — calculated at test RH (${testRH}%), no correction applied`);
+        }
+    }
+}
+          
 
         const effectiveRate = rateInput * accel * hygroFactor;
 
