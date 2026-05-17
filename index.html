@@ -5859,7 +5859,6 @@ function drawHygroscopicTimeChart() {
     var hygroCard = document.getElementById('hygro-card');
     if(!canvas) return;
     destroyChart('hygroTime');
-
     var currentMode = State.mode || 'wvtr';
     var betaKey = currentMode === 'wvtr' ? 'hygroscopicBetaWVTR' : 'hygroscopicBetaOTR';
     var refKey = currentMode === 'wvtr' ? 'hygroscopicRefRHWVTR' : 'hygroscopicRefRHOTR';
@@ -5876,10 +5875,45 @@ function drawHygroscopicTimeChart() {
         if(hygroCard) hygroCard.style.display='none';
         return;
     }
-    if(hygroCard) hygroCard.style.display='block';
-    
+
+    // ← ✅ RIMOSSA LA RIGA hygroCard.style.display='block' DA QUI
+
     var ctx = canvas.getContext('2d');
     var extRH = State.selCond.humidity;
+
+    // ✅ Controlla se condizioni di calcolo = condizioni di test
+    var allSameRH = true;
+    for(var li2=0; li2<State.layers.length; li2++) {
+        var layer2 = State.layers[li2];
+        if(!layer2.mid || layer2.thick <= 0) continue;
+        var mat2 = DB.materials.find(function(m){ return m.id === layer2.mid; });
+        if(!mat2) continue;
+        var beta2 = mat2[betaKey] || 0;
+        if(beta2 <= 0) continue;
+        if(mat2.validConditions && mat2.validConditions.length > 0) {
+            var bestCond = mat2.validConditions[0];
+            var minD = Math.abs(mat2.validConditions[0].temperature - State.selCond.temperature);
+            for(var ci3=0; ci3<mat2.validConditions.length; ci3++) {
+                var d2 = Math.abs(mat2.validConditions[ci3].temperature - State.selCond.temperature);
+                if(d2 < minD) { minD = d2; bestCond = mat2.validConditions[ci3]; }
+            }
+            if(Math.abs(bestCond.humidity - extRH) > 2) {
+                allSameRH = false;
+                break;
+            }
+        }
+    }
+
+    // ✅ NASCONDI se condizioni identiche, MOSTRA solo se diverse
+    if(allSameRH) {
+        if(hygroCard) hygroCard.style.display = 'none';
+        return;
+    }
+    
+    // ← ✅ MOSTRATA SOLO QUI, dopo aver verificato che serve
+    if(hygroCard) hygroCard.style.display='block';
+
+// Se tutte le condizioni coincidono, nascondi il grafico
     var timePoints = [], wvtrPoints = [];
     
     var diffusivityMap = {
