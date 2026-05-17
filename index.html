@@ -357,13 +357,13 @@ white-space: nowrap;
 max-width: 100%;
 }
 
-.mat-header .chevron {
-flex-shrink: 0; /* Impedisce al chevron di restringersi */
-width: 18px;
-height: 18px;
-color: var(--text-light);
-transition: transform 0.25s ease, color 0.2s;
-/* margin-left: auto NON serve più con justify-content: space-between */
+mat-header .chevron {
+  margin-left: auto; /* ✅ QUESTO È IL SEGRETO: spinge l'elemento a destra */
+  flex-shrink: 0; 
+  width: 18px;
+  height: 18px;
+  color: var(--text-light);
+  transition: transform 0.25s ease, color 0.2s;
 }
 .material-item.expanded .mat-header .chevron {
   transform: rotate(180deg);
