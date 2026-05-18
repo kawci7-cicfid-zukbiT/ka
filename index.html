@@ -7373,7 +7373,7 @@ var downTitle = userVote === 'down' ? 'Click to unvote' : 'Mark as unreliable';
     var regex = new RegExp('('+highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')+')', 'gi');
     displayName = m.name.replace(regex, '<mark style="background:var(--warning-light);color:var(--warning);padding:0 0.2rem;border-radius:3px;font-weight:600">$1</mark>');
   }
-
+// ✅ CONTROLLO FORNITORE VERIFICATO
 var isVerified = false;
 if (m.company && m.company.trim() !== '') {
   for (var vi = 0; vi < VERIFIED_SUPPLIERS.length; vi++) {
@@ -7432,13 +7432,10 @@ html += '<div class="mat-body">'+
     '</div>'+
   '</div>'+
 '</div>'+
-'</div>' +
-  }  
+'</div>'; 
+        }
   
-  // ✅ ✅ ✅ QUESTE RIGHE MANCAVANO ✅ ✅ ✅
-  html += '</div></div>';  // ← Chiude grid + card (aperti all'inizio)
-  return html;             // ← Restituisce il risultato
-}  // ← ✅ Chiude renderMaterials()
+
 
     
   
