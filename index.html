@@ -7372,10 +7372,10 @@ filtered.sort(function(a, b){
   var escName = m.name.replace(/'/g, "\\'");
   
   // ✅ Controlla se è materiale utente (non default)
-  var isUserMat = true;
-  for(var di=0; di<DEFAULT_MATERIALS.length; di++) {
-    if(DEFAULT_MATERIALS[di].id === m.id) { isUserMat = false; break; }
-  }
+  // ✅ FORZA isUserMat a true per permettere la modifica anche dei default
+var isUserMat = true;
+
+
   
   // ✅ Badge per materiali community
   var isComm = m.isCommunity || (m.id && String(m.id).startsWith('fb_'));
