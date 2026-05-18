@@ -1775,19 +1775,16 @@ load: function() {
   },
   
 updateMat: function(id, m) {
-    var targetId = Number(id); // ✅ Normalizza l'ID per evitare mismatch stringa/numero
-    for(var i=0; i<this.materials.length; i++){
+    var targetId = Number(id);
+    for(let i=0; i<this.materials.length; i++){
         if(this.materials[i].id == targetId){
             var existing = this.materials[i];
-            // Mantieni voti e metadata se non forniti
             m.reliabilityVotes = m.reliabilityVotes !== undefined ? m.reliabilityVotes : (existing.reliabilityVotes || { up: 0, down: 0 });
             m.family = m.family || getFamily(m.name);
             if(m.company === undefined) m.company = existing.company || '';
             if(m.tdsLink === undefined) m.tdsLink = existing.tdsLink || '';
             if(m.testMethodWVTR === undefined) m.testMethodWVTR = existing.testMethodWVTR || '';
             if(m.testMethodOTR === undefined) m.testMethodOTR = existing.testMethodOTR || '';
-            
-            // ✅ FIX: Usa l'ID ESISTENTE, non quello passato dalla modale
             this.materials[i] = Object.assign({}, existing, m, { id: existing.id });
             this.save();
             break;
