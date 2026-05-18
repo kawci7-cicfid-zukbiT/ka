@@ -1097,6 +1097,38 @@ main {
     touch-action: manipulation !important; /* Rimuove delay 300ms al tap */
   }
 }
+    /* === 🟢 MATERIALE CON FORNITORE VERIFICATO === */
+.material-item.verified-supplier {
+  border: 2px solid #16a34a !important;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15) !important;
+  background: linear-gradient(135deg, #f0fdf4 0%, #fff 100%) !important;
+  transition: all 0.2s ease;
+}
+.material-item.verified-supplier:hover {
+  box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.3) !important;
+}
+.material-item.verified-supplier .mat-header {
+  background: linear-gradient(135deg, #dcfce7 0%, #f8fafc 100%);
+  border-bottom-color: #86efac;
+}
+.verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+  color: #fff;
+  padding: 0.15rem 0.5rem;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  margin-left: 0.4rem;
+  box-shadow: 0 2px 4px rgba(22, 163, 74, 0.3);
+}
+.verified-badge svg {
+  width: 11px;
+  height: 11px;
+  stroke-width: 3;
+}
 </style>
   <!-- 📢 GOOGLE ADSENSE -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1234567890123456" crossorigin="anonymous"></script>
@@ -1638,6 +1670,11 @@ for(var di=0;di<DEFAULT_MATERIALS.length;di++){
   DEFAULT_MATERIALS[di].id=di;
   DEFAULT_MATERIALS[di].family=getFamily(DEFAULT_MATERIALS[di].name);
 }
+    var VERIFIED_SUPPLIERS = [
+  "xxx",
+  "xxx"
+  // Aggiungi altri nomi qui...
+];
 // === 📦 LAMINATI DI ESEMPIO (PRE-CARICATI) ===
 var DEFAULT_LAMINATES = [
     {
@@ -7337,65 +7374,66 @@ var downTitle = userVote === 'down' ? 'Click to unvote' : 'Mark as unreliable';
     displayName = m.name.replace(regex, '<mark style="background:var(--warning-light);color:var(--warning);padding:0 0.2rem;border-radius:3px;font-weight:600">$1</mark>');
   }
 
-  // ✅ PROFESSIONAL MATERIAL CARD (con displayName e searchBadges)
-  html += '<div class="material-item" onclick="this.classList.toggle(\'expanded\')">'+
-    
-    // === HEADER ===
-    '<div class="mat-header">'+
-      '<h3>'+
-        '<span style="color:var(--text)">'+displayName+'</span>'+  // ← USA displayName QUI
-        (isComm ? '<span class="mat-comm-badge">🌍 Community</span>' : '')+
-        '<span style="font-weight:400;color:var(--text-light);font-size:0.75rem">['+(m.family||'?')+']</span>'+
-        (v.valid ? '<span class="badge badge-green">✓ Arrhenius</span>' : '')+
-      '</h3>'+
-      '<svg class="chevron" style="margin-left:auto; flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>'+
-'</div>'+
-    
-    // === EXPANDABLE BODY ===
-    '<div class="mat-body">'+
-      '<div class="mat-body-content">'+
-        
-        // 0. SEARCH BADGES (solo se c'è una ricerca attiva)
-        (searchBadges ? searchBadges : '')+
-        
-        // 1. DATA TAGS
-        '<div class="mat-tags">'+tags+'</div>'+
-        
-        // 2. META INFO
-        '<div class="mat-info">'+
-          (function(){
-            var tm = State.mode === 'wvtr' ? (m.testMethodWVTR || m.testMethod || '') : (m.testMethodOTR || m.testMethod || '');
-            return tm ? '<div class="mat-info-item"><strong>Test Standard</strong><span class="mat-testmethod">'+tm+'</span></div>' : '';
-          })()+
-          (m.company ? '<div class="mat-info-item"><strong>Supplier</strong><span>'+m.company+'</span></div>' : '')+
-          (m.tdsLink ? '<div class="mat-info-item"><strong>Documentation</strong><a href="'+m.tdsLink+'" target="_blank" onclick="event.stopPropagation()">View TDS →</a></div>' : '')+
-        '</div>'+
-        
-        // 3. ACTION BUTTONS
-        '<div class="mat-actions">'+
-          '<button class="btn btn-outline" onclick="event.stopPropagation();showMatModal('+m.id+')">✏️ Edit</button>'+
-          (isUserMat ? '<button class="btn btn-danger" onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">🗑️ Delete</button>' : '')+
-          '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Datasheet</button>'+
-          ((isUserMat || isComm) ? '<button class="btn '+(m.firebaseDocId?'btn-success':'btn-primary')+'" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">'+(m.firebaseDocId?'🔄 Update':'🌍 Publish')+'</button>' : '')+
-        '</div>'+
-        
-        // 4. RELIABILITY VOTING
-        '<div class="mat-voting">'+
-          '<div class="mat-voting-label">'+
-            '<span>Community Reliability</span>'+
-            '<span class="reliability-badge '+(relScore>=70?'high':relScore>=40?'medium':'low')+'">'+relScore+'%</span>'+
-          '</div>'+
-         '<div class="mat-voting-buttons">'+
-'<button class="btn btn-outline" onclick="event.stopPropagation();voteReliability(\''+String(m.id)+'\',\'up\')" title="'+upTitle+'" '+upActive+'>👍</button>'+
-'<button class="btn btn-outline" onclick="event.stopPropagation();voteReliability(\''+String(m.id)+'\',\'down\')" title="'+downTitle+'" '+downActive+'>👎</button>'+
-'</div>'+
-        '</div>'+
-        
+var isVerified = false;
+if (m.company && m.company.trim() !== '') {
+  for (var vi = 0; vi < VERIFIED_SUPPLIERS.length; vi++) {
+    if (m.company.trim() === VERIFIED_SUPPLIERS[vi]) {
+      isVerified = true;
+      break;
+    }
+  }
+}
+var verifiedClass = isVerified ? ' verified-supplier' : '';
+var verifiedBadge = isVerified ? '<span class="verified-badge" title="Fornitore verificato da Admin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>Verified</span>' : '';
+
+// ✅ CARD APERTA con verifiedClass
+html += '<div class="material-item'+verifiedClass+'" onclick="this.classList.toggle(\'expanded\')">';
+
+// === HEADER (nota: tutto concatenato con +) ===
+html += '<div class="mat-header">'+
+  '<h3>'+
+    '<span style="color:var(--text)">'+displayName+'</span>'+
+    verifiedBadge +  // ← ✅ AGGIUNTO: badge verde se verificato
+    (isComm ? '<span class="mat-comm-badge">🌍 Community</span>' : '')+
+    '<span style="font-weight:400;color:var(--text-light);font-size:0.75rem">['+(m.family||'?')+']</span>'+
+    (v.valid ? '<span class="badge badge-green">✓ Arrhenius</span>' : '')+
+  '</h3>'+
+  '<svg class="chevron" style="margin-left:auto; flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>'+
+'</div>';
+
+// === EXPANDABLE BODY (tutto concatenato) ===
+html += '<div class="mat-body">'+
+  '<div class="mat-body-content">'+
+    (searchBadges ? searchBadges : '')+
+    '<div class="mat-tags">'+tags+'</div>'+
+    '<div class="mat-info">'+
+      (function(){
+        var tm = State.mode === 'wvtr' ? (m.testMethodWVTR || m.testMethod || '') : (m.testMethodOTR || m.testMethod || '');
+        return tm ? '<div class="mat-info-item"><strong>Test Standard</strong><span class="mat-testmethod">'+tm+'</span></div>' : '';
+      })()+
+      (m.company ? '<div class="mat-info-item"><strong>Supplier</strong><span>'+m.company+'</span></div>' : '')+
+      (m.tdsLink ? '<div class="mat-info-item"><strong>Documentation</strong><a href="'+m.tdsLink+'" target="_blank" onclick="event.stopPropagation()">View TDS →</a></div>' : '')+
+    '</div>'+
+    '<div class="mat-actions">'+
+      '<button class="btn btn-outline" onclick="event.stopPropagation();showMatModal('+m.id+')">✏️ Edit</button>'+
+      (isUserMat ? '<button class="btn btn-danger" onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">🗑️ Delete</button>' : '')+
+      '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Datasheet</button>'+
+      ((isUserMat || isComm) ? '<button class="btn '+(m.firebaseDocId?'btn-success':'btn-primary')+'" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">'+(m.firebaseDocId?'🔄 Update':'🌍 Publish')+'</button>' : '')+
+    '</div>'+
+    '<div class="mat-voting">'+
+      '<div class="mat-voting-label">'+
+        '<span>Community Reliability</span>'+
+        '<span class="reliability-badge '+(relScore>=70?'high':relScore>=40?'medium':'low')+'">'+relScore+'%</span>'+
+      '</div>'+
+      '<div class="mat-voting-buttons">'+
+        '<button class="btn btn-outline" onclick="event.stopPropagation();voteReliability(\''+String(m.id)+'\',\'up\')" title="'+upTitle+'" '+upActive+'>👍</button>'+
+        '<button class="btn btn-outline" onclick="event.stopPropagation();voteReliability(\''+String(m.id)+'\',\'down\')" title="'+downTitle+'" '+downActive+'>👎</button>'+
       '</div>'+
     '</div>'+
-  '</div>'; // ← ✅ FINE CARD
-}  // ← ✅ Chiude il FOR
-  }  // ← ✅ Chiude l'if/else
+  '</div>'+
+'</div>'+
+'</div>'; 
+  }  
   
   // ✅ ✅ ✅ QUESTE RIGHE MANCAVANO ✅ ✅ ✅
   html += '</div></div>';  // ← Chiude grid + card (aperti all'inizio)
