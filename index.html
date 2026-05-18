@@ -1688,29 +1688,29 @@ var DB = {
     laminates: [], 
     version: '3.0', 
     dbLastSync: null,
-    
-    load: function() {
-        this.materials = [];
-        // 1. Carica i default
-        for(var i=0; i<DEFAULT_MATERIALS.length; i++) {
-            this.materials.push(Object.assign({}, DEFAULT_MATERIALS[i]));
-        }
-        
-        try {
-            var savedMats = localStorage.getItem('wvtr_mats_v3');
-            if (savedMats) {
-                var userMats = JSON.parse(savedMats);
-                var defaultIds = {};
-                for(var di=0; di<DEFAULT_MATERIALS.length; di++) {
-                    defaultIds[DEFAULT_MATERIALS[di].id] = true;
-                }
-                // Evita duplicati
-                var loadedIds = new Set(this.materials.map(m => m.id));
-                for(var u=0; u<userMats.length; u++){
-                    var um = userMats[u];
-                    if(!defaultIds[um.id] && !loadedIds.has(um.id)){
-                        loadedIds.add(um.id);
-                        this.materials.push(um);
+   load: function() {
+    this.materials = [];
+    for(var i=0; i<DEFAULT_MATERIALS.length; i++) {
+        this.materials.push(Object.assign({}, DEFAULT_MATERIALS[i]));
+    }
+
+    try {
+        var savedMats = localStorage.getItem('wvtr_mats_v3');
+        if (savedMats) {
+            var userMats = JSON.parse(savedMats);
+            var loadedIds = new Set(this.materials.map(m => m.id));
+
+            for(var u=0; u<userMats.length; u++){
+                var um = userMats[u];
+                // ✅ FIX: se l'ID esiste già (è un default modificato), AGGIORNA invece di ignorare
+                var existingIdx = this.materials.findIndex(m => m.id == um.id);
+                if(existingIdx !== -1) {
+                    // Sovrascrive il default con la versione modificata dall'utente
+                    this.materials[existingIdx] = um;
+                } else if(!loadedIds.has(um.id)) {
+                    // Nuovo materiale non-default: aggiungilo normalmente
+                    loadedIds.add(um.id);
+                    this.materials.push(um);
                     }
                 }
             }
@@ -1732,18 +1732,22 @@ var DB = {
         }
     },  // ← load() chiude QUI
     
-    save: function() {
-        try {
-            var defaultIds = {};
-            for(var di=0; di<DEFAULT_MATERIALS.length; di++) {
-                defaultIds[DEFAULT_MATERIALS[di].id] = true;
+   save: function() {
+    try {
+        var defaultIds = {};
+        for(var di=0; di<DEFAULT_MATERIALS.length; di++) {
+            defaultIds[DEFAULT_MATERIALS[di].id] = true;
+        }
+        var userMats = [];
+        for(var m=0; m<this.materials.length; m++) {
+            var mat = this.materials[m];
+            // ✅ FIX: salva ANCHE i default se sono stati modificati
+            var isDefaultUnchanged = defaultIds[mat.id] &&
+                JSON.stringify(mat) === JSON.stringify(DEFAULT_MATERIALS.find(d => d.id == mat.id));
+            if(!isDefaultUnchanged) {
+                userMats.push(mat);
             }
-            var userMats = [];
-            for(var m=0; m<this.materials.length; m++) {
-                if(!defaultIds[this.materials[m].id]) {
-                    userMats.push(this.materials[m]);
-                }
-            }
+        }
             localStorage.setItem('wvtr_mats_v3', JSON.stringify(userMats));
             localStorage.setItem('wvtr_lams_v3', JSON.stringify(this.laminates));
         } catch (e) { 
