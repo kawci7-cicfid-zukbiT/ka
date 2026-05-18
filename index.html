@@ -2615,17 +2615,25 @@ function renderHome() {
         </div>
 
         <!-- FOOTER NOTE -->
-        <!-- FOOTER NOTE - MODIFIED FINAL SECTION -->
-        <div style="padding:1.5rem 0;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
-            <div style="font-size:0.72rem;color:#94a3b8;line-height:1.4">
-                <strong style="color:#64748b">Disclaimer:</strong> For R&D and engineering use only. 
-                Results require laboratory validation per ASTM F1249 / ISO 15106 standards.
-            </div>
-            <div style="display:flex;align-items:center;gap:1rem">
-                <span style="font-size:0.72rem;color:#94a3b8">
-                    WVTR/OTR Calculator v3.0
-            </div>
-        </div>
+       <div style="padding:1.5rem 0;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem">
+    <div style="font-size:0.72rem;color:#94a3b8;line-height:1.4">
+        <strong style="color:#64748b">Disclaimer:</strong> For R&D and engineering use only. 
+        Results require laboratory validation per ASTM F1249 / ISO 15106 standards.
+    </div>
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+        <span style="font-size:0.72rem;color:#94a3b8"></span>
+        <a href="mailto:wvtrotrcalculator@gmail.com?subject=Feedback%20-%20WVTR%2FOTR%20Calculator" 
+           style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.72rem;color:#2563eb;text-decoration:none;background:#eff6ff;border:1px solid #bfdbfe;padding:0.3rem 0.65rem;border-radius:6px;transition:all 0.2s"
+           onmouseover="this.style.background='#dbeafe'" 
+           onmouseout="this.style.background='#eff6ff'">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,12 2,6"/>
+            </svg>
+            Send Feedback
+        </a>
+    </div>
+</div>
 
     </div>
     `;
@@ -7763,9 +7771,10 @@ var matData = {
     validConditions: conditionsArray
 };
 
-if(editId != null) { DB.updateMat(editId, matData); } else { DB.addMat(matData); }
-render();
-return true;
+if(editId !== null && editId !== undefined) { 
+    DB.updateMat(editId, matData); 
+} else { 
+    DB.addMat(matData); 
 }
 );
 
