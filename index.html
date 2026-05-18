@@ -1688,29 +1688,37 @@ var DB = {
     laminates: [], 
     version: '3.0', 
     dbLastSync: null,
-   load: function() {
-    this.materials = [];
-    for(var i=0; i<DEFAULT_MATERIALS.length; i++) {
-        this.materials.push(Object.assign({}, DEFAULT_MATERIALS[i]));
-    }
-
-    try {
-        var savedMats = localStorage.getItem('wvtr_mats_v3');
-        if (savedMats) {
-            var userMats = JSON.parse(savedMats);
-            var loadedIds = new Set(this.materials.map(m => m.id));
-
-            for(var u=0; u<userMats.length; u++){
-                var um = userMats[u];
-                // ✅ FIX: se l'ID esiste già (è un default modificato), AGGIORNA invece di ignorare
-                var existingIdx = this.materials.findIndex(m => m.id == um.id);
-                if(existingIdx !== -1) {
-                    // Sovrascrive il default con la versione modificata dall'utente
-                    this.materials[existingIdx] = um;
-                } else if(!loadedIds.has(um.id)) {
-                    // Nuovo materiale non-default: aggiungilo normalmente
-                    loadedIds.add(um.id);
-                    this.materials.push(um);
+    
+    load: function() {
+        this.materials = [];
+        // 1. Carica i default
+        for(var i=0; i<DEFAULT_MATERIALS.length; i++) {
+            this.materials.push(Object.assign({}, DEFAULT_MATERIALS[i]));
+        }
+        
+        try {
+            var savedMats = localStorage.getItem('wvtr_mats_v3');
+            if (savedMats) {
+                var userMats = JSON.parse(savedMats);
+                var defaultIds = {};
+                for(var di=0; di<DEFAULT_MATERIALS.length; di++) {
+                    defaultIds[DEFAULT_MATERIALS[di].id] = true;
+                }
+                // Evita duplicati; aggiorna i default modificati
+                var loadedIds = new Set(this.materials.map(m => m.id));
+                for(var u=0; u<userMats.length; u++){
+                    var um = userMats[u];
+                    var existingIdx = -1;
+                    for(var ei=0; ei<this.materials.length; ei++){
+                        if(this.materials[ei].id == um.id){ existingIdx = ei; break; }
+                    }
+                    if(existingIdx !== -1){
+                        // Materiale default modificato: sovrascrive il default originale
+                        this.materials[existingIdx] = um;
+                    } else if(!loadedIds.has(um.id)){
+                        // Nuovo materiale non-default
+                        loadedIds.add(um.id);
+                        this.materials.push(um);
                     }
                 }
             }
@@ -1732,22 +1740,27 @@ var DB = {
         }
     },  // ← load() chiude QUI
     
-   save: function() {
-    try {
-        var defaultIds = {};
-        for(var di=0; di<DEFAULT_MATERIALS.length; di++) {
-            defaultIds[DEFAULT_MATERIALS[di].id] = true;
-        }
-        var userMats = [];
-        for(var m=0; m<this.materials.length; m++) {
-            var mat = this.materials[m];
-            // ✅ FIX: salva ANCHE i default se sono stati modificati
-            var isDefaultUnchanged = defaultIds[mat.id] &&
-                JSON.stringify(mat) === JSON.stringify(DEFAULT_MATERIALS.find(d => d.id == mat.id));
-            if(!isDefaultUnchanged) {
-                userMats.push(mat);
+    save: function() {
+        try {
+            var defaultIds = {};
+            for(var di=0; di<DEFAULT_MATERIALS.length; di++) {
+                defaultIds[DEFAULT_MATERIALS[di].id] = true;
             }
-        }
+            var userMats = [];
+            for(var m=0; m<this.materials.length; m++) {
+                var mat = this.materials[m];
+                if(!defaultIds[mat.id]) {
+                    userMats.push(mat);
+                } else {
+                    var orig = null;
+                    for(var di2=0; di2<DEFAULT_MATERIALS.length; di2++){
+                        if(DEFAULT_MATERIALS[di2].id == mat.id){ orig = DEFAULT_MATERIALS[di2]; break; }
+                    }
+                    if(orig && JSON.stringify(mat) !== JSON.stringify(orig)){
+                        userMats.push(mat);
+                    }
+                }
+            }
             localStorage.setItem('wvtr_mats_v3', JSON.stringify(userMats));
             localStorage.setItem('wvtr_lams_v3', JSON.stringify(this.laminates));
         } catch (e) { 
@@ -7562,7 +7575,7 @@ if(editId) {
 for(var i=0; i<DB.materials.length; i++) {
 if(DB.materials[i].id === editId) { mat = DB.materials[i]; break; }
 }
-};
+}
 var currentMode = State.mode;
 var currentLabel = currentMode === 'wvtr' ? 'WVTR' : 'OTR';
 var currentUnit = currentMode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
@@ -7779,6 +7792,9 @@ if(editId !== null && editId !== undefined) {
     DB.updateMat(editId, matData); 
 } else { 
     DB.addMat(matData); 
+}
+render();
+return true;
 }
 )
 
