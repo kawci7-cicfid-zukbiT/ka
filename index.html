@@ -1787,22 +1787,38 @@ var DB = {
     },
     
     updateMat: function(id, m) {
-        var targetId = Number(id);
-        for(var i=0; i<this.materials.length; i++){
-            if(this.materials[i].id == targetId){
-                var existing = this.materials[i];
-                m.reliabilityVotes = m.reliabilityVotes !== undefined ? m.reliabilityVotes : (existing.reliabilityVotes || { up: 0, down: 0 });
-                m.family = m.family || getFamily(m.name);
-                if(m.company === undefined) m.company = existing.company || '';
-                if(m.tdsLink === undefined) m.tdsLink = existing.tdsLink || '';
-                if(m.testMethodWVTR === undefined) m.testMethodWVTR = existing.testMethodWVTR || '';
-                if(m.testMethodOTR === undefined) m.testMethodOTR = existing.testMethodOTR || '';
-                this.materials[i] = Object.assign({}, existing, m, { id: existing.id });
-                this.save();
-                break;
-            }
+    for(var i=0; i<this.materials.length; i++){
+        if(this.materials[i].id === id){
+            var existing = this.materials[i];
+            // ✅ Mantieni TUTTI i campi esistenti se non sono forniti nel nuovo oggetto
+            var updated = {
+                id: existing.id,
+                name: m.name !== undefined ? m.name : existing.name,
+                family: m.family !== undefined ? m.family : existing.family,
+                wvtrValues: m.wvtrValues !== undefined ? m.wvtrValues : existing.wvtrValues,
+                otrValues: m.otrValues !== undefined ? m.otrValues : existing.otrValues,
+                validConditions: m.validConditions !== undefined ? m.validConditions : existing.validConditions,
+                testMethodWVTR: m.testMethodWVTR !== undefined ? m.testMethodWVTR : existing.testMethodWVTR,
+                testMethodOTR: m.testMethodOTR !== undefined ? m.testMethodOTR : existing.testMethodOTR,
+                isMetallized: m.isMetallized !== undefined ? m.isMetallized : existing.isMetallized,
+                hygroscopicBetaWVTR: m.hygroscopicBetaWVTR !== undefined ? m.hygroscopicBetaWVTR : existing.hygroscopicBetaWVTR,
+                hygroscopicRefRHWVTR: m.hygroscopicRefRHWVTR !== undefined ? m.hygroscopicRefRHWVTR : existing.hygroscopicRefRHWVTR,
+                hygroscopicBetaOTR: m.hygroscopicBetaOTR !== undefined ? m.hygroscopicBetaOTR : existing.hygroscopicBetaOTR,
+                hygroscopicRefRHOTR: m.hygroscopicRefRHOTR !== undefined ? m.hygroscopicRefRHOTR : existing.hygroscopicRefRHOTR,
+                company: m.company !== undefined ? m.company : existing.company,
+                tdsLink: m.tdsLink !== undefined ? m.tdsLink : existing.tdsLink,
+                reliabilityVotes: m.reliabilityVotes !== undefined ? m.reliabilityVotes : existing.reliabilityVotes,
+                isCommunity: existing.isCommunity, // ✅ MAI sovrascrivere questo
+                firebaseDocId: existing.firebaseDocId, // ✅ MAI sovrascrivere questo
+                usageCount: existing.usageCount,
+                lastUsageMonth: existing.lastUsageMonth
+            };
+            this.materials[i] = updated;
+            this.save();
+            break;
         }
-    },
+    }
+},
     
     deleteMat: function(id) { 
         this.materials = this.materials.filter(function(x){ return x.id !== id; }); 
