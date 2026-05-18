@@ -1122,80 +1122,6 @@ main {
 .material-item.verified-item .mat-header {
   background: linear-gradient(135deg, #f0fdf4 0%, #fff 100%) !important;
 }
-    /* === TOOLTIP ELEGANTE PER CELLE VERDI === */
-.green-cell {
-  position: relative;
-  cursor: help;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.green-cell:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
-}
-
-.green-cell::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%) translateY(8px);
-  background: #1e293b;
-  color: #fff;
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  white-space: nowrap;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.2s ease;
-  z-index: 100;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-.green-cell::before {
-  content: '';
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%) translateY(8px);
-  border: 6px solid transparent;
-  border-top-color: #1e293b;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.2s ease;
-  z-index: 100;
-}
-
-.green-cell:hover::after,
-.green-cell:hover::before {
-  opacity: 1;
-  visibility: visible;
-  transform: translateX(-50%) translateY(0);
-}
-
-/* Variante: tooltip a sinistra */
-.green-cell.tooltip-left::after {
-  left: auto;
-  right: 100%;
-  top: 50%;
-  bottom: auto;
-  transform: translateX(8px) translateY(-50%);
-}
-.green-cell.tooltip-left::before {
-  left: auto;
-  right: 100%;
-  top: 50%;
-  bottom: auto;
-  transform: translateX(8px) translateY(-50%);
-  border-top-color: transparent;
-  border-left-color: #1e293b;
-}
-.green-cell.tooltip-left:hover::after,
-.green-cell.tooltip-left:hover::before {
-  transform: translateX(0) translateY(-50%);
-}
 </style>
   <!-- 📢 GOOGLE ADSENSE -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1234567890123456" crossorigin="anonymous"></script>
@@ -1879,10 +1805,9 @@ var DB = {
     },
     
     deleteMat: function(id) { 
-    // ✅ MODIFICA: usa != per permettere la cancellazione anche se l'ID è una stringa
-    this.materials = this.materials.filter(function(x){ return x.id != id; }); 
-    this.save(); 
-},
+        this.materials = this.materials.filter(function(x){ return x.id !== id; }); 
+        this.save(); 
+    },
     
     addLam: function(l) { 
         l.id = Date.now(); 
@@ -2340,10 +2265,8 @@ alert(`✅ Published! The material is now visible to everyone.\n🌍 The 'Commun
 // ✅ Nuova funzione: cerca il materiale per ID e poi pubblica
 // ✅ Nuova funzione: cerca il materiale per ID e poi pubblica
 async function submitToFirebaseById(matId) {
-    // ✅ MODIFICA: usa == per trovare il materiale anche se gli ID sono di tipo diverso
-    var mat = DB.materials.find(m => m.id == matId);
+    var mat = DB.materials.find(m => m.id === matId);
     if(!mat) { alert("❌ Material not found"); return; }
-    
     
     const btn = event?.target;
     if(btn) { btn.disabled = true; btn.innerText = "⏳..."; }
@@ -2691,25 +2614,18 @@ function renderHome() {
             </div>
         </div>
 
-        <div style="padding:1.5rem 0;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem">
-    <div style="font-size:0.72rem;color:#94a3b8;line-height:1.4">
-        <strong style="color:#64748b">Disclaimer:</strong> For R&D and engineering use only. 
-        Results require laboratory validation per ASTM F1249 / ISO 15106 standards.
-    </div>
-    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
-        <span style="font-size:0.72rem;color:#94a3b8"></span>
-        <a href="mailto:wvtrotrcalculator@gmail.com?subject=Feedback%20-%20WVTR%2FOTR%20Calculator" 
-           style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.72rem;color:#2563eb;text-decoration:none;background:#eff6ff;border:1px solid #bfdbfe;padding:0.3rem 0.65rem;border-radius:6px;transition:all 0.2s"
-           onmouseover="this.style.background='#dbeafe'" 
-           onmouseout="this.style.background='#eff6ff'">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                <polyline points="22,6 12,12 2,6"/>
-            </svg>
-            Send Feedback
-        </a>
-    </div>
-</div>
+        <!-- FOOTER NOTE -->
+        <!-- FOOTER NOTE - MODIFIED FINAL SECTION -->
+        <div style="padding:1.5rem 0;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
+            <div style="font-size:0.72rem;color:#94a3b8;line-height:1.4">
+                <strong style="color:#64748b">Disclaimer:</strong> For R&D and engineering use only. 
+                Results require laboratory validation per ASTM F1249 / ISO 15106 standards.
+            </div>
+            <div style="display:flex;align-items:center;gap:1rem">
+                <span style="font-size:0.72rem;color:#94a3b8">
+                    WVTR/OTR Calculator v3.0
+            </div>
+        </div>
 
     </div>
     `;
@@ -7545,12 +7461,12 @@ html += '<div class="material-item' + verifiedClass + '" onclick="this.classList
         '</div>'+
         
         // 3. ACTION BUTTONS
-       '<div class="mat-actions">'+
-  '<button class="btn btn-outline" onclick="event.stopPropagation();showMatModal(\''+m.id+'\')">✏️ Edit</button>'+
-  (isUserMat ? '<button class="btn btn-danger" onclick="event.stopPropagation();DB.deleteMat(\''+m.id+'\');render()">🗑️ Delete</button>' : '')+
-  '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Datasheet</button>'+
-  ((isUserMat || isComm) ? '<button class="btn '+(m.firebaseDocId?'btn-success':'btn-primary')+'" onclick="event.stopPropagation();submitToFirebaseById(\''+m.id+'\')">'+(m.firebaseDocId?'🔄 Update':'🌍 Publish')+'</button>' : '')+
-'</div>'+
+        '<div class="mat-actions">'+
+          '<button class="btn btn-outline" onclick="event.stopPropagation();showMatModal('+m.id+')">✏️ Edit</button>'+
+          (isUserMat ? '<button class="btn btn-danger" onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">🗑️ Delete</button>' : '')+
+          '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Datasheet</button>'+
+          ((isUserMat || isComm) ? '<button class="btn '+(m.firebaseDocId?'btn-success':'btn-primary')+'" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">'+(m.firebaseDocId?'🔄 Update':'🌍 Publish')+'</button>' : '')+
+        '</div>'+
         
         // 4. RELIABILITY VOTING
         '<div class="mat-voting">'+
@@ -7629,17 +7545,12 @@ var Modal = {
 };
 
 function showMatModal(editId) {
-    var mat = null;
-    // ✅ MODIFICA: usa != null per gestire l'ID 0, e == per confrontare stringhe/numeri
-    if(editId != null) {
-        for(var i=0; i<DB.materials.length; i++) {
-            if(DB.materials[i].id == editId) { // ✅ Usa == invece di ===
-                mat = DB.materials[i]; 
-                break; 
-            }
-        }
-    }
-   
+var mat = null;
+if(editId) {
+for(var i=0; i<DB.materials.length; i++) {
+if(DB.materials[i].id === editId) { mat = DB.materials[i]; break; }
+}
+}
 var currentMode = State.mode;
 var currentLabel = currentMode === 'wvtr' ? 'WVTR' : 'OTR';
 var currentUnit = currentMode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
