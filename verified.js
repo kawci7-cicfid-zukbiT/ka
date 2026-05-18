@@ -8,7 +8,7 @@ window.VERIFIED_MATERIALS = {
   // Formato: "nome esatto del materiale" : { by: "tuo nome", date: "YYYY-MM" }
   // Esempi:
 
-  "EVOH (multi-temp)": {
+  "A-example": {
     by: "Admin",
     date: "2025-01",
     note: "Verified against ISO 15106-3 lab data"
