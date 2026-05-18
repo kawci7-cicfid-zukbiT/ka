@@ -1097,15 +1097,6 @@ main {
     touch-action: manipulation !important; /* Rimuove delay 300ms al tap */
   }
 }
-    .material-item.verified-supplier {
-  border-left: 4px solid #22c55e !important;
-  background: #f0fdf4 !important;
-}
-.material-item.verified-supplier .mat-header h3::before {
-  content: "✓ ";
-  color: #22c55e;
-  font-weight: 700;
-}
 </style>
   <!-- 📢 GOOGLE ADSENSE -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1234567890123456" crossorigin="anonymous"></script>
@@ -1647,26 +1638,6 @@ for(var di=0;di<DEFAULT_MATERIALS.length;di++){
   DEFAULT_MATERIALS[di].id=di;
   DEFAULT_MATERIALS[di].family=getFamily(DEFAULT_MATERIALS[di].name);
 }
-    var DEFAULT_MATERIALS = [
-  { name: "Nylon 6 (multi-temp)", wvtrValues: [{ value: 10.0, thickness: 100 }, { value: 25.0, thickness: 100 }, { value: 50.0, thickness: 100 }], otrValues: [{ value: 30, thickness: 100 }, { value: 60, thickness: 100 }, { value: 120, thickness: 100 }], validConditions: [{ temperature: 23, humidity: 60 }, { temperature: 38, humidity: 60 }, { temperature: 50, humidity: 60 }] },
-  { name: "LDPE (multi-temp)", wvtrValues: [{ value: 0.8, thickness: 100 }, { value: 1.5, thickness: 100 }, { value: 2.8, thickness: 100 }], otrValues: [{ value: 800, thickness: 100 }, { value: 1200, thickness: 100 }, { value: 2000, thickness: 100 }], validConditions: [{ temperature: 20, humidity: 50 }, { temperature: 30, humidity: 50 }, { temperature: 40, humidity: 50 }] },
-  { name: "EVOH (multi-temp)", wvtrValues: [{ value: 0.05, thickness: 100 }, { value: 0.15, thickness: 100 }, { value: 0.40, thickness: 100 }], otrValues: [{ value: 0.5, thickness: 100 }, { value: 1.5, thickness: 100 }, { value: 4.0, thickness: 100 }], validConditions: [{ temperature: 23, humidity: 50 }, { temperature: 38, humidity: 50 }, { temperature: 50, humidity: 50 }] },
-  { name: "PP (multi-temp)", wvtrValues: [{ value: 0.5, thickness: 50 }, { value: 1.0, thickness: 50 }, { value: 2.0, thickness: 50 }], otrValues: [{ value: 500, thickness: 50 }, { value: 800, thickness: 50 }, { value: 1500, thickness: 50 }], validConditions: [{ temperature: 25, humidity: 60 }, { temperature: 38, humidity: 60 }, { temperature: 50, humidity: 60 }] },
-  { name: "Low-Density Polyethylene (LDPE)", wvtrValues: [{ value: 1.2, thickness: 100 }], otrValues: [{ value: 7500, thickness: 100 }], validConditions: [{ temperature: 23, humidity: 50 }] },
-  { name: "BOPP", wvtrValues: [{ value: 0.8, thickness: 50 }], otrValues: [{ value: 2000, thickness: 50 }], validConditions: [{ temperature: 30, humidity: 60 }] },
-{ name: "Polyurethane", wvtrValues: [{ value: 0.3, thickness: 200 }], otrValues: [{ value: 100, thickness: 200 }], validConditions: [{ temperature: 30, humidity: 60 }] },
-  { name: "Stainless Steel", wvtrValues: [{ value: 0.0, thickness: 500 }], otrValues: [{ value: 0.0, thickness: 500 }], validConditions: [{ temperature: 30, humidity: 60 }] }
-];
-
-for(var di=0;di<DEFAULT_MATERIALS.length;di++){
-  DEFAULT_MATERIALS[di].id=di;
-  DEFAULT_MATERIALS[di].family=getFamily(DEFAULT_MATERIALS[di].name);
-}
-    // === ✅ MATERIALI VERIFICATI DAL FORNITORE (per NOME) ===
-var SUPPLIER_VERIFIED_NAMES = [
-  "Acrylic Sheet"  // ← Il tuo LLDPE qui
-  // Aggiungi altri nomi esatti qui
-];
 // === 📦 LAMINATI DI ESEMPIO (PRE-CARICATI) ===
 var DEFAULT_LAMINATES = [
     {
@@ -1712,139 +1683,7 @@ load: function() {
         var lastSync = localStorage.getItem('wvtr_db_sync_v3');
         if (lastSync) this.dbLastSync = new Date(lastSync);
     } catch (e) { console.warn('Load error:', e); }
-
-    // 🔄 MIGRAZIONE BACKWARD COMPATIBILITY
-    // Eseguita DOPO il caricamento, così converte i materiali salvati in precedenza
-    for(var i=0; i<this.materials.length; i++){
-        var m = this.materials[i];
-        if(m.hygroscopicBeta > 0 && !m.hygroscopicBetaWVTR){
-            m.hygroscopicBetaWVTR = m.hygroscopicBeta;
-            m.hygroscopicRefRHWVTR = m.hygroscopicRefRH || 50;
-        }
-    }
-    var savedLams = localStorage.getItem('wvtr_lams_v3');
-if (savedLams) this.laminates = JSON.parse(savedLams);
-
-// ✅ ✅ ✅ INIEZIONE AUTOMATICA ESEMPI SE IL DB È VUOTO
-if (this.laminates.length === 0 && typeof DEFAULT_LAMINATES !== 'undefined') {
-    // Crea una copia profonda per evitare riferimenti in memoria
-    this.laminates = JSON.parse(JSON.stringify(DEFAULT_LAMINATES));
-    this.save(); // Persisti subito in localStorage così l'utente li vede anche dopo refresh
-}
-},
-  
-  save: function() {
-    try {
-      var defaultIds = {};
-      for(var di3=0;di3<DEFAULT_MATERIALS.length;di3++) defaultIds[DEFAULT_MATERIALS[di3].id]=true;
-      var userMats = [];
-      for(var m=0;m<this.materials.length;m++) if(!defaultIds[this.materials[m].id]) userMats.push(this.materials[m]);
-      localStorage.setItem('wvtr_mats_v3', JSON.stringify(userMats));
-      localStorage.setItem('wvtr_lams_v3', JSON.stringify(this.laminates));
-    } catch (e) { console.warn('Save error:', e); }
-  },
-  
-  saveState: function(state) {
-    try {
-      var stateData = { layers: state.layers, selCond: state.selCond, mode: state.mode, timestamp: Date.now() };
-      localStorage.setItem('wvtr_state_v3', JSON.stringify(stateData));
-    } catch (e) {}
-  },
-  
-  loadState: function() {
-    try { var s = localStorage.getItem('wvtr_state_v3'); if (s) return JSON.parse(s); } catch (e) {}
-    return null;
-  },
-  
-  addMat: function(m) {
-    var maxId=0;
-    for(var i=0;i<this.materials.length;i++) if(this.materials[i].id>maxId) maxId=this.materials[i].id;
-    m.id=maxId+1; 
-    m.family = m.family || getFamily(m.name);
-    if(!m.reliabilityVotes) m.reliabilityVotes = { up: 0, down: 0 };
-    m.company = m.company || '';
-    m.tdsLink = m.tdsLink || '';
-    this.materials.push(m); this.save(); return m.id;
-  },
-  
-updateMat: function(id, m) {
-  for(var i=0; i<this.materials.length; i++){
-    if(this.materials[i].id === id){
-      var existing = this.materials[i];
-      
-      // Mantieni i campi obbligatori
-      m.reliabilityVotes = m.reliabilityVotes !== undefined ? m.reliabilityVotes : (existing.reliabilityVotes || { up: 0, down: 0 });
-      m.family = m.family || getFamily(m.name);
-      
-      // ✅ CORREZIONE: Aggiorna i campi opzionali SOLO se sono undefined (non se sono vuoti!)
-     if(m.company === undefined) m.company = existing.company || '';
-      if(m.tdsLink === undefined) m.tdsLink = existing.tdsLink || '';
-      if(m.testMethodWVTR === undefined) m.testMethodWVTR = existing.testMethodWVTR || '';
-      if(m.testMethodOTR === undefined) m.testMethodOTR = existing.testMethodOTR || '';
-      
-      // ✅ Usa Object.assign per fondere i valori correttamente
-      this.materials[i] = Object.assign({}, existing, m, { id: id });
-      this.save();
-      break;
-    }
-  }
-    // ✅ Controlla se un materiale è verificato (per nome + community)
-function isSupplierVerified(mat) {
-  var nameMatch = SUPPLIER_VERIFIED_NAMES.indexOf(mat.name) >= 0;
-  var isCommunity = mat.isCommunity === true || String(mat.id).startsWith('fb_');
-  return nameMatch && isCommunity;
-}
-    // === ✅ MATERIALI VERIFICATI DAL FORNITORE (per NOME) ===
-var SUPPLIER_VERIFIED_NAMES = [
-  "Acrylic Sheet"  // ← Il tuo LLDPE qui
-  // Aggiungi altri nomi esatti qui
-];
-// === 📦 LAMINATI DI ESEMPIO (PRE-CARICATI) ===
-var DEFAULT_LAMINATES = [
-    {
-        id: 1001, name: "Standard Snack Wrapper", total: 1.85, totalThickness: 70,
-        humidity: 50, temperature: 23, mode: 'wvtr', recyclable: false, monoStructure: false, layerCount: 2,
-        layers: [{mid: 5, thick: 20}, {mid: 1, thick: 50}] // BOPP 20µm + LDPE 50µm
-    },
-    {
-        id: 1002, name: "High-Barrier Coffee Pouch", total: 0.12, totalThickness: 85,
-        humidity: 50, temperature: 23, mode: 'wvtr', recyclable: false, monoStructure: false, layerCount: 3,
-        layers: [{mid: 0, thick: 15}, {mid: 2, thick: 20}, {mid: 3, thick: 50}] // Nylon 15 + EVOH 20 + PP 50
-    },
-    {
-        id: 1003, name: "Mono-PE Recyclable Pouch", total: 4.20, totalThickness: 120,
-        humidity: 60, temperature: 25, mode: 'wvtr', recyclable: true, monoStructure: true, layerCount: 2,
-        layers: [{mid: 4, thick: 70}, {mid: 1, thick: 50}] // LDPE 70 + LDPE 50 (Struttura mono-polimero)
-    }
-];
     
-var DB = {
-  materials: [], laminates: [], version: '3.0', dbLastSync: null,
-  
-load: function() {
-    this.materials = [];
-    for(var i=0;i<DEFAULT_MATERIALS.length;i++) this.materials.push(Object.assign({}, DEFAULT_MATERIALS[i]));
-    try {
-        var savedMats = localStorage.getItem('wvtr_mats_v3');
-        if (savedMats) {
-            var userMats = JSON.parse(savedMats);
-            var defaultIds = {};
-            for(var di2=0;di2<DEFAULT_MATERIALS.length;di2++) defaultIds[DEFAULT_MATERIALS[di2].id]=true;
-            for(var u=0;u<userMats.length;u++){
-                var um=userMats[u];
-                if(!defaultIds[um.id]){
-                    var maxId=0;for(var mi=0;mi<this.materials.length;mi++) if(this.materials[mi].id>maxId) maxId=this.materials[mi].id;
-                    um.id=maxId+1;
-                    this.materials.push(um);
-                }
-            }
-        }
-        var savedLams = localStorage.getItem('wvtr_lams_v3');
-        if (savedLams) this.laminates = JSON.parse(savedLams);
-        var lastSync = localStorage.getItem('wvtr_db_sync_v3');
-        if (lastSync) this.dbLastSync = new Date(lastSync);
-    } catch (e) { console.warn('Load error:', e); }
-
     // 🔄 MIGRAZIONE BACKWARD COMPATIBILITY
     // Eseguita DOPO il caricamento, così converte i materiali salvati in precedenza
     for(var i=0; i<this.materials.length; i++){
@@ -1854,15 +1693,6 @@ load: function() {
             m.hygroscopicRefRHWVTR = m.hygroscopicRefRH || 50;
         }
     }
-    var savedLams = localStorage.getItem('wvtr_lams_v3');
-if (savedLams) this.laminates = JSON.parse(savedLams);
-
-// ✅ ✅ ✅ INIEZIONE AUTOMATICA ESEMPI SE IL DB È VUOTO
-if (this.laminates.length === 0 && typeof DEFAULT_LAMINATES !== 'undefined') {
-    // Crea una copia profonda per evitare riferimenti in memoria
-    this.laminates = JSON.parse(JSON.stringify(DEFAULT_LAMINATES));
-    this.save(); // Persisti subito in localStorage così l'utente li vede anche dopo refresh
-}
 },
   
   save: function() {
@@ -7508,50 +7338,70 @@ var downTitle = userVote === 'down' ? 'Click to unvote' : 'Mark as unreliable';
   }
 
   // ✅ PROFESSIONAL MATERIAL CARD (con displayName e searchBadges)
-  // ✅ Aggiungi questa riga PRIMA della tua:
-// ✅ Aggiungi questa riga PRIMA della card:
-// ✅ Aggiungi questa riga PRIMA della card:
-var verifiedClass = isSupplierVerified(m) ? ' verified-supplier' : '';
+  html += '<div class="material-item" onclick="this.classList.toggle(\'expanded\')">'+
+    
+    // === HEADER ===
+    '<div class="mat-header">'+
+      '<h3>'+
+        '<span style="color:var(--text)">'+displayName+'</span>'+  // ← USA displayName QUI
+        (isComm ? '<span class="mat-comm-badge">🌍 Community</span>' : '')+
+        '<span style="font-weight:400;color:var(--text-light);font-size:0.75rem">['+(m.family||'?')+']</span>'+
+        (v.valid ? '<span class="badge badge-green">✓ Arrhenius</span>' : '')+
+      '</h3>'+
+      '<svg class="chevron" style="margin-left:auto; flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>'+
+'</div>'+
+    
+    // === EXPANDABLE BODY ===
+    '<div class="mat-body">'+
+      '<div class="mat-body-content">'+
+        
+        // 0. SEARCH BADGES (solo se c'è una ricerca attiva)
+        (searchBadges ? searchBadges : '')+
+        
+        // 1. DATA TAGS
+        '<div class="mat-tags">'+tags+'</div>'+
+        
+        // 2. META INFO
+        '<div class="mat-info">'+
+          (function(){
+            var tm = State.mode === 'wvtr' ? (m.testMethodWVTR || m.testMethod || '') : (m.testMethodOTR || m.testMethod || '');
+            return tm ? '<div class="mat-info-item"><strong>Test Standard</strong><span class="mat-testmethod">'+tm+'</span></div>' : '';
+          })()+
+          (m.company ? '<div class="mat-info-item"><strong>Supplier</strong><span>'+m.company+'</span></div>' : '')+
+          (m.tdsLink ? '<div class="mat-info-item"><strong>Documentation</strong><a href="'+m.tdsLink+'" target="_blank" onclick="event.stopPropagation()">View TDS →</a></div>' : '')+
+        '</div>'+
+        
+        // 3. ACTION BUTTONS
+        '<div class="mat-actions">'+
+          '<button class="btn btn-outline" onclick="event.stopPropagation();showMatModal('+m.id+')">✏️ Edit</button>'+
+          (isUserMat ? '<button class="btn btn-danger" onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">🗑️ Delete</button>' : '')+
+          '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Datasheet</button>'+
+          ((isUserMat || isComm) ? '<button class="btn '+(m.firebaseDocId?'btn-success':'btn-primary')+'" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">'+(m.firebaseDocId?'🔄 Update':'🌍 Publish')+'</button>' : '')+
+        '</div>'+
+        
+        // 4. RELIABILITY VOTING
+        '<div class="mat-voting">'+
+          '<div class="mat-voting-label">'+
+            '<span>Community Reliability</span>'+
+            '<span class="reliability-badge '+(relScore>=70?'high':relScore>=40?'medium':'low')+'">'+relScore+'%</span>'+
+          '</div>'+
+         '<div class="mat-voting-buttons">'+
+'<button class="btn btn-outline" onclick="event.stopPropagation();voteReliability(\''+String(m.id)+'\',\'up\')" title="'+upTitle+'" '+upActive+'>👍</button>'+
+'<button class="btn btn-outline" onclick="event.stopPropagation();voteReliability(\''+String(m.id)+'\',\'down\')" title="'+downTitle+'" '+downActive+'>👎</button>'+
+'</div>'+
+        '</div>'+
+        
+      '</div>'+
+    '</div>'+
+  '</div>'; // ← ✅ FINE CARD
+}  // ← ✅ Chiude il FOR
+  }  // ← ✅ Chiude l'if/else
+  
+  // ✅ ✅ ✅ QUESTE RIGHE MANCAVANO ✅ ✅ ✅
+  html += '</div></div>';  // ← Chiude grid + card (aperti all'inizio)
+  return html;             // ← Restituisce il risultato
+}  // ← ✅ Chiude renderMaterials()
 
-// ✅ Sostituisci TUTTA la card con questa versione (usa backtick `):
-html += `<div class="material-item${verifiedClass}" onclick="this.classList.toggle('expanded')">
-  <div class="mat-header">
-    <h3>
-      <span style="color:var(--text)">${displayName}</span>
-      ${isComm ? '<span class="mat-comm-badge">🌍 Community</span>' : ''}
-      <span style="font-weight:400;color:var(--text-light);font-size:0.75rem">[${m.family||'?'}]</span>
-      ${v.valid ? '<span class="badge badge-green">✓ Arrhenius</span>' : ''}
-    </h3>
-    <svg class="chevron" style="margin-left:auto;flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-  </div>
-  <div class="mat-body">
-    <div class="mat-body-content">
-      ${searchBadges||''}
-      <div class="mat-tags">${tags}</div>
-      <div class="mat-info">
-        ${(()=>{var tm=State.mode==='wvtr'?(m.testMethodWVTR||m.testMethod||''):(m.testMethodOTR||m.testMethod||'');return tm?'<div class="mat-info-item"><strong>Test Standard</strong><span class="mat-testmethod">'+tm+'</span></div>':'';})()}
-        ${m.company?'<div class="mat-info-item"><strong>Supplier</strong><span>'+m.company+'</span></div>':''}
-        ${m.tdsLink?'<div class="mat-info-item"><strong>Documentation</strong><a href="'+m.tdsLink+'" target="_blank" onclick="event.stopPropagation()">View TDS →</a></div>':''}
-      </div>
-      <div class="mat-actions">
-        <button class="btn btn-outline" onclick="event.stopPropagation();showMatModal(${m.id})">✏️ Edit</button>
-        ${isUserMat?'<button class="btn btn-danger" onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">🗑️ Delete</button>':''}
-        <button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb('${escName}')">🔍 Search Datasheet</button>
-        ${(isUserMat||isComm)?'<button class="btn '+(m.firebaseDocId?'btn-success':'btn-primary')+'" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">'+(m.firebaseDocId?'🔄 Update':'🌍 Publish')+'</button>':''}
-      </div>
-      <div class="mat-voting">
-        <div class="mat-voting-label">
-          <span>Community Reliability</span>
-          <span class="reliability-badge ${relScore>=70?'high':relScore>=40?'medium':'low'}">${relScore}%</span>
-        </div>
-        <div class="mat-voting-buttons">
-          <button class="btn btn-outline" onclick="event.stopPropagation();voteReliability('${String(m.id)}','up')" title="${upTitle}" ${upActive}>👍</button>
-          <button class="btn btn-outline" onclick="event.stopPropagation();voteReliability('${String(m.id)}','down')" title="${downTitle}" ${downActive}>👎</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>`; // ← ✅ CHIUSURA CORRETTA CON ; CHIUSURA CORRETTA CON ;
     
   
 function onMatSearch(val){
