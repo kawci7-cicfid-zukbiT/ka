@@ -1775,21 +1775,26 @@ load: function() {
   },
   
 updateMat: function(id, m) {
-    var targetId = Number(id);
-    for(let i=0; i<this.materials.length; i++){
-        if(this.materials[i].id == targetId){
-            var existing = this.materials[i];
-            m.reliabilityVotes = m.reliabilityVotes !== undefined ? m.reliabilityVotes : (existing.reliabilityVotes || { up: 0, down: 0 });
-            m.family = m.family || getFamily(m.name);
-            if(m.company === undefined) m.company = existing.company || '';
-            if(m.tdsLink === undefined) m.tdsLink = existing.tdsLink || '';
-            if(m.testMethodWVTR === undefined) m.testMethodWVTR = existing.testMethodWVTR || '';
-            if(m.testMethodOTR === undefined) m.testMethodOTR = existing.testMethodOTR || '';
-            this.materials[i] = Object.assign({}, existing, m, { id: existing.id });
-            this.save();
-            break;
-        }
+  for(var i=0; i<this.materials.length; i++){
+    if(this.materials[i].id === id){
+      var existing = this.materials[i];
+      
+      // Mantieni i campi obbligatori
+      m.reliabilityVotes = m.reliabilityVotes !== undefined ? m.reliabilityVotes : (existing.reliabilityVotes || { up: 0, down: 0 });
+      m.family = m.family || getFamily(m.name);
+      
+      // ✅ CORREZIONE: Aggiorna i campi opzionali SOLO se sono undefined (non se sono vuoti!)
+     if(m.company === undefined) m.company = existing.company || '';
+      if(m.tdsLink === undefined) m.tdsLink = existing.tdsLink || '';
+      if(m.testMethodWVTR === undefined) m.testMethodWVTR = existing.testMethodWVTR || '';
+      if(m.testMethodOTR === undefined) m.testMethodOTR = existing.testMethodOTR || '';
+      
+      // ✅ Usa Object.assign per fondere i valori correttamente
+      this.materials[i] = Object.assign({}, existing, m, { id: id });
+      this.save();
+      break;
     }
+  }
 },
   
   deleteMat: function(id) { this.materials = this.materials.filter(function(x){return x.id!==id;}); this.save(); },
