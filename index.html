@@ -1638,7 +1638,25 @@ for(var di=0;di<DEFAULT_MATERIALS.length;di++){
   DEFAULT_MATERIALS[di].id=di;
   DEFAULT_MATERIALS[di].family=getFamily(DEFAULT_MATERIALS[di].name);
 }
-
+// === 📦 LAMINATI DI ESEMPIO (PRE-CARICATI) ===
+var DEFAULT_LAMINATES = [
+    {
+        id: 1001, name: "Standard Snack Wrapper", total: 1.85, totalThickness: 70,
+        humidity: 50, temperature: 23, mode: 'wvtr', recyclable: false, monoStructure: false, layerCount: 2,
+        layers: [{mid: 5, thick: 20}, {mid: 1, thick: 50}] // BOPP 20µm + LDPE 50µm
+    },
+    {
+        id: 1002, name: "High-Barrier Coffee Pouch", total: 0.12, totalThickness: 85,
+        humidity: 50, temperature: 23, mode: 'wvtr', recyclable: false, monoStructure: false, layerCount: 3,
+        layers: [{mid: 0, thick: 15}, {mid: 2, thick: 20}, {mid: 3, thick: 50}] // Nylon 15 + EVOH 20 + PP 50
+    },
+    {
+        id: 1003, name: "Mono-PE Recyclable Pouch", total: 4.20, totalThickness: 120,
+        humidity: 60, temperature: 25, mode: 'wvtr', recyclable: true, monoStructure: true, layerCount: 2,
+        layers: [{mid: 4, thick: 70}, {mid: 1, thick: 50}] // LDPE 70 + LDPE 50 (Struttura mono-polimero)
+    }
+];
+    
 var DB = {
   materials: [], laminates: [], version: '3.0', dbLastSync: null,
   
@@ -1675,6 +1693,15 @@ load: function() {
             m.hygroscopicRefRHWVTR = m.hygroscopicRefRH || 50;
         }
     }
+    var savedLams = localStorage.getItem('wvtr_lams_v3');
+if (savedLams) this.laminates = JSON.parse(savedLams);
+
+// ✅ ✅ ✅ INIEZIONE AUTOMATICA ESEMPI SE IL DB È VUOTO
+if (this.laminates.length === 0 && typeof DEFAULT_LAMINATES !== 'undefined') {
+    // Crea una copia profonda per evitare riferimenti in memoria
+    this.laminates = JSON.parse(JSON.stringify(DEFAULT_LAMINATES));
+    this.save(); // Persisti subito in localStorage così l'utente li vede anche dopo refresh
+}
 },
   
   save: function() {
