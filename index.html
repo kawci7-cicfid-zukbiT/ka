@@ -1787,38 +1787,22 @@ var DB = {
     },
     
     updateMat: function(id, m) {
-    for(var i=0; i<this.materials.length; i++){
-        if(this.materials[i].id === id){
-            var existing = this.materials[i];
-            // ✅ Mantieni TUTTI i campi esistenti se non sono forniti nel nuovo oggetto
-            var updated = {
-                id: existing.id,
-                name: m.name !== undefined ? m.name : existing.name,
-                family: m.family !== undefined ? m.family : existing.family,
-                wvtrValues: m.wvtrValues !== undefined ? m.wvtrValues : existing.wvtrValues,
-                otrValues: m.otrValues !== undefined ? m.otrValues : existing.otrValues,
-                validConditions: m.validConditions !== undefined ? m.validConditions : existing.validConditions,
-                testMethodWVTR: m.testMethodWVTR !== undefined ? m.testMethodWVTR : existing.testMethodWVTR,
-                testMethodOTR: m.testMethodOTR !== undefined ? m.testMethodOTR : existing.testMethodOTR,
-                isMetallized: m.isMetallized !== undefined ? m.isMetallized : existing.isMetallized,
-                hygroscopicBetaWVTR: m.hygroscopicBetaWVTR !== undefined ? m.hygroscopicBetaWVTR : existing.hygroscopicBetaWVTR,
-                hygroscopicRefRHWVTR: m.hygroscopicRefRHWVTR !== undefined ? m.hygroscopicRefRHWVTR : existing.hygroscopicRefRHWVTR,
-                hygroscopicBetaOTR: m.hygroscopicBetaOTR !== undefined ? m.hygroscopicBetaOTR : existing.hygroscopicBetaOTR,
-                hygroscopicRefRHOTR: m.hygroscopicRefRHOTR !== undefined ? m.hygroscopicRefRHOTR : existing.hygroscopicRefRHOTR,
-                company: m.company !== undefined ? m.company : existing.company,
-                tdsLink: m.tdsLink !== undefined ? m.tdsLink : existing.tdsLink,
-                reliabilityVotes: m.reliabilityVotes !== undefined ? m.reliabilityVotes : existing.reliabilityVotes,
-                isCommunity: existing.isCommunity, // ✅ MAI sovrascrivere questo
-                firebaseDocId: existing.firebaseDocId, // ✅ MAI sovrascrivere questo
-                usageCount: existing.usageCount,
-                lastUsageMonth: existing.lastUsageMonth
-            };
-            this.materials[i] = updated;
-            this.save();
-            break;
+        var targetId = Number(id);
+        for(var i=0; i<this.materials.length; i++){
+            if(this.materials[i].id == targetId){
+                var existing = this.materials[i];
+                m.reliabilityVotes = m.reliabilityVotes !== undefined ? m.reliabilityVotes : (existing.reliabilityVotes || { up: 0, down: 0 });
+                m.family = m.family || getFamily(m.name);
+                if(m.company === undefined) m.company = existing.company || '';
+                if(m.tdsLink === undefined) m.tdsLink = existing.tdsLink || '';
+                if(m.testMethodWVTR === undefined) m.testMethodWVTR = existing.testMethodWVTR || '';
+                if(m.testMethodOTR === undefined) m.testMethodOTR = existing.testMethodOTR || '';
+                this.materials[i] = Object.assign({}, existing, m, { id: existing.id });
+                this.save();
+                break;
+            }
         }
-    }
-},
+    },
     
     deleteMat: function(id) { 
         this.materials = this.materials.filter(function(x){ return x.id !== id; }); 
@@ -2630,25 +2614,19 @@ function renderHome() {
             </div>
         </div>
 
-        <div style="padding:1.5rem 0;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem">
-    <div style="font-size:0.72rem;color:#94a3b8;line-height:1.4">
-        <strong style="color:#64748b">Disclaimer:</strong> For R&D and engineering use only. 
-        Results require laboratory validation per ASTM F1249 / ISO 15106 standards.
-    </div>
-    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
-        <span style="font-size:0.72rem;color:#94a3b8"></span>
-        <a href="mailto:wvtrotrcalculator@gmail.com?subject=Feedback%20-%20WVTR%2FOTR%20Calculator" 
-           style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.72rem;color:#2563eb;text-decoration:none;background:#eff6ff;border:1px solid #bfdbfe;padding:0.3rem 0.65rem;border-radius:6px;transition:all 0.2s"
-           onmouseover="this.style.background='#dbeafe'" 
-           onmouseout="this.style.background='#eff6ff'">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                <polyline points="22,6 12,12 2,6"/>
-            </svg>
-            Send Feedback
-        </a>
-    </div>
-</div>
+        <!-- FOOTER NOTE -->
+        <!-- FOOTER NOTE - MODIFIED FINAL SECTION -->
+        <div style="padding:1.5rem 0;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem">
+            <div style="font-size:0.72rem;color:#94a3b8;line-height:1.4">
+                <strong style="color:#64748b">Disclaimer:</strong> For R&D and engineering use only. 
+                Results require laboratory validation per ASTM F1249 / ISO 15106 standards.
+            </div>
+            <div style="display:flex;align-items:center;gap:1rem">
+                <span style="font-size:0.72rem;color:#94a3b8">
+                    WVTR/OTR Calculator v3.0
+            </div>
+        </div>
+
     </div>
     `;
 }
@@ -7394,10 +7372,10 @@ filtered.sort(function(a, b){
   var escName = m.name.replace(/'/g, "\\'");
   
   // ✅ Controlla se è materiale utente (non default)
-  var isUserMat = true;
-  for(var di=0; di<DEFAULT_MATERIALS.length; di++) {
-    if(DEFAULT_MATERIALS[di].id === m.id) { isUserMat = false; break; }
-  }
+  // ✅ FORZA isUserMat a true per permettere la modifica anche dei default
+var isUserMat = true;
+
+
   
   // ✅ Badge per materiali community
   var isComm = m.isCommunity || (m.id && String(m.id).startsWith('fb_'));
@@ -8003,7 +7981,6 @@ async function loadExternalMaterialsDB() {
         console.log('ℹ️ materials.json non caricato (opzionale):', e.message);
     }
 }
-
 // ====================================================================
 // 🚀 AVVIO APP (IIFE) - ORDINE CORRETTO DI CARICAMENTO
 // ====================================================================
