@@ -7910,78 +7910,65 @@ function importFile(input){
 // 📥 FUNZIONE: Carica materials.json esterno (DEFINITA PRIMA DELL'USO)
 // ====================================================================
 async function loadExternalMaterialsDB() {
-  try {
-    console.log('🔍 Tentativo di caricamento materials.json...');
-    const res = await fetch('materials.json');
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    
-    const data = await res.json();
-    const externalMats = Array.isArray(data) ? data : (data.materials || []);
-    
-    if (!externalMats.length) {
-      console.log('⚠️ Nessun materiale trovato in materials.json');
-      return;
+    try {
+        console.log('🔍 Tentativo di caricamento materials.json...');
+        const res = await fetch('materials.json');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        const externalMats = Array.isArray(data) ? data : (data.materials || []);
+        if (!externalMats.length) {
+            console.log('⚠️ Nessun materiale trovato in materials.json');
+            return;
+        }
+        
+        const existingNames = new Set(DB.materials.map(m => m.name.toLowerCase()));
+        let addedCount = 0;
+        
+        for (const em of externalMats) {
+            if (!em || !em.name) continue;
+            const normalizedName = em.name.toLowerCase().trim();
+            
+            // ✅ CERCA SE ESISTE GIA' PER NOME
+            var existing = DB.materials.find(m => m.name.toLowerCase() === em.name.toLowerCase());
+            if (existing) {
+                // ✅ AGGIORNA I CAMPI IGROSCOPICI SENZA DUPLICARE
+                if (em.hygroscopicRefRHWVTR !== undefined) {
+                    existing.hygroscopicRefRHWVTR = em.hygroscopicRefRHWVTR;
+                    existing.hygroscopicRefRHOTR = em.hygroscopicRefRHOTR;
+                    existing.hygroscopicBetaWVTR = em.hygroscopicBetaWVTR;
+                    existing.hygroscopicBetaOTR = em.hygroscopicBetaOTR;
+                }
+                console.log('↻ Aggiornato:', em.name);
+                continue; // ← ✅ NON CREARE DUPLICATO
+            }
+            
+            // ✅ Assegna ID univoco sequenziale
+            const numericIds = DB.materials
+                .map(m => typeof m.id === 'number' ? m.id : 0)
+                .filter(id => id > 0);
+            const maxId = numericIds.length ? Math.max(...numericIds) : 0;
+            em.id = maxId + 1 + addedCount;
+            em.family = em.family || getFamily(em.name);
+            em.isMetallized = em.isMetallized || false;
+            
+            if (!em.reliabilityVotes) em.reliabilityVotes = { up: 0, down: 0 };
+            if (!em.company) em.company = '';
+            if (!em.tdsLink) em.tdsLink = '';
+            if (!em.testMethodWVTR) em.testMethodWVTR = '';
+            if (!em.testMethodOTR) em.testMethodOTR = '';
+            
+            DB.materials.push(em);
+            existingNames.add(normalizedName);
+            addedCount++;
+        }
+        
+        console.log('✅ External DB loaded:', addedCount, 'new materials');
+        console.log('📊 Totale materiali:', DB.materials.length);
+        DB.save();
+        render();
+    } catch (e) {
+        console.log('ℹ️ materials.json non caricato (opzionale):', e.message);
     }
-    
-    // Merge: evita duplicati per nome (case-insensitive)
-    const existingNames = new Set(DB.materials.map(m => m.name.toLowerCase()));
-    let addedCount = 0;
-    
-    for (const em of externalMats) {
-      if (!em || !em.name) continue;
-      
-      const normalizedName = em.name.toLowerCase().trim();
-      // Sostituisci questo blocco:
-if (existingNames.has(normalizedName)) {
-    console.log('⏭️ Skip duplicato:', em.name);
-    continue;
-}
-
-// Con questo:
-if (existingNames.has(normalizedName)) {
-    // ✅ Aggiorna i campi hygroscopic anche sui duplicati
-    var existing = DB.materials.find(m => m.name.toLowerCase() === em.name.toLowerCase());
-    if (existing && em.hygroscopicRefRHWVTR !== undefined) {
-        existing.hygroscopicRefRHWVTR = em.hygroscopicRefRHWVTR;
-        existing.hygroscopicRefRHOTR = em.hygroscopicRefRHOTR;
-        existing.hygroscopicBetaWVTR = em.hygroscopicBetaWVTR;
-        existing.hygroscopicBetaOTR = em.hygroscopicBetaOTR;
-    }
-    continue;
-}
-      
-      // ✅ Assegna ID univoco sequenziale (CORRETTO)
-      const numericIds = DB.materials
-        .map(m => typeof m.id === 'number' ? m.id : 0)
-        .filter(id => id > 0);
-      const maxId = numericIds.length ? Math.max(...numericIds) : 0;
-      
-      em.id = maxId + 1 + addedCount;  // ID progressivo, non esponenziale!
-      em.family = em.family || getFamily(em.name);
-      em.isMetallized = em.isMetallized || false;
-      
-      // Campi opzionali con default sicuri
-      if (!em.reliabilityVotes) em.reliabilityVotes = { up: 0, down: 0 };
-      if (!em.company) em.company = '';
-      if (!em.tdsLink) em.tdsLink = '';
-      if (!em.testMethodWVTR) em.testMethodWVTR = '';
-      if (!em.testMethodOTR) em.testMethodOTR = '';
-      
-      DB.materials.push(em);
-      existingNames.add(normalizedName);  // ✅ Aggiorna set per evitare duplicati nello stesso batch
-      addedCount++;
-    }
-    
-    console.log('✅ External DB loaded:', addedCount, 'new materials');
-    console.log('📊 Totale materiali:', DB.materials.length);
-    
-    DB.save();  // Persisti in localStorage
-    render();   // Aggiorna UI
-    
-  } catch (e) {
-    // Silenzioso: materials.json è opzionale
-    console.log('ℹ️ materials.json non caricato (opzionale):', e.message);
-  }
 }
 
 // ====================================================================
@@ -8013,34 +8000,43 @@ if (existingNames.has(normalizedName)) {
     // 3️⃣ ✅ CARICA MATERIALS.JSON ESTERNO (database statico di base)
     await loadExternalMaterialsDB();
     
-    // 4️⃣ Carica materiali Firebase (database community dinamico)
-    if(window.communityDB) {
-      console.log("🔄 Caricamento community da Firebase...");
-      const fbMats = await window.loadFromCommunity();
-      console.log("📥 Firebase materials:", fbMats.length);
-      
-      const existingNames = new Set(DB.materials.map(m => m.name.toLowerCase()));
-      let addedCount = 0;
-      
-      for(const fm of fbMats) {
+   // 4️⃣ Carica materiali Firebase (database community dinamico)
+if(window.communityDB) {
+    console.log("🔄 Caricamento community da Firebase...");
+    const fbMats = await window.loadFromCommunity();
+    console.log("📥 Firebase materials:", fbMats.length);
+    
+    const existingNames = new Set(DB.materials.map(m => m.name.toLowerCase()));
+    let addedCount = 0;
+    
+    for(const fm of fbMats) {
+        // ✅ CERCA PER NOME (case-insensitive)
         var localMat = DB.materials.find(m => m.name.toLowerCase() === fm.name.toLowerCase());
+        
         if (localMat) {
-          // ✅ Materiale esiste già: aggiorna con dati Firebase (fonte di verità)
-          var oldId = localMat.id;  // Mantieni ID locale per compatibilità
-          Object.assign(localMat, fm);  // Sovrascrivi con dati freschi
-          localMat.id = oldId;  // Ripristina ID
-          localMat.isCommunity = true;
-          if(fm.firebaseDocId) localMat.firebaseDocId = fm.firebaseDocId;
+            // ✅ MATERIALE ESISTE: AGGIORNA CON DATI FIREBASE
+            var oldId = localMat.id;  // Mantieni ID locale
+            var oldFirebaseDocId = localMat.firebaseDocId;
+            
+            // Merge dei dati: mantieni ID locale, aggiorna il resto
+            Object.assign(localMat, fm, { 
+                id: oldId,  // ← ✅ MANTIENI ID LOCALE
+                firebaseDocId: oldFirebaseDocId || fm.firebaseDocId
+            });
+            
+            localMat.isCommunity = true;
+            console.log('↻ Sync Firebase:', fm.name);
         } else if (fm.name) {
-          // ✅ Nuovo materiale: aggiungi con prefisso fb_
-          fm.id = 'fb_' + (fm.id || Date.now());
-          fm.isCommunity = true;
-          DB.materials.push(fm);
-          addedCount++;
+            // ✅ NUOVO MATERIALE: AGGIUNGI CON PREFISSO fb_
+            fm.id = 'fb_' + (fm.firebaseDocId || Date.now() + addedCount);
+            fm.isCommunity = true;
+            DB.materials.push(fm);
+            addedCount++;
+            console.log('+ Nuovo da Firebase:', fm.name);
         }
-      }
-      console.log("✅ Community aggiunti:", addedCount);
     }
+    console.log("✅ Community aggiunti/aggiornati:", addedCount);
+}
     
     // 5️⃣ Renderizza l'app con tutti i materiali caricati
     console.log("🎨 Rendering...");
