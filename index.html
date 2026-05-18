@@ -7372,10 +7372,10 @@ filtered.sort(function(a, b){
   var escName = m.name.replace(/'/g, "\\'");
   
   // ✅ Controlla se è materiale utente (non default)
-  // ✅ FORZA isUserMat a true per permettere la modifica anche dei default
-var isUserMat = true;
-
-
+  var isUserMat = true;
+  for(var di=0; di<DEFAULT_MATERIALS.length; di++) {
+    if(DEFAULT_MATERIALS[di].id === m.id) { isUserMat = false; break; }
+  }
   
   // ✅ Badge per materiali community
   var isComm = m.isCommunity || (m.id && String(m.id).startsWith('fb_'));
@@ -7921,40 +7921,28 @@ async function loadExternalMaterialsDB() {
             return;
         }
         
-        // ✅ CREA UNA MAPPA DEI MATERIALI LOCALI ESISTENTI (per nome)
-        const localMatsMap = new Map();
-        DB.materials.forEach(m => {
-            localMatsMap.set(m.name.toLowerCase().trim(), m);
-        });
-        
+        const existingNames = new Set(DB.materials.map(m => m.name.toLowerCase()));
         let addedCount = 0;
+        
         for (const em of externalMats) {
             if (!em || !em.name) continue;
             const normalizedName = em.name.toLowerCase().trim();
             
-            // ✅ CONTROLLA SE ESISTE GIA' LOCALE
-            const existingLocal = localMatsMap.get(normalizedName);
-            
-            if (existingLocal) {
-                // ✅ MATERIALE LOCALE ESISTENTE: NON SOVRASCRIVERE!
-                // Aggiorna SOLO i campi hygroscopic se mancanti nel locale
-                if (em.hygroscopicRefRHWVTR !== undefined && existingLocal.hygroscopicRefRHWVTR === undefined) {
-                    existingLocal.hygroscopicRefRHWVTR = em.hygroscopicRefRHWVTR;
+            // ✅ CERCA SE ESISTE GIA' PER NOME
+            var existing = DB.materials.find(m => m.name.toLowerCase() === em.name.toLowerCase());
+            if (existing) {
+                // ✅ AGGIORNA I CAMPI IGROSCOPICI SENZA DUPLICARE
+                if (em.hygroscopicRefRHWVTR !== undefined) {
+                    existing.hygroscopicRefRHWVTR = em.hygroscopicRefRHWVTR;
+                    existing.hygroscopicRefRHOTR = em.hygroscopicRefRHOTR;
+                    existing.hygroscopicBetaWVTR = em.hygroscopicBetaWVTR;
+                    existing.hygroscopicBetaOTR = em.hygroscopicBetaOTR;
                 }
-                if (em.hygroscopicRefRHOTR !== undefined && existingLocal.hygroscopicRefRHOTR === undefined) {
-                    existingLocal.hygroscopicRefRHOTR = em.hygroscopicRefRHOTR;
-                }
-                if (em.hygroscopicBetaWVTR !== undefined && existingLocal.hygroscopicBetaWVTR === undefined) {
-                    existingLocal.hygroscopicBetaWVTR = em.hygroscopicBetaWVTR;
-                }
-                if (em.hygroscopicBetaOTR !== undefined && existingLocal.hygroscopicBetaOTR === undefined) {
-                    existingLocal.hygroscopicBetaOTR = em.hygroscopicBetaOTR;
-                }
-                console.log('↻ Preservato materiale locale:', em.name);
-                continue; // ✅ SALTA QUESTO MATERIALE ESTERNO
+                console.log('↻ Aggiornato:', em.name);
+                continue; // ← ✅ NON CREARE DUPLICATO
             }
             
-            // ✅ NUOVO MATERIALE: assegna ID e aggiungi
+            // ✅ Assegna ID univoco sequenziale
             const numericIds = DB.materials
                 .map(m => typeof m.id === 'number' ? m.id : 0)
                 .filter(id => id > 0);
@@ -7962,6 +7950,7 @@ async function loadExternalMaterialsDB() {
             em.id = maxId + 1 + addedCount;
             em.family = em.family || getFamily(em.name);
             em.isMetallized = em.isMetallized || false;
+            
             if (!em.reliabilityVotes) em.reliabilityVotes = { up: 0, down: 0 };
             if (!em.company) em.company = '';
             if (!em.tdsLink) em.tdsLink = '';
@@ -7969,7 +7958,7 @@ async function loadExternalMaterialsDB() {
             if (!em.testMethodOTR) em.testMethodOTR = '';
             
             DB.materials.push(em);
-            localMatsMap.set(normalizedName, em); // ✅ Aggiorna la mappa
+            existingNames.add(normalizedName);
             addedCount++;
         }
         
@@ -7981,6 +7970,7 @@ async function loadExternalMaterialsDB() {
         console.log('ℹ️ materials.json non caricato (opzionale):', e.message);
     }
 }
+
 // ====================================================================
 // 🚀 AVVIO APP (IIFE) - ORDINE CORRETTO DI CARICAMENTO
 // ====================================================================
