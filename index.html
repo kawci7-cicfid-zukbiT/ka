@@ -7763,7 +7763,7 @@ var matData = {
     validConditions: conditionsArray
 };
 
-if(editId) { DB.updateMat(editId, matData); } else { DB.addMat(matData); }
+if(editId != null) { DB.updateMat(editId, matData); } else { DB.addMat(matData); }
 render();
 return true;
 }
@@ -8008,33 +8008,29 @@ if(window.communityDB) {
     
     const existingNames = new Set(DB.materials.map(m => m.name.toLowerCase()));
     let addedCount = 0;
+   // Dentro initApp(), cerca questo blocco:
+for(const fm of fbMats) {
+    // ✅ MODIFICA: Cerca per nome O per firebaseDocId (se esiste)
+    var localMat = DB.materials.find(m => 
+        m.name.toLowerCase() === fm.name.toLowerCase() || 
+        (m.firebaseDocId && m.firebaseDocId === fm.firebaseDocId)
+    );
     
-    for(const fm of fbMats) {
-        // ✅ CERCA PER NOME (case-insensitive)
-        var localMat = DB.materials.find(m => m.name.toLowerCase() === fm.name.toLowerCase());
-        
-        if (localMat) {
-            // ✅ MATERIALE ESISTE: AGGIORNA CON DATI FIREBASE
-            var oldId = localMat.id;  // Mantieni ID locale
-            var oldFirebaseDocId = localMat.firebaseDocId;
-            
-            // Merge dei dati: mantieni ID locale, aggiorna il resto
-            Object.assign(localMat, fm, { 
-                id: oldId,  // ← ✅ MANTIENI ID LOCALE
-                firebaseDocId: oldFirebaseDocId || fm.firebaseDocId
-            });
-            
-            localMat.isCommunity = true;
-            console.log('↻ Sync Firebase:', fm.name);
-        } else if (fm.name) {
-            // ✅ NUOVO MATERIALE: AGGIUNGI CON PREFISSO fb_
-            fm.id = 'fb_' + (fm.firebaseDocId || Date.now() + addedCount);
-            fm.isCommunity = true;
-            DB.materials.push(fm);
-            addedCount++;
-            console.log('+ Nuovo da Firebase:', fm.name);
-        }
+    if (localMat) {
+        // ... (lascia il resto del codice di merge invariato)
+        var oldId = localMat.id;
+        Object.assign(localMat, fm);
+        localMat.id = oldId;
+        localMat.isCommunity = true;
+        if(fm.firebaseDocId) localMat.firebaseDocId = fm.firebaseDocId;
+    } else if (fm.name) {
+        // ... (lascia il resto invariato)
+        fm.id = 'fb_' + (fm.id || Date.now());
+        fm.isCommunity = true;
+        DB.materials.push(fm);
+        addedCount++;
     }
+}
     console.log("✅ Community aggiunti/aggiornati:", addedCount);
 }
     
