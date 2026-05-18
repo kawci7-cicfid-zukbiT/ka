@@ -1250,6 +1250,52 @@ window.loadFromCommunity = async function() {
         return [];
     }
 };
+
+// ====== USER LAMINATES SYNC ======
+window.getOrCreateUserId = function() {
+    let uid = localStorage.getItem('wvtr_uid');
+    if (!uid) {
+        uid = 'anon_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+        localStorage.setItem('wvtr_uid', uid);
+    }
+    return uid;
+};
+
+window.saveLaminateToCloud = async function(lam) {
+    if (!window.communityDB) return;
+    try {
+        const uid = window.getOrCreateUserId();
+        const col = window.fbCollection(window.communityDB, 'users', uid, 'laminates');
+        if (lam._cloudId) {
+            await window.fbUpdateDoc(window.fbDoc(window.communityDB, 'users', uid, 'laminates', lam._cloudId), lam);
+        } else {
+            const ref = await window.fbAddDoc(col, lam);
+            lam._cloudId = ref.id;
+        }
+    } catch(e) { console.warn('saveLaminateToCloud error:', e); }
+};
+
+window.deleteLaminateFromCloud = async function(cloudId) {
+    if (!window.communityDB || !cloudId) return;
+    try {
+        const uid = window.getOrCreateUserId();
+        const { deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+        await deleteDoc(window.fbDoc(window.communityDB, 'users', uid, 'laminates', cloudId));
+    } catch(e) { console.warn('deleteLaminateFromCloud error:', e); }
+};
+
+window.loadLaminatesFromCloud = async function() {
+    if (!window.communityDB) return [];
+    try {
+        const uid = window.getOrCreateUserId();
+        const col = window.fbCollection(window.communityDB, 'users', uid, 'laminates');
+        const snap = await window.fbGetDocs(col);
+        const lams = [];
+        snap.forEach(d => { lams.push(Object.assign({}, d.data(), { _cloudId: d.id })); });
+        console.log('☁️ Laminati cloud caricati:', lams.length);
+        return lams;
+    } catch(e) { console.warn('loadLaminatesFromCloud error:', e); return []; }
+};
 </script>
 
 <div class="app">
@@ -1829,11 +1875,14 @@ var DB = {
     addLam: function(l) { 
         l.id = Date.now(); 
         this.laminates.push(l); 
-        this.save(); 
+        this.save();
+        if(window.saveLaminateToCloud) window.saveLaminateToCloud(l);
         return l.id; 
     },
     
-    deleteLam: function(id) { 
+    deleteLam: function(id) {
+        var lam = this.laminates.find(function(x){ return x.id === id; });
+        if(lam && lam._cloudId && window.deleteLaminateFromCloud) window.deleteLaminateFromCloud(lam._cloudId);
         this.laminates = this.laminates.filter(function(x){ return x.id !== id; }); 
         this.save(); 
     },
@@ -8063,7 +8112,16 @@ for(const fm of fbMats) {
     console.log("✅ Community aggiunti/aggiornati:", addedCount);
 }
     
-    // 5️⃣ Renderizza l'app con tutti i materiali caricati
+    // 5️⃣ Carica laminati dal cloud (sovrascrive localStorage se il cloud ha dati)
+    if(window.loadLaminatesFromCloud) {
+        const cloudLams = await window.loadLaminatesFromCloud();
+        if(cloudLams.length > 0) {
+            DB.laminates = cloudLams;
+            DB.save();
+        }
+    }
+
+    // 6️⃣ Renderizza l'app con tutti i materiali caricati
     console.log("🎨 Rendering...");
     render();
     
