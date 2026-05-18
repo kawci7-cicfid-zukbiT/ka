@@ -1684,133 +1684,172 @@ var DEFAULT_LAMINATES = [
 ];
     
 var DB = {
-  materials: [], laminates: [], version: '3.0', dbLastSync: null,
-  
-load: function() {
-    this.materials = [];
-    // 1. Carica i default
-    for(var i=0; i<DEFAULT_MATERIALS.length; i++) {
-        this.materials.push(Object.assign({}, DEFAULT_MATERIALS[i]));
-    }
+    materials: [], 
+    laminates: [], 
+    version: '3.0', 
+    dbLastSync: null,
     
-    try {
-        var savedMats = localStorage.getItem('wvtr_mats_v3');
-        if (savedMats) {
-            var userMats = JSON.parse(savedMats);
-            var defaultIds = {};
-            for(var di2=0; di2<DEFAULT_MATERIALS.length; di2++) defaultIds[DEFAULT_MATERIALS[di2].id]=true;
-            
-            // ✅ FIX: Tieni traccia degli ID già caricati per evitare duplicati
-            var loadedIds = new Set(this.materials.map(m => m.id));
-            
-            for(var u=0; u<userMats.length; u++){
-                var um = userMats[u];
-                // ✅ Mantieni l'ID originale salvato. NON rigenerarlo!
-                // ✅ Salta se è un default o se l'ID è già presente
-                if(!defaultIds[um.id] && !loadedIds.has(um.id)){
-                    loadedIds.add(um.id);
-                    this.materials.push(um);
+    load: function() {
+        this.materials = [];
+        // 1. Carica i default
+        for(var i=0; i<DEFAULT_MATERIALS.length; i++) {
+            this.materials.push(Object.assign({}, DEFAULT_MATERIALS[i]));
+        }
+        
+        try {
+            var savedMats = localStorage.getItem('wvtr_mats_v3');
+            if (savedMats) {
+                var userMats = JSON.parse(savedMats);
+                var defaultIds = {};
+                for(var di=0; di<DEFAULT_MATERIALS.length; di++) {
+                    defaultIds[DEFAULT_MATERIALS[di].id] = true;
+                }
+                // Evita duplicati
+                var loadedIds = new Set(this.materials.map(m => m.id));
+                for(var u=0; u<userMats.length; u++){
+                    var um = userMats[u];
+                    if(!defaultIds[um.id] && !loadedIds.has(um.id)){
+                        loadedIds.add(um.id);
+                        this.materials.push(um);
+                    }
                 }
             }
+            var savedLams = localStorage.getItem('wvtr_lams_v3');
+            if (savedLams) this.laminates = JSON.parse(savedLams);
+            var lastSync = localStorage.getItem('wvtr_db_sync_v3');
+            if (lastSync) this.dbLastSync = new Date(lastSync);
+        } catch (e) { 
+            console.warn('Load error:', e); 
         }
-        var savedLams = localStorage.getItem('wvtr_lams_v3');
-        if (savedLams) this.laminates = JSON.parse(savedLams);
-        var lastSync = localStorage.getItem('wvtr_db_sync_v3');
-        if (lastSync) this.dbLastSync = new Date(lastSync);
-    } catch (e) { console.warn('Load error:', e); }
+        
+        // 🔄 Migrazione backward compatibility (SOLO DENTRO load)
+        for(var i=0; i<this.materials.length; i++){
+            var m = this.materials[i];
+            if(m.hygroscopicBeta > 0 && !m.hygroscopicBetaWVTR){
+                m.hygroscopicBetaWVTR = m.hygroscopicBeta;
+                m.hygroscopicRefRHWVTR = m.hygroscopicRefRH || 50;
+            }
+        }
+    },  // ← load() chiude QUI
     
-    // Migrazione backward compatibility
-    for(var i=0; i<this.materials.length; i++){
-        var m = this.materials[i];
-        if(m.hygroscopicBeta > 0 && !m.hygroscopicBetaWVTR){
-            m.hygroscopicBetaWVTR = m.hygroscopicBeta;
-            m.hygroscopicRefRHWVTR = m.hygroscopicRefRH || 50;
+    save: function() {
+        try {
+            var defaultIds = {};
+            for(var di=0; di<DEFAULT_MATERIALS.length; di++) {
+                defaultIds[DEFAULT_MATERIALS[di].id] = true;
+            }
+            var userMats = [];
+            for(var m=0; m<this.materials.length; m++) {
+                if(!defaultIds[this.materials[m].id]) {
+                    userMats.push(this.materials[m]);
+                }
+            }
+            localStorage.setItem('wvtr_mats_v3', JSON.stringify(userMats));
+            localStorage.setItem('wvtr_lams_v3', JSON.stringify(this.laminates));
+        } catch (e) { 
+            console.warn('Save error:', e); 
         }
-    }
-},
-
-    // 🔄 MIGRAZIONE BACKWARD COMPATIBILITY
-    // Eseguita DOPO il caricamento, così converte i materiali salvati in precedenza
-    for(var i=0; i<this.materials.length; i++){
-        var m = this.materials[i];
-        if(m.hygroscopicBeta > 0 && !m.hygroscopicBetaWVTR){
-            m.hygroscopicBetaWVTR = m.hygroscopicBeta;
-            m.hygroscopicRefRHWVTR = m.hygroscopicRefRH || 50;
+    },
+    
+    saveState: function(state) {
+        try {
+            var stateData = { 
+                layers: state.layers, 
+                selCond: state.selCond, 
+                mode: state.mode, 
+                timestamp: Date.now() 
+            };
+            localStorage.setItem('wvtr_state_v3', JSON.stringify(stateData));
+        } catch (e) {}
+    },
+    
+    loadState: function() {
+        try { 
+            var s = localStorage.getItem('wvtr_state_v3'); 
+            if (s) return JSON.parse(s); 
+        } catch (e) {}
+        return null;
+    },
+    
+    addMat: function(m) {
+        var maxId = 0;
+        for(var i=0; i<this.materials.length; i++) {
+            if(this.materials[i].id > maxId) maxId = this.materials[i].id;
         }
-    }
-},
-  
-  save: function() {
-    try {
-      var defaultIds = {};
-      for(var di3=0;di3<DEFAULT_MATERIALS.length;di3++) defaultIds[DEFAULT_MATERIALS[di3].id]=true;
-      var userMats = [];
-      for(var m=0;m<this.materials.length;m++) if(!defaultIds[this.materials[m].id]) userMats.push(this.materials[m]);
-      localStorage.setItem('wvtr_mats_v3', JSON.stringify(userMats));
-      localStorage.setItem('wvtr_lams_v3', JSON.stringify(this.laminates));
-    } catch (e) { console.warn('Save error:', e); }
-  },
-  
-  saveState: function(state) {
-    try {
-      var stateData = { layers: state.layers, selCond: state.selCond, mode: state.mode, timestamp: Date.now() };
-      localStorage.setItem('wvtr_state_v3', JSON.stringify(stateData));
-    } catch (e) {}
-  },
-  
-  loadState: function() {
-    try { var s = localStorage.getItem('wvtr_state_v3'); if (s) return JSON.parse(s); } catch (e) {}
-    return null;
-  },
-  
-  addMat: function(m) {
-    var maxId=0;
-    for(var i=0;i<this.materials.length;i++) if(this.materials[i].id>maxId) maxId=this.materials[i].id;
-    m.id=maxId+1; 
-    m.family = m.family || getFamily(m.name);
-    if(!m.reliabilityVotes) m.reliabilityVotes = { up: 0, down: 0 };
-    m.company = m.company || '';
-    m.tdsLink = m.tdsLink || '';
-    this.materials.push(m); this.save(); return m.id;
-  },
-  
-updateMat: function(id, m) {
-    var targetId = Number(id); // ✅ Normalizza l'ID per evitare mismatch stringa/numero
-    for(var i=0; i<this.materials.length; i++){
-        if(this.materials[i].id == targetId){
-            var existing = this.materials[i];
-            // Mantieni voti e metadata se non forniti
-            m.reliabilityVotes = m.reliabilityVotes !== undefined ? m.reliabilityVotes : (existing.reliabilityVotes || { up: 0, down: 0 });
-            m.family = m.family || getFamily(m.name);
-            if(m.company === undefined) m.company = existing.company || '';
-            if(m.tdsLink === undefined) m.tdsLink = existing.tdsLink || '';
-            if(m.testMethodWVTR === undefined) m.testMethodWVTR = existing.testMethodWVTR || '';
-            if(m.testMethodOTR === undefined) m.testMethodOTR = existing.testMethodOTR || '';
-            
-            // ✅ FIX: Usa l'ID ESISTENTE, non quello passato dalla modale
-            this.materials[i] = Object.assign({}, existing, m, { id: existing.id });
+        m.id = maxId + 1;
+        m.family = m.family || getFamily(m.name);
+        if(!m.reliabilityVotes) m.reliabilityVotes = { up: 0, down: 0 };
+        m.company = m.company || '';
+        m.tdsLink = m.tdsLink || '';
+        this.materials.push(m); 
+        this.save(); 
+        return m.id;
+    },
+    
+    updateMat: function(id, m) {
+        var targetId = Number(id);
+        for(var i=0; i<this.materials.length; i++){
+            if(this.materials[i].id == targetId){
+                var existing = this.materials[i];
+                m.reliabilityVotes = m.reliabilityVotes !== undefined ? m.reliabilityVotes : (existing.reliabilityVotes || { up: 0, down: 0 });
+                m.family = m.family || getFamily(m.name);
+                if(m.company === undefined) m.company = existing.company || '';
+                if(m.tdsLink === undefined) m.tdsLink = existing.tdsLink || '';
+                if(m.testMethodWVTR === undefined) m.testMethodWVTR = existing.testMethodWVTR || '';
+                if(m.testMethodOTR === undefined) m.testMethodOTR = existing.testMethodOTR || '';
+                this.materials[i] = Object.assign({}, existing, m, { id: existing.id });
+                this.save();
+                break;
+            }
+        }
+    },
+    
+    deleteMat: function(id) { 
+        this.materials = this.materials.filter(function(x){ return x.id !== id; }); 
+        this.save(); 
+    },
+    
+    addLam: function(l) { 
+        l.id = Date.now(); 
+        this.laminates.push(l); 
+        this.save(); 
+        return l.id; 
+    },
+    
+    deleteLam: function(id) { 
+        this.laminates = this.laminates.filter(function(x){ return x.id !== id; }); 
+        this.save(); 
+    },
+    
+    importMats: function(mats) { 
+        for(var i=0; i<mats.length; i++){
+            mats[i].id = Math.max.apply(null, this.materials.map(function(x){ return x.id; })) + 1;
+            mats[i].family = getFamily(mats[i].name);
+            this.materials.push(mats[i]);
+        } 
+        this.save(); 
+    },
+    
+    exportAll: function() { 
+        return JSON.stringify({ 
+            materials: this.materials, 
+            laminates: this.laminates, 
+            version: this.version, 
+            exportDate: new Date().toISOString() 
+        }); 
+    },
+    
+    importAll: function(dataStr) {
+        try {
+            var parsed = JSON.parse(dataStr);
+            if (parsed.materials) this.materials = parsed.materials;
+            if (parsed.laminates) this.laminates = parsed.laminates;
             this.save();
-            break;
+            return true;
+        } catch (e) {
+            return false;
         }
-    }
-},
-  
-  deleteMat: function(id) { this.materials = this.materials.filter(function(x){return x.id!==id;}); this.save(); },
-  addLam: function(l) { l.id=Date.now(); this.laminates.push(l); this.save(); return l.id; },
-  deleteLam: function(id) { this.laminates = this.laminates.filter(function(x){return x.id!==id;}); this.save(); },
-  importMats: function(mats) { for(var i=0;i<mats.length;i++){mats[i].id=Math.max.apply(null,this.materials.map(function(x){return x.id;}))+1;mats[i].family=getFamily(mats[i].name);this.materials.push(mats[i]);} this.save(); },
-  exportAll: function() { return JSON.stringify({ materials: this.materials, laminates: this.laminates, version: this.version, exportDate: new Date().toISOString() }); },
-  importAll: function(dataStr) { 
-    try { 
-      var parsed = JSON.parse(dataStr); 
-      if (parsed.materials) this.materials = parsed.materials; 
-      if (parsed.laminates) this.laminates = parsed.laminates; 
-      this.save(); 
-      return true; 
-    } catch (e) { 
-      return false; 
-    } 
-  }  // ← Ultima funzione: NESSUNA virgola
+    }  // ← Ultima funzione: NESSUNA virgola
 };  // ← ✅ UNA SOLA chiusura per tutto l'oggetto DB
   
 var State = {
