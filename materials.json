@@ -283,6 +283,5368 @@
     {"name":"Polyethylene Terephthalate Glycol (PETG)","family":"PET","company":"","isMetallized":false,"wvtrValues":[{"value":2.5,"thickness":800}],"otrValues":[{"value":80,"thickness":800}],"validConditions":[{"temperature":30,"humidity":60}],"testMethodWVTR":"","testMethodOTR":"","tdsLink":"","hygroscopicBetaWVTR":0,"hygroscopicRefRHWVTR":50,"hygroscopicBetaOTR":0,"hygroscopicRefRHOTR":50},
     {"name":"Polypropylene Random Copolymer (PP-R)","family":"PP","company":"","isMetallized":false,"wvtrValues":[{"value":0.9,"thickness":400}],"otrValues":[{"value":2200,"thickness":400}],"validConditions":[{"temperature":30,"humidity":60}],"testMethodWVTR":"","testMethodOTR":"","tdsLink":"","hygroscopicBetaWVTR":0,"hygroscopicRefRHWVTR":50,"hygroscopicBetaOTR":0,"hygroscopicRefRHOTR":50},
     {"name":"Polyoxymethylene Copolymer (Co-POM)","family":"Other","company":"","isMetallized":false,"wvtrValues":[{"value":1.5,"thickness":1000}],"otrValues":[{"value":280,"thickness":1000}],"validConditions":[{"temperature":25,"humidity":50}],"testMethodWVTR":"","testMethodOTR":"","tdsLink":"","hygroscopicBetaWVTR":0,"hygroscopicRefRHWVTR":50,"hygroscopicBetaOTR":0,"hygroscopicRefRHOTR":50},
-    {"name":"Polyamide-Imide (PAI)","family":"PA","company":"","isMetallized":false,"wvtrValues":[{"value":0.7,"thickness":300}],"otrValues":[{"value":90,"thickness":300}],"validConditions":[{"temperature":35,"humidity":70}],"testMethodWVTR":"","testMethodOTR":"","tdsLink":"","hygroscopicBetaWVTR":0,"hygroscopicRefRHWVTR":50,"hygroscopicBetaOTR":0,"hygroscopicRefRHOTR":50}
+    {"name":"Polyamide-Imide (PAI)","family":"PA","company":"","isMetallized":false,"wvtrValues":[{"value":0.7,"thickness":300}],"otrValues":[{"value":90,"thickness":300}],"validConditions":[{"temperature":35,"humidity":70}],"testMethodWVTR":"","testMethodOTR":"","tdsLink":"","hygroscopicBetaWVTR":0,"hygroscopicRefRHWVTR":50,"hygroscopicBetaOTR":0,"hygroscopicRefRHOTR":50},
+    {
+    "name": "EVAL L171B",
+    "family": "EVOH",
+    "company": "Kuraray",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 4.2,
+        "thickness": 100
+      },
+      {
+        "value": 9.8,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 0.6,
+        "thickness": 20
+      },
+      {
+        "value": 5.2,
+        "thickness": 20
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.036,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.054,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://eval.kuraray.com"
+  },
+  {
+    "name": "EVAL G156B",
+    "family": "EVOH",
+    "company": "Kuraray",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 5.0,
+        "thickness": 100
+      },
+      {
+        "value": 11.5,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 1.2,
+        "thickness": 20
+      },
+      {
+        "value": 9.5,
+        "thickness": 20
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.029,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.043,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://eval.kuraray.com"
+  },
+  {
+    "name": "Soarnol WD2203",
+    "family": "EVOH",
+    "company": "Nippon Gohsei",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 2.5,
+        "thickness": 100
+      },
+      {
+        "value": 6.1,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 0.2,
+        "thickness": 15
+      },
+      {
+        "value": 1.8,
+        "thickness": 15
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.04,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.062,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.nichigo.co.jp/english/product/lineup/soarnol/"
+  },
+  {
+    "name": "Soarnol H4815B",
+    "family": "EVOH",
+    "company": "Nippon Gohsei",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 6.5,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 2.8,
+        "thickness": 15
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.025,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.038,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.nichigo.co.jp/english/product/lineup/soarnol/"
+  },
+  {
+    "name": "Exceval AQ-4104",
+    "family": "EVOH",
+    "company": "Kuraray",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 3.3,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 0.35,
+        "thickness": 20
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.041,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.057,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.kuraray.com/products/exceval/"
+  },
+  {
+    "name": "Emblem PA25",
+    "family": "PA",
+    "company": "Coveris",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 170,
+        "thickness": 15
+      },
+      {
+        "value": 340,
+        "thickness": 15
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 40,
+        "thickness": 15
+      },
+      {
+        "value": 85,
+        "thickness": 15
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.019,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.013,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://coveris.com/solutions/flexible-packaging/"
+  },
+  {
+    "name": "Rilsamid AMNO PA12",
+    "family": "PA",
+    "company": "Arkema",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 35,
+        "thickness": 50
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 18,
+        "thickness": 50
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.008,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.006,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.extremematerials-arkema.com/en/product-ranges/rilsamid-range/"
+  },
+  {
+    "name": "Grilon CF6S PA6/66",
+    "family": "PA",
+    "company": "EMS-Chemie",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 145,
+        "thickness": 15
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 35,
+        "thickness": 15
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.016,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.011,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.emsgrivory.com/en/products/grilon/"
+  },
+  {
+    "name": "Nylon MXD6 Itar Grade S6121",
+    "family": "PA",
+    "company": "Mitsubishi Gas Chemical",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 85,
+        "thickness": 15
+      },
+      {
+        "value": 175,
+        "thickness": 15
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 2.8,
+        "thickness": 15
+      },
+      {
+        "value": 9.5,
+        "thickness": 15
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.021,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.032,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.mgc.co.jp/eng/products/nc/mxd6.html"
+  },
+  {
+    "name": "Ultramid A3K PA66",
+    "family": "PA",
+    "company": "BASF",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 130,
+        "thickness": 15
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 30,
+        "thickness": 15
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.018,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.012,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.basf.com/global/en/products/plastic-rubber/ultramid.html"
+  },
+  {
+    "name": "Mylar OL",
+    "family": "PET",
+    "company": "DuPont Teijin Films",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 11,
+        "thickness": 12
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 60,
+        "thickness": 12
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.dtf.com/en/products/mylar-pet-film"
+  },
+  {
+    "name": "Hostaphan RNK12",
+    "family": "PET",
+    "company": "Mitsubishi Polyester Film",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 13,
+        "thickness": 12
+      },
+      {
+        "value": 26,
+        "thickness": 12
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 68,
+        "thickness": 12
+      },
+      {
+        "value": 135,
+        "thickness": 12
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.m-petfilm.com/products/hostaphan/"
+  },
+  {
+    "name": "Lumirror X10S",
+    "family": "PET",
+    "company": "Toray",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 14,
+        "thickness": 12
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 74,
+        "thickness": 12
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.toray-films.com/products/lumirror/"
+  },
+  {
+    "name": "SKC SF82",
+    "family": "PET",
+    "company": "SKC",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 16,
+        "thickness": 23
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 82,
+        "thickness": 23
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.skcfilms.com/products/"
+  },
+  {
+    "name": "AlOx-coated PET Ceramis CX",
+    "family": "PET",
+    "company": "Amcor",
+    "isMetallized": true,
+    "wvtrValues": [
+      {
+        "value": 0.45,
+        "thickness": 12
+      },
+      {
+        "value": 1.1,
+        "thickness": 12
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 1.5,
+        "thickness": 12
+      },
+      {
+        "value": 4.0,
+        "thickness": 12
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.amcor.com/products/flexible-packaging"
+  },
+  {
+    "name": "Hostaphan GTE SiOx",
+    "family": "PET",
+    "company": "Mitsubishi Polyester Film",
+    "isMetallized": true,
+    "wvtrValues": [
+      {
+        "value": 0.55,
+        "thickness": 12
+      },
+      {
+        "value": 1.3,
+        "thickness": 12
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 2.2,
+        "thickness": 12
+      },
+      {
+        "value": 5.8,
+        "thickness": 12
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.m-petfilm.com/products/barrier/"
+  },
+  {
+    "name": "Flecoflex MET-PET 12",
+    "family": "PET",
+    "company": "Constantia Flexibles",
+    "isMetallized": true,
+    "wvtrValues": [
+      {
+        "value": 0.3,
+        "thickness": 12
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 2.0,
+        "thickness": 12
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.constantia-flexibles.com/en/products/"
+  },
+  {
+    "name": "Lumirror ZV25 AlOx",
+    "family": "PET",
+    "company": "Toray",
+    "isMetallized": true,
+    "wvtrValues": [
+      {
+        "value": 0.7,
+        "thickness": 12
+      },
+      {
+        "value": 1.6,
+        "thickness": 12
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 2.8,
+        "thickness": 12
+      },
+      {
+        "value": 6.5,
+        "thickness": 12
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.toray-films.com/products/barrier/"
+  },
+  {
+    "name": "Borealis Borsoft SD233CF",
+    "family": "PP",
+    "company": "Borealis",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 5.5,
+        "thickness": 20
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 2100,
+        "thickness": 20
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.borealisgroup.com/polyolefins/borsoft/"
+  },
+  {
+    "name": "SABIC PP FPC60",
+    "family": "PP",
+    "company": "SABIC",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 4.8,
+        "thickness": 20
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 1900,
+        "thickness": 20
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.sabic.com/en/products/polymers/polypropylene"
+  },
+  {
+    "name": "Torayfan BO-CT",
+    "family": "PP",
+    "company": "Toray",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 4.0,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 1600,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.toray-films.com/products/torayfan/"
+  },
+  {
+    "name": "Treofan THB",
+    "family": "PP",
+    "company": "Treofan",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 3.8,
+        "thickness": 30
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 1500,
+        "thickness": 30
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.treofan.com/products/"
+  },
+  {
+    "name": "Cosmo BOPP CPP-HS",
+    "family": "PP",
+    "company": "Cosmo Films",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 6.2,
+        "thickness": 30
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 2400,
+        "thickness": 30
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.cosmofilms.com/products/bopp-films/"
+  },
+  {
+    "name": "Exceed XP 8656ML",
+    "family": "PE",
+    "company": "ExxonMobil",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 15,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 7500,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.exxonmobilchemical.com/en/products/polyethylene/exceed-xp-performance-pe"
+  },
+  {
+    "name": "Elvaloy AC 1125",
+    "family": "PE",
+    "company": "DuPont",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 55,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 18000,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.dupont.com/products/elvaloy-ac.html"
+  },
+  {
+    "name": "Elite AT 6401",
+    "family": "PE",
+    "company": "Dow",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 13,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 6800,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.dow.com/en-us/product-technology-solutions/products/elite-performance-polyethylene-resins.html"
+  },
+  {
+    "name": "Borcycle ME1210",
+    "family": "PE",
+    "company": "Borealis",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 14,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 7200,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.borealisgroup.com/sustainability/borcycle/"
+  },
+  {
+    "name": "Solmax HDPE Barrier 300",
+    "family": "PE",
+    "company": "Solmax",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 7.5,
+        "thickness": 300
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 4500,
+        "thickness": 300
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM E96",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.solmax.com/products/"
+  },
+  {
+    "name": "Aluminum Foil 9\u00b5m Soft",
+    "family": "AL",
+    "company": "Constantia Flexibles",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 0.001,
+        "thickness": 9
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 0.0005,
+        "thickness": 9
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.constantia-flexibles.com/en/products/"
+  },
+  {
+    "name": "Aluminum Foil 12\u00b5m Hard",
+    "family": "AL",
+    "company": "Amcor",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 0.001,
+        "thickness": 12
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 0.0005,
+        "thickness": 12
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.amcor.com/products/flexible-packaging"
+  },
+  {
+    "name": "Aluminum Foil 20\u00b5m Pharma",
+    "family": "AL",
+    "company": "Huhtamaki",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 0.001,
+        "thickness": 20
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 0.0005,
+        "thickness": 20
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 40,
+        "humidity": 75
+      }
+    ],
+    "testMethodWVTR": "ASTM E96",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.huhtamaki.com/en/flexible-packaging/"
+  },
+  {
+    "name": "Tedlar PVF Film 25",
+    "family": "Other",
+    "company": "DuPont",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 4.2,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 120,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.dupont.com/products/tedlar-pvf-film.html"
+  },
+  {
+    "name": "Teflon PTFE Film 25",
+    "family": "PTFE",
+    "company": "Chemours",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 0.55,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 140,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.chemours.com/en/brands/teflon/films"
+  },
+  {
+    "name": "Makrofol DE 1-1",
+    "family": "PC",
+    "company": "Covestro",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 8.5,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 90,
+        "thickness": 100
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://solutions.covestro.com/en/products/makrofol/makrofol-de-1-1"
+  },
+  {
+    "name": "Lexan OQ50 PC Film",
+    "family": "PC",
+    "company": "SABIC",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 9.2,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 95,
+        "thickness": 100
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.sabic.com/en/products/polymers/polycarbonate/lexan-film"
+  },
+  {
+    "name": "Styroflex 2G66",
+    "family": "PS",
+    "company": "BASF",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 120,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 350,
+        "thickness": 100
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.basf.com/global/en/products/plastic-rubber/styroflex.html"
+  },
+  {
+    "name": "Pentapharm Formable Alu-Alu 200",
+    "family": "AL",
+    "company": "Klockner Pentaplast",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 0.001,
+        "thickness": 200
+      },
+      {
+        "value": 0.001,
+        "thickness": 200
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 0.0005,
+        "thickness": 200
+      },
+      {
+        "value": 0.0005,
+        "thickness": 200
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 40,
+        "humidity": 75
+      }
+    ],
+    "testMethodWVTR": "ASTM E96",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.kpfilms.com/products/pharma/"
+  },
+  {
+    "name": "Ultrofilm PVC/PVDC 250/90",
+    "family": "PVC",
+    "company": "Liveo Research",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 0.35,
+        "thickness": 340
+      },
+      {
+        "value": 0.65,
+        "thickness": 340
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 1.2,
+        "thickness": 340
+      },
+      {
+        "value": 2.5,
+        "thickness": 340
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 40,
+        "humidity": 75
+      }
+    ],
+    "testMethodWVTR": "ASTM E96",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.liveo-research.com/en/products/"
+  },
+  {
+    "name": "Technigraph PVC 100\u00b5m",
+    "family": "PVC",
+    "company": "Klockner Pentaplast",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 7.8,
+        "thickness": 100
+      },
+      {
+        "value": 14.5,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 280,
+        "thickness": 100
+      },
+      {
+        "value": 540,
+        "thickness": 100
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 40,
+        "humidity": 75
+      }
+    ],
+    "testMethodWVTR": "ASTM E96",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.kpfilms.com/products/pharma/"
+  },
+  {
+    "name": "Mondi Advantage BarrierPack Recyclable",
+    "family": "Paper",
+    "company": "Mondi",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 18,
+        "thickness": 80
+      },
+      {
+        "value": 35,
+        "thickness": 80
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 12,
+        "thickness": 80
+      },
+      {
+        "value": 25,
+        "thickness": 80
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.mondigroup.com/products/functional-paper-and-films/barrierpack/"
+  },
+  {
+    "name": "Sappi Seal Barrier Kraft 80",
+    "family": "Paper",
+    "company": "Sappi",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 22,
+        "thickness": 80
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 18,
+        "thickness": 80
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.sappi.com/release-and-speciality-papers"
+  },
+  {
+    "name": "Kotkamills ISLA Barrier Board",
+    "family": "Paper",
+    "company": "Kotkamills",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 25,
+        "thickness": 300
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 20,
+        "thickness": 300
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://kotkamills.com/products/isla/"
+  },
+  {
+    "name": "Cryovac OS2100 Retort PA/PP",
+    "family": "PA",
+    "company": "Sealed Air",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 95,
+        "thickness": 90
+      },
+      {
+        "value": 200,
+        "thickness": 90
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 22,
+        "thickness": 90
+      },
+      {
+        "value": 48,
+        "thickness": 90
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.014,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.009,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.sealedair.com/products/food-packaging/cryovac"
+  },
+  {
+    "name": "Bemis Retort Barrier 8-layer",
+    "family": "EVOH",
+    "company": "Amcor",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 4.0,
+        "thickness": 120
+      },
+      {
+        "value": 9.0,
+        "thickness": 120
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 0.55,
+        "thickness": 120
+      },
+      {
+        "value": 4.8,
+        "thickness": 120
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.032,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.048,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.amcor.com/products/flexible-packaging"
+  },
+  {
+    "name": "Coveris HighBarrier PET/PE Retort",
+    "family": "PET",
+    "company": "Coveris",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 8.5,
+        "thickness": 100
+      },
+      {
+        "value": 19,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 50,
+        "thickness": 100
+      },
+      {
+        "value": 110,
+        "thickness": 100
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://coveris.com/solutions/flexible-packaging/"
+  },
+  {
+    "name": "Winpak Retort Pouch PA/EVOH/PP",
+    "family": "EVOH",
+    "company": "Winpak",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 3.5,
+        "thickness": 110
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 0.45,
+        "thickness": 110
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.031,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.047,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.winpak.com/en/products"
+  },
+  {
+    "name": "Flecoflex Mono-PE Recycle Ready",
+    "family": "PE",
+    "company": "Constantia Flexibles",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 4.2,
+        "thickness": 90
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 30,
+        "thickness": 90
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.constantia-flexibles.com/en/sustainability/"
+  },
+  {
+    "name": "Berry Global Recyclable Mono-PE Barrier",
+    "family": "PE",
+    "company": "Berry Global",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 3.8,
+        "thickness": 100
+      },
+      {
+        "value": 7.5,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 20,
+        "thickness": 100
+      },
+      {
+        "value": 45,
+        "thickness": 100
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.berryglobal.com/products/flexible-packaging"
+  },
+  {
+    "name": "Jindal BOPP SiOx Coated",
+    "family": "PP",
+    "company": "Jindal Films",
+    "isMetallized": true,
+    "wvtrValues": [
+      {
+        "value": 0.6,
+        "thickness": 20
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 5.5,
+        "thickness": 20
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.jindalfilms.com/products/barrier-films/"
+  },
+  {
+    "name": "NatureFlex NVS",
+    "family": "Other",
+    "company": "Innovia Films",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 55,
+        "thickness": 30
+      },
+      {
+        "value": 220,
+        "thickness": 30
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 8.0,
+        "thickness": 30
+      },
+      {
+        "value": 48,
+        "thickness": 30
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.045,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.06,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.innoviafilms.com/natureflex/"
+  },
+  {
+    "name": "EVAL SP484B",
+    "family": "EVOH",
+    "company": "Kuraray",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 6.8,
+        "thickness": 100
+      },
+      {
+        "value": 15.0,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 2.5,
+        "thickness": 20
+      },
+      {
+        "value": 18.0,
+        "thickness": 20
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.027,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.04,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://eval.kuraray.com"
+  },
+  {
+    "name": "EVAL AT4403B",
+    "family": "EVOH",
+    "company": "Kuraray",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 4.5,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 0.65,
+        "thickness": 20
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.034,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.051,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://eval.kuraray.com"
+  },
+  {
+    "name": "Soarnol V2504RB",
+    "family": "EVOH",
+    "company": "Nippon Gohsei",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 1.5,
+        "thickness": 100
+      },
+      {
+        "value": 3.8,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 0.1,
+        "thickness": 15
+      },
+      {
+        "value": 0.95,
+        "thickness": 15
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.042,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.063,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.nichigo.co.jp/english/product/lineup/soarnol/"
+  },
+  {
+    "name": "Saran MA134",
+    "family": "Other",
+    "company": "Dow",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 0.9,
+        "thickness": 25
+      },
+      {
+        "value": 1.75,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 3.2,
+        "thickness": 25
+      },
+      {
+        "value": 6.5,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.dow.com/en-us/product-technology-solutions/products/saran-resins.html"
+  },
+  {
+    "name": "Ixan PB140",
+    "family": "Other",
+    "company": "Solvay",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 0.75,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 2.8,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.solvay.com/en/product/ixan"
+  },
+  {
+    "name": "Capron 8200 PA6",
+    "family": "PA",
+    "company": "Honeywell",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 190,
+        "thickness": 15
+      },
+      {
+        "value": 380,
+        "thickness": 15
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 48,
+        "thickness": 15
+      },
+      {
+        "value": 98,
+        "thickness": 15
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.02,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.014,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.honeywell-resins.com/products/capron/"
+  },
+  {
+    "name": "Technyl A218 PA66",
+    "family": "PA",
+    "company": "Solvay",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 125,
+        "thickness": 15
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 30,
+        "thickness": 15
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.017,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.012,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.solvay.com/en/product/technyl"
+  },
+  {
+    "name": "Vestamid L1901 PA12",
+    "family": "PA",
+    "company": "Evonik",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 32,
+        "thickness": 50
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 16,
+        "thickness": 50
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.007,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.005,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.vestamid.com/product/vestamid-l/"
+  },
+  {
+    "name": "EcoPaXX Q170H PA410",
+    "family": "PA",
+    "company": "DSM",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 60,
+        "thickness": 15
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 14,
+        "thickness": 15
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.01,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.008,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.dsm.com/en_US/products/ecopaxx.html"
+  },
+  {
+    "name": "Durethan C38F PA6/66",
+    "family": "PA",
+    "company": "Lanxess",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 155,
+        "thickness": 15
+      },
+      {
+        "value": 310,
+        "thickness": 15
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 37,
+        "thickness": 15
+      },
+      {
+        "value": 78,
+        "thickness": 15
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.018,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.012,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.lanxess.com/en/products/product-finder/"
+  },
+  {
+    "name": "Skyrol SP65",
+    "family": "PET",
+    "company": "SKC",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 12,
+        "thickness": 12
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 65,
+        "thickness": 12
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.skcfilms.com/products/"
+  },
+  {
+    "name": "Mylar A 48GA",
+    "family": "PET",
+    "company": "DuPont Teijin Films",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 10,
+        "thickness": 12
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 55,
+        "thickness": 12
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.dtf.com/en/products/mylar-pet-film"
+  },
+  {
+    "name": "Melinex 813 PVOH-coated",
+    "family": "PET",
+    "company": "DuPont Teijin Films",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 13,
+        "thickness": 12
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 1.2,
+        "thickness": 12
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.022,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.038,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.dtf.com/en/products/melinex-polyester-film"
+  },
+  {
+    "name": "Hostaphan BN16",
+    "family": "PET",
+    "company": "Mitsubishi Polyester Film",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 20,
+        "thickness": 23
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 100,
+        "thickness": 23
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.m-petfilm.com/products/hostaphan/"
+  },
+  {
+    "name": "Lumirror ZX10 Met PET",
+    "family": "PET",
+    "company": "Toray",
+    "isMetallized": true,
+    "wvtrValues": [
+      {
+        "value": 0.2,
+        "thickness": 12
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 1.2,
+        "thickness": 12
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.toray-films.com/products/metallized/"
+  },
+  {
+    "name": "Ceraphan ZX AlOx PET",
+    "family": "PET",
+    "company": "Toray",
+    "isMetallized": true,
+    "wvtrValues": [
+      {
+        "value": 0.65,
+        "thickness": 12
+      },
+      {
+        "value": 1.5,
+        "thickness": 12
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 2.5,
+        "thickness": 12
+      },
+      {
+        "value": 6.0,
+        "thickness": 12
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.toray-films.com/products/barrier/"
+  },
+  {
+    "name": "Huhtamaki MET PET 12 Barrier",
+    "family": "PET",
+    "company": "Huhtamaki",
+    "isMetallized": true,
+    "wvtrValues": [
+      {
+        "value": 0.28,
+        "thickness": 12
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 1.8,
+        "thickness": 12
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.huhtamaki.com/en/flexible-packaging/"
+  },
+  {
+    "name": "Spectar PETG DN004",
+    "family": "PET",
+    "company": "Eastman",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 28,
+        "thickness": 250
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 90,
+        "thickness": 250
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.eastman.com/en/products/product-page/spectar-copolyester"
+  },
+  {
+    "name": "Tritan TX1001 Copolyester",
+    "family": "PET",
+    "company": "Eastman",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 25,
+        "thickness": 250
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 85,
+        "thickness": 250
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.eastman.com/en/products/product-page/tritan-copolyester"
+  },
+  {
+    "name": "Topas 6013S-04 COC",
+    "family": "Other",
+    "company": "Topas Advanced Polymers",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 0.16,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 210,
+        "thickness": 100
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://topas.com/products/topas-coc-grades/"
+  },
+  {
+    "name": "Zeonex 480R COP",
+    "family": "Other",
+    "company": "Zeon Corporation",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 0.13,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 260,
+        "thickness": 100
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.zeon.co.jp/en/business/enterprise/resin/zeonex/"
+  },
+  {
+    "name": "Innoplen HP501H BOPP",
+    "family": "PP",
+    "company": "LyondellBasell",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 4.6,
+        "thickness": 20
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 1850,
+        "thickness": 20
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.lyondellbasell.com/en/chemicals-and-plastics/polypropylene/"
+  },
+  {
+    "name": "ExxonMobil PP3155",
+    "family": "PP",
+    "company": "ExxonMobil",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 5.2,
+        "thickness": 20
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 2050,
+        "thickness": 20
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.exxonmobilchemical.com/en/products/polypropylene"
+  },
+  {
+    "name": "Borealis HC318BF BOPP",
+    "family": "PP",
+    "company": "Borealis",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 4.3,
+        "thickness": 20
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 1750,
+        "thickness": 20
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.borealisgroup.com/polyolefins/bopp-film-grades/"
+  },
+  {
+    "name": "Bicor 110PBL Met BOPP",
+    "family": "PP",
+    "company": "Treofan",
+    "isMetallized": true,
+    "wvtrValues": [
+      {
+        "value": 0.42,
+        "thickness": 20
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 11,
+        "thickness": 20
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.treofan.com/products/"
+  },
+  {
+    "name": "Taghleef AT OPP Barrier",
+    "family": "PP",
+    "company": "Taghleef Industries",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 3.2,
+        "thickness": 25
+      },
+      {
+        "value": 6.8,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 1400,
+        "thickness": 25
+      },
+      {
+        "value": 2900,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.ti-films.com/products/"
+  },
+  {
+    "name": "Torayfan PVOH-coated OPP",
+    "family": "PP",
+    "company": "Toray",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 4.0,
+        "thickness": 20
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 2.5,
+        "thickness": 20
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.024,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.04,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.toray-films.com/products/torayfan/"
+  },
+  {
+    "name": "Coveris PVOH-coated OPP",
+    "family": "PP",
+    "company": "Coveris",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 3.8,
+        "thickness": 20
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 3.0,
+        "thickness": 20
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.023,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.039,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://coveris.com/solutions/flexible-packaging/"
+  },
+  {
+    "name": "Dowlex 2045G LLDPE",
+    "family": "PE",
+    "company": "Dow",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 16,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 7800,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.dow.com/en-us/product-technology-solutions/products/dowlex-polyethylene-resins.html"
+  },
+  {
+    "name": "Affinity GA 1900G",
+    "family": "PE",
+    "company": "Dow",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 20,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 9500,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.dow.com/en-us/product-technology-solutions/products/affinity-polyolefin-plastomers.html"
+  },
+  {
+    "name": "Engage 8003 Polyolefin",
+    "family": "PE",
+    "company": "Dow",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 28,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 12000,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.dow.com/en-us/product-technology-solutions/products/engage-polyolefin-elastomers.html"
+  },
+  {
+    "name": "Queo 0201 PE Plastomer",
+    "family": "PE",
+    "company": "Borealis",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 25,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 11000,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.borealisgroup.com/polyolefins/queo/"
+  },
+  {
+    "name": "Nextene G5351 mLLDPE",
+    "family": "PE",
+    "company": "LyondellBasell",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 14,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 7000,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.lyondellbasell.com/en/chemicals-and-plastics/polyethylene/"
+  },
+  {
+    "name": "SABIC LLDPE 118NE",
+    "family": "PE",
+    "company": "SABIC",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 17,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 8200,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.sabic.com/en/products/polymers/polyethylene/lldpe"
+  },
+  {
+    "name": "Desmopan DP 9370A PU Film",
+    "family": "PU",
+    "company": "Covestro",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 650,
+        "thickness": 25
+      },
+      {
+        "value": 1200,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 2800,
+        "thickness": 25
+      },
+      {
+        "value": 5500,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "testMethodWVTR": "ASTM E96",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.covestro.com/products/desmopan"
+  },
+  {
+    "name": "Elastollan C90A TPU Film",
+    "family": "PU",
+    "company": "BASF",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 500,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 2200,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM E96",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.basf.com/global/en/products/plastic-rubber/elastollan.html"
+  },
+  {
+    "name": "Teflon FEP Film 50",
+    "family": "PTFE",
+    "company": "Chemours",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 0.28,
+        "thickness": 50
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 68,
+        "thickness": 50
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.chemours.com/en/brands/teflon/films"
+  },
+  {
+    "name": "Aclam PVC/PVDC 90/30 Pharma",
+    "family": "PVC",
+    "company": "Perlen Packaging",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 0.65,
+        "thickness": 120
+      },
+      {
+        "value": 1.25,
+        "thickness": 120
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 2.2,
+        "thickness": 120
+      },
+      {
+        "value": 4.5,
+        "thickness": 120
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 40,
+        "humidity": 75
+      }
+    ],
+    "testMethodWVTR": "ASTM E96",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.perlen.com/packaging/products/"
+  },
+  {
+    "name": "Pentapharm PVC/PVDC 60/40",
+    "family": "PVC",
+    "company": "Klockner Pentaplast",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 0.45,
+        "thickness": 100
+      },
+      {
+        "value": 0.85,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 1.5,
+        "thickness": 100
+      },
+      {
+        "value": 3.2,
+        "thickness": 100
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 40,
+        "humidity": 75
+      }
+    ],
+    "testMethodWVTR": "ASTM E96",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.kpfilms.com/products/pharma/"
+  },
+  {
+    "name": "Novelis Pharma Foil 15\u00b5m",
+    "family": "AL",
+    "company": "Novelis",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 0.001,
+        "thickness": 15
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 0.0005,
+        "thickness": 15
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 40,
+        "humidity": 75
+      }
+    ],
+    "testMethodWVTR": "ASTM E96",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.novelis.com/product/packaging-foil/"
+  },
+  {
+    "name": "Hydro Aluminium Foil 25\u00b5m",
+    "family": "AL",
+    "company": "Hydro",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 0.001,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 0.0005,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.hydro.com/en/aluminium/products/aluminium-foil/"
+  },
+  {
+    "name": "Makrofol ID PC Film",
+    "family": "PC",
+    "company": "Covestro",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 7.8,
+        "thickness": 75
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 75,
+        "thickness": 75
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://solutions.covestro.com/en/products/makrofol/makrofol-id"
+  },
+  {
+    "name": "Hyzod GP PC Sheet",
+    "family": "PC",
+    "company": "SABIC",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 10,
+        "thickness": 125
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 105,
+        "thickness": 125
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.sabic.com/en/products/polymers/polycarbonate/lexan-sheet"
+  },
+  {
+    "name": "Stora Enso Trayforma Barrier",
+    "family": "Paper",
+    "company": "Stora Enso",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 30,
+        "thickness": 350
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 22,
+        "thickness": 350
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.storaenso.com/en/products/packaging-materials/trayforma"
+  },
+  {
+    "name": "UPM Asendo Barrier Paper",
+    "family": "Paper",
+    "company": "UPM",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 18,
+        "thickness": 80
+      },
+      {
+        "value": 38,
+        "thickness": 80
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 14,
+        "thickness": 80
+      },
+      {
+        "value": 30,
+        "thickness": 80
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.upmraflatac.com/eu/eng/products/paper-labels/"
+  },
+  {
+    "name": "Smurfit Kappa Kraftliner Barrier",
+    "family": "Paper",
+    "company": "Smurfit Kappa",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 28,
+        "thickness": 125
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 18,
+        "thickness": 125
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.smurfitkappa.com/products/paper/kraftliner"
+  },
+  {
+    "name": "Amcor AmLite Ultra Recyclable",
+    "family": "PE",
+    "company": "Amcor",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 3.0,
+        "thickness": 90
+      },
+      {
+        "value": 6.2,
+        "thickness": 90
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 18,
+        "thickness": 90
+      },
+      {
+        "value": 38,
+        "thickness": 90
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.amcor.com/products/flexible-packaging"
+  },
+  {
+    "name": "Sealed Air Cryovac R520 Retort",
+    "family": "EVOH",
+    "company": "Sealed Air",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 3.8,
+        "thickness": 130
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 0.5,
+        "thickness": 130
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.033,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.049,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.sealedair.com/products/food-packaging/cryovac"
+  },
+  {
+    "name": "Orgasol 3501 EXD PA12 Powder Film",
+    "family": "PA",
+    "company": "Arkema",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 28,
+        "thickness": 50
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 14,
+        "thickness": 50
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.007,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.005,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.extremematerials-arkema.com/en/product-ranges/orgasol-range/"
+  },
+  {
+    "name": "Taghleef SiOx BOPP GL-Barrier",
+    "family": "PP",
+    "company": "Taghleef Industries",
+    "isMetallized": true,
+    "wvtrValues": [
+      {
+        "value": 0.55,
+        "thickness": 20
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 4.5,
+        "thickness": 20
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.ti-films.com/products/"
+  },
+  {
+    "name": "EVAL E105B",
+    "family": "EVOH",
+    "company": "Kuraray",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 2.8, "thickness": 100}, {"value": 6.5, "thickness": 100}],
+    "otrValues": [{"value": 0.30, "thickness": 20}, {"value": 2.5, "thickness": 20}],
+    "validConditions": [{"temperature": 23, "humidity": 50}, {"temperature": 38, "humidity": 90}],
+    "hygroscopicBetaWVTR": 0.038,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.056,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://eval.kuraray.com"
+  },
+  {
+    "name": "EVAL H171B",
+    "family": "EVOH",
+    "company": "Kuraray",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 7.5, "thickness": 100}],
+    "otrValues": [{"value": 3.80, "thickness": 20}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "hygroscopicBetaWVTR": 0.024,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.036,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://eval.kuraray.com"
+  },
+  {
+    "name": "Soarnol T2315B",
+    "family": "EVOH",
+    "company": "Nippon Gohsei",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 1.2, "thickness": 100}, {"value": 3.0, "thickness": 100}],
+    "otrValues": [{"value": 0.08, "thickness": 15}, {"value": 0.75, "thickness": 15}],
+    "validConditions": [{"temperature": 23, "humidity": 50}, {"temperature": 38, "humidity": 90}],
+    "hygroscopicBetaWVTR": 0.044,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.066,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.nichigo.co.jp/english/product/lineup/soarnol/"
+  },
+  {
+    "name": "EVAL C109B",
+    "family": "EVOH",
+    "company": "Kuraray",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 3.5, "thickness": 100}, {"value": 8.2, "thickness": 100}],
+    "otrValues": [{"value": 0.45, "thickness": 20}, {"value": 3.8, "thickness": 20}],
+    "validConditions": [{"temperature": 23, "humidity": 50}, {"temperature": 38, "humidity": 90}],
+    "hygroscopicBetaWVTR": 0.036,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.054,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://eval.kuraray.com"
+  },
+  {
+    "name": "Mowiflex TC 232 PVOH",
+    "family": "Other",
+    "company": "Kuraray",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 280, "thickness": 76}, {"value": 580, "thickness": 76}],
+    "otrValues": [{"value": 0.60, "thickness": 76}, {"value": 5.5, "thickness": 76}],
+    "validConditions": [{"temperature": 23, "humidity": 50}, {"temperature": 38, "humidity": 90}],
+    "hygroscopicBetaWVTR": 0.065,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.085,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.kuraray.com/products/poval/mowiflex/"
+  },
+  {
+    "name": "Akulon F223-D PA6",
+    "family": "PA",
+    "company": "DSM",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 175, "thickness": 15}, {"value": 355, "thickness": 15}],
+    "otrValues": [{"value": 42, "thickness": 15}, {"value": 88, "thickness": 15}],
+    "validConditions": [{"temperature": 23, "humidity": 50}, {"temperature": 38, "humidity": 90}],
+    "hygroscopicBetaWVTR": 0.020,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.014,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.dsm.com/en_US/products/akulon.html"
+  },
+  {
+    "name": "Zytel 101L PA66",
+    "family": "PA",
+    "company": "DuPont",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 120, "thickness": 15}],
+    "otrValues": [{"value": 28, "thickness": 15}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "hygroscopicBetaWVTR": 0.016,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.011,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.dupont.com/products/zytel-nylon-resin.html"
+  },
+  {
+    "name": "Capron B135WP BOPA",
+    "family": "PA",
+    "company": "Honeywell",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 160, "thickness": 15}, {"value": 320, "thickness": 15}],
+    "otrValues": [{"value": 38, "thickness": 15}, {"value": 80, "thickness": 15}],
+    "validConditions": [{"temperature": 23, "humidity": 50}, {"temperature": 38, "humidity": 90}],
+    "hygroscopicBetaWVTR": 0.019,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.013,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.honeywell-resins.com/products/capron/"
+  },
+  {
+    "name": "Grilon A 28 MNZ PA66",
+    "family": "PA",
+    "company": "EMS-Chemie",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 110, "thickness": 15}],
+    "otrValues": [{"value": 25, "thickness": 15}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "hygroscopicBetaWVTR": 0.015,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.010,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.emsgrivory.com/en/products/grilon/"
+  },
+  {
+    "name": "Ultramid B33L PA6",
+    "family": "PA",
+    "company": "BASF",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 185, "thickness": 15}, {"value": 370, "thickness": 15}],
+    "otrValues": [{"value": 45, "thickness": 15}, {"value": 93, "thickness": 15}],
+    "validConditions": [{"temperature": 23, "humidity": 50}, {"temperature": 38, "humidity": 90}],
+    "hygroscopicBetaWVTR": 0.021,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.014,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.basf.com/global/en/products/plastic-rubber/ultramid.html"
+  },
+  {
+    "name": "Novamid 1007C PA6",
+    "family": "PA",
+    "company": "DSM",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 195, "thickness": 15}],
+    "otrValues": [{"value": 50, "thickness": 15}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "hygroscopicBetaWVTR": 0.021,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.015,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.dsm.com/en_US/products/novamid.html"
+  },
+  {
+    "name": "Hostaphan RDS Matte PET",
+    "family": "PET",
+    "company": "Mitsubishi Polyester Film",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 15, "thickness": 23}],
+    "otrValues": [{"value": 78, "thickness": 23}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.m-petfilm.com/products/hostaphan/"
+  },
+  {
+    "name": "Lumirror T60 PET",
+    "family": "PET",
+    "company": "Toray",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 11, "thickness": 12}, {"value": 24, "thickness": 12}],
+    "otrValues": [{"value": 58, "thickness": 12}, {"value": 120, "thickness": 12}],
+    "validConditions": [{"temperature": 23, "humidity": 50}, {"temperature": 38, "humidity": 90}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.toray-films.com/products/lumirror/"
+  },
+  {
+    "name": "Mylar D 92GA",
+    "family": "PET",
+    "company": "DuPont Teijin Films",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 9.5, "thickness": 12}],
+    "otrValues": [{"value": 50, "thickness": 12}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.dtf.com/en/products/mylar-pet-film"
+  },
+  {
+    "name": "Melinex 442 Heat-seal PET",
+    "family": "PET",
+    "company": "DuPont Teijin Films",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 14, "thickness": 12}],
+    "otrValues": [{"value": 74, "thickness": 12}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.dtf.com/en/products/melinex-polyester-film"
+  },
+  {
+    "name": "Skyrol SPW White PET",
+    "family": "PET",
+    "company": "SKC",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 13, "thickness": 50}],
+    "otrValues": [{"value": 68, "thickness": 50}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.skcfilms.com/products/"
+  },
+  {
+    "name": "Polyplex PET Barrier Film",
+    "family": "PET",
+    "company": "Polyplex",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 14, "thickness": 12}],
+    "otrValues": [{"value": 76, "thickness": 12}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.polyplexcorporation.com/products/polyester-film"
+  },
+  {
+    "name": "Hostaphan RNS23 SiOx",
+    "family": "PET",
+    "company": "Mitsubishi Polyester Film",
+    "isMetallized": true,
+    "wvtrValues": [{"value": 0.50, "thickness": 23}, {"value": 1.2, "thickness": 23}],
+    "otrValues": [{"value": 1.8, "thickness": 23}, {"value": 4.5, "thickness": 23}],
+    "validConditions": [{"temperature": 23, "humidity": 50}, {"temperature": 38, "humidity": 90}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.m-petfilm.com/products/barrier/"
+  },
+  {
+    "name": "Mylar BOPET Met 23µm",
+    "family": "PET",
+    "company": "DuPont Teijin Films",
+    "isMetallized": true,
+    "wvtrValues": [{"value": 0.22, "thickness": 23}],
+    "otrValues": [{"value": 1.5, "thickness": 23}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.dtf.com/en/products/mylar-pet-film"
+  },
+  {
+    "name": "SKC CPP Film CK25",
+    "family": "PP",
+    "company": "SKC",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 7.5, "thickness": 25}],
+    "otrValues": [{"value": 2800, "thickness": 25}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.skcfilms.com/products/"
+  },
+  {
+    "name": "Treofan NNE25 BOPP",
+    "family": "PP",
+    "company": "Treofan",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 4.1, "thickness": 25}],
+    "otrValues": [{"value": 1650, "thickness": 25}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.treofan.com/products/"
+  },
+  {
+    "name": "Cosmo Pearl White BOPP",
+    "family": "PP",
+    "company": "Cosmo Films",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 3.5, "thickness": 40}],
+    "otrValues": [{"value": 1450, "thickness": 40}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.cosmofilms.com/products/bopp-films/"
+  },
+  {
+    "name": "Taghleef SOP Sealable OPP",
+    "family": "PP",
+    "company": "Taghleef Industries",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 5.0, "thickness": 20}],
+    "otrValues": [{"value": 1950, "thickness": 20}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.ti-films.com/products/"
+  },
+  {
+    "name": "ExxonMobil PP1024E4 BOPP",
+    "family": "PP",
+    "company": "ExxonMobil",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 4.9, "thickness": 20}],
+    "otrValues": [{"value": 1980, "thickness": 20}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.exxonmobilchemical.com/en/products/polypropylene"
+  },
+  {
+    "name": "Brelen MH18 BOPP",
+    "family": "PP",
+    "company": "Borealis",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 4.4, "thickness": 18}],
+    "otrValues": [{"value": 1780, "thickness": 18}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.borealisgroup.com/polyolefins/bopp-film-grades/"
+  },
+  {
+    "name": "Jindal BOPE Mono-PE Film",
+    "family": "PE",
+    "company": "Jindal Films",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 5.5, "thickness": 50}, {"value": 11, "thickness": 50}],
+    "otrValues": [{"value": 35, "thickness": 50}, {"value": 72, "thickness": 50}],
+    "validConditions": [{"temperature": 23, "humidity": 50}, {"temperature": 38, "humidity": 90}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.jindalfilms.com/products/pe-films/"
+  },
+  {
+    "name": "Surlyn 1702 Ionomer",
+    "family": "PE",
+    "company": "DuPont",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 22, "thickness": 25}],
+    "otrValues": [{"value": 9800, "thickness": 25}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.dupont.com/products/surlyn-ionomer.html"
+  },
+  {
+    "name": "Nucrel 0903HC EAA",
+    "family": "PE",
+    "company": "DuPont",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 35, "thickness": 25}],
+    "otrValues": [{"value": 14000, "thickness": 25}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.dupont.com/products/nucrel-copolymer.html"
+  },
+  {
+    "name": "Escorene LD 165BW LDPE",
+    "family": "PE",
+    "company": "ExxonMobil",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 19, "thickness": 25}],
+    "otrValues": [{"value": 8900, "thickness": 25}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.exxonmobilchemical.com/en/products/polyethylene/ldpe"
+  },
+  {
+    "name": "Lacqtene 1020FN24 LDPE",
+    "family": "PE",
+    "company": "TotalEnergies",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 18, "thickness": 25}],
+    "otrValues": [{"value": 8600, "thickness": 25}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.totalenergies-corbion.com/products/"
+  },
+  {
+    "name": "Borpure MT61000 PE",
+    "family": "PE",
+    "company": "Borealis",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 10, "thickness": 25}],
+    "otrValues": [{"value": 5500, "thickness": 25}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.borealisgroup.com/polyolefins/borpure/"
+  },
+  {
+    "name": "Tyvek 1073B HDPE Nonwoven",
+    "family": "PE",
+    "company": "DuPont",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 3800, "thickness": 170}],
+    "otrValues": [{"value": 45000, "thickness": 170}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM E96",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.dupont.com/products/tyvek-medical-packaging.html"
+  },
+  {
+    "name": "Noveon Estane 58888 TPU",
+    "family": "PU",
+    "company": "Lubrizol",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 420, "thickness": 25}],
+    "otrValues": [{"value": 1800, "thickness": 25}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM E96",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.lubrizol.com/health/products/thermoplastic-polyurethanes"
+  },
+  {
+    "name": "Baymedix FP505 PU Film",
+    "family": "PU",
+    "company": "Covestro",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 550, "thickness": 25}, {"value": 1050, "thickness": 25}],
+    "otrValues": [{"value": 2300, "thickness": 25}, {"value": 4600, "thickness": 25}],
+    "validConditions": [{"temperature": 23, "humidity": 50}, {"temperature": 38, "humidity": 90}],
+    "testMethodWVTR": "ASTM E96",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.covestro.com/products/baymedix"
+  },
+  {
+    "name": "Teflon PFA Film 50",
+    "family": "PTFE",
+    "company": "Chemours",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 0.20, "thickness": 50}],
+    "otrValues": [{"value": 52, "thickness": 50}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.chemours.com/en/brands/teflon/films"
+  },
+  {
+    "name": "Saint-Gobain PTFE Film 100",
+    "family": "PTFE",
+    "company": "Saint-Gobain",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 0.30, "thickness": 100}],
+    "otrValues": [{"value": 35, "thickness": 100}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.saint-gobain-performance-plastics.com/products/film"
+  },
+  {
+    "name": "Crystal PS 1340 HIPS",
+    "family": "PS",
+    "company": "TotalEnergies",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 130, "thickness": 100}],
+    "otrValues": [{"value": 380, "thickness": 100}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.totalenergies-corbion.com/products/"
+  },
+  {
+    "name": "Styron 685D GPPS",
+    "family": "PS",
+    "company": "Trinseo",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 110, "thickness": 100}],
+    "otrValues": [{"value": 340, "thickness": 100}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.trinseo.com/Products/Styron"
+  },
+  {
+    "name": "Perlen PVC 250 Pharma",
+    "family": "PVC",
+    "company": "Perlen Packaging",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 3.5, "thickness": 250}, {"value": 6.8, "thickness": 250}],
+    "otrValues": [{"value": 120, "thickness": 250}, {"value": 240, "thickness": 250}],
+    "validConditions": [{"temperature": 23, "humidity": 50}, {"temperature": 40, "humidity": 75}],
+    "testMethodWVTR": "ASTM E96",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.perlen.com/packaging/products/"
+  },
+  {
+    "name": "Wipak Pharma PVC/PVDC 120/60",
+    "family": "PVC",
+    "company": "Wipak",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 0.30, "thickness": 180}, {"value": 0.58, "thickness": 180}],
+    "otrValues": [{"value": 1.0, "thickness": 180}, {"value": 2.2, "thickness": 180}],
+    "validConditions": [{"temperature": 23, "humidity": 50}, {"temperature": 40, "humidity": 75}],
+    "testMethodWVTR": "ASTM E96",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.wipak.com/en/products/pharmaceutical-packaging/"
+  },
+  {
+    "name": "Aclar SupRx Ultra Pharma",
+    "family": "Other",
+    "company": "Honeywell",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 0.007, "thickness": 51}, {"value": 0.013, "thickness": 51}],
+    "otrValues": [{"value": 0.003, "thickness": 51}, {"value": 0.006, "thickness": 51}],
+    "validConditions": [{"temperature": 23, "humidity": 50}, {"temperature": 40, "humidity": 75}],
+    "testMethodWVTR": "ASTM E96",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.honeywell-aclar.com"
+  },
+  {
+    "name": "Topas 9506F-04 COC",
+    "family": "Other",
+    "company": "Topas Advanced Polymers",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 0.17, "thickness": 100}],
+    "otrValues": [{"value": 195, "thickness": 100}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://topas.com/products/topas-coc-grades/"
+  },
+  {
+    "name": "Constantia Foil 40µm Retort",
+    "family": "AL",
+    "company": "Constantia Flexibles",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 0.001, "thickness": 40}],
+    "otrValues": [{"value": 0.0005, "thickness": 40}],
+    "validConditions": [{"temperature": 23, "humidity": 50}, {"temperature": 40, "humidity": 75}],
+    "testMethodWVTR": "ASTM E96",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.constantia-flexibles.com/en/products/"
+  },
+  {
+    "name": "Amcor Peelable Lidding Foil 50",
+    "family": "AL",
+    "company": "Amcor",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 0.001, "thickness": 50}],
+    "otrValues": [{"value": 0.0005, "thickness": 50}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.amcor.com/products/flexible-packaging"
+  },
+  {
+    "name": "Holmen Iggesund Invercote Barrier",
+    "family": "Paper",
+    "company": "Iggesund Paperboard",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 35, "thickness": 240}],
+    "otrValues": [{"value": 25, "thickness": 240}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.iggesund.com/en/products/invercote/"
+  },
+  {
+    "name": "Metsä Board Excellence Barrier",
+    "family": "Paper",
+    "company": "Metsä Board",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 28, "thickness": 200}, {"value": 55, "thickness": 200}],
+    "otrValues": [{"value": 20, "thickness": 200}, {"value": 42, "thickness": 200}],
+    "validConditions": [{"temperature": 23, "humidity": 50}, {"temperature": 38, "humidity": 90}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.metsaboard.com/Products/Pages/Default.aspx"
+  },
+  {
+    "name": "Clearwater Paper Barrier Coated",
+    "family": "Paper",
+    "company": "Clearwater Paper",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 22, "thickness": 90}],
+    "otrValues": [{"value": 16, "thickness": 90}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.clearwaterpaper.com/consumer-products"
+  },
+  {
+    "name": "Vectra A625 LCP Film",
+    "family": "Other",
+    "company": "Celanese",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 0.004, "thickness": 100}],
+    "otrValues": [{"value": 0.02, "thickness": 100}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.celanese.com/products/engineered-materials/vectra-lcp/"
+  },
+  {
+    "name": "Innovia RCT Cellulose Barrier",
+    "family": "Other",
+    "company": "Innovia Films",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 45, "thickness": 23}, {"value": 180, "thickness": 23}],
+    "otrValues": [{"value": 6.5, "thickness": 23}, {"value": 38, "thickness": 23}],
+    "validConditions": [{"temperature": 23, "humidity": 50}, {"temperature": 38, "humidity": 90}],
+    "hygroscopicBetaWVTR": 0.047,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.062,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.innoviafilms.com/products/"
+  },
+  {
+    "name": "Mondi Functional Barrier Paper SealPeel",
+    "family": "Paper",
+    "company": "Mondi",
+    "isMetallized": false,
+    "wvtrValues": [{"value": 16, "thickness": 80}],
+    "otrValues": [{"value": 11, "thickness": 80}],
+    "validConditions": [{"temperature": 23, "humidity": 50}],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.mondigroup.com/products/functional-paper-and-films/"
+  },
+  {
+    "name": "EVAL F171B",
+    "family": "EVOH",
+    "company": "Kuraray",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 2.4,
+        "thickness": 100
+      },
+      {
+        "value": 5.8,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 0.25,
+        "thickness": 20
+      },
+      {
+        "value": 2.2,
+        "thickness": 20
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.039,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.057,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://eval.kuraray.com"
+  },
+  {
+    "name": "EVAL M100B",
+    "family": "EVOH",
+    "company": "Kuraray",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 8.5,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 5.2,
+        "thickness": 20
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.022,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.033,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://eval.kuraray.com"
+  },
+  {
+    "name": "Soarnol AT4403RB",
+    "family": "EVOH",
+    "company": "Nippon Gohsei",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 3.0,
+        "thickness": 100
+      },
+      {
+        "value": 7.2,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 0.55,
+        "thickness": 15
+      },
+      {
+        "value": 4.6,
+        "thickness": 15
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.033,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.05,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.nichigo.co.jp/english/product/lineup/soarnol/"
+  },
+  {
+    "name": "Nichigo G-Polymer OKS-8049",
+    "family": "Other",
+    "company": "Nippon Gohsei",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 320,
+        "thickness": 20
+      },
+      {
+        "value": 650,
+        "thickness": 20
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 0.1,
+        "thickness": 20
+      },
+      {
+        "value": 1.2,
+        "thickness": 20
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.072,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.09,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.nichigo.co.jp/english/product/lineup/g-polymer/"
+  },
+  {
+    "name": "MonoSol M8630 PVOH Film",
+    "family": "Other",
+    "company": "MonoSol",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 350,
+        "thickness": 76
+      },
+      {
+        "value": 720,
+        "thickness": 76
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 0.45,
+        "thickness": 76
+      },
+      {
+        "value": 4.8,
+        "thickness": 76
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.068,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.088,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.monosol.com/products/"
+  },
+  {
+    "name": "Ingeo PLA 4032D",
+    "family": "Other",
+    "company": "NatureWorks",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 170,
+        "thickness": 30
+      },
+      {
+        "value": 340,
+        "thickness": 30
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 550,
+        "thickness": 30
+      },
+      {
+        "value": 1100,
+        "thickness": 30
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.natureworksllc.com/Products/Ingeo-Biopolymer/Films-Grade"
+  },
+  {
+    "name": "Luminy PLA L175",
+    "family": "Other",
+    "company": "TotalEnergies Corbion",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 160,
+        "thickness": 30
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 520,
+        "thickness": 30
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.totalenergies-corbion.com/products/luminy-pla/"
+  },
+  {
+    "name": "Mater-Bi NF803S",
+    "family": "Other",
+    "company": "Novamont",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 280,
+        "thickness": 20
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 3200,
+        "thickness": 20
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.novamont.com/eng/mater-bi/"
+  },
+  {
+    "name": "Grilon TS V-0 PA6T/66",
+    "family": "PA",
+    "company": "EMS-Chemie",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 70,
+        "thickness": 15
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 18,
+        "thickness": 15
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.012,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.009,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.emsgrivory.com/en/products/grilon/"
+  },
+  {
+    "name": "Vestamid Terra BS1600 PA",
+    "family": "PA",
+    "company": "Evonik",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 40,
+        "thickness": 50
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 20,
+        "thickness": 50
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.009,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.007,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.vestamid.com/product/vestamid-terra/"
+  },
+  {
+    "name": "Akulon Ultraflow K-FHG27",
+    "family": "PA",
+    "company": "DSM",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 168,
+        "thickness": 15
+      },
+      {
+        "value": 338,
+        "thickness": 15
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 40,
+        "thickness": 15
+      },
+      {
+        "value": 83,
+        "thickness": 15
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.02,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.014,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.dsm.com/en_US/products/akulon.html"
+  },
+  {
+    "name": "Durethan BKV30H2.0 PA6",
+    "family": "PA",
+    "company": "Lanxess",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 140,
+        "thickness": 15
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 33,
+        "thickness": 15
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.019,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.013,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.lanxess.com/en/products/product-finder/"
+  },
+  {
+    "name": "Capron 8267F OPA",
+    "family": "PA",
+    "company": "Honeywell",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 145,
+        "thickness": 15
+      },
+      {
+        "value": 295,
+        "thickness": 15
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 35,
+        "thickness": 15
+      },
+      {
+        "value": 73,
+        "thickness": 15
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.019,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.013,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.honeywell-resins.com/products/capron/"
+  },
+  {
+    "name": "Grilon BG-20 PA6",
+    "family": "PA",
+    "company": "EMS-Chemie",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 180,
+        "thickness": 15
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 44,
+        "thickness": 15
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "hygroscopicBetaWVTR": 0.021,
+    "hygroscopicRefRHWVTR": 50,
+    "hygroscopicBetaOTR": 0.015,
+    "hygroscopicRefRHOTR": 50,
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.emsgrivory.com/en/products/grilon/"
+  },
+  {
+    "name": "Lumirror P11 PET",
+    "family": "PET",
+    "company": "Toray",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 12,
+        "thickness": 12
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 62,
+        "thickness": 12
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.toray-films.com/products/lumirror/"
+  },
+  {
+    "name": "Melinex 516 PET",
+    "family": "PET",
+    "company": "DuPont Teijin Films",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 13,
+        "thickness": 12
+      },
+      {
+        "value": 27,
+        "thickness": 12
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 68,
+        "thickness": 12
+      },
+      {
+        "value": 138,
+        "thickness": 12
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.dtf.com/en/products/melinex-polyester-film"
+  },
+  {
+    "name": "SKC SH40 PET 40\u00b5m",
+    "family": "PET",
+    "company": "SKC",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 7.0,
+        "thickness": 40
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 38,
+        "thickness": 40
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.skcfilms.com/products/"
+  },
+  {
+    "name": "Hostaphan GNB Barrier PET",
+    "family": "PET",
+    "company": "Mitsubishi Polyester Film",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 11,
+        "thickness": 12
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 58,
+        "thickness": 12
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.m-petfilm.com/products/hostaphan/"
+  },
+  {
+    "name": "Toray Lumirror ECO Recycled PET",
+    "family": "PET",
+    "company": "Toray",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 13,
+        "thickness": 12
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 70,
+        "thickness": 12
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.toray-films.com/products/lumirror/"
+  },
+  {
+    "name": "Lumirror X30S AlOx Retort PET",
+    "family": "PET",
+    "company": "Toray",
+    "isMetallized": true,
+    "wvtrValues": [
+      {
+        "value": 0.9,
+        "thickness": 12
+      },
+      {
+        "value": 2.1,
+        "thickness": 12
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 3.5,
+        "thickness": 12
+      },
+      {
+        "value": 8.0,
+        "thickness": 12
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.toray-films.com/products/barrier/"
+  },
+  {
+    "name": "Mitsubishi VM-PET 50000",
+    "family": "PET",
+    "company": "Mitsubishi Polyester Film",
+    "isMetallized": true,
+    "wvtrValues": [
+      {
+        "value": 0.18,
+        "thickness": 12
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 1.1,
+        "thickness": 12
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.m-petfilm.com/products/metallized/"
+  },
+  {
+    "name": "Polyplex White PET Film",
+    "family": "PET",
+    "company": "Polyplex",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 13,
+        "thickness": 50
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 67,
+        "thickness": 50
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.polyplexcorporation.com/products/polyester-film"
+  },
+  {
+    "name": "Torayfan ZK400 Heat-Seal PP",
+    "family": "PP",
+    "company": "Toray",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 6.0,
+        "thickness": 30
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 2300,
+        "thickness": 30
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.toray-films.com/products/torayfan/"
+  },
+  {
+    "name": "Taghleef BE White BOPP",
+    "family": "PP",
+    "company": "Taghleef Industries",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 3.8,
+        "thickness": 40
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 1550,
+        "thickness": 40
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.ti-films.com/products/"
+  },
+  {
+    "name": "Cosmo Silver Met BOPP",
+    "family": "PP",
+    "company": "Cosmo Films",
+    "isMetallized": true,
+    "wvtrValues": [
+      {
+        "value": 0.45,
+        "thickness": 20
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 13,
+        "thickness": 20
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.cosmofilms.com/products/metalized-films/"
+  },
+  {
+    "name": "Jindal Metlon BOPP Met",
+    "family": "PP",
+    "company": "Jindal Films",
+    "isMetallized": true,
+    "wvtrValues": [
+      {
+        "value": 0.38,
+        "thickness": 20
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 9.5,
+        "thickness": 20
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.jindalfilms.com/products/metallized-films/"
+  },
+  {
+    "name": "Treofan BHS Heat-Stable BOPP",
+    "family": "PP",
+    "company": "Treofan",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 3.6,
+        "thickness": 20
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 1480,
+        "thickness": 20
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.treofan.com/products/"
+  },
+  {
+    "name": "Borealis BB412E CPP",
+    "family": "PP",
+    "company": "Borealis",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 7.0,
+        "thickness": 30
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 2600,
+        "thickness": 30
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.borealisgroup.com/polyolefins/cpp-film-grades/"
+  },
+  {
+    "name": "Bornewables PP RA120MF",
+    "family": "PP",
+    "company": "Borealis",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 4.7,
+        "thickness": 20
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 1880,
+        "thickness": 20
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.borealisgroup.com/sustainability/bornewables/"
+  },
+  {
+    "name": "Dow AGILITY EC 7000 LLDPE",
+    "family": "PE",
+    "company": "Dow",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 13,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 6600,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.dow.com/en-us/product-technology-solutions/products/agility-ec-polyethylene.html"
+  },
+  {
+    "name": "ExxonMobil HDPE HYA 600",
+    "family": "PE",
+    "company": "ExxonMobil",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 7.5,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 4800,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.exxonmobilchemical.com/en/products/polyethylene/hdpe"
+  },
+  {
+    "name": "Braskem I'm green PE SEB 853",
+    "family": "PE",
+    "company": "Braskem",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 16,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 7600,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.braskem.com/imgreen"
+  },
+  {
+    "name": "Borealis Eltex TUB 121 HDPE",
+    "family": "PE",
+    "company": "Borealis",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 8.0,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 5100,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.borealisgroup.com/polyolefins/eltex/"
+  },
+  {
+    "name": "Formolene HDPE 1040H",
+    "family": "PE",
+    "company": "Formosa Plastics",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 7.8,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 4900,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.fpcusa.com/products/polyethylene/"
+  },
+  {
+    "name": "SABIC HDPE CC 4460",
+    "family": "PE",
+    "company": "SABIC",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 8.5,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 5300,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.sabic.com/en/products/polymers/polyethylene/hdpe"
+  },
+  {
+    "name": "Huntsman Irogran A80P TPU",
+    "family": "PU",
+    "company": "Huntsman",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 480,
+        "thickness": 25
+      },
+      {
+        "value": 920,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 2000,
+        "thickness": 25
+      },
+      {
+        "value": 4100,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "testMethodWVTR": "ASTM E96",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.huntsman.com/products/polyurethanes/tpu/"
+  },
+  {
+    "name": "Covestro Dispercoll U TPU Film",
+    "family": "PU",
+    "company": "Covestro",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 600,
+        "thickness": 25
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 2500,
+        "thickness": 25
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM E96",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.covestro.com/products/dispercoll"
+  },
+  {
+    "name": "Chemours Tefzel ETFE 100",
+    "family": "PTFE",
+    "company": "Chemours",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 0.12,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 28,
+        "thickness": 100
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.chemours.com/en/brands/tefzel"
+  },
+  {
+    "name": "Daikin Neoflon ETFE Film",
+    "family": "PTFE",
+    "company": "Daikin",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 0.15,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 32,
+        "thickness": 100
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.daikin.com/products/fluoropolymers/neoflon/etfe/"
+  },
+  {
+    "name": "Macrolon 2205 PC Film",
+    "family": "PC",
+    "company": "Covestro",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 8.8,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 92,
+        "thickness": 100
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://solutions.covestro.com/en/products/makrolon/macrolon-2205"
+  },
+  {
+    "name": "SABIC Noryl PC/PPE Blend",
+    "family": "PC",
+    "company": "SABIC",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 6.5,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 68,
+        "thickness": 100
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.sabic.com/en/products/polymers/polycarbonate-pc/noryl-resin"
+  },
+  {
+    "name": "INEOS Styrenics XL730 HIPS",
+    "family": "PS",
+    "company": "INEOS Styrolution",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 125,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 365,
+        "thickness": 100
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.ineos-styrolution.com/products/polystyrene.html"
+  },
+  {
+    "name": "Nova Chemicals ARCEL Foam PS",
+    "family": "PS",
+    "company": "Nova Chemicals",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 850,
+        "thickness": 100
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 4500,
+        "thickness": 100
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM E96",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.novachem.com/products/arcel/"
+  },
+  {
+    "name": "Klockner ClearForm Cold-Form Foil",
+    "family": "AL",
+    "company": "Klockner Pentaplast",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 0.001,
+        "thickness": 45
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 0.0005,
+        "thickness": 45
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 40,
+        "humidity": 75
+      }
+    ],
+    "testMethodWVTR": "ASTM E96",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.kpfilms.com/products/pharma/"
+  },
+  {
+    "name": "Novelis Retort Foil 35\u00b5m",
+    "family": "AL",
+    "company": "Novelis",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 0.001,
+        "thickness": 35
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 0.0005,
+        "thickness": 35
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 121,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM E96",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.novelis.com/product/packaging-foil/"
+  },
+  {
+    "name": "Perlen Cold-Form OPA/AL/PVC",
+    "family": "AL",
+    "company": "Perlen Packaging",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 0.001,
+        "thickness": 200
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 0.0005,
+        "thickness": 200
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 40,
+        "humidity": 75
+      }
+    ],
+    "testMethodWVTR": "ASTM E96",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.perlen.com/packaging/products/"
+  },
+  {
+    "name": "Ahlstrom-Munksj\u00f6 Pharma Barrier",
+    "family": "Paper",
+    "company": "Ahlstrom-Munksj\u00f6",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 20,
+        "thickness": 60
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 14,
+        "thickness": 60
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.ahlstrom.com/products/pharmaceutical-packaging-materials/"
+  },
+  {
+    "name": "BillerudKorsn\u00e4s Korsn\u00e4s Barrier",
+    "family": "Paper",
+    "company": "Billerud",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 24,
+        "thickness": 90
+      },
+      {
+        "value": 48,
+        "thickness": 90
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 17,
+        "thickness": 90
+      },
+      {
+        "value": 36,
+        "thickness": 90
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      },
+      {
+        "temperature": 38,
+        "humidity": 90
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.billerudkorsnas.com/solutions/packaging/"
+  },
+  {
+    "name": "Kotkamills Absorbex Barrier Board",
+    "family": "Paper",
+    "company": "Kotkamills",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 22,
+        "thickness": 250
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 16,
+        "thickness": 250
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://kotkamills.com/products/absorbex/"
+  },
+  {
+    "name": "Seaman Paper Greenwrap Barrier",
+    "family": "Paper",
+    "company": "Seaman Paper",
+    "isMetallized": false,
+    "wvtrValues": [
+      {
+        "value": 30,
+        "thickness": 80
+      }
+    ],
+    "otrValues": [
+      {
+        "value": 22,
+        "thickness": 80
+      }
+    ],
+    "validConditions": [
+      {
+        "temperature": 23,
+        "humidity": 50
+      }
+    ],
+    "testMethodWVTR": "ASTM F1249",
+    "testMethodOTR": "ASTM D3985",
+    "tdsLink": "https://www.seamanpaper.com/products/barrier-papers/"
+  }
   ]
 }
