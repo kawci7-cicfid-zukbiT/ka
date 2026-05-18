@@ -1688,18 +1688,27 @@ var DB = {
   
 load: function() {
     this.materials = [];
-    for(var i=0;i<DEFAULT_MATERIALS.length;i++) this.materials.push(Object.assign({}, DEFAULT_MATERIALS[i]));
+    // 1. Carica i default
+    for(var i=0; i<DEFAULT_MATERIALS.length; i++) {
+        this.materials.push(Object.assign({}, DEFAULT_MATERIALS[i]));
+    }
+    
     try {
         var savedMats = localStorage.getItem('wvtr_mats_v3');
         if (savedMats) {
             var userMats = JSON.parse(savedMats);
             var defaultIds = {};
-            for(var di2=0;di2<DEFAULT_MATERIALS.length;di2++) defaultIds[DEFAULT_MATERIALS[di2].id]=true;
-            for(var u=0;u<userMats.length;u++){
-                var um=userMats[u];
-                if(!defaultIds[um.id]){
-                    var maxId=0;for(var mi=0;mi<this.materials.length;mi++) if(this.materials[mi].id>maxId) maxId=this.materials[mi].id;
-                    um.id=maxId+1;
+            for(var di2=0; di2<DEFAULT_MATERIALS.length; di2++) defaultIds[DEFAULT_MATERIALS[di2].id]=true;
+            
+            // ✅ FIX: Tieni traccia degli ID già caricati per evitare duplicati
+            var loadedIds = new Set(this.materials.map(m => m.id));
+            
+            for(var u=0; u<userMats.length; u++){
+                var um = userMats[u];
+                // ✅ Mantieni l'ID originale salvato. NON rigenerarlo!
+                // ✅ Salta se è un default o se l'ID è già presente
+                if(!defaultIds[um.id] && !loadedIds.has(um.id)){
+                    loadedIds.add(um.id);
                     this.materials.push(um);
                 }
             }
@@ -1709,6 +1718,16 @@ load: function() {
         var lastSync = localStorage.getItem('wvtr_db_sync_v3');
         if (lastSync) this.dbLastSync = new Date(lastSync);
     } catch (e) { console.warn('Load error:', e); }
+    
+    // Migrazione backward compatibility
+    for(var i=0; i<this.materials.length; i++){
+        var m = this.materials[i];
+        if(m.hygroscopicBeta > 0 && !m.hygroscopicBetaWVTR){
+            m.hygroscopicBetaWVTR = m.hygroscopicBeta;
+            m.hygroscopicRefRHWVTR = m.hygroscopicRefRH || 50;
+        }
+    }
+},
 
     // 🔄 MIGRAZIONE BACKWARD COMPATIBILITY
     // Eseguita DOPO il caricamento, così converte i materiali salvati in precedenza
@@ -1756,27 +1775,25 @@ load: function() {
   },
   
 updateMat: function(id, m) {
-  for(var i=0; i<this.materials.length; i++){
-    if(this.materials[i].id === id){
-      var existing = this.materials[i];
-      
-      // Mantieni i campi obbligatori
-      m.reliabilityVotes = m.reliabilityVotes !== undefined ? m.reliabilityVotes : (existing.reliabilityVotes || { up: 0, down: 0 });
-      m.family = m.family || getFamily(m.name);
-      
-      // ✅ CORREZIONE: Aggiorna i campi opzionali SOLO se sono undefined (non se sono vuoti!)
-     if(m.company === undefined) m.company = existing.company || '';
-      if(m.tdsLink === undefined) m.tdsLink = existing.tdsLink || '';
-      if(m.testMethodWVTR === undefined) m.testMethodWVTR = existing.testMethodWVTR || '';
-      if(m.testMethodOTR === undefined) m.testMethodOTR = existing.testMethodOTR || '';
-      
-      // ✅ Usa Object.assign per fondere i valori correttamente
-      this.materials[i] = Object.assign({}, existing, m, { id: id });
-      this.save();
-      break;
+    var targetId = Number(id); // ✅ Normalizza l'ID per evitare mismatch stringa/numero
+    for(var i=0; i<this.materials.length; i++){
+        if(this.materials[i].id == targetId){
+            var existing = this.materials[i];
+            // Mantieni voti e metadata se non forniti
+            m.reliabilityVotes = m.reliabilityVotes !== undefined ? m.reliabilityVotes : (existing.reliabilityVotes || { up: 0, down: 0 });
+            m.family = m.family || getFamily(m.name);
+            if(m.company === undefined) m.company = existing.company || '';
+            if(m.tdsLink === undefined) m.tdsLink = existing.tdsLink || '';
+            if(m.testMethodWVTR === undefined) m.testMethodWVTR = existing.testMethodWVTR || '';
+            if(m.testMethodOTR === undefined) m.testMethodOTR = existing.testMethodOTR || '';
+            
+            // ✅ FIX: Usa l'ID ESISTENTE, non quello passato dalla modale
+            this.materials[i] = Object.assign({}, existing, m, { id: existing.id });
+            this.save();
+            break;
+        }
     }
-  }
-}, // ← ✅ VIRGOLA, non chiude l'oggetto
+},
   
   deleteMat: function(id) { this.materials = this.materials.filter(function(x){return x.id!==id;}); this.save(); },
   addLam: function(l) { l.id=Date.now(); this.laminates.push(l); this.save(); return l.id; },
