@@ -197,7 +197,7 @@ select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csv
 /* === MATERIALS LIST - FIX PRINCIPALE === */
 .material-item{border:1.5px solid var(--border);border-radius:10px;overflow:hidden;transition:all 0.2s;background:#fff}
 .material-item:hover{box-shadow:var(--shadow-lg);border-color:var(--primary)}
-.mat-header{display:flex;align-items:center;justify-content:space-between;padding:0.7rem 0.9rem;cursor:pointer;background:#fafbfc}
+.mat-{display:flex;align-items:center;justify-content:space-between;padding:0.7rem 0.9rem;cursor:pointer;background:#fafbfc}
 .mat-header h3{font-size:0.82rem;font-weight:600;margin:0}.mat-header .chevron{transition:transform 0.2s;width:13px;height:13px;color:var(--text-light)}
 .material-item.expanded .mat-header .chevron{transform:rotate(180deg)}
 .mat-body{padding:0.85rem;display:none}.material-item.expanded .mat-body{display:block}
@@ -1097,6 +1097,31 @@ main {
     touch-action: manipulation !important; /* Rimuove delay 300ms al tap */
   }
 }
+    /* === ✅ VERIFIED BADGE === */
+.badge-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  color: #166534;
+  border: 1.5px solid #86efac;
+  padding: 0.18rem 0.55rem;
+  border-radius: 20px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: help;
+  box-shadow: 0 1px 4px rgba(22, 101, 52, 0.15);
+}
+
+/* Card border verde se verificata */
+.material-item.verified-item {
+  border-color: #86efac !important;
+  box-shadow: 0 0 0 1px #bbf7d0, 0 4px 12px rgba(22, 163, 74, 0.08) !important;
+}
+.material-item.verified-item .mat-header {
+  background: linear-gradient(135deg, #f0fdf4 0%, #fff 100%) !important;
+}
 </style>
   <!-- 📢 GOOGLE ADSENSE -->
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1234567890123456" crossorigin="anonymous"></script>
@@ -1109,6 +1134,7 @@ main {
 </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="verified.js"></script>
 </head>
 <body>
 <!-- 🔥 FIREBASE COMMUNITY SETUP -->
@@ -2638,6 +2664,11 @@ function getReliabilityBadge(score) {
   if(score >= 70) return '<span class="badge badge-green">✓ Reliable '+score+'%</span>';
   if(score >= 40) return '<span class="badge badge-yellow">⚠ Mixed '+score+'%</span>';
   return '<span class="badge badge-red">✗ Unreliable '+score+'%</span>';
+}
+    // ✅ Controlla se un materiale è verificato dall'admin
+function isVerifiedMaterial(mat) {
+  if (!window.VERIFIED_MATERIALS) return null;
+  return window.VERIFIED_MATERIALS[mat.name] || null;
 }
 // ====================================================================
 // 📚 SHELF LIFE METHODOLOGY EXPLAINER
@@ -7337,19 +7368,21 @@ var downTitle = userVote === 'down' ? 'Click to unvote' : 'Mark as unreliable';
     displayName = m.name.replace(regex, '<mark style="background:var(--warning-light);color:var(--warning);padding:0 0.2rem;border-radius:3px;font-weight:600">$1</mark>');
   }
 
-  // ✅ PROFESSIONAL MATERIAL CARD (con displayName e searchBadges)
-  html += '<div class="material-item" onclick="this.classList.toggle(\'expanded\')">'+
-    
-    // === HEADER ===
-    '<div class="mat-header">'+
-      '<h3>'+
-        '<span style="color:var(--text)">'+displayName+'</span>'+  // ← USA displayName QUI
-        (isComm ? '<span class="mat-comm-badge">🌍 Community</span>' : '')+
-        '<span style="font-weight:400;color:var(--text-light);font-size:0.75rem">['+(m.family||'?')+']</span>'+
-        (v.valid ? '<span class="badge badge-green">✓ Arrhenius</span>' : '')+
-      '</h3>'+
-      '<svg class="chevron" style="margin-left:auto; flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>'+
-'</div>'+
+  // ✅ CORRETTO
+var verified = isVerifiedMaterial(m);
+var verifiedClass = verified ? ' verified-item' : '';
+
+html += '<div class="material-item' + verifiedClass + '" onclick="this.classList.toggle(\'expanded\')">' +
+    '<div class="mat-header">' +
+      '<h3>' +
+        '<span style="color:var(--text)">' + displayName + '</span>' +
+        (isComm ? '<span class="mat-comm-badge">🌍 Community</span>' : '') +
+        (verified ? '<span class="badge-verified" title="Verified by ' + verified.by + ' · ' + verified.date + (verified.note ? ' · ' + verified.note : '') + '">✅ Verified</span>' : '') +
+        '<span style="font-weight:400;color:var(--text-light);font-size:0.75rem">[' + (m.family || '?') + ']</span>' +
+        (v.valid ? '<span class="badge badge-green">✓ Arrhenius</span>' : '') +
+      '</h3>' +
+      '<svg class="chevron" style="margin-left:auto; flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>' +
+    '</div>' +
     
     // === EXPANDABLE BODY ===
     '<div class="mat-body">'+
