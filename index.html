@@ -7869,7 +7869,7 @@ function renderConverter() {
   },
 
   // Tutto converge in g/m²·day come unità pivot interna
-  toGm2day(value, unit, thickMicron, dpKPa) {
+  toGm2day: function(value, unit, thickMicron, dpKPa) {
     const thick_mm = thickMicron / 1000;
     switch(unit) {
       case 'gm2day':          return value;
