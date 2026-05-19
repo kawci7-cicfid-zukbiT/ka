@@ -1754,12 +1754,9 @@ var DB = {
     this.materials = [];
     this.laminates = [];
 
-    // 1. Carica materiali default
     for(var i=0; i<DEFAULT_MATERIALS.length; i++) {
         this.materials.push(Object.assign({}, DEFAULT_MATERIALS[i]));
     }
-
-    // ✅ 2. Carica laminati default
     for(var i=0; i<DEFAULT_LAMINATES.length; i++) {
         this.laminates.push(Object.assign({}, DEFAULT_LAMINATES[i]));
     }
@@ -1768,14 +1765,18 @@ var DB = {
         var savedMats = localStorage.getItem('wvtr_mats_v3');
         if (savedMats) {
             var userMats = JSON.parse(savedMats);
-            var loadedIds = new Set(this.materials.map(m => m.id));
+            var loadedIds = new Set(this.materials.map(function(m){ return m.id; }));
             for(var u=0; u<userMats.length; u++){
                 var um = userMats[u];
+                // ✅ Cerca per ID numerico
                 var existingIdx = -1;
                 for(var ei=0; ei<this.materials.length; ei++){
-                    if(this.materials[ei].id == um.id){ existingIdx = ei; break; }
+                    if(String(this.materials[ei].id) === String(um.id)){
+                        existingIdx = ei; break;
+                    }
                 }
                 if(existingIdx !== -1){
+                    // ✅ Sovrascrive (aggiornamento nome o dati)
                     this.materials[existingIdx] = um;
                 } else if(!loadedIds.has(um.id)){
                     loadedIds.add(um.id);
@@ -1784,11 +1785,10 @@ var DB = {
             }
         }
 
-        // ✅ Merge laminati utente con default
         var savedLams = localStorage.getItem('wvtr_lams_v3');
         if (savedLams) {
             var userLams = JSON.parse(savedLams);
-            var defaultLamIds = new Set(DEFAULT_LAMINATES.map(l => l.id));
+            var defaultLamIds = new Set(DEFAULT_LAMINATES.map(function(l){ return l.id; }));
             for(var ul=0; ul<userLams.length; ul++){
                 if(!defaultLamIds.has(userLams[ul].id)){
                     this.laminates.push(userLams[ul]);
@@ -1802,7 +1802,6 @@ var DB = {
         console.warn('Load error:', e);
     }
 
-    // Migrazione backward compatibility
     for(var i=0; i<this.materials.length; i++){
         var m = this.materials[i];
         if(m.hygroscopicBeta > 0 && !m.hygroscopicBetaWVTR){
@@ -8056,64 +8055,70 @@ function importFile(input){
 // 📥 FUNZIONE: Carica materials.json esterno (DEFINITA PRIMA DELL'USO)
 // ====================================================================
 async function loadExternalMaterialsDB() {
+async function loadExternalMaterialsDB() {
     try {
-        console.log('🔍 Tentativo di caricamento materials.json...');
         const res = await fetch('materials.json');
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         const externalMats = Array.isArray(data) ? data : (data.materials || []);
-        if (!externalMats.length) {
-            console.log('⚠️ Nessun materiale trovato in materials.json');
-            return;
-        }
-        
-        const existingNames = new Set(DB.materials.map(m => m.name.toLowerCase()));
+        if (!externalMats.length) return;
+
         let addedCount = 0;
-        
+
         for (const em of externalMats) {
             if (!em || !em.name) continue;
-            const normalizedName = em.name.toLowerCase().trim();
-            
-            // ✅ CERCA SE ESISTE GIA' PER NOME
-            var existing = DB.materials.find(m => m.name.toLowerCase() === em.name.toLowerCase());
-            if (existing) {
-                // ✅ AGGIORNA I CAMPI IGROSCOPICI SENZA DUPLICARE
+
+            // ✅ Cerca per ID prima (più affidabile del nome)
+            var existingById = DB.materials.find(function(m){
+                return typeof m.id === 'number' && typeof em.id === 'number' && m.id === em.id;
+            });
+            if (existingById) {
+                // Aggiorna solo i campi tecnici, NON il nome (l'utente potrebbe averlo cambiato)
                 if (em.hygroscopicRefRHWVTR !== undefined) {
-                    existing.hygroscopicRefRHWVTR = em.hygroscopicRefRHWVTR;
-                    existing.hygroscopicRefRHOTR = em.hygroscopicRefRHOTR;
-                    existing.hygroscopicBetaWVTR = em.hygroscopicBetaWVTR;
-                    existing.hygroscopicBetaOTR = em.hygroscopicBetaOTR;
+                    existingById.hygroscopicRefRHWVTR = em.hygroscopicRefRHWVTR;
+                    existingById.hygroscopicRefRHOTR = em.hygroscopicRefRHOTR;
+                    existingById.hygroscopicBetaWVTR = em.hygroscopicBetaWVTR;
+                    existingById.hygroscopicBetaOTR = em.hygroscopicBetaOTR;
                 }
-                console.log('↻ Aggiornato:', em.name);
-                continue; // ← ✅ NON CREARE DUPLICATO
+                continue;
             }
-            
-            // ✅ Assegna ID univoco sequenziale
+
+            // ✅ Cerca per nome originale (solo se non trovato per ID)
+            var existingByName = DB.materials.find(function(m){
+                return m.name.toLowerCase() === em.name.toLowerCase();
+            });
+            if (existingByName) {
+                if (em.hygroscopicRefRHWVTR !== undefined) {
+                    existingByName.hygroscopicRefRHWVTR = em.hygroscopicRefRHWVTR;
+                    existingByName.hygroscopicRefRHOTR = em.hygroscopicRefRHOTR;
+                    existingByName.hygroscopicBetaWVTR = em.hygroscopicBetaWVTR;
+                    existingByName.hygroscopicBetaOTR = em.hygroscopicBetaOTR;
+                }
+                continue;
+            }
+
+            // Nuovo materiale: assegna ID univoco
             const numericIds = DB.materials
-                .map(m => typeof m.id === 'number' ? m.id : 0)
-                .filter(id => id > 0);
-            const maxId = numericIds.length ? Math.max(...numericIds) : 0;
+                .map(function(m){ return typeof m.id === 'number' ? m.id : 0; })
+                .filter(function(id){ return id > 0; });
+            const maxId = numericIds.length ? Math.max.apply(null, numericIds) : 0;
             em.id = maxId + 1 + addedCount;
             em.family = em.family || getFamily(em.name);
             em.isMetallized = em.isMetallized || false;
-            
             if (!em.reliabilityVotes) em.reliabilityVotes = { up: 0, down: 0 };
             if (!em.company) em.company = '';
             if (!em.tdsLink) em.tdsLink = '';
             if (!em.testMethodWVTR) em.testMethodWVTR = '';
             if (!em.testMethodOTR) em.testMethodOTR = '';
-            
+
             DB.materials.push(em);
-            existingNames.add(normalizedName);
             addedCount++;
         }
-        
-        console.log('✅ External DB loaded:', addedCount, 'new materials');
-        console.log('📊 Totale materiali:', DB.materials.length);
+
         DB.save();
         render();
     } catch (e) {
-        console.log('ℹ️ materials.json non caricato (opzionale):', e.message);
+        console.log('ℹ️ materials.json non caricato:', e.message);
     }
 }
 
@@ -8147,39 +8152,43 @@ async function loadExternalMaterialsDB() {
     // 3. Carica materials.json esterno
     await loadExternalMaterialsDB();
 
-    // 4. Carica materiali Firebase
-    if(window.communityDB) {
-      console.log("🔄 Caricamento community da Firebase...");
-      const fbMats = await window.loadFromCommunity();
-      console.log("📥 Firebase materials:", fbMats.length);
+   // 4. Carica materiali Firebase
+if(window.communityDB) {
+    const fbMats = await window.loadFromCommunity();
 
-      let addedCount = 0;
-      for(const fm of fbMats) {
-        // ✅ Cerca per firebaseDocId PRIMA, poi per nome
-        var localMat = DB.materials.find(m =>
-          (m.firebaseDocId && m.firebaseDocId === fm.firebaseDocId) ||
-          m.name.toLowerCase() === fm.name.toLowerCase()
-        );
+    let addedCount = 0;
+    for(const fm of fbMats) {
+        // ✅ Cerca per firebaseDocId (più affidabile)
+        var localMat = DB.materials.find(function(m){
+            return m.firebaseDocId && m.firebaseDocId === fm.firebaseDocId;
+        });
+
+        // ✅ Fallback: cerca per nome SOLO se non ha ancora un firebaseDocId
+        if(!localMat) {
+            localMat = DB.materials.find(function(m){
+                return !m.firebaseDocId && m.name.toLowerCase() === fm.name.toLowerCase();
+            });
+        }
 
         if (localMat) {
-          var oldId = localMat.id;
-          Object.assign(localMat, fm);
-          localMat.id = oldId;
-          localMat.isCommunity = true;
-          if(fm.firebaseDocId) localMat.firebaseDocId = fm.firebaseDocId;
+            var oldId = localMat.id;
+            var oldName = localMat.name; // ✅ Preserva il nome modificato dall'utente
+            Object.assign(localMat, fm);
+            localMat.id = oldId;
+            localMat.name = oldName; // ✅ Ripristina il nome locale
+            localMat.isCommunity = true;
+            if(fm.firebaseDocId) localMat.firebaseDocId = fm.firebaseDocId;
         } else if (fm.name) {
-          fm.id = 'fb_' + (fm.firebaseDocId || Date.now());
-          fm.isCommunity = true;
-          // ✅ Controlla che non esista già con stesso id
-          var alreadyExists = DB.materials.find(m => m.id === fm.id);
-          if(!alreadyExists) {
-            DB.materials.push(fm);
-            addedCount++;
-          }
+            fm.id = 'fb_' + (fm.firebaseDocId || Date.now());
+            fm.isCommunity = true;
+            var alreadyExists = DB.materials.find(function(m){ return m.id === fm.id; });
+            if(!alreadyExists) {
+                DB.materials.push(fm);
+                addedCount++;
+            }
         }
-      }
-      console.log("✅ Community aggiunti:", addedCount);
     }
+}
 
     // 5. ✅ Merge laminati cloud SENZA sovrascrivere quelli locali
     if(window.loadLaminatesFromCloud) {
