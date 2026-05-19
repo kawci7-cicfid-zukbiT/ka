@@ -5894,6 +5894,8 @@ function drawLaminateCurveChart(){
     
     // ✅ Ottieni la RH selezionata (se presente)
     var selectedRH = State.selCond ? State.selCond.rh : null;
+    console.log('Selected RH:', selectedRH, 'Type:', typeof selectedRH);
+    console.log('State.selCond:', State.selCond);
     
     // 1. Genera dataset per ogni layer (Materiali)
     for(var i = 0; i < State.layers.length; i++){
