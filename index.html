@@ -1865,13 +1865,11 @@ var DB = {
    updateMat: function(id, m) {
     const targetId = String(id);
     for(let i=0; i<this.materials.length; i++){
-        // Confronta sia ID numerico che firebaseDocId
         if(String(this.materials[i].id) === targetId || this.materials[i].firebaseDocId === targetId){
             const existing = this.materials[i];
-            // Preserva ID critici e voti community
-            const preserved = { 
-                id: existing.id, 
-                firebaseDocId: existing.firebaseDocId, 
+            const preserved = {
+                id: existing.id,                    // ← MAI cambiare l'ID locale
+                firebaseDocId: existing.firebaseDocId, // ← MAI cambiare il Firebase ID
                 reliabilityVotes: m.reliabilityVotes || existing.reliabilityVotes,
                 usageCount: m.usageCount || existing.usageCount || 0,
                 lastUsageMonth: m.lastUsageMonth || existing.lastUsageMonth || ''
@@ -1937,27 +1935,22 @@ var DB = {
 deduplicateMaterials: function() {
     const map = new Map();
     for (const mat of this.materials) {
-      // Chiave univoca: Firebase ID > ID locale > Nome
-      const key = mat.firebaseDocId || String(mat.id) || mat.name.toLowerCase().trim();
-      const existing = map.get(key);
-      
-      if (!existing) {
-        map.set(key, mat);
-      } else {
-        // Tieni la versione più aggiornata
-        const timeA = new Date(mat.updatedAt || 0).getTime();
-        const timeB = new Date(existing.updatedAt || 0).getTime();
-        if (timeA > timeB) map.set(key, mat);
-        else if (timeA === timeB && (mat.wvtrValues?.length || 0) >= (existing.wvtrValues?.length || 0)) {
-          map.set(key, mat);
+        // 🔑 Chiave primaria: firebaseDocId (se esiste)
+        const key = mat.firebaseDocId || `local_${mat.id}`;
+        
+        const existing = map.get(key);
+        if (!existing) {
+            map.set(key, mat);
+        } else {
+            // Tieni la versione più recente
+            const timeA = new Date(mat.updatedAt || 0).getTime();
+            const timeB = new Date(existing.updatedAt || 0).getTime();
+            if (timeA > timeB) map.set(key, mat);
         }
-      }
     }
     this.materials = Array.from(map.values());
     return this.materials;
-  }  // ← ← ← NESSUNA virgola, è l'ultima funzione
-};  // ← ← ← CHIUSURA FINALE DELL'OGGETTO DB (UNA SOLA VOLTA!)
-
+}
 window.DB = DB;
 
 var State = {
@@ -2384,12 +2377,12 @@ async function submitToFirebaseById(matId) {
         mat.author = mat.author || State.userName || "Community";
         
         const result = await window.saveToCommunity(mat);
-        if(result.success) {
-            mat.firebaseDocId = result.id;
-            mat.isCommunity = true;
-            DB.save();
-            alert("✅ Published/Updated successfully!");
-            render();
+       if(result.success) {
+    mat.firebaseDocId = result.id;  // ← Imposta subito l'ID Firebase
+    mat.isCommunity = true;
+    DB.save();  // ← Salva IMMEDIATAMENTE per persistere il firebaseDocId
+    alert("✅ Published/Updated successfully!");
+    render();
         } else {
             alert("❌ Error: " + result.error);
         }
@@ -8166,16 +8159,23 @@ async function loadExternalMaterialsDB() {
 if(window.communityDB) {
     const fbMats = await window.loadFromCommunity();
     for(const fm of fbMats) {
-        // Cerca prima per firebaseDocId, poi per nome esatto
+        // 🔑 PRIORITÀ 1: cerca per firebaseDocId
         let localMat = DB.materials.find(m => m.firebaseDocId === fm.firebaseDocId);
-        if (!localMat) {
-            localMat = DB.materials.find(m => !m.firebaseDocId && m.name.toLowerCase().trim() === fm.name.toLowerCase().trim());
+        
+        // 🔑 PRIORITÀ 2: solo se non ha firebaseDocId, cerca per nome
+        if (!localMat && !fm.firebaseDocId) {
+            localMat = DB.materials.find(m => 
+                !m.firebaseDocId && m.name.toLowerCase().trim() === fm.name.toLowerCase().trim()
+            );
         }
+        
         if (localMat) {
+            // Aggiorna il materiale esistente preservando gli ID
             Object.assign(localMat, fm);
             if(fm.firebaseDocId) localMat.firebaseDocId = fm.firebaseDocId;
             localMat.isCommunity = true;
         } else {
+            // Solo se veramente nuovo, aggiungilo
             DB.materials.push({ ...fm, isCommunity: true });
         }
     }
