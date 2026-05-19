@@ -1923,39 +1923,41 @@ var DB = {
     },
     
     importAll: function(dataStr) {
-        try {
-            var parsed = JSON.parse(dataStr);
-            if (parsed.materials) this.materials = parsed.materials;
-            if (parsed.laminates) this.laminates = parsed.laminates;
-            this.save();
-            return true;
-        } catch (e) {
-            return false;
-        }
-    }  // ← Ultima funzione: NESSUNA virgola
-}; 
- deduplicateMaterials: function() {
+    try {
+      var parsed = JSON.parse(dataStr);
+      if (parsed.materials) this.materials = parsed.materials;
+      if (parsed.laminates) this.laminates = parsed.laminates;
+      this.save();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },  // ← ← ← VIRGOLA QUI!
+    
+deduplicateMaterials: function() {
     const map = new Map();
     for (const mat of this.materials) {
-        // Chiave univoca: Firebase ID > ID locale > Nome (case-insensitive)
-        const key = mat.firebaseDocId || String(mat.id) || mat.name.toLowerCase().trim();
-        const existing = map.get(key);
-        
-        if (!existing) {
-            map.set(key, mat);
-        } else {
-            // Tieni la versione più aggiornata o con più dati
-            const timeA = new Date(mat.updatedAt || 0).getTime();
-            const timeB = new Date(existing.updatedAt || 0).getTime();
-            if (timeA > timeB) map.set(key, mat);
-            else if (timeA === timeB && (mat.wvtrValues?.length || 0) >= (existing.wvtrValues?.length || 0)) {
-                map.set(key, mat);
-            }
+      // Chiave univoca: Firebase ID > ID locale > Nome
+      const key = mat.firebaseDocId || String(mat.id) || mat.name.toLowerCase().trim();
+      const existing = map.get(key);
+      
+      if (!existing) {
+        map.set(key, mat);
+      } else {
+        // Tieni la versione più aggiornata
+        const timeA = new Date(mat.updatedAt || 0).getTime();
+        const timeB = new Date(existing.updatedAt || 0).getTime();
+        if (timeA > timeB) map.set(key, mat);
+        else if (timeA === timeB && (mat.wvtrValues?.length || 0) >= (existing.wvtrValues?.length || 0)) {
+          map.set(key, mat);
         }
+      }
     }
     this.materials = Array.from(map.values());
     return this.materials;
-},   // ← ✅ UNA SOLA chiusura per tutto l'oggetto DB
+  }  // ← ← ← NESSUNA virgola, è l'ultima funzione
+};  // ← ← ← CHIUSURA FINALE DELL'OGGETTO DB (UNA SOLA VOLTA!)
+
 window.DB = DB;
 
 var State = {
