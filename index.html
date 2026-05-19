@@ -1923,7 +1923,7 @@ var DB = {
         }); 
     },
     
-      importAll: function(dataStr) {
+    importAll: function(dataStr) {
     try {
       var parsed = JSON.parse(dataStr);
       if (parsed.materials) this.materials = parsed.materials;
@@ -1933,26 +1933,30 @@ var DB = {
     } catch (e) {
       return false;
     }
-  },  // ← ← ← VIRGOLA OBBLIGATORIA QUI!
-  
-  deduplicateMaterials: function() {
+  },  // ← ← ← VIRGOLA QUI!
+    
+// Inside the DB object - last method
+deduplicateMaterials: function() {
     const map = new Map();
     for (const mat of this.materials) {
-      const key = mat.firebaseDocId || String(mat.id) || mat.name.toLowerCase().trim();
-      const existing = map.get(key);
-      if (!existing) {
-        map.set(key, mat);
-      } else {
-        const timeA = new Date(mat.updatedAt || 0).getTime();
-        const timeB = new Date(existing.updatedAt || 0).getTime();
-        if (timeA > timeB) map.set(key, mat);
-      }
+        const key = mat.firebaseDocId || String(mat.id) || mat.name.toLowerCase().trim();
+        const existing = map.get(key);
+        if (!existing) {
+            map.set(key, mat);
+        } else {
+            const timeA = new Date(mat.updatedAt || 0).getTime();
+            const timeB = new Date(existing.updatedAt || 0).getTime();
+            if (timeA > timeB) map.set(key, mat);
+            else if (timeA === timeB && (mat.wvtrValues?.length || 0) >= (existing.wvtrValues?.length || 0)) {
+                map.set(key, mat);
+            }
+        }
     }
     this.materials = Array.from(map.values());
     return this.materials;
-  }  // ← ← ← NESSUNA virgola (è l'ultima proprietà)
-};  // ← ← ← UNICA chiusura dell'oggetto DB
-window.DB = DB;
+}  // ← NO comma here (last property)
+};  // ← This closes the DB object
+window.DB = DB;  // ← This must be OUTSIDE the object
 
 var State = {
   tab: 'home', layers: [{ mid: null, thick: 0 }], selCond: null, laminateName: '', autoCalc: false,
@@ -2022,9 +2026,6 @@ function postNavRender() {
     if(State.tab === 'sensitivity') postSensitivityRender();
     if(State.tab === 'compare') postCompareRender();
     if(State.tab === 'laminates' && DB.laminates.length >= 2) drawLamChart();
-      if(State.tab === 'converter') {
-  setTimeout(() => CONV.convert(), 100);
-}
   }, 150);
 }
 
@@ -7675,13 +7676,13 @@ html += '<div class="material-item' + verifiedClass + '" onclick="this.classList
       '</div>'+
     '</div>'+
   '</div>'; // ← ✅ FINE CARD
-}  
-  }  
+}  // ← ✅ Chiude il FOR
+  }  // ← ✅ Chiude l'if/else
   
-  
-  html += '</div></div>';  
-  return html;            
-}  
+  // ✅ ✅ ✅ QUESTE RIGHE MANCAVANO ✅ ✅ ✅
+  html += '</div></div>';  // ← Chiude grid + card (aperti all'inizio)
+  return html;             // ← Restituisce il risultato
+}  // ← ✅ Chiude renderMaterials()
 
     
   
@@ -7714,286 +7715,7 @@ function renderLaminates(){
   if(DB.laminates.length>=2) html+='<div class="card"><h2>WVTR Comparison</h2><div class="chart-container"><canvas id="lamChart"></canvas></div></div>';
   return html;
 }
-function renderConverter() {
-  return `
-  <div class="grid grid-2">
 
-    <!-- FORM INPUT -->
-    <div class="card">
-      <h2>Permeability Unit Converter</h2>
-      <p style="font-size:0.78rem;color:var(--text-light);margin-bottom:1rem">
-        Convert between all industry-standard permeability units. 
-        Results update instantly across all units simultaneously.
-      </p>
-
-      <!-- GAS TYPE -->
-      <div class="form-group">
-        <label>Gas Type</label>
-        <select class="form-input" id="conv-gas" onchange="CONV.convert()">
-          <option value="h2o">Water Vapor (H₂O)</option>
-          <option value="o2">Oxygen (O₂)</option>
-          <option value="co2">Carbon Dioxide (CO₂)</option>
-          <option value="n2">Nitrogen (N₂)</option>
-        </select>
-      </div>
-
-      <!-- INPUT VALUE + UNIT -->
-      <div class="grid grid-2" style="gap:0.5rem">
-        <div class="form-group" style="margin:0">
-          <label>Value to Convert</label>
-          <input type="number" id="conv-value" class="form-input" 
-                 value="1" step="any" oninput="CONV.convert()" 
-                 placeholder="Enter value...">
-        </div>
-        <div class="form-group" style="margin:0">
-          <label>From Unit</label>
-          <select class="form-input" id="conv-from" onchange="CONV.convert()">
-            <option value="gm2day">g/m²·day</option>
-            <option value="g100in2day">g/100in²·day</option>
-            <option value="barrer">Barrer</option>
-            <option value="molm2spa">mol/m²·s·Pa</option>
-            <option value="ngm2spa">ng/m²·s·Pa</option>
-            <option value="ccm2dayatm">cc/m²·day·atm (OTR)</option>
-            <option value="cc100in2dayatm">cc/100in²·day·atm</option>
-            <option value="gmmperm2daykpa">g·mm/m²·day·kPa (Perm. Coeff.)</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- THICKNESS & PRESSURE (needed for some conversions) -->
-      <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:0.75rem;margin-top:0.5rem">
-        <div style="font-size:0.72rem;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.5rem">
-          Reference Conditions (for Barrer / Perm. Coeff. conversions)
-        </div>
-        <div class="grid grid-2" style="gap:0.5rem">
-          <div class="form-group" style="margin:0">
-            <label>Film Thickness (µm)</label>
-            <input type="number" id="conv-thick" class="form-input" 
-                   value="100" step="1" oninput="CONV.convert()" 
-                   placeholder="e.g. 100">
-          </div>
-          <div class="form-group" style="margin:0">
-            <label>ΔP Partial Pressure (kPa)</label>
-            <input type="number" id="conv-dp" class="form-input" 
-                   value="1.41" step="0.01" oninput="CONV.convert()" 
-                   placeholder="e.g. 1.41">
-          </div>
-        </div>
-        <div style="font-size:0.65rem;color:var(--text-light);margin-top:0.35rem">
-          Standard: 23°C/50%RH → ΔP = 1.41 kPa · Thickness = thickness at which WVTR was measured
-        </div>
-      </div>
-
-      <!-- QUICK PRESETS -->
-      <div style="margin-top:0.75rem">
-        <div style="font-size:0.72rem;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.4rem">
-          Quick Presets
-        </div>
-        <div style="display:flex;gap:0.35rem;flex-wrap:wrap">
-          ${[
-            { label: 'ASTM F1249\n23°C/50%', thick: 100, dp: 1.41, gas: 'h2o' },
-            { label: 'ASTM F1249\n38°C/90%', thick: 100, dp: 5.63, gas: 'h2o' },
-            { label: 'ASTM D3985\n23°C', thick: 100, dp: 21.2, gas: 'o2' },
-            { label: 'ISO 15106\n25°C/75%', thick: 100, dp: 2.37, gas: 'h2o' },
-          ].map(p => `
-            <button class="btn btn-sm btn-outline" 
-                    onclick="CONV.applyPreset('${p.gas}', ${p.thick}, ${p.dp})"
-                    style="font-size:0.65rem;white-space:pre-line;line-height:1.2;padding:0.3rem 0.5rem">
-              ${p.label}
-            </button>
-          `).join('')}
-        </div>
-      </div>
-    </div>
-
-    <!-- RESULTS PANEL -->
-    <div class="card">
-      <h2>Conversion Results</h2>
-      <div id="conv-results">
-        <div class="empty-state">
-          <p>Enter a value to see all conversions</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- REFERENCE TABLE -->
-  <div class="card" style="margin-top:1rem">
-    <h2>Unit Reference Guide</h2>
-    <table class="cond-table" style="font-size:0.78rem">
-      <thead>
-        <tr>
-          <th>Unit</th>
-          <th>Full Name</th>
-          <th>Gas</th>
-          <th>Typical Use</th>
-          <th>Standard</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${[
-          ['g/m²·day', 'Grams per square meter per day', 'H₂O', 'Europe, packaging industry', 'ISO 15106'],
-          ['g/100in²·day', 'Grams per 100 sq.in per day', 'H₂O', 'USA packaging', 'ASTM F1249'],
-          ['cc/m²·day·atm', 'Cubic cm per sq.m per day per atm', 'O₂, CO₂', 'OTR standard', 'ASTM D3985'],
-          ['cc/100in²·day·atm', 'Cubic cm per 100 sq.in per day per atm', 'O₂', 'USA OTR', 'ASTM D3985'],
-          ['Barrer', '10⁻¹⁰ cm³(STP)·cm/cm²·s·cmHg', 'All', 'Research, polymer science', 'Academic'],
-          ['mol/m²·s·Pa', 'Moles per sq.m per second per Pascal', 'All', 'Physics, SI units', 'ISO'],
-          ['ng/m²·s·Pa', 'Nanograms per sq.m per second per Pascal', 'H₂O', 'Pharma packaging', 'ISO 15747'],
-          ['g·mm/m²·day·kPa', 'Permeation Coefficient', 'H₂O', 'Material intrinsic property', 'ISO 15106'],
-        ].map(r => `
-          <tr>
-            <td><strong style="color:var(--primary)">${r[0]}</strong></td>
-            <td style="color:var(--text-light);font-size:0.72rem">${r[1]}</td>
-            <td><span class="badge badge-blue">${r[2]}</span></td>
-            <td style="font-size:0.72rem">${r[3]}</td>
-            <td><span class="badge badge-green" style="font-size:0.6rem">${r[4]}</span></td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-  </div>`;
-}
-   if (!window.CONV) {
-window.CONV = {
-  // Costanti fisiche
-  MW_H2O: 18.015, MW_O2: 31.999, MW_CO2: 44.010, MW_N2: 28.014, R_GAS: 8.314,
-  
-  getMW() {
-    const gas = document.getElementById('conv-gas')?.value || 'h2o';
-    return { h2o: this.MW_H2O, o2: this.MW_O2, co2: this.MW_CO2, n2: this.MW_N2 }[gas];
-  },
-
-
-  // Tutto converge in g/m²·day come unità pivot interna
-  toGm2day(value, unit, thickMicron, dpKPa) {
-    const thick_mm = thickMicron / 1000;
-    switch(unit) {
-      case 'gm2day':          return value;
-      case 'g100in2day':      return value / 0.09290304;        // 1 m² = 10.764 ft² = 1550.4 in² → /100 = 15.504
-      case 'barrer': {
-        const MW = this.getMW();
-        const dp_cmHg = dpKPa * 0.7501;
-        return value * 1e-10 * MW * dp_cmHg * thick_mm * 10 * 86400 / 22414;
-      }
-      case 'molm2spa': {
-        const MW = this.getMW();
-        return value * MW * 86400 * dpKPa * 1000;  // mol→g, s→day, Pa→kPa
-      }
-      case 'ngm2spa': {
-        const MW = this.getMW();
-        return value * 1e-9 * 86400 * dpKPa * 1000;
-      }
-      case 'ccm2dayatm':      return value * this.getMW() / 22414 * 101.325 / dpKPa;
-      case 'cc100in2dayatm':  return (value / 0.09290304) * this.getMW() / 22414 * 101.325 / dpKPa;
-      case 'gmmperm2daykpa':  return value / thick_mm * dpKPa;   // P·coeff → WVTR
-      default: return value;
-    }
-  },
-
-  // Da g/m²·day → unità target
-  fromGm2day(gm2day, unit, thickMicron, dpKPa) {
-    const thick_mm = thickMicron / 1000;
-    switch(unit) {
-      case 'gm2day':          return gm2day;
-      case 'g100in2day':      return gm2day * 0.09290304;
-      case 'barrer': {
-        const MW = this.getMW();
-        const dp_cmHg = dpKPa * 0.7501;
-        const denom = MW * dp_cmHg * thick_mm * 10 * 86400 / 22414;
-        return denom > 0 ? gm2day / denom * 1e10 : 0;
-      }
-      case 'molm2spa': {
-        const MW = this.getMW();
-        return gm2day / (MW * 86400 * dpKPa * 1000);
-      }
-      case 'ngm2spa': {
-        return gm2day / (1e-9 * 86400 * dpKPa * 1000);
-      }
-      case 'ccm2dayatm':      return gm2day / this.getMW() * 22414 / 101.325 * dpKPa;
-      case 'cc100in2dayatm':  return gm2day * 0.09290304 / this.getMW() * 22414 / 101.325 * dpKPa;
-      case 'gmmperm2daykpa':  return gm2day * thick_mm / dpKPa;
-      default: return gm2day;
-    }
-  },
-
-  applyPreset(gas, thick, dp) {
-    const g = document.getElementById('conv-gas');
-    const t = document.getElementById('conv-thick');
-    const d = document.getElementById('conv-dp');
-    if(g) g.value = gas;
-    if(t) t.value = thick;
-    if(d) d.value = dp;
-    this.convert();
-  },
-
-  convert() {
-    const value    = parseFloat(document.getElementById('conv-value')?.value) || 0;
-    const fromUnit = document.getElementById('conv-from')?.value || 'gm2day';
-    const thick    = parseFloat(document.getElementById('conv-thick')?.value) || 100;
-    const dp       = parseFloat(document.getElementById('conv-dp')?.value) || 1.41;
-    const panel    = document.getElementById('conv-results');
-    if(!panel) return;
-
-    if(!value || value <= 0) {
-      panel.innerHTML = '<div class="alert alert-info">Enter a positive value to convert</div>';
-      return;
-    }
-
-    // Converti tutto in g/m²·day pivot
-    const pivot = this.toGm2day(value, fromUnit, thick, dp);
-
-    const units = [
-      { id: 'gm2day',           label: 'g/m²·day',              desc: 'ISO standard (Europe)' },
-      { id: 'g100in2day',       label: 'g/100in²·day',          desc: 'ASTM standard (USA)' },
-      { id: 'barrer',           label: 'Barrer',                  desc: 'Research / polymer science' },
-      { id: 'molm2spa',         label: 'mol/m²·s·Pa',            desc: 'SI physics unit' },
-      { id: 'ngm2spa',          label: 'ng/m²·s·Pa',             desc: 'Pharma (ISO 15747)' },
-      { id: 'ccm2dayatm',       label: 'cc/m²·day·atm',          desc: 'OTR standard' },
-      { id: 'cc100in2dayatm',   label: 'cc/100in²·day·atm',      desc: 'OTR USA' },
-      { id: 'gmmperm2daykpa',   label: 'g·mm/m²·day·kPa',        desc: 'Permeation Coefficient' },
-    ];
-
-    let html = '';
-    for(const u of units) {
-      const converted = this.fromGm2day(pivot, u.id, thick, dp);
-      const isSource  = u.id === fromUnit;
-      const formatted = converted < 0.0001 || converted > 99999
-        ? converted.toExponential(4)
-        : converted.toPrecision(5);
-
-      html += `
-        <div style="display:flex;align-items:center;justify-content:space-between;
-                    padding:0.65rem 0.85rem;margin-bottom:0.35rem;
-                    border-radius:8px;border:1.5px solid ${isSource ? 'var(--primary)' : 'var(--border)'};
-                    background:${isSource ? 'var(--primary-light)' : '#fafbfc'};
-                    transition:all 0.15s;cursor:pointer"
-             onclick="navigator.clipboard?.writeText('${formatted}')">
-          <div>
-            <div style="font-size:0.8rem;font-weight:600;color:var(--text)">
-              ${u.label}
-              ${isSource ? '<span class="badge badge-blue" style="margin-left:0.4rem">INPUT</span>' : ''}
-            </div>
-            <div style="font-size:0.65rem;color:var(--text-light)">${u.desc}</div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:1.1rem;font-weight:800;color:${isSource ? 'var(--primary)' : 'var(--text)'}">
-              ${formatted}
-            </div>
-            <div style="font-size:0.6rem;color:var(--text-light)">click to copy</div>
-          </div>
-        </div>`;
-    }
-
-    // Nota sui limiti
-    html += `
-      <div class="alert alert-warning" style="margin-top:0.75rem;font-size:0.72rem">
-        ⚠️ Barrer and Permeation Coefficient conversions require correct thickness and ΔP. 
-        Verify reference conditions match your original datasheet.
-      </div>`;
-
-    panel.innerHTML = html;
-  };
-}
 function drawLamChart(){
   if(DB.laminates.length<2) return;
   var canvas=document.getElementById('lamChart');if(!canvas) return;
@@ -8306,61 +8028,62 @@ function addMatRow() {
     '</div>');
 }
 function showBulkImport(){
- Modal.open(
-  'Bulk Import (CSV)',
-  '<p style="font-size:.78rem;color:var(--text-light);margin-bottom:.75rem">' +
-    '<strong>CSV format:</strong><br>' +
-    'Name,Family,TestMethod,IsMetallized,WVTR_Value,WVTR_Thickness,OTR_Value,OTR_Thickness,Temp1,Hum1[,Temp2,Hum2,...]<br><br>' +
-    '<strong>Example:</strong><br>' +
-    'PET,PET,ASTM F1249,false,1.0,500,150,500,23,50,38,50<br>' +
-    'Alu-PET,PET,,true,0.01,500,0.005,500,23,50<br><br>' +
-    '<em>• TestMethod: leave empty or use standard name</em><br>' +
-    '<em>• IsMetallized: true/false (barrier independent of thickness)</em><br>' +
-    '<em>• WVTR/OTR columns: use 0 if not applicable</em><br>' +
-    '<em>• Add more Temp/Hum pairs for Arrhenius analysis</em>' +
-  '</p>' +
-  '<div class="import-area">' +
-    '<textarea id="bulk-data" placeholder="PET,PET,ASTM F1249,false,1.0,500,150,500,23,50,38,50"></textarea>' +
-  '</div>' +
-  '<p style="font-size:.7rem;color:var(--text-light);margin-top:.5rem">' +
-    'Or <a href="#" onclick="document.getElementById(\'bulk-file\').click();return false">upload JSON</a>' +
-    '<input type="file" id="bulk-file" accept=".json" style="display:none" onchange="importFile(this)">' +
-  '</p>',
-  function() {
-    var data = document.getElementById('bulk-data').value.trim();
-    if (!data) { alert('Paste data first'); return false; }
-    try {
-      var lines = data.split('\n').filter(function(l) { return l.trim(); });
-      var count = 0;
-      for (var li = 0; li < lines.length; li++) {
-        var cols = lines[li].split(/,\s*|\t/).map(function(s) { return s.trim(); });
-        if (cols.length < 10) continue;
-        var name = cols[0];
-        var family = cols[1] || getFamily(cols[0]);
-        var testMethod = cols[2] || '';
-        var isMetallized = (cols[3] || '').toLowerCase() === 'true';
-        var wvtr = parseFloat(cols[4]) || 0, wvtrT = parseFloat(cols[5]) || 0;
-        var otr = parseFloat(cols[6]) || 0, otrT = parseFloat(cols[7]) || 0;
-        var validConditions = [];
-        for (var i = 8; i < cols.length; i += 2) {
-          var te = parseFloat(cols[i]), h = parseFloat(cols[i+1]);
-          if (!isNaN(te) && !isNaN(h)) validConditions.push({temperature: te, humidity: h});
+  Modal.open('Bulk Import (CSV)',
+    '<p style="font-size:.78rem;color:var(--text-light);margin-bottom:.75rem">'+
+      '<strong>CSV format:</strong><br>'+
+      'Name,Family,TestMethod,IsMetallized,WVTR_Value,WVTR_Thickness,OTR_Value,OTR_Thickness,Temp1,Hum1[,Temp2,Hum2,...]<br><br>'+
+      '<strong>Example:</strong><br>'+
+      'PET,PET,ASTM F1249,false,1.0,500,150,500,23,50,38,50<br>'+
+      'Alu-PET,PET,,true,0.01,500,0.005,500,23,50<br><br>'+
+      '<em>• TestMethod: leave empty or use standard name</em><br>'+
+      '<em>• IsMetallized: true/false (barrier independent of thickness)</em><br>'+
+      '<em>• WVTR/OTR columns: use 0 if not applicable</em><br>'+
+      '<em>• Add more Temp/Hum pairs for Arrhenius analysis</em>'+
+    '</p>'+
+    '<div class="import-area"><textarea id="bulk-data" placeholder="PET,PET,ASTM F1249,false,1.0,500,150,500,23,50,38,50"></textarea></div>'+
+    '<p style="font-size:.7rem;color:var(--text-light);margin-top:.5rem">Or <a href="#" onclick="document.getElementById(\'bulk-file\').click();return false">upload JSON</a><input type="file" id="bulk-file" accept=".json" style="display:none" onchange="importFile(this)"></p>',
+    function(){
+      var data=document.getElementById('bulk-data').value.trim();
+      if(!data){alert('Paste data first');return false;}
+      try{
+        var lines = data.split('\n').filter(function(l){ return l.trim(); });
+        var count=0;
+        for(var li=0;li<lines.length;li++){
+        // ✅ CORRETTO
+var cols=lines[li].split(/,\s*|\t/).map(function(s){return s.trim();});
+          if(cols.length<10) continue; // Min: Name,Family,TestM,IsMet,WVTR_v,WVTR_t,OTR_v,OTR_t,Temp,Hum
+          
+          var name=cols[0];
+          var family=cols[1] || getFamily(cols[0]);
+          var testMethod=cols[2] || '';
+          var isMetallized=(cols[3]||'').toLowerCase()==='true';  // ← ✅ LETTURA FLAG
+          
+          var wvtr=parseFloat(cols[4])||0; var wvtrT=parseFloat(cols[5])||0;
+          var otr=parseFloat(cols[6])||0; var otrT=parseFloat(cols[7])||0;
+          
+          var validConditions=[];
+          for(var i=8;i<cols.length;i+=2){
+            var te=parseFloat(cols[i]); var h=parseFloat(cols[i+1]);
+            if(!isNaN(te)&&!isNaN(h)) validConditions.push({temperature:te,humidity:h});
+          }
+          if(name && validConditions.length>0){
+            DB.addMat({
+              name:name,
+              family:family,
+              testMethod:testMethod,
+              isMetallized:isMetallized,  // ← ✅ SALVATO
+              wvtrValues:[{value:wvtr,thickness:wvtrT}],
+              otrValues:[{value:otr,thickness:otrT}],
+              validConditions:validConditions
+            });
+            count++;
+          }
         }
-        if (name && validConditions.length > 0) {
-          DB.addMat({
-            name: name, family: family, testMethod: testMethod, isMetallized: isMetallized,
-            wvtrValues: [{value: wvtr, thickness: wvtrT}],
-            otrValues: [{value: otr, thickness: otrT}],
-            validConditions: validConditions
-          });
-          count++;
-        }
-      }
-      alert('Imported ' + count + ' materials'); render(); return true;
-    } catch(e) { alert('Import error: ' + e.message); return false; }
-  }
-);
-     }
+        alert('Imported '+count+' materials');render();return true;
+      }catch(e){alert('Import error: '+e.message);return false;}
+    }
+  );
+}
 
 function importFile(input){
   var file=input.files[0];if(!file) return;
