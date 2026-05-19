@@ -7627,15 +7627,35 @@ html += '<div class="material-item' + verifiedClass + '" onclick="this.classList
         '</div>'+
         
         // 3. ACTION BUTTONS
-        '<div class="mat-actions">'+
-         // ✅ FIX: Mette le virgolette se l'ID è una stringa (Community)
-var editIdSafe = (typeof m.id === 'string') ? "'" + m.id.replace(/'/g, "\\'") + "'" : m.id;
-'<button class="btn btn-outline" onclick="event.stopPropagation();showMatModal('+editIdSafe+')">✏️ Edit</button>'+
-          (isUserMat ? '<button class="btn btn-danger" onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">🗑️ Delete</button>' : '')+
-          '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Datasheet</button>'+
-          ((isUserMat || isComm) ? '<button class="btn '+(m.firebaseDocId?'btn-success':'btn-primary')+'" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">'+(m.firebaseDocId?'🔄 Update':'🌍 Publish')+'</button>' : '')+
-        '</div>'+
-        
+'<div class="mat-actions">'+
+  (function(){
+    // ✅ FIX: Safe ID handling per ID stringa (Community) o numero (locale)
+    var safeId = function(id) {
+      return (typeof id === 'string') ? "'" + id.replace(/'/g, "\\'") + "'" : id;
+    };
+    var idSafe = safeId(m.id);
+    
+    // Pulsante Edit
+    var html = '<button class="btn btn-outline" onclick="event.stopPropagation();showMatModal('+idSafe+')">✏️ Edit</button>';
+    
+    // Pulsante Delete (solo per materiali utente)
+    if(isUserMat) {
+      html += '<button class="btn btn-danger" onclick="event.stopPropagation();DB.deleteMat('+idSafe+');render()">🗑️ Delete</button>';
+    }
+    
+    // Pulsante Search Datasheet
+    html += '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Datasheet</button>';
+    
+    // Pulsante Publish/Update (per materiali utente o community)
+    if(isUserMat || isComm) {
+      var btnClass = m.firebaseDocId ? 'btn-success' : 'btn-primary';
+      var btnText = m.firebaseDocId ? '🔄 Update' : '🌍 Publish';
+      html += '<button class="btn '+btnClass+'" onclick="event.stopPropagation();submitToFirebaseById('+idSafe+')">'+btnText+'</button>';
+    }
+    
+    return html;
+  })()+
+'</div>'+
         // 4. RELIABILITY VOTING
         '<div class="mat-voting">'+
           '<div class="mat-voting-label">'+
