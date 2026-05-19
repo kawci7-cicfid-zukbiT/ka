@@ -1792,38 +1792,34 @@ var DB = {
         }
     }
 },
-    
     save: function() {
     try {
-        var defaultMatIds = {};
-        for(var di=0; di<DEFAULT_MATERIALS.length; di++) {
-            defaultMatIds[DEFAULT_MATERIALS[di].id] = true;
-        }
-        var userMats = [];
-        for(var m=0; m<this.materials.length; m++) {
-            var mat = this.materials[m];
-            if(!defaultMatIds[mat.id]) {
-                userMats.push(mat);
-            } else {
-                var orig = null;
-                for(var di2=0; di2<DEFAULT_MATERIALS.length; di2++){
-                    if(DEFAULT_MATERIALS[di2].id == mat.id){ orig = DEFAULT_MATERIALS[di2]; break; }
-                }
-                if(orig && JSON.stringify(mat) !== JSON.stringify(orig)){
-                    userMats.push(mat);
-                }
+        // ✅ 1. DEDUPLICAZIONE INTERNA PER ID PRIMA DI SALVARE
+        const uniqueLocal = new Map();
+        for(let i = this.materials.length - 1; i >= 0; i--){
+            const m = this.materials[i];
+            // Ignora materiali di default non modificati
+            const isDefault = DEFAULT_MATERIALS.some(d => d.id === m.id);
+            if(isDefault) continue;
+            
+            const key = String(m.id);
+            if(!uniqueLocal.has(key)){
+                uniqueLocal.set(key, m);
             }
         }
+        
+        // ✅ 2. PREPARA ARRAY PULITO
+        const userMats = Array.from(uniqueLocal.values());
+        
+        // ✅ 3. SALVA SOLO QUESTI IN LOCALSTORAGE
         localStorage.setItem('wvtr_mats_v3', JSON.stringify(userMats));
-
-        // ✅ Salva solo laminati non-default
-        var defaultLamIds = new Set(DEFAULT_LAMINATES.map(l => l.id));
-        var userLams = this.laminates.filter(function(l) {
-            return !defaultLamIds.has(l.id);
-        });
+        
+        // ✅ 4. LAMINATI (invariato, ma pulito)
+        const defaultLamIds = new Set(DEFAULT_LAMINATES.map(l => l.id));
+        const userLams = this.laminates.filter(l => !defaultLamIds.has(l.id));
         localStorage.setItem('wvtr_lams_v3', JSON.stringify(userLams));
-    } catch (e) {
-        console.warn('Save error:', e);
+    } catch (e) { 
+        console.warn('❌ Save error:', e); 
     }
 },
     
@@ -1864,22 +1860,29 @@ var DB = {
     
    updateMat: function(id, m) {
     const targetId = String(id);
-    for(let i=0; i<this.materials.length; i++){
-        if(String(this.materials[i].id) === targetId || this.materials[i].firebaseDocId === targetId){
+    let updated = false;
+    
+    for(let i = 0; i < this.materials.length; i++){
+        if(String(this.materials[i].id) === targetId){
+            // ✅ PRESERVA ASSOLUTAMENTE ID E VOTI LOCALI
             const existing = this.materials[i];
-            const preserved = {
-                id: existing.id,                    // ← MAI cambiare l'ID locale
-                firebaseDocId: existing.firebaseDocId, // ← MAI cambiare il Firebase ID
+            const locked = {
+                id: existing.id,
+                firebaseDocId: existing.firebaseDocId,
                 reliabilityVotes: m.reliabilityVotes || existing.reliabilityVotes,
                 usageCount: m.usageCount || existing.usageCount || 0,
                 lastUsageMonth: m.lastUsageMonth || existing.lastUsageMonth || ''
             };
-            this.materials[i] = { ...existing, ...m, ...preserved, updatedAt: new Date().toISOString() };
-            this.save();
-            return true;
+            
+            // ✅ SOVRASCRIVE IL MATERIALE, MA MANTIENE I CAMPI BLOCCATI
+            this.materials[i] = { ...existing, ...m, ...locked, updatedAt: new Date().toISOString() };
+            updated = true;
+            break; // Esci subito dopo aver trovato e aggiornato
         }
     }
-    return false;
+    
+    if(updated) this.save(); // Salva SOLO se ha effettivamente aggiornato
+    return updated;
 },
     
     deleteMat: function(id) { 
@@ -1932,26 +1935,28 @@ var DB = {
     }
   },  // ← ← ← VIRGOLA QUI!
     
+// Inside the DB object - last method
 deduplicateMaterials: function() {
     const map = new Map();
     for (const mat of this.materials) {
-        // 🔑 Chiave primaria: firebaseDocId (se esiste)
-        const key = mat.firebaseDocId || `local_${mat.id}`;
-        
+        const key = mat.firebaseDocId || String(mat.id) || mat.name.toLowerCase().trim();
         const existing = map.get(key);
         if (!existing) {
             map.set(key, mat);
         } else {
-            // Tieni la versione più recente
             const timeA = new Date(mat.updatedAt || 0).getTime();
             const timeB = new Date(existing.updatedAt || 0).getTime();
             if (timeA > timeB) map.set(key, mat);
+            else if (timeA === timeB && (mat.wvtrValues?.length || 0) >= (existing.wvtrValues?.length || 0)) {
+                map.set(key, mat);
+            }
         }
     }
     this.materials = Array.from(map.values());
     return this.materials;
-}
-window.DB = DB;
+}  // ← NO comma here (last property)
+};  // ← This closes the DB object
+window.DB = DB;  // ← This must be OUTSIDE the object
 
 var State = {
   tab: 'home', layers: [{ mid: null, thick: 0 }], selCond: null, laminateName: '', autoCalc: false,
