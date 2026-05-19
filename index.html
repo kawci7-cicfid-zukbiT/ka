@@ -1749,61 +1749,43 @@ var DB = {
     laminates: [], 
     version: '3.0', 
     dbLastSync: null,
-    
     load: function() {
-    this.materials = [];
-    this.laminates = [];
-
-    for(var i=0; i<DEFAULT_MATERIALS.length; i++) {
-        this.materials.push(Object.assign({}, DEFAULT_MATERIALS[i]));
-    }
-    for(var i=0; i<DEFAULT_LAMINATES.length; i++) {
-        this.laminates.push(Object.assign({}, DEFAULT_LAMINATES[i]));
-    }
-
+    this.materials = DEFAULT_MATERIALS.slice();
+    this.laminates = DEFAULT_LAMINATES.slice();
     try {
-        var savedMats = localStorage.getItem('wvtr_mats_v3');
+        // Merge materiali da localStorage
+        const savedMats = localStorage.getItem('wvtr_mats_v3');
         if (savedMats) {
-            var userMats = JSON.parse(savedMats);
-            var loadedIds = new Set(this.materials.map(function(m){ return m.id; }));
-            for(var u=0; u<userMats.length; u++){
-                var um = userMats[u];
-                // ✅ Cerca per ID numerico
-                var existingIdx = -1;
-                for(var ei=0; ei<this.materials.length; ei++){
-                    if(String(this.materials[ei].id) === String(um.id)){
-                        existingIdx = ei; break;
-                    }
-                }
-                if(existingIdx !== -1){
-                    // ✅ Sovrascrive (aggiornamento nome o dati)
-                    this.materials[existingIdx] = um;
-                } else if(!loadedIds.has(um.id)){
-                    loadedIds.add(um.id);
+            const userMats = JSON.parse(savedMats);
+            const existingIds = new Set(this.materials.map(m => String(m.id)));
+            for (const um of userMats) {
+                const idx = this.materials.findIndex(m => String(m.id) === String(um.id));
+                if (idx !== -1) {
+                    // Aggiorna preservando ID originali e firebaseDocId
+                    this.materials[idx] = { ...um, id: this.materials[idx].id, firebaseDocId: this.materials[idx].firebaseDocId || um.firebaseDocId };
+                } else if (!existingIds.has(String(um.id))) {
                     this.materials.push(um);
+                    existingIds.add(String(um.id));
                 }
             }
         }
-
-        var savedLams = localStorage.getItem('wvtr_lams_v3');
+        // Merge laminati da localStorage
+        const savedLams = localStorage.getItem('wvtr_lams_v3');
         if (savedLams) {
-            var userLams = JSON.parse(savedLams);
-            var defaultLamIds = new Set(DEFAULT_LAMINATES.map(function(l){ return l.id; }));
-            for(var ul=0; ul<userLams.length; ul++){
-                if(!defaultLamIds.has(userLams[ul].id)){
-                    this.laminates.push(userLams[ul]);
+            const userLams = JSON.parse(savedLams);
+            const defaultLamIds = new Set(DEFAULT_LAMINATES.map(l => l.id));
+            for (const ul of userLams) {
+                if (!defaultLamIds.has(ul.id) && !this.laminates.some(l => l.id === ul.id)) {
+                    this.laminates.push(ul);
                 }
             }
         }
-
-        var lastSync = localStorage.getItem('wvtr_db_sync_v3');
+        const lastSync = localStorage.getItem('wvtr_db_sync_v3');
         if (lastSync) this.dbLastSync = new Date(lastSync);
-    } catch (e) {
-        console.warn('Load error:', e);
-    }
-
-    for(var i=0; i<this.materials.length; i++){
-        var m = this.materials[i];
+    } catch (e) { console.warn('Load error:', e); }
+    
+    // Assicura campi igroscopici
+    for(let m of this.materials){
         if(m.hygroscopicBeta > 0 && !m.hygroscopicBetaWVTR){
             m.hygroscopicBetaWVTR = m.hygroscopicBeta;
             m.hygroscopicRefRHWVTR = m.hygroscopicRefRH || 50;
@@ -1880,23 +1862,27 @@ var DB = {
         return m.id;
     },
     
-    updateMat: function(id, m) {
-        var targetId = Number(id);
-        for(var i=0; i<this.materials.length; i++){
-            if(this.materials[i].id == targetId){
-                var existing = this.materials[i];
-                m.reliabilityVotes = m.reliabilityVotes !== undefined ? m.reliabilityVotes : (existing.reliabilityVotes || { up: 0, down: 0 });
-                m.family = m.family || getFamily(m.name);
-                if(m.company === undefined) m.company = existing.company || '';
-                if(m.tdsLink === undefined) m.tdsLink = existing.tdsLink || '';
-                if(m.testMethodWVTR === undefined) m.testMethodWVTR = existing.testMethodWVTR || '';
-                if(m.testMethodOTR === undefined) m.testMethodOTR = existing.testMethodOTR || '';
-                this.materials[i] = Object.assign({}, existing, m, { id: existing.id });
-                this.save();
-                break;
-            }
+   updateMat: function(id, m) {
+    const targetId = String(id);
+    for(let i=0; i<this.materials.length; i++){
+        // Confronta sia ID numerico che firebaseDocId
+        if(String(this.materials[i].id) === targetId || this.materials[i].firebaseDocId === targetId){
+            const existing = this.materials[i];
+            // Preserva ID critici e voti community
+            const preserved = { 
+                id: existing.id, 
+                firebaseDocId: existing.firebaseDocId, 
+                reliabilityVotes: m.reliabilityVotes || existing.reliabilityVotes,
+                usageCount: m.usageCount || existing.usageCount || 0,
+                lastUsageMonth: m.lastUsageMonth || existing.lastUsageMonth || ''
+            };
+            this.materials[i] = { ...existing, ...m, ...preserved, updatedAt: new Date().toISOString() };
+            this.save();
+            return true;
         }
-    },
+    }
+    return false;
+},
     
     deleteMat: function(id) { 
         this.materials = this.materials.filter(function(x){ return x.id !== id; }); 
@@ -1947,7 +1933,29 @@ var DB = {
             return false;
         }
     }  // ← Ultima funzione: NESSUNA virgola
-};  // ← ✅ UNA SOLA chiusura per tutto l'oggetto DB
+}; 
+ deduplicateMaterials: function() {
+    const map = new Map();
+    for (const mat of this.materials) {
+        // Chiave univoca: Firebase ID > ID locale > Nome (case-insensitive)
+        const key = mat.firebaseDocId || String(mat.id) || mat.name.toLowerCase().trim();
+        const existing = map.get(key);
+        
+        if (!existing) {
+            map.set(key, mat);
+        } else {
+            // Tieni la versione più aggiornata o con più dati
+            const timeA = new Date(mat.updatedAt || 0).getTime();
+            const timeB = new Date(existing.updatedAt || 0).getTime();
+            if (timeA > timeB) map.set(key, mat);
+            else if (timeA === timeB && (mat.wvtrValues?.length || 0) >= (existing.wvtrValues?.length || 0)) {
+                map.set(key, mat);
+            }
+        }
+    }
+    this.materials = Array.from(map.values());
+    return this.materials;
+},   // ← ✅ UNA SOLA chiusura per tutto l'oggetto DB
 window.DB = DB;
 
 var State = {
@@ -8152,56 +8160,41 @@ async function loadExternalMaterialsDB() {
     await loadExternalMaterialsDB();
 
    // 4. Carica materiali Firebase
+// 4. Carica materiali Firebase e fai merge sicuro
 if(window.communityDB) {
     const fbMats = await window.loadFromCommunity();
-
-    let addedCount = 0;
     for(const fm of fbMats) {
-        // ✅ Cerca per firebaseDocId (più affidabile)
-        var localMat = DB.materials.find(function(m){
-            return m.firebaseDocId && m.firebaseDocId === fm.firebaseDocId;
-        });
-
-        // ✅ Fallback: cerca per nome SOLO se non ha ancora un firebaseDocId
-        if(!localMat) {
-            localMat = DB.materials.find(function(m){
-                return !m.firebaseDocId && m.name.toLowerCase() === fm.name.toLowerCase();
-            });
+        // Cerca prima per firebaseDocId, poi per nome esatto
+        let localMat = DB.materials.find(m => m.firebaseDocId === fm.firebaseDocId);
+        if (!localMat) {
+            localMat = DB.materials.find(m => !m.firebaseDocId && m.name.toLowerCase().trim() === fm.name.toLowerCase().trim());
         }
-
         if (localMat) {
-            var oldId = localMat.id;
-            var oldName = localMat.name; // ✅ Preserva il nome modificato dall'utente
             Object.assign(localMat, fm);
-            localMat.id = oldId;
-            localMat.name = oldName; // ✅ Ripristina il nome locale
-            localMat.isCommunity = true;
             if(fm.firebaseDocId) localMat.firebaseDocId = fm.firebaseDocId;
-        } else if (fm.name) {
-            fm.id = 'fb_' + (fm.firebaseDocId || Date.now());
-            fm.isCommunity = true;
-            var alreadyExists = DB.materials.find(function(m){ return m.id === fm.id; });
-            if(!alreadyExists) {
-                DB.materials.push(fm);
-                addedCount++;
-            }
+            localMat.isCommunity = true;
+        } else {
+            DB.materials.push({ ...fm, isCommunity: true });
         }
     }
 }
 
-    // 5. ✅ Merge laminati cloud SENZA sovrascrivere quelli locali
-    if(window.loadLaminatesFromCloud) {
-      const cloudLams = await window.loadLaminatesFromCloud();
-      if(cloudLams.length > 0) {
+// 5. ✅ ELIMINA I DUPLICATI DOVER TUTTI I CARICAMENTI
+DB.deduplicateMaterials();
+
+// 6. Merge laminati cloud (solo se nuovi)
+if(window.loadLaminatesFromCloud) {
+    const cloudLams = await window.loadLaminatesFromCloud();
+    if(cloudLams.length > 0) {
         const existingCloudIds = new Set(DB.laminates.map(l => l._cloudId).filter(Boolean));
         for(const cl of cloudLams) {
-          if(!existingCloudIds.has(cl._cloudId)) {
-            DB.laminates.push(cl);
-          }
+            if(!existingCloudIds.has(cl._cloudId) && !DB.laminates.some(l => l.id === cl.id)) {
+                DB.laminates.push(cl);
+            }
         }
         DB.save();
-      }
     }
+}
 
     // 6. Render
     console.log("🎨 Rendering...");
