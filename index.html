@@ -1225,9 +1225,8 @@ main {
       return { success: false, error: e.message };
     }
   };
-
- window.addMeasurementToMaterial = async function(materialFirebaseId, measurement) {
-  // Authentication logic (no outer try needed)
+window.addMeasurementToMaterial = async function(materialFirebaseId, measurement) {
+  // ✅ Authentication logic (no outer try needed)
   if (!window.currentUser) {
     let waited = 0;
     while (!window.currentUser && waited < 50) {
@@ -1249,15 +1248,13 @@ main {
     return { success: false, error: "Not authenticated" };
   }
   
-  // Validation logic continues...
-}
-      // Validazione campi obbligatori
-      if (!measurement.email || !measurement.email.includes('@')) {
-        return { success: false, error: "Valid email required" };
-      }
-      if (typeof measurement.value !== 'number' || measurement.value < 0) {
-        return { success: false, error: "Invalid value" };
-      }
+  // ✅ Validation logic continues normally (all returns are now safely inside the function)
+  if (!measurement.email || !measurement.email.includes('@')) {
+    return { success: false, error: "Valid email required" };
+  }
+  if (typeof measurement.value !== 'number' || measurement.value < 0) {
+    return { success: false, error: "Invalid value" };
+  }
       if (typeof measurement.thickness !== 'number' || measurement.thickness <= 0) {
         return { success: false, error: "Invalid thickness" };
       }
