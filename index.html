@@ -1140,11 +1140,15 @@ main {
 <!-- 🔥 FIREBASE COMMUNITY SETUP -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
- import { getFirestore, collection, addDoc, getDocs, getDoc, query, orderBy, updateDoc, doc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, getDocs, getDoc, query, orderBy, updateDoc, deleteDoc, doc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
   window.fbGetDoc = getDoc;
-window.fbIncrement = increment;
+  window.fbIncrement = increment;
   window.fbUpdateDoc = updateDoc;
-window.fbDoc = doc;
+  window.fbDoc = doc;
+  window.fbDeleteDoc = deleteDoc;
+
   const firebaseConfig = {
     apiKey: "AIzaSyA6qFSRGcknbBbjVzV4F3CoLkdBA_fqkvk",
     authDomain: "wvtr-community.firebaseapp.com",
@@ -1155,11 +1159,19 @@ window.fbDoc = doc;
   };
 
   const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-// ✅ Silenzia i log di connessione Firebase in dev
-try { db._firestore._settings.host = undefined; } catch(e){}
-  
-  // Rendi disponibile globalmente
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+
+  // ✅ Auth anonima automatica
+  signInAnonymously(auth)
+    .then((userCredential) => {
+      window.currentUser = userCredential.user;
+      console.log("✅ Auth anonima:", window.currentUser.uid);
+    })
+    .catch((error) => {
+      console.warn("⚠️ Auth fallita:", error.message);
+    });
+
   window.communityDB = db;
   window.fbAddDoc = addDoc;
   window.fbGetDocs = getDocs;
@@ -1170,147 +1182,221 @@ try { db._firestore._settings.host = undefined; } catch(e){}
   window.fbDoc = doc;
   console.log("🔥 Firebase connesso!");
 
-// ✅ Funzione: Salva materiale nella community (con isMetallized)
-// ✅ Funzione: Salva materiale nella community (CON TUTTI I CAMPI)
-window.saveToCommunity = async function(mat) {
+  // ✅ Salva materiale community
+  window.saveToCommunity = async function(mat) {
     try {
-        const payload = {
-    name: mat.name,
-    family: mat.family || "Other",
-    testMethodWVTR: mat.testMethodWVTR || "",
-    testMethodOTR: mat.testMethodOTR || "",
-    isMetallized: mat.isMetallized || false,
-    // ✅ NUOVI CAMPI
-    hygroscopicBetaWVTR: mat.hygroscopicBetaWVTR || 0,
-    hygroscopicRefRHWVTR: mat.hygroscopicRefRHWVTR || 50,
-    hygroscopicBetaOTR: mat.hygroscopicBetaOTR || 0,
-    hygroscopicRefRHOTR: mat.hygroscopicRefRHOTR || 50,
-    wvtrValues: mat.wvtrValues || [],
-    otrValues: mat.otrValues || [],
-    validConditions: mat.validConditions || [],
-    author: mat.author || "Community",
-    company: mat.company || "",
-    tdsLink: mat.tdsLink || "",
-    updatedAt: new Date().toISOString()
-};
-        
-        let docRef;
-        if (mat.firebaseDocId) {
-            const ref = window.fbDoc(window.communityDB, "materials", mat.firebaseDocId);
-            await window.fbUpdateDoc(ref, payload);
-            docRef = { id: mat.firebaseDocId };
-        } else {
-            payload.createdAt = new Date().toISOString();
-            docRef = await window.fbAddDoc(window.fbCollection(window.communityDB, "materials"), payload);
+      const payload = {
+        name: mat.name,
+        family: mat.family || "Other",
+        testMethodWVTR: mat.testMethodWVTR || "",
+        testMethodOTR: mat.testMethodOTR || "",
+        isMetallized: mat.isMetallized || false,
+        hygroscopicBetaWVTR: mat.hygroscopicBetaWVTR || 0,
+        hygroscopicRefRHWVTR: mat.hygroscopicRefRHWVTR || 50,
+        hygroscopicBetaOTR: mat.hygroscopicBetaOTR || 0,
+        hygroscopicRefRHOTR: mat.hygroscopicRefRHOTR || 50,
+        wvtrValues: mat.wvtrValues || [],
+        otrValues: mat.otrValues || [],
+        validConditions: mat.validConditions || [],
+        author: mat.author || "Community",
+        authorUid: window.currentUser?.uid || "anonymous",
+        company: mat.company || "",
+        tdsLink: mat.tdsLink || "",
+        updatedAt: new Date().toISOString()
+      };
+
+      let docRef;
+      if (mat.firebaseDocId) {
+        // ✅ Solo se sei l'autore originale
+        if (mat.originalAuthorUid && mat.originalAuthorUid !== window.currentUser?.uid) {
+          return { success: false, error: "You can only edit your own materials" };
         }
-        return { success: true, id: docRef.id };
+        const ref = window.fbDoc(window.communityDB, "materials", mat.firebaseDocId);
+        await window.fbUpdateDoc(ref, payload);
+        docRef = { id: mat.firebaseDocId };
+      } else {
+        payload.createdAt = new Date().toISOString();
+        payload.originalAuthorUid = window.currentUser?.uid || "anonymous";
+        docRef = await window.fbAddDoc(window.fbCollection(window.communityDB, "materials"), payload);
+      }
+      return { success: true, id: docRef.id };
     } catch(e) {
-        console.error("❌ Save error:", e);
-        return { success: false, error: e.message };
+      console.error("❌ Save error:", e);
+      return { success: false, error: e.message };
     }
-};
+  };
 
-// ✅ Funzione: Carica materiali dalla community (con isMetallized)
-// ✅ Funzione: Carica materiali dalla community (CON TUTTI I CAMPI)
-window.loadFromCommunity = async function() {
+  // ✅ Aggiungi misura a materiale esistente
+  window.addMeasurementToMaterial = async function(materialFirebaseId, measurement) {
     try {
-        console.log("🔍 Query Firestore in corso...");
-        const q = window.fbQuery(
-            window.fbCollection(window.communityDB, "materials"),
-            window.fbOrderBy("createdAt", "desc")
-        );
-        const snapshot = await window.fbGetDocs(q);
-        console.log("📄 Documenti trovati:", snapshot.size);
-        const mats = [];
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            if(data.testMethod && !data.testMethodWVTR && !data.testMethodOTR) {
-                data.testMethodWVTR = data.testMethod;
-                data.testMethodOTR = data.testMethod;
-            }
-            mats.push({
-                id: 'fb_' + doc.id,
-                firebaseDocId: doc.id,
-                ...data,
-                testMethod: data.testMethod || "",
-                author: data.author || "Community",
-                company: data.company || "",           // ✅ AGGIUNTO
-                tdsLink: data.tdsLink || "",           // ✅ AGGIUNTO
-                isMetallized: data.isMetallized || false,
-                isCommunity: true,
-                usageCount: data.usageCount || 0,
-                lastUsageMonth: data.lastUsageMonth || '',
-                reliabilityVotes: data.reliabilityVotes || { up: 0, down: 0 }
-            });
-        });
-        console.log("✅ Totale materiali caricati:", mats.length);
-        return mats;
+      if (!window.currentUser) {
+        return { success: false, error: "Not authenticated" };
+      }
+      // Validazione campi obbligatori
+      if (!measurement.email || !measurement.email.includes('@')) {
+        return { success: false, error: "Valid email required" };
+      }
+      if (typeof measurement.value !== 'number' || measurement.value < 0) {
+        return { success: false, error: "Invalid value" };
+      }
+      if (typeof measurement.thickness !== 'number' || measurement.thickness <= 0) {
+        return { success: false, error: "Invalid thickness" };
+      }
+
+      const measurementPayload = {
+        type: measurement.type, // 'wvtr' o 'otr'
+        value: measurement.value,
+        thickness: measurement.thickness,
+        temperature: measurement.temperature,
+        humidity: measurement.humidity,
+        testMethod: measurement.testMethod || "",
+        authorUid: window.currentUser.uid,
+        // ✅ Email/azienda salvate ma non mostrate pubblicamente
+        _email: measurement.email,
+        _company: measurement.company || "",
+        displayName: measurement.displayName || "Community",
+        notes: measurement.notes || "",
+        lab: measurement.lab || "",
+        verified: false,
+        votes: { up: 0, down: 0 },
+        createdAt: new Date().toISOString()
+      };
+
+      const measurementsCol = window.fbCollection(
+        window.communityDB,
+        "materials", materialFirebaseId, "measurements"
+      );
+      const docRef = await window.fbAddDoc(measurementsCol, measurementPayload);
+      return { success: true, id: docRef.id };
     } catch(e) {
-        console.error("❌ Load error:", e);
-        return [];
+      console.error("❌ addMeasurement error:", e);
+      return { success: false, error: e.message };
     }
-};
+  };
 
-// ====== USER LAMINATES SYNC ======
-window.getOrCreateUserId = function() {
-    let uid = localStorage.getItem('wvtr_uid');
-    if (!uid) {
-        uid = 'anon_' + Date.now() + '_' + Math.random().toString(36).slice(2);
-        localStorage.setItem('wvtr_uid', uid);
+  // ✅ Carica misure di un materiale
+  window.loadMeasurements = async function(materialFirebaseId) {
+    try {
+      const measurementsCol = window.fbCollection(
+        window.communityDB,
+        "materials", materialFirebaseId, "measurements"
+      );
+      const q = window.fbQuery(measurementsCol, window.fbOrderBy("createdAt", "asc"));
+      const snapshot = await window.fbGetDocs(q);
+      const measurements = [];
+      snapshot.forEach(d => {
+        const data = d.data();
+        measurements.push({
+          id: d.id,
+          type: data.type,
+          value: data.value,
+          thickness: data.thickness,
+          temperature: data.temperature,
+          humidity: data.humidity,
+          testMethod: data.testMethod || "",
+          displayName: data.displayName || "Community",
+          notes: data.notes || "",
+          lab: data.lab || "",
+          verified: data.verified || false,
+          votes: data.votes || { up: 0, down: 0 },
+          createdAt: data.createdAt,
+          authorUid: data.authorUid
+          // ✅ _email e _company NON inclusi: restano privati
+        });
+      });
+      return measurements;
+    } catch(e) {
+      console.error("❌ loadMeasurements error:", e);
+      return [];
     }
-    return uid;
-};
+  };
 
-// Rimuove campi undefined che Firestore non accetta
-function _cleanForFirestore(obj) {
+  // ✅ Carica materiali community
+  window.loadFromCommunity = async function() {
+    try {
+      const q = window.fbQuery(
+        window.fbCollection(window.communityDB, "materials"),
+        window.fbOrderBy("createdAt", "desc")
+      );
+      const snapshot = await window.fbGetDocs(q);
+      const mats = [];
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if(data.testMethod && !data.testMethodWVTR && !data.testMethodOTR) {
+          data.testMethodWVTR = data.testMethod;
+          data.testMethodOTR = data.testMethod;
+        }
+        mats.push({
+          id: 'fb_' + doc.id,
+          firebaseDocId: doc.id,
+          ...data,
+          testMethod: data.testMethod || "",
+          author: data.author || "Community",
+          company: data.company || "",
+          tdsLink: data.tdsLink || "",
+          isMetallized: data.isMetallized || false,
+          isCommunity: true,
+          usageCount: data.usageCount || 0,
+          lastUsageMonth: data.lastUsageMonth || '',
+          reliabilityVotes: data.reliabilityVotes || { up: 0, down: 0 }
+        });
+      });
+      return mats;
+    } catch(e) {
+      console.error("❌ Load error:", e);
+      return [];
+    }
+  };
+
+  // ====== USER LAMINATES SYNC ======
+  window.getOrCreateUserId = function() {
+    return window.currentUser?.uid || localStorage.getItem('wvtr_uid') || 'anon_' + Date.now();
+  };
+
+  function _cleanForFirestore(obj) {
     return JSON.parse(JSON.stringify(obj));
-}
+  }
 
-window.saveLaminateToCloud = async function(lam) {
+  window.saveLaminateToCloud = async function(lam) {
     if (!window.communityDB) return;
     try {
-        const uid = window.getOrCreateUserId();
-        const payload = _cleanForFirestore(lam);
-        if (lam._cloudId) {
-            // Aggiorna documento esistente
-            await window.fbUpdateDoc(
-                window.fbDoc(window.communityDB, 'users', uid, 'laminates', lam._cloudId),
-                payload
-            );
-        } else {
-            // Crea nuovo documento
-            const col = window.fbCollection(window.communityDB, 'users', uid, 'laminates');
-            const ref = await window.fbAddDoc(col, payload);
-            // Salva _cloudId sull'oggetto E persiste in localStorage
-            lam._cloudId = ref.id;
-            if (window.DB && window.DB.save) window.DB.save();
-        }
-        console.log('☁️ Laminato salvato:', lam._cloudId);
+      const uid = window.getOrCreateUserId();
+      const payload = _cleanForFirestore(lam);
+      if (lam._cloudId) {
+        await window.fbUpdateDoc(
+          window.fbDoc(window.communityDB, 'users', uid, 'laminates', lam._cloudId),
+          payload
+        );
+      } else {
+        const col = window.fbCollection(window.communityDB, 'users', uid, 'laminates');
+        const ref = await window.fbAddDoc(col, payload);
+        lam._cloudId = ref.id;
+        if (window.DB && window.DB.save) window.DB.save();
+      }
     } catch(e) { console.warn('saveLaminateToCloud error:', e); }
-};
+  };
 
-window.deleteLaminateFromCloud = async function(cloudId) {
+  window.deleteLaminateFromCloud = async function(cloudId) {
     if (!window.communityDB || !cloudId) return;
     try {
-        const uid = window.getOrCreateUserId();
-        const { deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-        await deleteDoc(window.fbDoc(window.communityDB, 'users', uid, 'laminates', cloudId));
-        console.log('☁️ Laminato eliminato:', cloudId);
+      const uid = window.getOrCreateUserId();
+      await window.fbDeleteDoc(
+        window.fbDoc(window.communityDB, 'users', uid, 'laminates', cloudId)
+      );
     } catch(e) { console.warn('deleteLaminateFromCloud error:', e); }
-};
+  };
 
-window.loadLaminatesFromCloud = async function() {
-    if (!window.communityDB) { console.log('☁️ Firebase non pronto, skip cloud laminates'); return []; }
+  window.loadLaminatesFromCloud = async function() {
+    if (!window.communityDB) return [];
     try {
-        const uid = window.getOrCreateUserId();
-        const col = window.fbCollection(window.communityDB, 'users', uid, 'laminates');
-        const snap = await window.fbGetDocs(col);
-        const lams = [];
-        snap.forEach(d => { lams.push(Object.assign({}, d.data(), { _cloudId: d.id })); });
-        console.log('☁️ Laminati cloud caricati:', lams.length);
-        return lams;
+      const uid = window.getOrCreateUserId();
+      const col = window.fbCollection(window.communityDB, 'users', uid, 'laminates');
+      const snap = await window.fbGetDocs(col);
+      const lams = [];
+      snap.forEach(d => { lams.push(Object.assign({}, d.data(), { _cloudId: d.id })); });
+      return lams;
     } catch(e) { console.warn('loadLaminatesFromCloud error:', e); return []; }
-};
+  };
 </script>
 
 <div class="app">
@@ -1404,7 +1490,54 @@ window.loadLaminatesFromCloud = async function() {
 </div>
 
 <script>
-const Engine={
+    
+function getMergedMaterialValues(mat, mode) {
+    var values = mode === 'wvtr' ? (mat.wvtrValues || []) : (mat.otrValues || []);
+    if(!values || values.length === 0) return [];
+
+    // Raggruppa per condizione (temperatura + umidità)
+    var groups = {};
+    for(var i=0; i<values.length; i++) {
+        var v = values[i];
+        if(!v || v.value == null) continue;
+        var cond = mat.validConditions && mat.validConditions[i];
+        if(!cond) continue;
+        var key = cond.temperature + '_' + cond.humidity;
+        if(!groups[key]) groups[key] = { values: [], verified: null, cond: cond };
+        if(v.verified) {
+            groups[key].verified = v; // ✅ Misura verificata vince
+        } else {
+            groups[key].values.push(v);
+        }
+    }
+
+    // Costruisci array risultante
+    var mergedValues = [];
+    var mergedConditions = [];
+    for(var key in groups) {
+        var g = groups[key];
+        if(g.verified) {
+            // ✅ Usa misura verificata
+            mergedValues.push(g.verified);
+            mergedConditions.push(g.cond);
+        } else if(g.values.length > 0) {
+            // ✅ Calcola media
+            var avgValue = 0;
+            var avgThickness = 0;
+            for(var j=0; j<g.values.length; j++) {
+                avgValue += g.values[j].value;
+                avgThickness += g.values[j].thickness;
+            }
+            avgValue /= g.values.length;
+            avgThickness /= g.values.length;
+            mergedValues.push({ value: avgValue, thickness: avgThickness });
+            mergedConditions.push(g.cond);
+        }
+    }
+
+    return { values: mergedValues, conditions: mergedConditions };
+}
+={
   R_GAS:8.314,
    calcHygroscopicCorrection: function(mat, condition, mode) {
     mode = mode || Engine.mode;
@@ -1486,7 +1619,13 @@ const Engine={
     }
     return errs;
   },
-  getValues:function(mat){return this.mode==='wvtr'?mat.wvtrValues:mat.otrValues;},
+  getValues: function(mat) {
+    var merged = getMergedMaterialValues(mat, this.mode);
+    if(merged && merged.values && merged.values.length > 0) {
+        return merged.values;
+    }
+    return this.mode === 'wvtr' ? mat.wvtrValues : mat.otrValues;
+},
   getUnits:function(){return this.mode==='wvtr'?{value:'g/m²·day',label:'WVTR'}:{value:'cc/m²·day',label:'OTR'};},
   findCommonConditions:function(layers,materials,testMethodFilter){
   var mats=layers.filter(function(l){return l.mid!==null;}).map(function(l){return materials.find(function(m){return m.id===l.mid;});}).filter(Boolean);
@@ -1495,7 +1634,8 @@ const Engine={
   var allE=[];for(var j=0;j<mats.length;j++){var v=Engine.validateData(mats[j]);for(var k=0;k<v.length;k++) allE.push(v[k]);}
   if(allE.length>0) return{conditions:[],error:allE.join('. '),warning:null,matInfo:null};
   
-  var common=[].concat(mats[0].validConditions);
+  var merged0 = getMergedMaterialValues(mats[0], Engine.mode);
+var common = [].concat(merged0 && merged0.conditions && merged0.conditions.length > 0 ? merged0.conditions : mats[0].validConditions);
   for(var i=1;i<mats.length;i++){
     var nc=mats[i].validConditions;
     common=common.filter(function(c){
@@ -1751,83 +1891,101 @@ var DB = {
     dbLastSync: null,
     
     load: function() {
-        this.materials = [];
-        // 1. Carica i default
-        for(var i=0; i<DEFAULT_MATERIALS.length; i++) {
-            this.materials.push(Object.assign({}, DEFAULT_MATERIALS[i]));
-        }
-        
-        try {
-            var savedMats = localStorage.getItem('wvtr_mats_v3');
-            if (savedMats) {
-                var userMats = JSON.parse(savedMats);
-                var defaultIds = {};
-                for(var di=0; di<DEFAULT_MATERIALS.length; di++) {
-                    defaultIds[DEFAULT_MATERIALS[di].id] = true;
+    this.materials = [];
+    this.laminates = [];
+
+    // 1. Carica materiali default
+    for(var i=0; i<DEFAULT_MATERIALS.length; i++) {
+        this.materials.push(Object.assign({}, DEFAULT_MATERIALS[i]));
+    }
+
+    // ✅ 2. Carica laminati default
+    for(var i=0; i<DEFAULT_LAMINATES.length; i++) {
+        this.laminates.push(Object.assign({}, DEFAULT_LAMINATES[i]));
+    }
+
+    try {
+        var savedMats = localStorage.getItem('wvtr_mats_v3');
+        if (savedMats) {
+            var userMats = JSON.parse(savedMats);
+            var loadedIds = new Set(this.materials.map(m => m.id));
+            for(var u=0; u<userMats.length; u++){
+                var um = userMats[u];
+                var existingIdx = -1;
+                for(var ei=0; ei<this.materials.length; ei++){
+                    if(this.materials[ei].id == um.id){ existingIdx = ei; break; }
                 }
-                // Evita duplicati; aggiorna i default modificati
-                var loadedIds = new Set(this.materials.map(m => m.id));
-                for(var u=0; u<userMats.length; u++){
-                    var um = userMats[u];
-                    var existingIdx = -1;
-                    for(var ei=0; ei<this.materials.length; ei++){
-                        if(this.materials[ei].id == um.id){ existingIdx = ei; break; }
-                    }
-                    if(existingIdx !== -1){
-                        // Materiale default modificato: sovrascrive il default originale
-                        this.materials[existingIdx] = um;
-                    } else if(!loadedIds.has(um.id)){
-                        // Nuovo materiale non-default
-                        loadedIds.add(um.id);
-                        this.materials.push(um);
-                    }
+                if(existingIdx !== -1){
+                    this.materials[existingIdx] = um;
+                } else if(!loadedIds.has(um.id)){
+                    loadedIds.add(um.id);
+                    this.materials.push(um);
                 }
             }
-            var savedLams = localStorage.getItem('wvtr_lams_v3');
-            if (savedLams) this.laminates = JSON.parse(savedLams);
-            var lastSync = localStorage.getItem('wvtr_db_sync_v3');
-            if (lastSync) this.dbLastSync = new Date(lastSync);
-        } catch (e) { 
-            console.warn('Load error:', e); 
         }
-        
-        // 🔄 Migrazione backward compatibility (SOLO DENTRO load)
-        for(var i=0; i<this.materials.length; i++){
-            var m = this.materials[i];
-            if(m.hygroscopicBeta > 0 && !m.hygroscopicBetaWVTR){
-                m.hygroscopicBetaWVTR = m.hygroscopicBeta;
-                m.hygroscopicRefRHWVTR = m.hygroscopicRefRH || 50;
+
+        // ✅ Merge laminati utente con default
+        var savedLams = localStorage.getItem('wvtr_lams_v3');
+        if (savedLams) {
+            var userLams = JSON.parse(savedLams);
+            var defaultLamIds = new Set(DEFAULT_LAMINATES.map(l => l.id));
+            for(var ul=0; ul<userLams.length; ul++){
+                if(!defaultLamIds.has(userLams[ul].id)){
+                    this.laminates.push(userLams[ul]);
+                }
             }
         }
-    },  // ← load() chiude QUI
+
+        var lastSync = localStorage.getItem('wvtr_db_sync_v3');
+        if (lastSync) this.dbLastSync = new Date(lastSync);
+    } catch (e) {
+        console.warn('Load error:', e);
+    }
+
+    // Migrazione backward compatibility
+    for(var i=0; i<this.materials.length; i++){
+        var m = this.materials[i];
+        if(m.hygroscopicBeta > 0 && !m.hygroscopicBetaWVTR){
+            m.hygroscopicBetaWVTR = m.hygroscopicBeta;
+            m.hygroscopicRefRHWVTR = m.hygroscopicRefRH || 50;
+        }
+    }
+},
     
     save: function() {
-        try {
-            var defaultIds = {};
-            for(var di=0; di<DEFAULT_MATERIALS.length; di++) {
-                defaultIds[DEFAULT_MATERIALS[di].id] = true;
-            }
-            var userMats = [];
-            for(var m=0; m<this.materials.length; m++) {
-                var mat = this.materials[m];
-                if(!defaultIds[mat.id]) {
+    try {
+        var defaultMatIds = {};
+        for(var di=0; di<DEFAULT_MATERIALS.length; di++) {
+            defaultMatIds[DEFAULT_MATERIALS[di].id] = true;
+        }
+        var userMats = [];
+        for(var m=0; m<this.materials.length; m++) {
+            var mat = this.materials[m];
+            if(!defaultMatIds[mat.id]) {
+                userMats.push(mat);
+            } else {
+                var orig = null;
+                for(var di2=0; di2<DEFAULT_MATERIALS.length; di2++){
+                    if(DEFAULT_MATERIALS[di2].id == mat.id){ orig = DEFAULT_MATERIALS[di2]; break; }
+                }
+                if(orig && JSON.stringify(mat) !== JSON.stringify(orig)){
                     userMats.push(mat);
-                } else {
-                    var orig = null;
-                    for(var di2=0; di2<DEFAULT_MATERIALS.length; di2++){
-                        if(DEFAULT_MATERIALS[di2].id == mat.id){ orig = DEFAULT_MATERIALS[di2]; break; }
-                    }
-                    if(orig && JSON.stringify(mat) !== JSON.stringify(orig)){
-                        userMats.push(mat);
-                    }
                 }
             }
-            localStorage.setItem('wvtr_mats_v3', JSON.stringify(userMats));
-            localStorage.setItem('wvtr_lams_v3', JSON.stringify(this.laminates));
-        } catch (e) { 
-            console.warn('Save error:', e); 
         }
-    },
+        localStorage.setItem('wvtr_mats_v3', JSON.stringify(userMats));
+
+        // ✅ Salva solo laminati non-default
+        var defaultLamIds = new Set(DEFAULT_LAMINATES.map(l => l.id));
+        var userLams = this.laminates.filter(function(l) {
+            return !defaultLamIds.has(l.id);
+        });
+        localStorage.setItem('wvtr_lams_v3', JSON.stringify(userLams));
+    } catch (e) {
+        console.warn('Save error:', e);
+    }
+},
+
     
     saveState: function(state) {
         try {
@@ -2374,6 +2532,145 @@ async function submitToFirebaseById(matId) {
     }
 }
 // 📊 TRACCIAMENTO UTILIZZO MATERIALI & RESET MENSILE
+function showAddMeasurementModal(matId) {
+    var mat = DB.materials.find(m => m.id === matId);
+    if(!mat) return;
+    if(!mat.firebaseDocId) {
+        alert('⚠️ This material must be published to Firebase first before adding measurements.');
+        return;
+    }
+
+    var ctmWVTR = ['ASTM F1249','ISO 15106-3','ASTM E96','JIS K7129','MOCON PERMATRAN','DIN 53122','Other'];
+    var ctmOTR = ['ASTM D3985','ISO 15106-2','JIS K7126','MOCON OXTRAN','Other'];
+    var currentMode = State.mode;
+    var ctm = currentMode === 'wvtr' ? ctmWVTR : ctmOTR;
+    var tmOpts = ctm.map(t => `<option value="${t}">${t}</option>`).join('');
+
+    Modal.open(
+        'Add Measurement: ' + mat.name,
+        `<div class="alert alert-info" style="margin-bottom:1rem;font-size:0.78rem">
+            Your email/company will be kept private and used only if abuse is reported.
+        </div>
+        <div class="grid grid-2" style="gap:0.5rem">
+            <div class="form-group" style="margin:0">
+                <label>Type *</label>
+                <select class="form-input" id="am-type">
+                    <option value="wvtr">WVTR</option>
+                    <option value="otr">OTR</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin:0">
+                <label>Test Method</label>
+                <select class="form-input" id="am-method">${tmOpts}</select>
+            </div>
+            <div class="form-group" style="margin:0">
+                <label>Value *</label>
+                <input type="number" step="any" class="form-input" id="am-value" placeholder="0.05">
+            </div>
+            <div class="form-group" style="margin:0">
+                <label>Thickness (µm) *</label>
+                <input type="number" step="any" class="form-input" id="am-thickness" placeholder="100">
+            </div>
+            <div class="form-group" style="margin:0">
+                <label>Temperature (°C) *</label>
+                <input type="number" step="any" class="form-input" id="am-temp" placeholder="23">
+            </div>
+            <div class="form-group" style="margin:0">
+                <label>Humidity (%) *</label>
+                <input type="number" step="any" class="form-input" id="am-humidity" placeholder="50">
+            </div>
+            <div class="form-group" style="margin:0">
+                <label>Email * (private)</label>
+                <input type="email" class="form-input" id="am-email" placeholder="your@email.com">
+            </div>
+            <div class="form-group" style="margin:0">
+                <label>Company (optional, private)</label>
+                <input type="text" class="form-input" id="am-company" placeholder="Your company">
+            </div>
+            <div class="form-group" style="margin:0">
+                <label>Display Name *</label>
+                <input type="text" class="form-input" id="am-displayname" placeholder="How you appear publicly">
+            </div>
+            <div class="form-group" style="margin:0">
+                <label>Lab (optional)</label>
+                <input type="text" class="form-input" id="am-lab" placeholder="Lab name">
+            </div>
+        </div>
+        <div class="form-group" style="margin-top:0.5rem">
+            <label>Notes (optional)</label>
+            <input type="text" class="form-input" id="am-notes" placeholder="Any relevant notes">
+        </div>`,
+        async function() {
+            var type = document.getElementById('am-type').value;
+            var value = parseFloat(document.getElementById('am-value').value);
+            var thickness = parseFloat(document.getElementById('am-thickness').value);
+            var temp = parseFloat(document.getElementById('am-temp').value);
+            var humidity = parseFloat(document.getElementById('am-humidity').value);
+            var email = document.getElementById('am-email').value.trim();
+            var company = document.getElementById('am-company').value.trim();
+            var displayName = document.getElementById('am-displayname').value.trim();
+            var method = document.getElementById('am-method').value;
+            var lab = document.getElementById('am-lab').value.trim();
+            var notes = document.getElementById('am-notes').value.trim();
+
+            // Validazione
+            if(!email || !email.includes('@')) { alert('Valid email required'); return false; }
+            if(!displayName) { alert('Display name required'); return false; }
+            if(isNaN(value) || value < 0) { alert('Invalid value'); return false; }
+            if(isNaN(thickness) || thickness <= 0) { alert('Invalid thickness'); return false; }
+            if(isNaN(temp)) { alert('Temperature required'); return false; }
+            if(isNaN(humidity) || humidity < 0 || humidity > 100) { alert('Invalid humidity'); return false; }
+
+            var measurement = {
+                type, value, thickness,
+                temperature: temp,
+                humidity,
+                testMethod: method,
+                email, company, displayName,
+                lab, notes
+            };
+
+            var btn = document.getElementById('modal-save-btn');
+            if(btn) { btn.disabled = true; btn.textContent = '⏳...'; }
+
+            var result = await window.addMeasurementToMaterial(mat.firebaseDocId, measurement);
+
+            if(result.success) {
+                // ✅ Aggiorna anche localmente
+                var newEntry = { value, thickness };
+                var newCond = { temperature: temp, humidity };
+                if(type === 'wvtr') {
+                    mat.wvtrValues = mat.wvtrValues || [];
+                    mat.wvtrValues.push(newEntry);
+                } else {
+                    mat.otrValues = mat.otrValues || [];
+                    mat.otrValues.push(newEntry);
+                }
+                mat.validConditions = mat.validConditions || [];
+                // Aggiungi condizione solo se non esiste già
+                var condExists = mat.validConditions.some(c =>
+                    Math.abs(c.temperature - temp) < 0.01 &&
+                    Math.abs(c.humidity - humidity) < 0.01
+                );
+                if(!condExists) mat.validConditions.push(newCond);
+                DB.save();
+                alert('✅ Measurement added successfully! It is now available in the calculator.');
+                render();
+                return true;
+            } else {
+                alert('❌ Error: ' + result.error);
+                if(btn) { btn.disabled = false; btn.textContent = 'Submit'; }
+                return false;
+            }
+        }
+    );
+
+    // Cambia testo pulsante
+    setTimeout(() => {
+        var btn = document.getElementById('modal-save-btn');
+        if(btn) btn.textContent = 'Submit';
+    }, 50);
+}
 
 
 // 📊 TRACCIAMENTO UTILIZZO MATERIALI & RESET MENSILE
@@ -3839,7 +4136,13 @@ return (O2_crit * fatKg * 0.21) / (rate * A);
         }
     },
 
-    // --- Draw Logistics Chain Charts ---
+    updateManualArea() {
+        const val = document.getElementById('sl-area-manual')?.value || '0';
+        const areaDisplay = document.getElementById('sl-area-display');
+        const areaInput = document.getElementById('sl-area');
+        if(areaDisplay) areaDisplay.textContent = parseFloat(val).toFixed(4) + ' m²';
+        if(areaInput) areaInput.value = parseFloat(val).toFixed(4);
+    },
     // ✅ FIX: Aggiunto parametro 'res'
     drawLogisticsCharts(res) {
         destroyChart('slChain');
@@ -7555,6 +7858,9 @@ html += '<div class="material-item' + verifiedClass + '" onclick="this.classList
           '<button class="btn btn-outline" onclick="event.stopPropagation();showMatModal('+m.id+')">✏️ Edit</button>'+
           (isUserMat ? '<button class="btn btn-danger" onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">🗑️ Delete</button>' : '')+
           '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Datasheet</button>'+
+    (isComm && mat.firebaseDocId ? 
+    '<button class="btn btn-outline" onclick="event.stopPropagation();showAddMeasurementModal('+m.id+')"> Add Measurement</button>' 
+    : '')+
           ((isUserMat || isComm) ? '<button class="btn '+(m.firebaseDocId?'btn-success':'btn-primary')+'" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">'+(m.firebaseDocId?'🔄 Update':'🌍 Publish')+'</button>' : '')+
         '</div>'+
         
@@ -8005,38 +8311,34 @@ function importFile(input){
 // ====================================================================
 async function loadExternalMaterialsDB() {
     try {
-        console.log('🔍 Tentativo di caricamento materials.json...');
         const res = await fetch('materials.json');
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         const externalMats = Array.isArray(data) ? data : (data.materials || []);
-        if (!externalMats.length) {
-            console.log('⚠️ Nessun materiale trovato in materials.json');
-            return;
-        }
-        
-        const existingNames = new Set(DB.materials.map(m => m.name.toLowerCase()));
+        if (!externalMats.length) return;
+
         let addedCount = 0;
-        
         for (const em of externalMats) {
             if (!em || !em.name) continue;
-            const normalizedName = em.name.toLowerCase().trim();
-            
-            // ✅ CERCA SE ESISTE GIA' PER NOME
-            var existing = DB.materials.find(m => m.name.toLowerCase() === em.name.toLowerCase());
+
+            // ✅ Cerca per ID prima, poi per nome
+            var existing = DB.materials.find(m =>
+                (em.id && m.id == em.id) ||
+                m.name.toLowerCase() === em.name.toLowerCase()
+            );
+
             if (existing) {
-                // ✅ AGGIORNA I CAMPI IGROSCOPICI SENZA DUPLICARE
+                // Aggiorna solo campi igroscopici se presenti
                 if (em.hygroscopicRefRHWVTR !== undefined) {
                     existing.hygroscopicRefRHWVTR = em.hygroscopicRefRHWVTR;
                     existing.hygroscopicRefRHOTR = em.hygroscopicRefRHOTR;
                     existing.hygroscopicBetaWVTR = em.hygroscopicBetaWVTR;
                     existing.hygroscopicBetaOTR = em.hygroscopicBetaOTR;
                 }
-                console.log('↻ Aggiornato:', em.name);
-                continue; // ← ✅ NON CREARE DUPLICATO
+                continue;
             }
-            
-            // ✅ Assegna ID univoco sequenziale
+
+            // ✅ Assegna ID univoco evitando collisioni
             const numericIds = DB.materials
                 .map(m => typeof m.id === 'number' ? m.id : 0)
                 .filter(id => id > 0);
@@ -8044,24 +8346,21 @@ async function loadExternalMaterialsDB() {
             em.id = maxId + 1 + addedCount;
             em.family = em.family || getFamily(em.name);
             em.isMetallized = em.isMetallized || false;
-            
             if (!em.reliabilityVotes) em.reliabilityVotes = { up: 0, down: 0 };
             if (!em.company) em.company = '';
             if (!em.tdsLink) em.tdsLink = '';
             if (!em.testMethodWVTR) em.testMethodWVTR = '';
             if (!em.testMethodOTR) em.testMethodOTR = '';
-            
+
             DB.materials.push(em);
-            existingNames.add(normalizedName);
             addedCount++;
         }
-        
+
         console.log('✅ External DB loaded:', addedCount, 'new materials');
-        console.log('📊 Totale materiali:', DB.materials.length);
         DB.save();
         render();
     } catch (e) {
-        console.log('ℹ️ materials.json non caricato (opzionale):', e.message);
+        console.log('ℹ️ materials.json non caricato:', e.message);
     }
 }
 
@@ -8070,80 +8369,87 @@ async function loadExternalMaterialsDB() {
 // ====================================================================
 (async function initApp() {
   console.log("🚀 Avvio app...");
-  
-  // ⏳ Attendi Firebase (max 5s)
+
+  // ⏳ Attendi Firebase max 5s
   let retries = 0;
   while(!window.communityDB && retries < 50) {
     await new Promise(resolve => setTimeout(resolve, 100));
     retries++;
   }
-  
+
   try {
-    // 1️⃣ Carica materiali locali (default + localStorage)
+    // 1. Carica materiali e laminati locali
     DB.load();
     console.log("📦 Materiali locali:", DB.materials.length);
-    
-    // 2️⃣ Carica stato salvato
+    console.log("📦 Laminati locali:", DB.laminates.length);
+
+    // 2. Carica stato salvato
     var savedState = DB.loadState();
     if(savedState){
       if(savedState.layers) State.layers = savedState.layers;
       if(savedState.selCond) State.selCond = savedState.selCond;
       if(savedState.mode) { State.mode = savedState.mode; Engine.mode = savedState.mode; }
     }
-    
-    // 3️⃣ ✅ CARICA MATERIALS.JSON ESTERNO (database statico di base)
+
+    // 3. Carica materials.json esterno
     await loadExternalMaterialsDB();
-    
-   // 4️⃣ Carica materiali Firebase (database community dinamico)
-if(window.communityDB) {
-    console.log("🔄 Caricamento community da Firebase...");
-    const fbMats = await window.loadFromCommunity();
-    console.log("📥 Firebase materials:", fbMats.length);
-    
-    const existingNames = new Set(DB.materials.map(m => m.name.toLowerCase()));
-    let addedCount = 0;
-   // Dentro initApp(), cerca questo blocco:
-for(const fm of fbMats) {
-    // ✅ MODIFICA: Cerca per nome O per firebaseDocId (se esiste)
-    var localMat = DB.materials.find(m => 
-        m.name.toLowerCase() === fm.name.toLowerCase() || 
-        (m.firebaseDocId && m.firebaseDocId === fm.firebaseDocId)
-    );
-    
-    if (localMat) {
-        // ... (lascia il resto del codice di merge invariato)
-        var oldId = localMat.id;
-        Object.assign(localMat, fm);
-        localMat.id = oldId;
-        localMat.isCommunity = true;
-        if(fm.firebaseDocId) localMat.firebaseDocId = fm.firebaseDocId;
-    } else if (fm.name) {
-        // ... (lascia il resto invariato)
-        fm.id = 'fb_' + (fm.id || Date.now());
-        fm.isCommunity = true;
-        DB.materials.push(fm);
-        addedCount++;
-    }
-}
-    console.log("✅ Community aggiunti/aggiornati:", addedCount);
-}
-    
-    // 5️⃣ Carica laminati dal cloud (sovrascrive localStorage se il cloud ha dati)
-    if(window.loadLaminatesFromCloud) {
-        const cloudLams = await window.loadLaminatesFromCloud();
-        if(cloudLams.length > 0) {
-            DB.laminates = cloudLams;
-            DB.save();
+
+    // 4. Carica materiali Firebase
+    if(window.communityDB) {
+      console.log("🔄 Caricamento community da Firebase...");
+      const fbMats = await window.loadFromCommunity();
+      console.log("📥 Firebase materials:", fbMats.length);
+
+      let addedCount = 0;
+      for(const fm of fbMats) {
+        // ✅ Cerca per firebaseDocId PRIMA, poi per nome
+        var localMat = DB.materials.find(m =>
+          (m.firebaseDocId && m.firebaseDocId === fm.firebaseDocId) ||
+          m.name.toLowerCase() === fm.name.toLowerCase()
+        );
+
+        if (localMat) {
+          var oldId = localMat.id;
+          Object.assign(localMat, fm);
+          localMat.id = oldId;
+          localMat.isCommunity = true;
+          if(fm.firebaseDocId) localMat.firebaseDocId = fm.firebaseDocId;
+        } else if (fm.name) {
+          fm.id = 'fb_' + (fm.firebaseDocId || Date.now());
+          fm.isCommunity = true;
+          // ✅ Controlla che non esista già con stesso id
+          var alreadyExists = DB.materials.find(m => m.id === fm.id);
+          if(!alreadyExists) {
+            DB.materials.push(fm);
+            addedCount++;
+          }
         }
+      }
+      console.log("✅ Community aggiunti:", addedCount);
     }
 
-    // 6️⃣ Renderizza l'app con tutti i materiali caricati
+    // 5. ✅ Merge laminati cloud SENZA sovrascrivere quelli locali
+    if(window.loadLaminatesFromCloud) {
+      const cloudLams = await window.loadLaminatesFromCloud();
+      if(cloudLams.length > 0) {
+        const existingCloudIds = new Set(DB.laminates.map(l => l._cloudId).filter(Boolean));
+        for(const cl of cloudLams) {
+          if(!existingCloudIds.has(cl._cloudId)) {
+            DB.laminates.push(cl);
+          }
+        }
+        DB.save();
+      }
+    }
+
+    // 6. Render
     console.log("🎨 Rendering...");
     render();
-    
+
   } catch(e) {
     console.error("❌ Init error:", e);
     DB.materials = DEFAULT_MATERIALS.slice();
+    DB.laminates = DEFAULT_LAMINATES.slice();
     render();
   }
 })();
