@@ -2533,143 +2533,135 @@ async function submitToFirebaseById(matId) {
 }
 // 📊 TRACCIAMENTO UTILIZZO MATERIALI & RESET MENSILE
 function showAddMeasurementModal(matId) {
-    var mat = DB.materials.find(m => m.id === matId);
-    if(!mat) return;
-    if(!mat.firebaseDocId) {
-        alert('⚠️ This material must be published to Firebase first before adding measurements.');
-        return;
+  var mat = DB.materials.find(function(m) { return m.id === matId; });
+  if (!mat) return;
+
+  if (!mat.firebaseDocId) {
+    alert('⚠️ Pubblica prima questo materiale cliccando "Publish" sulla card, poi riprova.');
+    return;
+  }
+
+  var ctmWVTR = ['ASTM F1249','ISO 15106-3','ASTM E96','JIS K7129','MOCON PERMATRAN','DIN 53122','Other'];
+  var ctmOTR  = ['ASTM D3985','ISO 15106-2','JIS K7126','MOCON OXTRAN','Other'];
+  var ctm = State.mode === 'wvtr' ? ctmWVTR : ctmOTR;
+  var tmOpts = ctm.map(function(t){ return '<option value="'+t+'">'+t+'</option>'; }).join('');
+
+  Modal.open(
+    '➕ Add Measurement — ' + mat.name,
+
+    // ── BANNER LOCKED ──
+    '<div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1.5px solid #93c5fd;border-radius:10px;padding:0.75rem 1rem;margin-bottom:0.9rem">'+
+      '<div style="display:flex;align-items:center;gap:0.4rem;margin-bottom:0.3rem">'+
+        '<svg viewBox="0 0 24 24" fill="none" stroke="#1e40af" stroke-width="2" style="width:14px;height:14px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'+
+        '<span style="font-size:0.75rem;font-weight:700;color:#1e40af">LOCKED — Campi protetti dalla community</span>'+
+      '</div>'+
+      '<div style="font-size:0.82rem;color:#1e3a8a;font-weight:600">'+mat.name+(mat.family?' · '+mat.family:'')+(mat.company?' · '+mat.company:'')+'</div>'+
+      '<div style="font-size:0.68rem;color:#3b82f6;margin-top:0.2rem">Puoi solo aggiungere nuove misurazioni. Tutti gli altri campi sono protetti.</div>'+
+    '</div>'+
+
+    // ── TIPO + METODO ──
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.6rem">'+
+      '<div class="form-group" style="margin:0"><label>Tipo *</label>'+
+        '<select class="form-input" id="am-type"><option value="wvtr">WVTR (g/m²·day)</option><option value="otr">OTR (cc/m²·day)</option></select></div>'+
+      '<div class="form-group" style="margin:0"><label>Metodo di test *</label>'+
+        '<select class="form-input" id="am-method">'+tmOpts+'</select></div>'+
+    '</div>'+
+
+    // ── VALORI MISURATI ──
+    '<div style="background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:0.75rem;margin-bottom:0.75rem">'+
+      '<div style="font-size:0.72rem;font-weight:700;color:var(--text);margin-bottom:0.5rem">📊 Valori misurati</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.5rem">'+
+        '<div class="form-group" style="margin:0"><label>Valore *</label><input type="number" step="any" class="form-input" id="am-value" placeholder="0.05"></div>'+
+        '<div class="form-group" style="margin:0"><label>Spessore (µm) *</label><input type="number" step="any" class="form-input" id="am-thickness" placeholder="100"></div>'+
+        '<div class="form-group" style="margin:0"><label>Temperatura (°C) *</label><input type="number" step="any" class="form-input" id="am-temp" placeholder="23"></div>'+
+        '<div class="form-group" style="margin:0"><label>Umidità (%) *</label><input type="number" step="any" class="form-input" id="am-humidity" placeholder="50"></div>'+
+      '</div>'+
+    '</div>'+
+
+    // ── DATI AUTORE ──
+    '<div style="background:#fefce8;border:1.5px solid #fde68a;border-radius:8px;padding:0.75rem;margin-bottom:0.75rem">'+
+      '<div style="font-size:0.72rem;font-weight:700;color:#92400e;margin-bottom:0.3rem">👤 Le tue informazioni</div>'+
+      '<div style="font-size:0.67rem;color:#a16207;margin-bottom:0.5rem;padding:0.3rem 0.5rem;background:rgba(245,158,11,0.1);border-radius:5px">'+
+        '🔒 Email e azienda sono salvate <strong>privatamente</strong> e non mostrate pubblicamente. Usate solo in caso di segnalazione abusi.'+
+      '</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">'+
+        '<div class="form-group" style="margin:0"><label>Email * <span style="font-size:0.62rem;color:var(--text-light)">(privata)</span></label>'+
+          '<input type="email" class="form-input" id="am-email" placeholder="tua@email.com"></div>'+
+        '<div class="form-group" style="margin:0"><label>Azienda / Istituto <span style="font-size:0.62rem;color:var(--text-light)">(privato)</span></label>'+
+          '<input type="text" class="form-input" id="am-company" placeholder="es. Nestlé R&D, Univ. Parma"></div>'+
+        '<div class="form-group" style="margin:0"><label>Nome pubblico *</label>'+
+          '<input type="text" class="form-input" id="am-displayname" placeholder="Come appari pubblicamente, es. M. Rossi"></div>'+
+        '<div class="form-group" style="margin:0"><label>Laboratorio / Strumento <span style="font-size:0.62rem;color:var(--text-light)">(opzionale)</span></label>'+
+          '<input type="text" class="form-input" id="am-lab" placeholder="es. MOCON Permatran-W 3/33"></div>'+
+      '</div>'+
+    '</div>'+
+
+    // ── NOTE ──
+    '<div class="form-group" style="margin:0">'+
+      '<label>Note / Contesto <span style="font-size:0.68rem;color:var(--text-light)">(opzionale)</span></label>'+
+      '<input type="text" class="form-input" id="am-notes" placeholder="es. condizionato 48h, lotto #2024-A, co-estruso con PE">'+
+    '</div>',
+
+    // ── SALVATAGGIO ──
+    async function() {
+      var type        = document.getElementById('am-type').value;
+      var value       = parseFloat(document.getElementById('am-value').value);
+      var thickness   = parseFloat(document.getElementById('am-thickness').value);
+      var temp        = parseFloat(document.getElementById('am-temp').value);
+      var humidity    = parseFloat(document.getElementById('am-humidity').value);
+      var email       = document.getElementById('am-email').value.trim();
+      var company     = document.getElementById('am-company').value.trim();
+      var displayName = document.getElementById('am-displayname').value.trim();
+      var method      = document.getElementById('am-method').value;
+      var lab         = document.getElementById('am-lab').value.trim();
+      var notes       = document.getElementById('am-notes').value.trim();
+
+      if (!email || !email.includes('@'))                     { alert('⚠️ Email valida richiesta'); return false; }
+      if (!displayName)                                       { alert('⚠️ Nome pubblico richiesto'); return false; }
+      if (isNaN(value) || value < 0)                         { alert('⚠️ Valore non valido'); return false; }
+      if (isNaN(thickness) || thickness <= 0)                { alert('⚠️ Spessore deve essere > 0'); return false; }
+      if (isNaN(temp))                                       { alert('⚠️ Temperatura richiesta'); return false; }
+      if (isNaN(humidity) || humidity < 0 || humidity > 100) { alert('⚠️ Umidità deve essere tra 0 e 100%'); return false; }
+
+      var btn = document.getElementById('modal-save-btn');
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Invio in corso...'; }
+
+      var result = await window.addMeasurementToMaterial(mat.firebaseDocId, {
+        type: type, value: value, thickness: thickness,
+        temperature: temp, humidity: humidity,
+        testMethod: method,
+        email: email, company: company,
+        displayName: displayName, lab: lab, notes: notes
+      });
+
+      if (result.success) {
+        // Aggiorna copia locale
+        var newEntry = { value: value, thickness: thickness };
+        var newCond  = { temperature: temp, humidity: humidity };
+        if (type === 'wvtr') { mat.wvtrValues = mat.wvtrValues || []; mat.wvtrValues.push(newEntry); }
+        else                 { mat.otrValues  = mat.otrValues  || []; mat.otrValues.push(newEntry); }
+        mat.validConditions = mat.validConditions || [];
+        var condExists = mat.validConditions.some(function(c) {
+          return Math.abs(c.temperature - temp) < 0.01 && Math.abs(c.humidity - humidity) < 0.01;
+        });
+        if (!condExists) mat.validConditions.push(newCond);
+        DB.save();
+        alert('✅ Misurazione inviata! Grazie, ' + displayName + '!');
+        render();
+        return true;
+      } else {
+        alert('❌ Errore: ' + result.error);
+        if (btn) { btn.disabled = false; btn.textContent = 'Invia misurazione'; }
+        return false;
+      }
     }
+  );
 
-    var ctmWVTR = ['ASTM F1249','ISO 15106-3','ASTM E96','JIS K7129','MOCON PERMATRAN','DIN 53122','Other'];
-    var ctmOTR = ['ASTM D3985','ISO 15106-2','JIS K7126','MOCON OXTRAN','Other'];
-    var currentMode = State.mode;
-    var ctm = currentMode === 'wvtr' ? ctmWVTR : ctmOTR;
-    var tmOpts = ctm.map(t => `<option value="${t}">${t}</option>`).join('');
-
-    Modal.open(
-        'Add Measurement: ' + mat.name,
-        `<div class="alert alert-info" style="margin-bottom:1rem;font-size:0.78rem">
-            Your email/company will be kept private and used only if abuse is reported.
-        </div>
-        <div class="grid grid-2" style="gap:0.5rem">
-            <div class="form-group" style="margin:0">
-                <label>Type *</label>
-                <select class="form-input" id="am-type">
-                    <option value="wvtr">WVTR</option>
-                    <option value="otr">OTR</option>
-                </select>
-            </div>
-            <div class="form-group" style="margin:0">
-                <label>Test Method</label>
-                <select class="form-input" id="am-method">${tmOpts}</select>
-            </div>
-            <div class="form-group" style="margin:0">
-                <label>Value *</label>
-                <input type="number" step="any" class="form-input" id="am-value" placeholder="0.05">
-            </div>
-            <div class="form-group" style="margin:0">
-                <label>Thickness (µm) *</label>
-                <input type="number" step="any" class="form-input" id="am-thickness" placeholder="100">
-            </div>
-            <div class="form-group" style="margin:0">
-                <label>Temperature (°C) *</label>
-                <input type="number" step="any" class="form-input" id="am-temp" placeholder="23">
-            </div>
-            <div class="form-group" style="margin:0">
-                <label>Humidity (%) *</label>
-                <input type="number" step="any" class="form-input" id="am-humidity" placeholder="50">
-            </div>
-            <div class="form-group" style="margin:0">
-                <label>Email * (private)</label>
-                <input type="email" class="form-input" id="am-email" placeholder="your@email.com">
-            </div>
-            <div class="form-group" style="margin:0">
-                <label>Company (optional, private)</label>
-                <input type="text" class="form-input" id="am-company" placeholder="Your company">
-            </div>
-            <div class="form-group" style="margin:0">
-                <label>Display Name *</label>
-                <input type="text" class="form-input" id="am-displayname" placeholder="How you appear publicly">
-            </div>
-            <div class="form-group" style="margin:0">
-                <label>Lab (optional)</label>
-                <input type="text" class="form-input" id="am-lab" placeholder="Lab name">
-            </div>
-        </div>
-        <div class="form-group" style="margin-top:0.5rem">
-            <label>Notes (optional)</label>
-            <input type="text" class="form-input" id="am-notes" placeholder="Any relevant notes">
-        </div>`,
-        async function() {
-            var type = document.getElementById('am-type').value;
-            var value = parseFloat(document.getElementById('am-value').value);
-            var thickness = parseFloat(document.getElementById('am-thickness').value);
-            var temp = parseFloat(document.getElementById('am-temp').value);
-            var humidity = parseFloat(document.getElementById('am-humidity').value);
-            var email = document.getElementById('am-email').value.trim();
-            var company = document.getElementById('am-company').value.trim();
-            var displayName = document.getElementById('am-displayname').value.trim();
-            var method = document.getElementById('am-method').value;
-            var lab = document.getElementById('am-lab').value.trim();
-            var notes = document.getElementById('am-notes').value.trim();
-
-            // Validazione
-            if(!email || !email.includes('@')) { alert('Valid email required'); return false; }
-            if(!displayName) { alert('Display name required'); return false; }
-            if(isNaN(value) || value < 0) { alert('Invalid value'); return false; }
-            if(isNaN(thickness) || thickness <= 0) { alert('Invalid thickness'); return false; }
-            if(isNaN(temp)) { alert('Temperature required'); return false; }
-            if(isNaN(humidity) || humidity < 0 || humidity > 100) { alert('Invalid humidity'); return false; }
-
-            var measurement = {
-                type, value, thickness,
-                temperature: temp,
-                humidity,
-                testMethod: method,
-                email, company, displayName,
-                lab, notes
-            };
-
-            var btn = document.getElementById('modal-save-btn');
-            if(btn) { btn.disabled = true; btn.textContent = '⏳...'; }
-
-            var result = await window.addMeasurementToMaterial(mat.firebaseDocId, measurement);
-
-            if(result.success) {
-                // ✅ Aggiorna anche localmente
-                var newEntry = { value, thickness };
-                var newCond = { temperature: temp, humidity };
-                if(type === 'wvtr') {
-                    mat.wvtrValues = mat.wvtrValues || [];
-                    mat.wvtrValues.push(newEntry);
-                } else {
-                    mat.otrValues = mat.otrValues || [];
-                    mat.otrValues.push(newEntry);
-                }
-                mat.validConditions = mat.validConditions || [];
-                // Aggiungi condizione solo se non esiste già
-                var condExists = mat.validConditions.some(c =>
-                    Math.abs(c.temperature - temp) < 0.01 &&
-                    Math.abs(c.humidity - humidity) < 0.01
-                );
-                if(!condExists) mat.validConditions.push(newCond);
-                DB.save();
-                alert('✅ Measurement added successfully! It is now available in the calculator.');
-                render();
-                return true;
-            } else {
-                alert('❌ Error: ' + result.error);
-                if(btn) { btn.disabled = false; btn.textContent = 'Submit'; }
-                return false;
-            }
-        }
-    );
-
-    // Cambia testo pulsante
-    setTimeout(() => {
-        var btn = document.getElementById('modal-save-btn');
-        if(btn) btn.textContent = 'Submit';
-    }, 50);
+  // Cambia testo pulsante
+  setTimeout(function() {
+    var btn = document.getElementById('modal-save-btn');
+    if (btn) { btn.textContent = 'Invia misurazione'; btn.style.background = 'var(--success)'; }
+  }, 50);
 }
 
 
@@ -6176,33 +6168,45 @@ function drawLaminateCurveChart(){
     
     var unit = getUnit();
     var datasets = [];
-    var allTemps = []; var allVals = [];
-    
+    var allTemps = []; 
+    var allVals = [];
+
     // 1. Genera dataset per ogni layer (Materiali)
     for(var i = 0; i < State.layers.length; i++){
         var layer = State.layers[i];
         if(layer.mid === null || layer.thick <= 0) continue;
+        
         var mat = null;
         for(var m = 0; m < DB.materials.length; m++) {
             if(DB.materials[m].id === layer.mid){ mat = DB.materials[m]; break; }
         }
         if(!mat) continue;
-        
+
         var color = LAYER_COLORS[i % LAYER_COLORS.length];
         var vals = Engine.getValues(mat);
         var dataPoints = [];
+
         for(var j = 0; j < vals.length; j++){
             var cond = mat.validConditions[j];
             if(cond){
+                // ✅ ✅ ✅ NUOVO FILTRO: Mostra solo i dati che corrispondono all'UMIDITÀ selezionata
+                // Se State.selCond è impostata, confronta l'umidità del punto con quella selezionata.
+                if(State.selCond && Math.abs(cond.humidity - State.selCond.humidity) > 0.01) {
+                    continue; // Salta questo punto se l'umidità è diversa da quella selezionata
+                }
+
                 var product = vals[j].value * vals[j].thickness;
                 var resistance = layer.thick / product;
                 var trans = resistance > 0 ? 1/resistance : 0;
+                
                 dataPoints.push({x: cond.temperature, y: trans});
-                allTemps.push(cond.temperature); allVals.push(trans);
+                allTemps.push(cond.temperature); 
+                allVals.push(trans);
             }
         }
+
         datasets.push({
-            label: mat.name, 
+            label: mat.name,
             data: dataPoints,
             borderColor: color,
             backgroundColor: color,
@@ -6213,66 +6217,82 @@ function drawLaminateCurveChart(){
             pointRadius: 5,
             pointHoverRadius: 7
         });
-        
-        var p = Engine.calcArrheniusParams(mat);
-        if(p.valid){
-            var curveData = [];
-            var tMin2 = mat.validConditions[0].temperature;
-            var tMax2 = mat.validConditions[0].temperature;
-            for(var cc = 0; cc < mat.validConditions.length; cc++){
-                var tt2 = mat.validConditions[cc].temperature;
-                if(tt2 < tMin2) tMin2 = tt2;
-                if(tt2 > tMax2) tMax2 = tt2;
+
+        // Curva di fit Arrhenius (solo se ci sono dati filtrati)
+        if(dataPoints.length >= 2) {
+            var p = Engine.calcArrheniusParams(mat);
+            if(p.valid){
+                var curveData = [];
+                // Calcola range temperature dai punti filtrati
+                var tMin2 = dataPoints[0].x;
+                var tMax2 = dataPoints[0].x;
+                for(var dp = 0; dp < dataPoints.length; dp++){
+                    if(dataPoints[dp].x < tMin2) tMin2 = dataPoints[dp].x;
+                    if(dataPoints[dp].x > tMax2) tMax2 = dataPoints[dp].x;
+                }
+                tMin2 -= 5; tMax2 += 5;
+                
+                for(var t = tMin2; t <= tMax2; t += 0.5){
+                    var transMat = Engine.predict(p.A, p.Ea, t);
+                    var product2 = transMat * Engine.getValues(mat)[0].thickness;
+                    var resistance2 = layer.thick / product2;
+                    var trans2 = resistance2 > 0 ? 1/resistance2 : 0;
+                    curveData.push({x: t, y: trans2});
+                }
+                datasets.push({
+                    label: mat.name + ' (Fit)',
+                    data: curveData,
+                    borderColor: color,
+                    backgroundColor: 'transparent',
+                    borderWidth: 1.5,
+                    borderDash: [5, 3],
+                    pointRadius: 0,
+                    type: 'line',
+                    order: 1,
+                    showLine: true
+                });
             }
-            tMin2 -= 10; tMax2 += 10;
-            for(var t = tMin2; t <= tMax2; t += 0.5){
-                var transMat = Engine.predict(p.A, p.Ea, t);
-                var product2 = transMat * Engine.getValues(mat)[0].thickness;
-                var resistance2 = layer.thick / product2;
-                var trans2 = resistance2 > 0 ? 1/resistance2 : 0;
-                curveData.push({x: t, y: trans2});
-                allTemps.push(t); allVals.push(trans2);
-            }
-            datasets.push({
-                label: mat.name + ' (Fit)',
-                data: curveData,
-                borderColor: color,
-                backgroundColor: 'transparent',
-                borderWidth: 1.5,
-                borderDash: [5, 3],
-                pointRadius: 0,
-                type: 'line',
-                order: 1,
-                showLine: true
-            });
         }
     }
-    
+
     // 2. Curva Laminato Totale
     var laminateCurve = [];
     if(allTemps.length > 0){
         var tMin3 = Math.min.apply(null, allTemps) - 5;
         var tMax3 = Math.max.apply(null, allTemps) + 5;
+        
         for(var t3 = tMin3; t3 <= tMax3; t3 += 0.5){
-            var totalR = 0; var valid = true;
+            var totalR = 0; 
+            var valid = true;
+            
             for(var li = 0; li < State.layers.length; li++){
                 var ly = State.layers[li];
                 if(ly.mid === null || ly.thick <= 0){ valid = false; break; }
+                
                 var mt = null;
                 for(var mi = 0; mi < DB.materials.length; mi++) {
                     if(DB.materials[mi].id === ly.mid){ mt = DB.materials[mi]; break; }
                 }
                 if(!mt){ valid = false; break; }
+
+                // Cerca condizione per questa temperatura
                 var condIdx = -1;
                 for(var ci = 0; ci < mt.validConditions.length; ci++){
-                    if(Math.abs(mt.validConditions[ci].temperature - t3) < 0.01){ condIdx = ci; break; }
+                    // ✅ Qui usiamo anche un filtro di tolleranza per l'umidità se necessario,
+                    // ma per il calcolo totale Arrhenius spesso si usa il dato disponibile più vicino.
+                    if(Math.abs(mt.validConditions[ci].temperature - t3) < 0.01){ 
+                        condIdx = ci; 
+                        break; 
+                    }
                 }
+
                 if(condIdx >= 0){
                     var wv = Engine.getValues(mt)[condIdx];
                     if(wv.value <= 0.00001){ valid = false; break; }
                     var prod = wv.value * wv.thickness;
                     totalR += ly.thick / prod;
                 } else {
+                    // Fallback Arrhenius se non c'è dato esatto
                     var pp = Engine.calcArrheniusParams(mt);
                     if(pp.valid){
                         var transMat2 = Engine.predict(pp.A, pp.Ea, t3);
@@ -6284,9 +6304,9 @@ function drawLaminateCurveChart(){
             if(valid && totalR > 0) laminateCurve.push({x: t3, y: 1/totalR});
         }
     }
-    
+
     if(laminateCurve.length > 0) datasets.push({
-        label: ' LAMINATE TOTAL', 
+        label: ' LAMINATE TOTAL',
         data: laminateCurve,
         borderColor: '#dc2626',
         backgroundColor: 'rgba(220,38,38,0.1)',
@@ -6296,27 +6316,9 @@ function drawLaminateCurveChart(){
         fill: false,
         order: 0
     });
-    
-    // ✅ Punto Calcolato Corrente (visibile sul grafico, nascosto da tooltip e legenda)
-    if(State.selCond && State.calcResult && State.calcResult.total > 0 && !State.calcResult.isBarrier) {
-        datasets.push({
-            label: ' Calculated @ ' + State.selCond.temperature + '°C',
-            data: [{x: State.selCond.temperature, y: State.calcResult.total}],
-            borderColor: '#dc2626',
-            backgroundColor: '#dc2626',
-            borderWidth: 3,
-            pointRadius: 8,
-            pointHoverRadius: 10,
-            pointBackgroundColor: '#fff',
-            pointBorderColor: '#dc2626',
-            type: 'scatter',
-            showLine: false,
-            order: -1
-        });
-    }
-    
+
     if(datasets.length === 0) return;
-    
+
     var ctx = canvas.getContext('2d');
     chartInstances.lamCurve = new Chart(ctx, {
         type: 'line',
@@ -6327,19 +6329,18 @@ function drawLaminateCurveChart(){
             interaction: { mode: 'nearest', axis: 'x', intersect: false },
             plugins: {
                 legend: { display: false },
-                // ✅ ✅ ✅ FILTRO TOOLTIP: nasconde il punto calcolato ✅ ✅ ✅
                 tooltip: {
                     filter: function(item){
                         return !item.dataset.label.includes('Calculated');
                     },
                     callbacks: {
                         label: function(ctx){
-  var lbl = ctx.dataset.label || '';
-  var prec = getDisplayPrecision();
-  if(lbl.includes('LAMINATE TOTAL')) return ' LAMINATE: '+formatWithSigFigs(ctx.parsed.y, prec)+' '+getUnit();
-  if(lbl.includes('(Fit)')) return lbl;
-  return lbl+': '+formatWithSigFigs(ctx.parsed.y, prec)+' '+getUnit();
-}
+                            var lbl = ctx.dataset.label || '';
+                            var prec = getDisplayPrecision();
+                            if(lbl.includes('LAMINATE TOTAL')) return ' LAMINATE: '+formatWithSigFigs(ctx.parsed.y, prec)+' '+getUnit();
+                            if(lbl.includes('(Fit)')) return lbl;
+                            return lbl+': '+formatWithSigFigs(ctx.parsed.y, prec)+' '+getUnit();
+                        }
                     }
                 }
             },
@@ -6354,34 +6355,28 @@ function drawLaminateCurveChart(){
                     title: { display: true, text: getLabel() + ' (' + unit + ')', font: { size: 10, weight: '600' } },
                     beginAtZero: true,
                     grid: { color: 'rgba(0,0,0,0.04)' },
-                    ticks: { 
+                    ticks: {
                         font: { size: 9 },
-                       callback: function(value) {
-  var prec = getDisplayPrecision();
-  return value < 0.01 ? formatWithSigFigs(value, prec) : formatWithSigFigs(value, prec);
-}
+                        callback: function(value) {
+                            var prec = getDisplayPrecision();
+                            return value < 0.01 ? formatWithSigFigs(value, prec) : formatWithSigFigs(value, prec);
+                        }
                     }
                 }
             }
         }
     });
-    
-    // ✅ ✅ ✅ LEGENDA HTML: mostra solo materiali e laminato totale ✅ ✅ ✅
+
+    // Genera legenda HTML
     var legendEl = document.getElementById('lamCurveLegend');
     if(legendEl){
         var html = '<div style="display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center; margin-top:0.8rem;">';
         for(var d = 0; d < datasets.length; d++){
             var ds = datasets[d];
             var txt = ds.label || '';
-            
-            // ✅ FILTRA: nasconde il punto calcolato e le curve di fit dalla legenda
-            if(txt.indexOf('Calculated') >= 0 || txt.indexOf('(Fit)') >= 0) {
-                continue;
-            }
-            
+            if(txt.indexOf('Calculated') >= 0 || txt.indexOf('(Fit)') >= 0) continue;
             var col = ds.borderColor || ds.backgroundColor;
             if(!txt || !col) continue;
-            
             html += '<div style="display:flex; align-items:center; gap:0.4rem; background:#fff; padding:0.35rem 0.6rem; border-radius:6px; border:1px solid var(--border); font-size:0.75rem; font-weight:500; color:var(--text);">';
             html += '<span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:'+col+'; flex-shrink:0;"></span>';
             html += '<span>' + txt + '</span>';
@@ -7854,15 +7849,26 @@ html += '<div class="material-item' + verifiedClass + '" onclick="this.classList
         '</div>'+
         
         // 3. ACTION BUTTONS
-        '<div class="mat-actions">'+
-          '<button class="btn btn-outline" onclick="event.stopPropagation();showMatModal('+m.id+')">✏️ Edit</button>'+
-          (isUserMat ? '<button class="btn btn-danger" onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">🗑️ Delete</button>' : '')+
-          '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Datasheet</button>'+
-(isComm && m.firebaseDocId ? 
-    '<button class="btn btn-outline" onclick="event.stopPropagation();showAddMeasurementModal('+m.id+')"> Add Measurement</button>' 
-    : '')+
-          ((isUserMat || isComm) ? '<button class="btn '+(m.firebaseDocId?'btn-success':'btn-primary')+'" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">'+(m.firebaseDocId?'🔄 Update':'🌍 Publish')+'</button>' : '')+
-        '</div>'+
+        (isComm ?
+          // ── MATERIALE COMMUNITY: campi bloccati ──
+          '<div class="mat-actions">'+
+            '<div style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.3rem 0.65rem;background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #93c5fd;border-radius:7px;font-size:0.68rem;color:#1e40af;font-weight:600">'+
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:11px;height:11px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'+
+              'Locked — Community material'+
+            '</div>'+
+            '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();showAddMeasurementModal('+m.id+')">➕ Add Measurement</button>'+
+            (m.tdsLink ? '<a href="'+m.tdsLink+'" target="_blank" class="btn btn-outline btn-sm" onclick="event.stopPropagation()">📄 TDS</a>' : '')+
+            '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Datasheet</button>'+
+          '</div>'
+        :
+          // ── MATERIALE PERSONALE: modifica completa ──
+          '<div class="mat-actions">'+
+            '<button class="btn btn-outline" onclick="event.stopPropagation();showMatModal('+m.id+')">✏️ Edit</button>'+
+            (isUserMat ? '<button class="btn btn-danger" onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">🗑️ Delete</button>' : '')+
+            '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Datasheet</button>'+
+            (isUserMat ? '<button class="btn '+(m.firebaseDocId?'btn-success':'btn-primary')+'" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">'+(m.firebaseDocId?'🔄 Update':'🌍 Publish')+'</button>' : '')+
+          '</div>'
+        )+
         
         // 4. RELIABILITY VOTING
         '<div class="mat-voting">'+
@@ -7873,19 +7879,27 @@ html += '<div class="material-item' + verifiedClass + '" onclick="this.classList
          '<div class="mat-voting-buttons">'+
 '<button class="btn btn-outline" onclick="event.stopPropagation();voteReliability(\''+String(m.id)+'\',\'up\')" title="'+upTitle+'" '+upActive+'>👍</button>'+
 '<button class="btn btn-outline" onclick="event.stopPropagation();voteReliability(\''+String(m.id)+'\',\'down\')" title="'+downTitle+'" '+downActive+'>👎</button>'+
-'</div>'+
+ '</div>'+
         '</div>'+
-        
-      '</div>'+
-    '</div>'+
-  '</div>'; // ← ✅ FINE CARD
-}  // ← ✅ Chiude il FOR
-  }  // ← ✅ Chiude l'if/else
+
+        // 5. PANNELLO MISURAZIONI COMMUNITY  ← DENTRO mat-body-content
+        '<div style="margin-top:0.5rem;padding-top:0.4rem;border-top:1px dashed var(--border)">'+
+          '<button id="ms-toggle-btn-'+m.id+'" class="btn btn-outline btn-full" '+
+          'style="font-size:0.72rem;color:var(--primary);border-color:var(--primary)" '+
+          'onclick="event.stopPropagation();toggleMeasurementsPanel('+m.id+')">'+
+          '📊 Show Community Measurements</button>'+
+          '<div id="ms-panel-'+m.id+'" style="display:none;margin-top:0.4rem"></div>'+
+        '</div>'+
+
+      '</div>'+   // ← chiude mat-body-content
+    '</div>'+     // ← chiude mat-body
+  '</div>';       // ← chiude material-item (FINE CARD)
+}   // ← chiude il FOR
+  }   // ← chiude if/else
   
-  // ✅ ✅ ✅ QUESTE RIGHE MANCAVANO ✅ ✅ ✅
-  html += '</div></div>';  // ← Chiude grid + card (aperti all'inizio)
-  return html;             // ← Restituisce il risultato
-}  // ← ✅ Chiude renderMaterials()
+  html += '</div></div>';
+  return html;
+}   // ← chiude renderMaterials()enderMaterials()
 
     
   
@@ -7947,6 +7961,11 @@ for(var i=0; i<DB.materials.length; i++) {
 if(DB.materials[i].id === editId) { mat = DB.materials[i]; break; }
 }
 }
+// ✅ GUARD: materiali community → vai direttamente ad Add Measurement
+  if (mat && mat.isCommunity) {
+    showAddMeasurementModal(mat.id);
+    return;
+  }
 var currentMode = State.mode;
 var currentLabel = currentMode === 'wvtr' ? 'WVTR' : 'OTR';
 var currentUnit = currentMode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
@@ -8453,6 +8472,144 @@ async function loadExternalMaterialsDB() {
     render();
   }
 })();
+    // ── Carica e mostra le misurazioni community di un materiale ──
+async function loadAndRenderMeasurements(matId, containerId) {
+  var mat = DB.materials.find(function(m) { return m.id === matId; });
+  if (!mat || !mat.firebaseDocId) {
+    var c = document.getElementById(containerId);
+    if (c) c.innerHTML = '<div style="padding:0.6rem;font-size:0.75rem;color:var(--text-light)">Pubblica prima il materiale per abilitare le misurazioni community.</div>';
+    return;
+  }
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '<div style="padding:0.6rem;font-size:0.75rem;color:var(--text-light)">⏳ Caricamento misurazioni...</div>';
+
+  var measurements = await window.loadMeasurements(mat.firebaseDocId);
+
+  if (!measurements || measurements.length === 0) {
+    container.innerHTML =
+      '<div style="padding:0.85rem;text-align:center;color:var(--text-light);font-size:0.78rem;background:#fafbfc;border-radius:8px;border:1px dashed var(--border)">'+
+      'Nessuna misurazione community ancora.<br>'+
+      '<button class="btn btn-primary btn-sm" style="margin-top:0.5rem" onclick="showAddMeasurementModal('+matId+')">➕ Sii il primo ad aggiungerne una</button>'+
+      '</div>';
+    return;
+  }
+
+  var html = '<div style="margin-top:0.3rem">'+
+    '<div style="font-size:0.68rem;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.4rem">'+
+    'Misurazioni community ('+measurements.length+')</div>';
+
+  measurements.forEach(function(ms) {
+    var upVotes   = (ms.votes && ms.votes.up)   || 0;
+    var downVotes = (ms.votes && ms.votes.down)  || 0;
+    var total     = upVotes + downVotes;
+    var credScore = total > 0 ? Math.round((upVotes / total) * 100) : null;
+    var credColor = credScore === null ? '#94a3b8' : credScore >= 70 ? '#16a34a' : credScore >= 40 ? '#d97706' : '#dc2626';
+    var credBg    = credScore === null ? '#f1f5f9' : credScore >= 70 ? '#dcfce7' : credScore >= 40 ? '#fef3c7' : '#fee2e2';
+    var credLabel = credScore === null ? 'Nessun voto' : credScore + '% credibile';
+    var myMsVote  = getMeasurementVote(mat.firebaseDocId, ms.id);
+    var upStyle   = myMsVote === 'up'   ? 'background:var(--success-light);border-color:var(--success);color:var(--success)' : 'background:#fff';
+    var downStyle = myMsVote === 'down' ? 'background:var(--danger-light);border-color:var(--danger);color:var(--danger)'   : 'background:#fff';
+    var typeLabel = (ms.type || 'wvtr').toUpperCase();
+    var unit      = ms.type === 'otr' ? 'cc/m²·day' : 'g/m²·day';
+    var dateStr   = ms.createdAt ? new Date(ms.createdAt).toLocaleDateString('it-IT', {day:'numeric',month:'short',year:'2-digit'}) : '';
+
+    html +=
+      '<div style="background:#fff;border:1px solid var(--border);border-radius:9px;padding:0.6rem 0.7rem;margin-bottom:0.35rem">'+
+
+      // Riga 1: valore + badge credibilità
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.3rem">'+
+        '<div style="display:flex;align-items:baseline;gap:0.35rem">'+
+          '<span style="font-size:0.62rem;font-weight:700;color:var(--text-light);text-transform:uppercase">'+typeLabel+'</span>'+
+          '<span style="font-size:0.95rem;font-weight:800;color:var(--primary)">'+ms.value+'</span>'+
+          '<span style="font-size:0.68rem;color:var(--text-light)">'+unit+' @ '+ms.thickness+'µm</span>'+
+        '</div>'+
+        '<span style="font-size:0.65rem;font-weight:600;color:'+credColor+';background:'+credBg+';padding:0.12rem 0.4rem;border-radius:20px">'+credLabel+'</span>'+
+      '</div>'+
+
+      // Riga 2: chip condizioni
+      '<div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.3rem">'+
+        '<span style="font-size:0.65rem;background:#f1f5f9;padding:0.12rem 0.35rem;border-radius:4px">🌡 '+ms.temperature+'°C</span>'+
+        '<span style="font-size:0.65rem;background:#f1f5f9;padding:0.12rem 0.35rem;border-radius:4px">💧 '+ms.humidity+'%</span>'+
+        (ms.testMethod ? '<span style="font-size:0.65rem;background:var(--primary-light);color:var(--primary);padding:0.12rem 0.35rem;border-radius:4px">📋 '+ms.testMethod+'</span>' : '')+
+        (ms.lab ? '<span style="font-size:0.65rem;background:#f0fdf4;color:#166534;padding:0.12rem 0.35rem;border-radius:4px">🔬 '+ms.lab+'</span>' : '')+
+      '</div>'+
+
+      // Riga 3: autore + pulsanti voto
+      '<div style="display:flex;align-items:center;justify-content:space-between">'+
+        '<div style="font-size:0.65rem;color:var(--text-light);min-width:0;overflow:hidden">'+
+          '<strong style="color:var(--text)">'+(ms.displayName||'Anonimo')+'</strong>'+
+          (ms.notes ? ' · <em style="color:#94a3b8">'+ms.notes.slice(0,55)+(ms.notes.length>55?'…':'')+'</em>' : '')+
+          (dateStr ? ' · '+dateStr : '')+
+        '</div>'+
+        '<div style="display:flex;align-items:center;gap:0.25rem;flex-shrink:0;margin-left:0.5rem">'+
+          '<span style="font-size:0.6rem;color:var(--text-light)">Credibilità:</span>'+
+          '<button style="border:1.5px solid var(--border);border-radius:5px;padding:0.15rem 0.4rem;font-size:0.72rem;cursor:pointer;transition:all 0.15s;'+upStyle+'" '+
+            'onclick="event.stopPropagation();voteMeasurement(\''+mat.firebaseDocId+'\',\''+ms.id+'\',\'up\',\''+containerId+'\','+matId+')">👍 '+upVotes+'</button>'+
+          '<button style="border:1.5px solid var(--border);border-radius:5px;padding:0.15rem 0.4rem;font-size:0.72rem;cursor:pointer;transition:all 0.15s;'+downStyle+'" '+
+            'onclick="event.stopPropagation();voteMeasurement(\''+mat.firebaseDocId+'\',\''+ms.id+'\',\'down\',\''+containerId+'\','+matId+')">👎 '+downVotes+'</button>'+
+        '</div>'+
+      '</div>'+
+      '</div>';
+  });
+
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+// ── Voto per singola misurazione (localStorage) ──
+function getMeasurementVote(firebaseDocId, measurementId) {
+  try {
+    var votes = JSON.parse(localStorage.getItem('ms_votes_' + firebaseDocId) || '{}');
+    return votes[measurementId] || null;
+  } catch(e) { return null; }
+}
+
+function setMeasurementVote(firebaseDocId, measurementId, voteType) {
+  try {
+    var key = 'ms_votes_' + firebaseDocId;
+    var votes = JSON.parse(localStorage.getItem(key) || '{}');
+    if (voteType) votes[measurementId] = voteType;
+    else delete votes[measurementId];
+    localStorage.setItem(key, JSON.stringify(votes));
+  } catch(e) {}
+}
+
+async function voteMeasurement(firebaseDocId, measurementId, voteType, containerId, matId) {
+  if (!window.communityDB || !firebaseDocId || !measurementId) return;
+  var prevVote = getMeasurementVote(firebaseDocId, measurementId);
+  var update = {};
+  if (prevVote === voteType) {
+    // Stesso voto → annulla
+    update['votes.' + voteType] = window.fbIncrement(-1);
+    setMeasurementVote(firebaseDocId, measurementId, null);
+  } else {
+    if (prevVote) update['votes.' + prevVote] = window.fbIncrement(-1);
+    update['votes.' + voteType] = window.fbIncrement(1);
+    setMeasurementVote(firebaseDocId, measurementId, voteType);
+  }
+  try {
+    var ref = window.fbDoc(window.communityDB, 'materials', firebaseDocId, 'measurements', measurementId);
+    await window.fbUpdateDoc(ref, update);
+  } catch(e) { console.warn('voteMeasurement sync failed:', e); }
+  loadAndRenderMeasurements(matId, containerId);
+}
+
+// ── Toggle pannello misurazioni ──
+function toggleMeasurementsPanel(matId) {
+  var panelId = 'ms-panel-' + matId;
+  var panel   = document.getElementById(panelId);
+  var btn     = document.getElementById('ms-toggle-btn-' + matId);
+  if (!panel) return;
+  if (panel.style.display === 'none' || panel.style.display === '') {
+    panel.style.display = 'block';
+    if (btn) btn.textContent = '📊 Hide Community Measurements';
+    loadAndRenderMeasurements(matId, panelId);
+  } else {
+    panel.style.display = 'none';
+    if (btn) btn.textContent = '📊 Show Community Measurements';
+  }
+}
 </script>
 </body>
 </html>
