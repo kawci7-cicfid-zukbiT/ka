@@ -5892,6 +5892,9 @@ function drawLaminateCurveChart(){
     var datasets = [];
     var allTemps = []; var allVals = [];
     
+    // ✅ Ottieni la RH selezionata (se presente)
+    var selectedRH = State.selCond ? State.selCond.rh : null;
+    
     // 1. Genera dataset per ogni layer (Materiali)
     for(var i = 0; i < State.layers.length; i++){
         var layer = State.layers[i];
@@ -5905,9 +5908,13 @@ function drawLaminateCurveChart(){
         var color = LAYER_COLORS[i % LAYER_COLORS.length];
         var vals = Engine.getValues(mat);
         var dataPoints = [];
+        
         for(var j = 0; j < vals.length; j++){
             var cond = mat.validConditions[j];
             if(cond){
+                // ✅ FILTRO RH: includi solo se la RH della condizione corrisponde a quella selezionata
+                if(selectedRH !== null && cond.rh !== selectedRH) continue;
+                
                 var product = vals[j].value * vals[j].thickness;
                 var resistance = layer.thick / product;
                 var trans = resistance > 0 ? 1/resistance : 0;
@@ -5915,54 +5922,70 @@ function drawLaminateCurveChart(){
                 allTemps.push(cond.temperature); allVals.push(trans);
             }
         }
-        datasets.push({
-            label: mat.name, 
-            data: dataPoints,
-            borderColor: color,
-            backgroundColor: color,
-            borderWidth: 2,
-            showLine: true,
-            type: 'scatter',
-            order: 2,
-            pointRadius: 5,
-            pointHoverRadius: 7
-        });
         
+        // Aggiungi dataset solo se ci sono punti validi dopo il filtro RH
+        if(dataPoints.length > 0){
+            datasets.push({
+                label: mat.name, 
+                data: dataPoints,
+                borderColor: color,
+                backgroundColor: color,
+                borderWidth: 2,
+                showLine: true,
+                type: 'scatter',
+                order: 2,
+                pointRadius: 5,
+                pointHoverRadius: 7
+            });
+        }
+        
+        // ✅ Curva di fit Arrhenius: calcola solo se ci sono punti con la RH selezionata
         var p = Engine.calcArrheniusParams(mat);
-        if(p.valid){
+        if(p.valid && dataPoints.length > 0){
             var curveData = [];
             var tMin2 = mat.validConditions[0].temperature;
             var tMax2 = mat.validConditions[0].temperature;
+            
+            // ✅ Considera solo le condizioni con la RH selezionata per il range di temperatura
             for(var cc = 0; cc < mat.validConditions.length; cc++){
-                var tt2 = mat.validConditions[cc].temperature;
+                var cond2 = mat.validConditions[cc];
+                if(selectedRH !== null && cond2.rh !== selectedRH) continue;
+                var tt2 = cond2.temperature;
                 if(tt2 < tMin2) tMin2 = tt2;
                 if(tt2 > tMax2) tMax2 = tt2;
             }
-            tMin2 -= 10; tMax2 += 10;
-            for(var t = tMin2; t <= tMax2; t += 0.5){
-                var transMat = Engine.predict(p.A, p.Ea, t);
-                var product2 = transMat * Engine.getValues(mat)[0].thickness;
-                var resistance2 = layer.thick / product2;
-                var trans2 = resistance2 > 0 ? 1/resistance2 : 0;
-                curveData.push({x: t, y: trans2});
-                allTemps.push(t); allVals.push(trans2);
+            
+            // Genera curva solo se abbiamo un range valido
+            if(tMin2 !== undefined && tMax2 !== undefined){
+                tMin2 -= 10; tMax2 += 10;
+                for(var t = tMin2; t <= tMax2; t += 0.5){
+                    var transMat = Engine.predict(p.A, p.Ea, t);
+                    var product2 = transMat * Engine.getValues(mat)[0].thickness;
+                    var resistance2 = layer.thick / product2;
+                    var trans2 = resistance2 > 0 ? 1/resistance2 : 0;
+                    curveData.push({x: t, y: trans2});
+                    allTemps.push(t); allVals.push(trans2);
+                }
+                
+                if(curveData.length > 0){
+                    datasets.push({
+                        label: mat.name + ' (Fit)',
+                        data: curveData,
+                        borderColor: color,
+                        backgroundColor: 'transparent',
+                        borderWidth: 1.5,
+                        borderDash: [5, 3],
+                        pointRadius: 0,
+                        type: 'line',
+                        order: 1,
+                        showLine: true
+                    });
+                }
             }
-            datasets.push({
-                label: mat.name + ' (Fit)',
-                data: curveData,
-                borderColor: color,
-                backgroundColor: 'transparent',
-                borderWidth: 1.5,
-                borderDash: [5, 3],
-                pointRadius: 0,
-                type: 'line',
-                order: 1,
-                showLine: true
-            });
         }
     }
     
-    // 2. Curva Laminato Totale
+    // 2. Curva Laminato Totale (con filtro RH)
     var laminateCurve = [];
     if(allTemps.length > 0){
         var tMin3 = Math.min.apply(null, allTemps) - 5;
@@ -5977,18 +6000,32 @@ function drawLaminateCurveChart(){
                     if(DB.materials[mi].id === ly.mid){ mt = DB.materials[mi]; break; }
                 }
                 if(!mt){ valid = false; break; }
+                
+                // ✅ Cerca condizione con temperatura E RH corrispondente
                 var condIdx = -1;
                 for(var ci = 0; ci < mt.validConditions.length; ci++){
-                    if(Math.abs(mt.validConditions[ci].temperature - t3) < 0.01){ condIdx = ci; break; }
+                    var cnd = mt.validConditions[ci];
+                    if(Math.abs(cnd.temperature - t3) < 0.01 && 
+                       (selectedRH === null || cnd.rh === selectedRH)){
+                        condIdx = ci; break;
+                    }
                 }
+                
                 if(condIdx >= 0){
                     var wv = Engine.getValues(mt)[condIdx];
                     if(wv.value <= 0.00001){ valid = false; break; }
                     var prod = wv.value * wv.thickness;
                     totalR += ly.thick / prod;
                 } else {
+                    // Fallback su Arrhenius solo se il materiale ha dati con la RH selezionata
                     var pp = Engine.calcArrheniusParams(mt);
-                    if(pp.valid){
+                    var hasRHData = false;
+                    for(var cci = 0; cci < mt.validConditions.length; cci++){
+                        if(selectedRH === null || mt.validConditions[cci].rh === selectedRH){
+                            hasRHData = true; break;
+                        }
+                    }
+                    if(pp.valid && hasRHData){
                         var transMat2 = Engine.predict(pp.A, pp.Ea, t3);
                         var prod2 = transMat2 * Engine.getValues(mt)[0].thickness;
                         totalR += ly.thick / prod2;
@@ -6041,19 +6078,18 @@ function drawLaminateCurveChart(){
             interaction: { mode: 'nearest', axis: 'x', intersect: false },
             plugins: {
                 legend: { display: false },
-                // ✅ ✅ ✅ FILTRO TOOLTIP: nasconde il punto calcolato ✅ ✅ ✅
                 tooltip: {
                     filter: function(item){
                         return !item.dataset.label.includes('Calculated');
                     },
                     callbacks: {
                         label: function(ctx){
-  var lbl = ctx.dataset.label || '';
-  var prec = getDisplayPrecision();
-  if(lbl.includes('LAMINATE TOTAL')) return ' LAMINATE: '+formatWithSigFigs(ctx.parsed.y, prec)+' '+getUnit();
-  if(lbl.includes('(Fit)')) return lbl;
-  return lbl+': '+formatWithSigFigs(ctx.parsed.y, prec)+' '+getUnit();
-}
+                            var lbl = ctx.dataset.label || '';
+                            var prec = getDisplayPrecision();
+                            if(lbl.includes('LAMINATE TOTAL')) return ' LAMINATE: '+formatWithSigFigs(ctx.parsed.y, prec)+' '+getUnit();
+                            if(lbl.includes('(Fit)')) return lbl;
+                            return lbl+': '+formatWithSigFigs(ctx.parsed.y, prec)+' '+getUnit();
+                        }
                     }
                 }
             },
@@ -6070,17 +6106,17 @@ function drawLaminateCurveChart(){
                     grid: { color: 'rgba(0,0,0,0.04)' },
                     ticks: { 
                         font: { size: 9 },
-                       callback: function(value) {
-  var prec = getDisplayPrecision();
-  return value < 0.01 ? formatWithSigFigs(value, prec) : formatWithSigFigs(value, prec);
-}
+                        callback: function(value) {
+                            var prec = getDisplayPrecision();
+                            return value < 0.01 ? formatWithSigFigs(value, prec) : formatWithSigFigs(value, prec);
+                        }
                     }
                 }
             }
         }
     });
     
-    // ✅ ✅ ✅ LEGENDA HTML: mostra solo materiali e laminato totale ✅ ✅ ✅
+    // ✅ LEGENDA HTML: mostra solo materiali e laminato totale
     var legendEl = document.getElementById('lamCurveLegend');
     if(legendEl){
         var html = '<div style="display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center; margin-top:0.8rem;">';
@@ -6088,7 +6124,6 @@ function drawLaminateCurveChart(){
             var ds = datasets[d];
             var txt = ds.label || '';
             
-            // ✅ FILTRA: nasconde il punto calcolato e le curve di fit dalla legenda
             if(txt.indexOf('Calculated') >= 0 || txt.indexOf('(Fit)') >= 0) {
                 continue;
             }
