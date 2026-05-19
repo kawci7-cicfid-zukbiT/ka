@@ -7851,50 +7851,38 @@ html += '<div class="material-item' + verifiedClass + '" onclick="this.classList
        // 3. ACTION BUTTONS
         '<div class="mat-actions">'+
         (isComm
-          // ══ COMMUNITY: solo lock badge + Add Measurement ══
-          ? '<span style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.3rem 0.65rem;'+
-              'background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1.5px solid #93c5fd;'+
-              'border-radius:7px;font-size:0.68rem;color:#1e40af;font-weight:700;flex-shrink:0">'+
-              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:11px;height:11px">'+
-                '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>'+
-              '</svg>Community — locked</span>'+
-            '<button class="btn btn-primary btn-sm" '+
-              'onclick="event.stopPropagation();showAddMeasurementModal('+m.id+')">'+
-              '➕ Add Measurement'+
-            '</button>'+
-            (m.tdsLink
-              ? '<a href="'+m.tdsLink+'" target="_blank" class="btn btn-outline btn-sm" '+
-                  'onclick="event.stopPropagation()">📄 TDS</a>'
-              : '')
- 
-          // ══ LOCALE: Edit | Delete | Search Datasheet | Publish/Update ══
-          : '<button class="btn btn-outline btn-sm" '+
-              'onclick="event.stopPropagation();showMatModal('+m.id+')">'+
-              '✏️ Edit'+
-            '</button>'+
-            (isUserMat
-              ? '<button class="btn btn-danger btn-sm" '+
-                  'onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">'+
-                  '🗑️ Delete'+
-                '</button>'
-              : '')+
-            '<button class="online-search-btn" '+
-              'onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">'+
-              '🔍 Search Datasheet'+
-            '</button>'+
-            (isUserMat
-              ? '<button class="btn '+(m.firebaseDocId?'btn-success':'btn-primary')+' btn-sm" '+
-                  'onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">'+
-                  (m.firebaseDocId?'🔄 Update':'🌍 Publish')+
-                '</button>'
-              : '')
+          ? '<span style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.3rem 0.65rem;background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1.5px solid #93c5fd;border-radius:7px;font-size:0.68rem;color:#1e40af;font-weight:700;flex-shrink:0">'+
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:11px;height:11px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Community — locked</span>'+
+            '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();showAddMeasurementModal('+m.id+')">➕ Add Measurement</button>'+
+            (m.tdsLink ? '<a href="'+m.tdsLink+'" target="_blank" class="btn btn-outline btn-sm" onclick="event.stopPropagation()">📄 TDS</a>' : '')
+          : '<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();showMatModal('+m.id+')">✏️ Edit</button>'+
+            (isUserMat ? '<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">🗑️ Delete</button>' : '')+
+            '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Datasheet</button>'+
+            (isUserMat ? '<button class="btn '+(m.firebaseDocId?'btn-success':'btn-primary')+' btn-sm" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">'+(m.firebaseDocId?'🔄 Update':'🌍 Publish')+'</button>' : '')
         )+
-        '</div>'+"""
-       
-  
+        '</div>'+
+
+        // 4. RELIABILITY VOTING
+        '<div class="mat-voting">'+
+          '<div class="mat-voting-label"><span>Community Reliability</span>'+
+            '<span class="reliability-badge '+(relScore>=70?'high':relScore>=40?'medium':'low')+'">'+relScore+'%</span>'+
+          '</div>'+
+          '<div class="mat-voting-buttons">'+
+            '<button class="btn btn-outline" onclick="event.stopPropagation();voteReliability(\''+String(m.id)+'\',\'up\')" title="'+upTitle+'" '+upActive+'>👍</button>'+
+            '<button class="btn btn-outline" onclick="event.stopPropagation();voteReliability(\''+String(m.id)+'\',\'down\')" title="'+downTitle+'" '+downActive+'>👎</button>'+
+          '</div>'+
+        '</div>'+
+
+      '</div>'+
+    '</div>'+
+  '</div>';
+
+  }   // chiude FOR materiali
+  }   // chiude if/else filtered
+
   html += '</div></div>';
   return html;
-}   // ← chiude renderMaterials()enderMaterials()
+}   // chiude renderMaterials()
 
     
   
