@@ -5892,10 +5892,11 @@ function drawLaminateCurveChart(){
     var datasets = [];
     var allTemps = []; var allVals = [];
     
-    // ✅ Ottieni la RH selezionata (se presente)
-    var selectedRH = State.selCond ? State.selCond.rh : null;
-    console.log('Selected RH:', selectedRH, 'Type:', typeof selectedRH);
-    console.log('State.selCond:', State.selCond);
+    // ✅ CORRETTO: usa "humidity" invece di "rh"
+    var selectedHumidity = State.selCond ? State.selCond.humidity : null;
+    
+    // 🔍 Debug opzionale (rimuovi dopo il test)
+    console.log('Selected Humidity:', selectedHumidity);
     
     // 1. Genera dataset per ogni layer (Materiali)
     for(var i = 0; i < State.layers.length; i++){
@@ -5914,8 +5915,8 @@ function drawLaminateCurveChart(){
         for(var j = 0; j < vals.length; j++){
             var cond = mat.validConditions[j];
             if(cond){
-                // ✅ FILTRO RH: includi solo se la RH della condizione corrisponde a quella selezionata
-                if(selectedRH !== null && cond.rh !== selectedRH) continue;
+                // ✅ FILTRO HUMIDITY: includi solo se corrisponde a quella selezionata
+                if(selectedHumidity !== null && cond.humidity !== selectedHumidity) continue;
                 
                 var product = vals[j].value * vals[j].thickness;
                 var resistance = layer.thick / product;
@@ -5925,7 +5926,7 @@ function drawLaminateCurveChart(){
             }
         }
         
-        // Aggiungi dataset solo se ci sono punti validi dopo il filtro RH
+        // Aggiungi dataset solo se ci sono punti validi dopo il filtro
         if(dataPoints.length > 0){
             datasets.push({
                 label: mat.name, 
@@ -5941,23 +5942,22 @@ function drawLaminateCurveChart(){
             });
         }
         
-        // ✅ Curva di fit Arrhenius: calcola solo se ci sono punti con la RH selezionata
+        // ✅ Curva di fit Arrhenius: calcola solo se ci sono punti con l'humidity selezionata
         var p = Engine.calcArrheniusParams(mat);
         if(p.valid && dataPoints.length > 0){
             var curveData = [];
             var tMin2 = mat.validConditions[0].temperature;
             var tMax2 = mat.validConditions[0].temperature;
             
-            // ✅ Considera solo le condizioni con la RH selezionata per il range di temperatura
+            // ✅ Considera solo le condizioni con l'humidity selezionata per il range
             for(var cc = 0; cc < mat.validConditions.length; cc++){
                 var cond2 = mat.validConditions[cc];
-                if(selectedRH !== null && cond2.rh !== selectedRH) continue;
+                if(selectedHumidity !== null && cond2.humidity !== selectedHumidity) continue;
                 var tt2 = cond2.temperature;
                 if(tt2 < tMin2) tMin2 = tt2;
                 if(tt2 > tMax2) tMax2 = tt2;
             }
             
-            // Genera curva solo se abbiamo un range valido
             if(tMin2 !== undefined && tMax2 !== undefined){
                 tMin2 -= 10; tMax2 += 10;
                 for(var t = tMin2; t <= tMax2; t += 0.5){
@@ -5987,7 +5987,7 @@ function drawLaminateCurveChart(){
         }
     }
     
-    // 2. Curva Laminato Totale (con filtro RH)
+    // 2. Curva Laminato Totale (con filtro humidity)
     var laminateCurve = [];
     if(allTemps.length > 0){
         var tMin3 = Math.min.apply(null, allTemps) - 5;
@@ -6003,12 +6003,12 @@ function drawLaminateCurveChart(){
                 }
                 if(!mt){ valid = false; break; }
                 
-                // ✅ Cerca condizione con temperatura E RH corrispondente
+                // ✅ Cerca condizione con temperatura E humidity corrispondente
                 var condIdx = -1;
                 for(var ci = 0; ci < mt.validConditions.length; ci++){
                     var cnd = mt.validConditions[ci];
                     if(Math.abs(cnd.temperature - t3) < 0.01 && 
-                       (selectedRH === null || cnd.rh === selectedRH)){
+                       (selectedHumidity === null || cnd.humidity === selectedHumidity)){
                         condIdx = ci; break;
                     }
                 }
@@ -6019,15 +6019,15 @@ function drawLaminateCurveChart(){
                     var prod = wv.value * wv.thickness;
                     totalR += ly.thick / prod;
                 } else {
-                    // Fallback su Arrhenius solo se il materiale ha dati con la RH selezionata
+                    // Fallback su Arrhenius solo se il materiale ha dati con l'humidity selezionata
                     var pp = Engine.calcArrheniusParams(mt);
-                    var hasRHData = false;
+                    var hasHumidityData = false;
                     for(var cci = 0; cci < mt.validConditions.length; cci++){
-                        if(selectedRH === null || mt.validConditions[cci].rh === selectedRH){
-                            hasRHData = true; break;
+                        if(selectedHumidity === null || mt.validConditions[cci].humidity === selectedHumidity){
+                            hasHumidityData = true; break;
                         }
                     }
-                    if(pp.valid && hasRHData){
+                    if(pp.valid && hasHumidityData){
                         var transMat2 = Engine.predict(pp.A, pp.Ea, t3);
                         var prod2 = transMat2 * Engine.getValues(mt)[0].thickness;
                         totalR += ly.thick / prod2;
@@ -6050,7 +6050,7 @@ function drawLaminateCurveChart(){
         order: 0
     });
     
-    // ✅ Punto Calcolato Corrente (visibile sul grafico, nascosto da tooltip e legenda)
+    // ✅ Punto Calcolato Corrente
     if(State.selCond && State.calcResult && State.calcResult.total > 0 && !State.calcResult.isBarrier) {
         datasets.push({
             label: ' Calculated @ ' + State.selCond.temperature + '°C',
@@ -6118,7 +6118,7 @@ function drawLaminateCurveChart(){
         }
     });
     
-    // ✅ LEGENDA HTML: mostra solo materiali e laminato totale
+    // ✅ LEGENDA HTML
     var legendEl = document.getElementById('lamCurveLegend');
     if(legendEl){
         var html = '<div style="display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center; margin-top:0.8rem;">';
