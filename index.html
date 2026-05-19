@@ -8005,14 +8005,9 @@ function addMatRow(){
         '</div>'+
         '<div class="form-group" style="margin:0;flex:1">'+
           '<label>Humidity (%)</label>'+
-          '<input type="number" step="any" class="form-input mf-hum" value="" placeholder="50">'+
-        '</div>'+
+          '<input type="number" step="any" class="form-input mf-hum" value="" placeholder="50"></div>'+
       '</div>'+
-      // ✅ NUOVO: Dropdown test method per questa riga
-      '<div class="form-group" style="margin:0;flex:1">'+
-        '<label>Test Method</label>'+
-        '<select class="form-input mf-testmethod">'+tmOpts+'</select>'+
-      '</div>'+
+      testMethodField+
     '</div>');
 }
 function showBulkImport(){
