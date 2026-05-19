@@ -8000,19 +8000,7 @@ function renderConverter() {
     panel.innerHTML = html;
   }
 };
-const CONV = {
 
-  // Costanti fisiche
-  MW_H2O: 18.015,    // g/mol
-  MW_O2:  31.999,
-  MW_CO2: 44.010,
-  MW_N2:  28.014,
-  R_GAS:  8.314,
-
-  getMW() {
-    const gas = document.getElementById('conv-gas')?.value || 'h2o';
-    return { h2o: 18.015, o2: 31.999, co2: 44.010, n2: 28.014 }[gas];
-  },
 
   // Tutto converge in g/m²·day come unità pivot interna
   toGm2day(value, unit, thickMicron, dpKPa) {
