@@ -2574,7 +2574,7 @@ function renderHome() {
     for(var i = 0; i < DB.materials.length; i++) {
         if(Engine.validateArrhenius(DB.materials[i]).valid) multiTempMats++;
     }
-    var commCount = getCommunityCount();
+    var totalMats = DB.materials.length;
 
     return `
 <div class="home-bg-glow"></div>
@@ -2613,17 +2613,17 @@ function renderHome() {
                     Community Materials
                 </div>
                 <div style="font-size:2.8rem;font-weight:800;color:#2563eb;line-height:1;margin-bottom:0.4rem">
-                    ${commCount}
-                </div>
-                <div style="font-size:0.78rem;color:#94a3b8">
-                    Shared by the community
-                </div>
+${totalMats}
+</div>
+<div style="font-size:0.78rem;color:#94a3b8">
+Total materials available
+</div>
                 <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid #f1f5f9">
                     <button 
-                        onclick="document.getElementById('nav-tabs').querySelector('[data-tab=materials]').click()"
-                        style="font-size:0.78rem;color:#2563eb;background:none;border:none;cursor:pointer;padding:0;font-weight:600">
-                        Explore database →
-                    </button>
+onclick="document.getElementById('nav-tabs').querySelector('[data-tab=materials]').click()"
+style="font-size:0.78rem;color:#2563eb;background:none;border:none;cursor:pointer;padding:0;font-weight:600">
+Browse all materials →
+</button>
                 </div>
             </div>
 
