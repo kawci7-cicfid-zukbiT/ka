@@ -8067,59 +8067,55 @@ async function loadExternalMaterialsDB() {
         for (const em of externalMats) {
             if (!em || !em.name) continue;
 
-            // ✅ 1. CERCA SOLO PER ID NUMERICO (ignora nome completamente)
+            // ✅ Cerca per ID prima (più affidabile del nome)
             var existingById = DB.materials.find(function(m){
-                return typeof m.id === 'number' && 
-                       typeof em.id === 'number' && 
-                       m.id === em.id;
+                return typeof m.id === 'number' && typeof em.id === 'number' && m.id === em.id;
             });
-            
             if (existingById) {
-                // Trovato per ID → aggiorna solo campi tecnici, MAI il nome
+                // Aggiorna solo i campi tecnici, NON il nome (l'utente potrebbe averlo cambiato)
                 if (em.hygroscopicRefRHWVTR !== undefined) {
                     existingById.hygroscopicRefRHWVTR = em.hygroscopicRefRHWVTR;
                     existingById.hygroscopicRefRHOTR = em.hygroscopicRefRHOTR;
                     existingById.hygroscopicBetaWVTR = em.hygroscopicBetaWVTR;
                     existingById.hygroscopicBetaOTR = em.hygroscopicBetaOTR;
                 }
-                continue; // ← non aggiungere, non cercare per nome
-            }
-
-            // ✅ 2. CERCA PER _sourceId (flag che segniamo al primo import)
-            var existingBySource = DB.materials.find(function(m){
-                return m._sourceId && em.id && String(m._sourceId) === String(em.id);
-            });
-            
-            if (existingBySource) {
-                // Già importato in precedenza, skip
                 continue;
             }
 
-            // ✅ 3. SOLO SE PROPRIO NUOVO: aggiungi con _sourceId
+            // ✅ Cerca per nome originale (solo se non trovato per ID)
+            var existingByName = DB.materials.find(function(m){
+                return m.name.toLowerCase() === em.name.toLowerCase();
+            });
+            if (existingByName) {
+                if (em.hygroscopicRefRHWVTR !== undefined) {
+                    existingByName.hygroscopicRefRHWVTR = em.hygroscopicRefRHWVTR;
+                    existingByName.hygroscopicRefRHOTR = em.hygroscopicRefRHOTR;
+                    existingByName.hygroscopicBetaWVTR = em.hygroscopicBetaWVTR;
+                    existingByName.hygroscopicBetaOTR = em.hygroscopicBetaOTR;
+                }
+                continue;
+            }
+
+            // Nuovo materiale: assegna ID univoco
             const numericIds = DB.materials
                 .map(function(m){ return typeof m.id === 'number' ? m.id : 0; })
                 .filter(function(id){ return id > 0; });
             const maxId = numericIds.length ? Math.max.apply(null, numericIds) : 0;
-            
-            const newMat = Object.assign({}, em);
-            newMat.id = maxId + 1 + addedCount;
-            newMat._sourceId = em.id; // ← salva l'ID originale del file
-            newMat.family = newMat.family || getFamily(newMat.name);
-            newMat.isMetallized = newMat.isMetallized || false;
-            if (!newMat.reliabilityVotes) newMat.reliabilityVotes = { up: 0, down: 0 };
-            if (!newMat.company) newMat.company = '';
-            if (!newMat.tdsLink) newMat.tdsLink = '';
-            if (!newMat.testMethodWVTR) newMat.testMethodWVTR = '';
-            if (!newMat.testMethodOTR) newMat.testMethodOTR = '';
+            em.id = maxId + 1 + addedCount;
+            em.family = em.family || getFamily(em.name);
+            em.isMetallized = em.isMetallized || false;
+            if (!em.reliabilityVotes) em.reliabilityVotes = { up: 0, down: 0 };
+            if (!em.company) em.company = '';
+            if (!em.tdsLink) em.tdsLink = '';
+            if (!em.testMethodWVTR) em.testMethodWVTR = '';
+            if (!em.testMethodOTR) em.testMethodOTR = '';
 
-            DB.materials.push(newMat);
+            DB.materials.push(em);
             addedCount++;
         }
 
-        if (addedCount > 0) {
-            DB.save();
-            render();
-        }
+        DB.save();
+        render();
     } catch (e) {
         console.log('ℹ️ materials.json non caricato:', e.message);
     }
@@ -8193,48 +8189,20 @@ if(window.communityDB) {
     }
 }
 
-   // 5. ✅ Merge laminati cloud SENZA sovrascrivere quelli locali
-if(window.loadLaminatesFromCloud) {
-    const cloudLams = await window.loadLaminatesFromCloud();
-    if(cloudLams.length > 0) {
-        let changed = false;
-        
+    // 5. ✅ Merge laminati cloud SENZA sovrascrivere quelli locali
+    if(window.loadLaminatesFromCloud) {
+      const cloudLams = await window.loadLaminatesFromCloud();
+      if(cloudLams.length > 0) {
+        const existingCloudIds = new Set(DB.laminates.map(l => l._cloudId).filter(Boolean));
         for(const cl of cloudLams) {
-            if(!cl._cloudId) continue;
-            
-            // ✅ 1. Cerca per _cloudId (chiave primaria cloud)
-            const existingByCloudId = DB.laminates.find(function(l){
-                return l._cloudId && l._cloudId === cl._cloudId;
-            });
-            
-            if(existingByCloudId) {
-                // ✅ Già presente: NON sovrascrivere mai (il locale ha priorità)
-                continue;
-            }
-            
-            // ✅ 2. Cerca per ID numerico locale (potrebbe essere stato
-            //    sincronizzato prima che _cloudId fosse salvato)
-            const existingById = DB.laminates.find(function(l){
-                return l.id && cl.id && String(l.id) === String(cl.id);
-            });
-            
-            if(existingById) {
-                // Aggiorna solo il _cloudId se manca, senza toccare i dati
-                if(!existingById._cloudId) {
-                    existingById._cloudId = cl._cloudId;
-                    changed = true;
-                }
-                continue;
-            }
-            
-            // ✅ 3. Solo se proprio nuovo: aggiungi dal cloud
+          if(!existingCloudIds.has(cl._cloudId)) {
             DB.laminates.push(cl);
-            changed = true;
+          }
         }
-        
-        if(changed) DB.save();
+        DB.save();
+      }
     }
-}
+
     // 6. Render
     console.log("🎨 Rendering...");
     render();
