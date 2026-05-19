@@ -5795,12 +5795,24 @@ function onTestMethodFilterChange(value) {
   DB.saveState(State);
   renderContent(); // Ri-renderizza per applicare il filtro
 }
-function onLayerChange(i,field,val){
-  if(field === 'mid' && val) recordMaterialUsage(val);
-  if(field==='mid') State.layers[i].mid=val!==''?parseFloat(val):null;
-  else State.layers[i].thick=parseFloat(val)||0;
-  DB.saveState(State);
-  if(State.autoCalc) doCalcSilent(); else renderContent();
+function onLayerChange(i, field, val) {
+    if (field === 'mid') {
+        // ✅ FIX: Gestisce sia ID numerici che ID stringa (Community)
+        if (val !== '') {
+            if (!isNaN(val)) {
+                State.layers[i].mid = parseFloat(val); // ID locale (numero)
+            } else {
+                State.layers[i].mid = val; // ID Community (stringa 'fb_...')
+            }
+            recordMaterialUsage(val);
+        } else {
+            State.layers[i].mid = null;
+        }
+    } else {
+        State.layers[i].thick = parseFloat(val) || 0;
+    }
+    DB.saveState(State);
+    if (State.autoCalc) doCalcSilent(); else renderContent();
 }
 function addLayer(){State.layers.push({mid:null,thick:0});DB.saveState(State);renderContent();}
 function rmLayer(i){if(State.layers.length<=1) return;State.layers.splice(i,1);DB.saveState(State);renderContent();}
@@ -7616,7 +7628,9 @@ html += '<div class="material-item' + verifiedClass + '" onclick="this.classList
         
         // 3. ACTION BUTTONS
         '<div class="mat-actions">'+
-          '<button class="btn btn-outline" onclick="event.stopPropagation();showMatModal('+m.id+')">✏️ Edit</button>'+
+         // ✅ FIX: Mette le virgolette se l'ID è una stringa (Community)
+var editIdSafe = (typeof m.id === 'string') ? "'" + m.id.replace(/'/g, "\\'") + "'" : m.id;
+'<button class="btn btn-outline" onclick="event.stopPropagation();showMatModal('+editIdSafe+')">✏️ Edit</button>'+
           (isUserMat ? '<button class="btn btn-danger" onclick="event.stopPropagation();DB.deleteMat('+m.id+');render()">🗑️ Delete</button>' : '')+
           '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Datasheet</button>'+
           ((isUserMat || isComm) ? '<button class="btn '+(m.firebaseDocId?'btn-success':'btn-primary')+'" onclick="event.stopPropagation();submitToFirebaseById('+m.id+')">'+(m.firebaseDocId?'🔄 Update':'🌍 Publish')+'</button>' : '')+
