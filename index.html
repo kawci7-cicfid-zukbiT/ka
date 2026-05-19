@@ -5906,90 +5906,53 @@ function drawLaminateCurveChart(){
     
     var unit = getUnit();
     var datasets = [];
-    var allTemps = []; var allVals = [];
-    
-    // ✅ CORRETTO: usa "humidity" invece di "rh"
+    var allTemps = [];
+    var allVals = [];
     var selectedHumidity = State.selCond ? State.selCond.humidity : null;
-    
-    // 🔍 Debug opzionale (rimuovi dopo il test)
-    console.log('Selected Humidity:', selectedHumidity);
-    
-    // 1. Genera dataset per ogni layer (Materiali)
+
+    // 1. Dataset per ogni layer
     for(var i = 0; i < State.layers.length; i++){
         var layer = State.layers[i];
         if(layer.mid === null || layer.thick <= 0) continue;
         var mat = null;
-        for(var m = 0; m < DB.materials.length; m++) {
+        for(var m = 0; m < DB.materials.length; m++){
             if(DB.materials[m].id === layer.mid){ mat = DB.materials[m]; break; }
         }
         if(!mat) continue;
-        
+
         var color = LAYER_COLORS[i % LAYER_COLORS.length];
         var vals = Engine.getValues(mat);
-        var dataPoints = [];
-        
+
+        // Raggruppa per condizione (Temp + Humidity) e calcola media
+        var grouped = {};
         for(var j = 0; j < vals.length; j++){
             var cond = mat.validConditions[j];
-            if(cond){
-                // ✅ FILTRO HUMIDITY: includi solo se corrisponde a quella selezionata
-                if(selectedHumidity !== null && cond.humidity !== selectedHumidity) continue;
-                // ✅ RAGGRUPPA MISURE CON STESSA CONDIZIONE (Temp + RH) E CALCOLA MEDIA
-var grouped = {};
-for(var j = 0; j < vals.length; j++){
-    var cond = mat.validConditions[j];
-    if(!cond) continue;
-    
-    // Filtro humidity (già presente)
-    if(selectedHumidity !== null && cond.humidity !== selectedHumidity) continue;
-    
-    // Crea chiave univoca per condizione
-    var key = cond.temperature + '|' + cond.humidity;
-    
-    // Inizializza gruppo se non esiste
-    if(!grouped[key]) {
-        grouped[key] = { 
-            values: [], 
-            thicknesses: [], 
-            cond: cond,
-            count: 0  // utile per debug
-        };
-    }
-    
-    // Aggiungi valori al gruppo
-    grouped[key].values.push(vals[j].value);
-    grouped[key].thicknesses.push(vals[j].thickness);
-    grouped[key].count++;
-}
-
-// ✅ GENERA PUNTI USANDO LA MEDIA DI OGNI GRUPPO
-for(var key in grouped){
-    var g = grouped[key];
-    
-    // Calcola media dei valori e spessori
-    var avgValue = g.values.reduce(function(a,b){ return a+b; }, 0) / g.values.length;
-    var avgThick = g.thicknesses.reduce(function(a,b){ return a+b; }, 0) / g.thicknesses.length;
-    
-    // Calcola trasmissione come prima
-    var product = avgValue * avgThick;
-    var resistance = layer.thick / product;
-    var trans = resistance > 0 ? 1/resistance : 0;
-    
-    // Aggiungi punto al grafico
-    dataPoints.push({x: g.cond.temperature, y: trans});
-    allTemps.push(g.cond.temperature); 
-    allVals.push(trans);
-    
-    // 🔍 Debug opzionale (rimuovi dopo test)
-    console.log('Grouped:', g.cond.temperature+'°C/'+g.cond.humidity+'%RH', 
-                '→ avg WVTR:', avgValue.toFixed(4), '(n='+g.count+')');
-
+            if(!cond) continue;
+            if(selectedHumidity !== null && cond.humidity !== selectedHumidity) continue;
+            var key = cond.temperature + '|' + cond.humidity;
+            if(!grouped[key]){
+                grouped[key] = { values: [], thicknesses: [], cond: cond };
             }
-        
-        
-        // Aggiungi dataset solo se ci sono punti validi dopo il filtro
+            grouped[key].values.push(vals[j].value);
+            grouped[key].thicknesses.push(vals[j].thickness);
+        }
+
+        var dataPoints = [];
+        for(var key in grouped){
+            var g = grouped[key];
+            var avgValue = g.values.reduce(function(a,b){ return a+b; }, 0) / g.values.length;
+            var avgThick = g.thicknesses.reduce(function(a,b){ return a+b; }, 0) / g.thicknesses.length;
+            var product = avgValue * avgThick;
+            var resistance = layer.thick / product;
+            var trans = resistance > 0 ? 1/resistance : 0;
+            dataPoints.push({x: g.cond.temperature, y: trans});
+            allTemps.push(g.cond.temperature);
+            allVals.push(trans);
+        }
+
         if(dataPoints.length > 0){
             datasets.push({
-                label: mat.name, 
+                label: mat.name,
                 data: dataPoints,
                 borderColor: color,
                 backgroundColor: color,
@@ -6001,93 +5964,79 @@ for(var key in grouped){
                 pointHoverRadius: 7
             });
         }
-        
-        // ✅ Curva di fit Arrhenius: calcola solo se ci sono punti con l'humidity selezionata
+
+        // Curva Arrhenius fit
         var p = Engine.calcArrheniusParams(mat);
         if(p.valid && dataPoints.length > 0){
-            var curveData = [];
-            var tMin2 = mat.validConditions[0].temperature;
-            var tMax2 = mat.validConditions[0].temperature;
-            
-            // ✅ Considera solo le condizioni con l'humidity selezionata per il range
-            for(var cc = 0; cc < mat.validConditions.length; cc++){
-                var cond2 = mat.validConditions[cc];
-                if(selectedHumidity !== null && cond2.humidity !== selectedHumidity) continue;
-                var tt2 = cond2.temperature;
-                if(tt2 < tMin2) tMin2 = tt2;
-                if(tt2 > tMax2) tMax2 = tt2;
+            var tMin2 = dataPoints[0].x, tMax2 = dataPoints[0].x;
+            for(var dp = 0; dp < dataPoints.length; dp++){
+                if(dataPoints[dp].x < tMin2) tMin2 = dataPoints[dp].x;
+                if(dataPoints[dp].x > tMax2) tMax2 = dataPoints[dp].x;
             }
-            
-            if(tMin2 !== undefined && tMax2 !== undefined){
-                tMin2 -= 10; tMax2 += 10;
-                for(var t = tMin2; t <= tMax2; t += 0.5){
-                    var transMat = Engine.predict(p.A, p.Ea, t);
-                    var product2 = transMat * Engine.getValues(mat)[0].thickness;
-                    var resistance2 = layer.thick / product2;
-                    var trans2 = resistance2 > 0 ? 1/resistance2 : 0;
-                    curveData.push({x: t, y: trans2});
-                    allTemps.push(t); allVals.push(trans2);
-                }
-                
-                if(curveData.length > 0){
-                    datasets.push({
-                        label: mat.name + ' (Fit)',
-                        data: curveData,
-                        borderColor: color,
-                        backgroundColor: 'transparent',
-                        borderWidth: 1.5,
-                        borderDash: [5, 3],
-                        pointRadius: 0,
-                        type: 'line',
-                        order: 1,
-                        showLine: true
-                    });
-                }
+            tMin2 -= 10; tMax2 += 10;
+            var curveData = [];
+            for(var tt = tMin2; tt <= tMax2; tt += 0.5){
+                var transMat = Engine.predict(p.A, p.Ea, tt);
+                var product2 = transMat * Engine.getValues(mat)[0].thickness;
+                var resistance2 = layer.thick / product2;
+                var trans2 = resistance2 > 0 ? 1/resistance2 : 0;
+                curveData.push({x: tt, y: trans2});
+                allTemps.push(tt);
+                allVals.push(trans2);
+            }
+            if(curveData.length > 0){
+                datasets.push({
+                    label: mat.name + ' (Fit)',
+                    data: curveData,
+                    borderColor: color,
+                    backgroundColor: 'transparent',
+                    borderWidth: 1.5,
+                    borderDash: [5, 3],
+                    pointRadius: 0,
+                    type: 'line',
+                    order: 1,
+                    showLine: true
+                });
             }
         }
     }
-    
-    // 2. Curva Laminato Totale (con filtro humidity)
+
+    // 2. Curva laminato totale
     var laminateCurve = [];
     if(allTemps.length > 0){
         var tMin3 = Math.min.apply(null, allTemps) - 5;
         var tMax3 = Math.max.apply(null, allTemps) + 5;
         for(var t3 = tMin3; t3 <= tMax3; t3 += 0.5){
-            var totalR = 0; var valid = true;
+            var totalR = 0;
+            var valid = true;
             for(var li = 0; li < State.layers.length; li++){
                 var ly = State.layers[li];
                 if(ly.mid === null || ly.thick <= 0){ valid = false; break; }
                 var mt = null;
-                for(var mi = 0; mi < DB.materials.length; mi++) {
+                for(var mi = 0; mi < DB.materials.length; mi++){
                     if(DB.materials[mi].id === ly.mid){ mt = DB.materials[mi]; break; }
                 }
                 if(!mt){ valid = false; break; }
-                
-                // ✅ Cerca condizione con temperatura E humidity corrispondente
+
                 var condIdx = -1;
                 for(var ci = 0; ci < mt.validConditions.length; ci++){
                     var cnd = mt.validConditions[ci];
-                    if(Math.abs(cnd.temperature - t3) < 0.01 && 
+                    if(Math.abs(cnd.temperature - t3) < 0.01 &&
                        (selectedHumidity === null || cnd.humidity === selectedHumidity)){
                         condIdx = ci; break;
                     }
                 }
-                
+
                 if(condIdx >= 0){
                     var wv = Engine.getValues(mt)[condIdx];
-                    if(wv.value <= 0.00001){ valid = false; break; }
-                    var prod = wv.value * wv.thickness;
-                    totalR += ly.thick / prod;
+                    if(!wv || wv.value <= 0.00001){ valid = false; break; }
+                    totalR += ly.thick / (wv.value * wv.thickness);
                 } else {
-                    // Fallback su Arrhenius solo se il materiale ha dati con l'humidity selezionata
                     var pp = Engine.calcArrheniusParams(mt);
-                    var hasHumidityData = false;
-                    for(var cci = 0; cci < mt.validConditions.length; cci++){
-                        if(selectedHumidity === null || mt.validConditions[cci].humidity === selectedHumidity){
-                            hasHumidityData = true; break;
-                        }
-                    }
-                    if(pp.valid && hasHumidityData){
+                    var hasHumData = mt.validConditions.some(function(cc){
+                        return selectedHumidity === null || cc.humidity === selectedHumidity;
+                    });
+                    if(pp.valid && hasHumData){
                         var transMat2 = Engine.predict(pp.A, pp.Ea, t3);
                         var prod2 = transMat2 * Engine.getValues(mt)[0].thickness;
                         totalR += ly.thick / prod2;
@@ -6097,21 +6046,23 @@ for(var key in grouped){
             if(valid && totalR > 0) laminateCurve.push({x: t3, y: 1/totalR});
         }
     }
-    
-    if(laminateCurve.length > 0) datasets.push({
-        label: ' LAMINATE TOTAL', 
-        data: laminateCurve,
-        borderColor: '#dc2626',
-        backgroundColor: 'rgba(220,38,38,0.1)',
-        borderWidth: 2.5,
-        pointRadius: 0,
-        type: 'line',
-        fill: false,
-        order: 0
-    });
-    
-    // ✅ Punto Calcolato Corrente
-    if(State.selCond && State.calcResult && State.calcResult.total > 0 && !State.calcResult.isBarrier) {
+
+    if(laminateCurve.length > 0){
+        datasets.push({
+            label: ' LAMINATE TOTAL',
+            data: laminateCurve,
+            borderColor: '#dc2626',
+            backgroundColor: 'rgba(220,38,38,0.1)',
+            borderWidth: 2.5,
+            pointRadius: 0,
+            type: 'line',
+            fill: false,
+            order: 0
+        });
+    }
+
+    // 3. Punto calcolato corrente
+    if(State.selCond && State.calcResult && State.calcResult.total > 0 && !State.calcResult.isBarrier){
         datasets.push({
             label: ' Calculated @ ' + State.selCond.temperature + '°C',
             data: [{x: State.selCond.temperature, y: State.calcResult.total}],
@@ -6127,9 +6078,9 @@ for(var key in grouped){
             order: -1
         });
     }
-    
+
     if(datasets.length === 0) return;
-    
+
     var ctx = canvas.getContext('2d');
     chartInstances.lamCurve = new Chart(ctx, {
         type: 'line',
@@ -6141,9 +6092,7 @@ for(var key in grouped){
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    filter: function(item){
-                        return !item.dataset.label.includes('Calculated');
-                    },
+                    filter: function(item){ return !item.dataset.label.includes('Calculated'); },
                     callbacks: {
                         label: function(ctx){
                             var lbl = ctx.dataset.label || '';
@@ -6166,37 +6115,31 @@ for(var key in grouped){
                     title: { display: true, text: getLabel() + ' (' + unit + ')', font: { size: 10, weight: '600' } },
                     beginAtZero: true,
                     grid: { color: 'rgba(0,0,0,0.04)' },
-                    ticks: { 
+                    ticks: {
                         font: { size: 9 },
-                        callback: function(value) {
+                        callback: function(value){
                             var prec = getDisplayPrecision();
-                            return value < 0.01 ? formatWithSigFigs(value, prec) : formatWithSigFigs(value, prec);
+                            return formatWithSigFigs(value, prec);
                         }
                     }
                 }
             }
         }
     });
-    
-    // ✅ LEGENDA HTML
+
+    // Legenda HTML
     var legendEl = document.getElementById('lamCurveLegend');
     if(legendEl){
-        var html = '<div style="display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center; margin-top:0.8rem;">';
+        var html = '<div style="display:flex;flex-wrap:wrap;gap:0.5rem;justify-content:center;margin-top:0.8rem;">';
         for(var d = 0; d < datasets.length; d++){
             var ds = datasets[d];
             var txt = ds.label || '';
-            
-            if(txt.indexOf('Calculated') >= 0 || txt.indexOf('(Fit)') >= 0) {
-                continue;
-            }
-            
+            if(txt.indexOf('Calculated') >= 0 || txt.indexOf('(Fit)') >= 0) continue;
             var col = ds.borderColor || ds.backgroundColor;
             if(!txt || !col) continue;
-            
-            html += '<div style="display:flex; align-items:center; gap:0.4rem; background:#fff; padding:0.35rem 0.6rem; border-radius:6px; border:1px solid var(--border); font-size:0.75rem; font-weight:500; color:var(--text);">';
-            html += '<span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:'+col+'; flex-shrink:0;"></span>';
-            html += '<span>' + txt + '</span>';
-            html += '</div>';
+            html += '<div style="display:flex;align-items:center;gap:0.4rem;background:#fff;padding:0.35rem 0.6rem;border-radius:6px;border:1px solid var(--border);font-size:0.75rem;font-weight:500;color:var(--text);">';
+            html += '<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:'+col+';flex-shrink:0;"></span>';
+            html += '<span>'+txt+'</span></div>';
         }
         html += '</div>';
         legendEl.innerHTML = html;
