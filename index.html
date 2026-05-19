@@ -7863,76 +7863,6 @@ window.CONV = {
     return { h2o: this.MW_H2O, o2: this.MW_O2, co2: this.MW_CO2, n2: this.MW_N2 }[gas];
   },
 
-  toGm2day(value, unit, thickMicron, dpKPa) {
-    const thick_mm = thickMicron / 1000;
-    switch(unit) {
-      case 'gm2day': return value;
-      case 'g100in2day': return value / 0.09290304;
-      case 'barrer': { const MW = this.getMW(); const dp_cmHg = dpKPa * 0.7501; return value * 1e-10 * MW * dp_cmHg * thick_mm * 10 * 86400 / 22414; }
-      case 'molm2spa': { const MW = this.getMW(); return value * MW * 86400 * dpKPa * 1000; }
-      case 'ngm2spa': { const MW = this.getMW(); return value * 1e-9 * 86400 * dpKPa * 1000; }
-      case 'ccm2dayatm': return value * this.getMW() / 22414 * 101.325 / dpKPa;
-      case 'cc100in2dayatm': return (value / 0.09290304) * this.getMW() / 22414 * 101.325 / dpKPa;
-      case 'gmmperm2daykpa': return value / thick_mm * dpKPa;
-      default: return value;
-    }
-  },
-
-  fromGm2day(gm2day, unit, thickMicron, dpKPa) {
-    const thick_mm = thickMicron / 1000;
-    switch(unit) {
-      case 'gm2day': return gm2day;
-      case 'g100in2day': return gm2day * 0.09290304;
-      case 'barrer': { const MW = this.getMW(); const dp_cmHg = dpKPa * 0.7501; const denom = MW * dp_cmHg * thick_mm * 10 * 86400 / 22414; return denom > 0 ? gm2day / denom * 1e10 : 0; }
-      case 'molm2spa': { const MW = this.getMW(); return gm2day / (MW * 86400 * dpKPa * 1000); }
-      case 'ngm2spa': return gm2day / (1e-9 * 86400 * dpKPa * 1000);
-      case 'ccm2dayatm': return gm2day / this.getMW() * 22414 / 101.325 * dpKPa;
-      case 'cc100in2dayatm': return gm2day * 0.09290304 / this.getMW() * 22414 / 101.325 * dpKPa;
-      case 'gmmperm2daykpa': return gm2day * thick_mm / dpKPa;
-      default: return gm2day;
-    }
-  },
-
-  applyPreset(gas, thick, dp) {
-    const g = document.getElementById('conv-gas');
-    const t = document.getElementById('conv-thick');
-    const d = document.getElementById('conv-dp');
-    if(g) g.value = gas; if(t) t.value = thick; if(d) d.value = dp;
-    this.convert();
-  },
-
-  convert() {
-    const value = parseFloat(document.getElementById('conv-value')?.value) || 0;
-    const fromUnit = document.getElementById('conv-from')?.value || 'gm2day';
-    const thick = parseFloat(document.getElementById('conv-thick')?.value) || 100;
-    const dp = parseFloat(document.getElementById('conv-dp')?.value) || 1.41;
-    const panel = document.getElementById('conv-results');
-    if(!panel) return;
-    if(!value || value <= 0) { panel.innerHTML = '<div class="alert alert-info">Enter a positive value to convert</div>'; return; }
-    const pivot = this.toGm2day(value, fromUnit, thick, dp);
-    const units = [
-      { id: 'gm2day', label: 'g/m²·day', desc: 'ISO standard (Europe)' },
-      { id: 'g100in2day', label: 'g/100in²·day', desc: 'ASTM standard (USA)' },
-      { id: 'barrer', label: 'Barrer', desc: 'Research / polymer science' },
-      { id: 'molm2spa', label: 'mol/m²·s·Pa', desc: 'SI physics unit' },
-      { id: 'ngm2spa', label: 'ng/m²·s·Pa', desc: 'Pharma (ISO 15747)' },
-      { id: 'ccm2dayatm', label: 'cc/m²·day·atm', desc: 'OTR standard' },
-      { id: 'cc100in2dayatm', label: 'cc/100in²·day·atm', desc: 'OTR USA' },
-      { id: 'gmmperm2daykpa', label: 'g·mm/m²·day·kPa', desc: 'Permeation Coefficient' },
-    ];
-    let html = '';
-    for(const u of units) {
-      const converted = this.fromGm2day(pivot, u.id, thick, dp);
-      const isSource = u.id === fromUnit;
-      const formatted = converted < 0.0001 || converted > 99999 ? converted.toExponential(4) : converted.toPrecision(5);
-      html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:0.65rem 0.85rem;margin-bottom:0.35rem;border-radius:8px;border:1.5px solid ${isSource ? 'var(--primary)' : 'var(--border)'};background:${isSource ? 'var(--primary-light)' : '#fafbfc'};transition:all 0.15s;cursor:pointer" onclick="navigator.clipboard?.writeText('${formatted}')"><div><div style="font-size:0.8rem;font-weight:600;color:var(--text)">${u.label}${isSource ? '<span class="badge badge-blue" style="margin-left:0.4rem">INPUT</span>' : ''}</div><div style="font-size:0.65rem;color:var(--text-light)">${u.desc}</div></div><div style="text-align:right"><div style="font-size:1.1rem;font-weight:800;color:${isSource ? 'var(--primary)' : 'var(--text)'}">${formatted}</div><div style="font-size:0.6rem;color:var(--text-light)">click to copy</div></div></div>`;
-    }
-    html += `<div class="alert alert-warning" style="margin-top:0.75rem;font-size:0.72rem">⚠️ Barrer and Permeation Coefficient conversions require correct thickness and ΔP. Verify reference conditions match your original datasheet.</div>`;
-    panel.innerHTML = html;
-  }
-};
-} 
-
 
   // Tutto converge in g/m²·day come unità pivot interna
   toGm2day(value, unit, thickMicron, dpKPa) {
@@ -8430,6 +8360,7 @@ function showBulkImport(){
     } catch(e) { alert('Import error: ' + e.message); return false; }
   }
 );
+     }
 
 function importFile(input){
   var file=input.files[0];if(!file) return;
