@@ -1537,7 +1537,7 @@ function getMergedMaterialValues(mat, mode) {
 
     return { values: mergedValues, conditions: mergedConditions };
 }
-={
+var Engine = {
   R_GAS:8.314,
    calcHygroscopicCorrection: function(mat, condition, mode) {
     mode = mode || Engine.mode;
