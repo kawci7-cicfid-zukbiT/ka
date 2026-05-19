@@ -1226,106 +1226,72 @@ main {
     }
   };
 window.addMeasurementToMaterial = async function(materialFirebaseId, measurement) {
-  // ✅ Authentication logic (no outer try needed)
-  if (!window.currentUser) {
-    let waited = 0;
-    while (!window.currentUser && waited < 50) {
-      await new Promise(r => setTimeout(r, 100));
-      waited++;
-    }
-  }
-  if (!window.currentUser) {
-    try {
-      const { getAuth, signInAnonymously } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js");
-      const auth = getAuth();
-      const cred = await signInAnonymously(auth);
-      window.currentUser = cred.user;
-    } catch(authErr) {
-      return { success: false, error: "Authentication failed. Please reload the page." };
-    }
-  }
-  if (!window.currentUser) {
-    return { success: false, error: "Not authenticated" };
-  }
-  
-  // ✅ Validation logic continues normally (all returns are now safely inside the function)
-  if (!measurement.email || !measurement.email.includes('@')) {
-    return { success: false, error: "Valid email required" };
-  }
-  if (typeof measurement.value !== 'number' || measurement.value < 0) {
-    return { success: false, error: "Invalid value" };
-  }
-      if (typeof measurement.thickness !== 'number' || measurement.thickness <= 0) {
-        return { success: false, error: "Invalid thickness" };
+  try {  // ← Outer try opens here and STAYS OPEN
+    
+    // === AUTHENTICATION LOGIC ===
+    if (!window.currentUser) {
+      let waited = 0;
+      while (!window.currentUser && waited < 50) {
+        await new Promise(r => setTimeout(r, 100));
+        waited++;
       }
-
-      const measurementPayload = {
-        type: measurement.type, // 'wvtr' o 'otr'
-        value: measurement.value,
-        thickness: measurement.thickness,
-        temperature: measurement.temperature,
-        humidity: measurement.humidity,
-        testMethod: measurement.testMethod || "",
-        authorUid: window.currentUser.uid,
-        // ✅ Email/azienda salvate ma non mostrate pubblicamente
-        _email: measurement.email,
-        _company: measurement.company || "",
-        displayName: measurement.displayName || "Community",
-        notes: measurement.notes || "",
-        lab: measurement.lab || "",
-        verified: false,
-        votes: { up: 0, down: 0 },
-        createdAt: new Date().toISOString()
-      };
-
-      const measurementsCol = window.fbCollection(
-        window.communityDB,
-        "materials", materialFirebaseId, "measurements"
-      );
-      const docRef = await window.fbAddDoc(measurementsCol, measurementPayload);
-      return { success: true, id: docRef.id };
-    } catch(e) {
-      console.error("❌ addMeasurement error:", e);
-      return { success: false, error: e.message };
     }
-  };
-
-  // ✅ Carica misure di un materiale
-  window.loadMeasurements = async function(materialFirebaseId) {
-    try {
-      const measurementsCol = window.fbCollection(
-        window.communityDB,
-        "materials", materialFirebaseId, "measurements"
-      );
-      const q = window.fbQuery(measurementsCol, window.fbOrderBy("createdAt", "asc"));
-      const snapshot = await window.fbGetDocs(q);
-      const measurements = [];
-      snapshot.forEach(d => {
-        const data = d.data();
-        measurements.push({
-          id: d.id,
-          type: data.type,
-          value: data.value,
-          thickness: data.thickness,
-          temperature: data.temperature,
-          humidity: data.humidity,
-          testMethod: data.testMethod || "",
-          displayName: data.displayName || "Community",
-          notes: data.notes || "",
-          lab: data.lab || "",
-          verified: data.verified || false,
-          votes: data.votes || { up: 0, down: 0 },
-          createdAt: data.createdAt,
-          authorUid: data.authorUid
-          // ✅ _email e _company NON inclusi: restano privati
-        });
-      });
-      return measurements;
-    } catch(e) {
-      console.error("❌ loadMeasurements error:", e);
-      return [];
+    if (!window.currentUser) {
+      try {
+        const { getAuth, signInAnonymously } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js");
+        const auth = getAuth();
+        const cred = await signInAnonymously(auth);
+        window.currentUser = cred.user;
+      } catch(authErr) {
+        return { success: false, error: "Authentication failed. Please reload the page." };
+      }
     }
-  };
+    if (!window.currentUser) {
+      return { success: false, error: "Not authenticated" };
+    }
+    
+    // === VALIDATION LOGIC (NOW INSIDE TRY) ===
+    if (!measurement.email || !measurement.email.includes('@')) {
+      return { success: false, error: "Valid email required" };
+    }
+    if (typeof measurement.value !== 'number' || measurement.value < 0) {
+      return { success: false, error: "Invalid value" };
+    }
+    if (typeof measurement.thickness !== 'number' || measurement.thickness <= 0) {
+      return { success: false, error: "Invalid thickness" };
+    }
+
+    // === PAYLOAD & FIREBASE CALL (NOW INSIDE TRY) ===
+    const measurementPayload = {
+      type: measurement.type,
+      value: measurement.value,
+      thickness: measurement.thickness,
+      temperature: measurement.temperature,
+      humidity: measurement.humidity,
+      testMethod: measurement.testMethod || "",
+      authorUid: window.currentUser.uid,
+      _email: measurement.email,
+      _company: measurement.company || "",
+      displayName: measurement.displayName || "Community",
+      notes: measurement.notes || "",
+      lab: measurement.lab || "",
+      verified: false,
+      votes: { up: 0, down: 0 },
+      createdAt: new Date().toISOString()
+    };
+
+    const measurementsCol = window.fbCollection(
+      window.communityDB,
+      "materials", materialFirebaseId, "measurements"
+    );
+    const docRef = await window.fbAddDoc(measurementsCol, measurementPayload);
+    return { success: true, id: docRef.id };
+    
+  } catch(e) {  // ← ✅ Now this catch HAS a matching try!
+    console.error("❌ addMeasurement error:", e);
+    return { success: false, error: e.message };
+  }
+};  // ← Function closes here
 
   // ✅ Carica materiali community
   window.loadFromCommunity = async function() {
