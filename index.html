@@ -7853,7 +7853,8 @@ function renderConverter() {
     </table>
   </div>`;
 }
-    const CONV = {
+    if (!window.CONV) {
+  window.CONV = {
 
   // Costanti fisiche
   MW_H2O: 18.015,    // g/mol
