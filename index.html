@@ -2574,8 +2574,10 @@ function renderHome() {
     for(var i = 0; i < DB.materials.length; i++) {
         if(Engine.validateArrhenius(DB.materials[i]).valid) multiTempMats++;
     }
-    var totalMats = DB.materials.length;
-
+    
+    // ✅ ADD THIS LINE:
+    var commCount = getCommunityCount();
+    
     return `
 <div class="home-bg-glow"></div>
 <div style="max-width:1100px;margin:0 auto;padding:0 0.5rem; position:relative; z-index:10;">
