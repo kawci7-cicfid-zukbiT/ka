@@ -2016,15 +2016,13 @@ function setMode(mode) {
 
 function postNavRender() {
   setTimeout(function() {
-    // ✅ AGGIUNTO: gestisci anche il tab home
-    if(State.tab === 'home') {
-      initHomeAnimations();
-    }
+    if(State.tab === 'home') initHomeAnimations();
     if(State.tab === 'calc' && State.calcResult) postCalcRender();
     if(State.tab === 'arrhenius') postArrheniusRender();
     if(State.tab === 'sensitivity') postSensitivityRender();
     if(State.tab === 'compare') postCompareRender();
     if(State.tab === 'laminates' && DB.laminates.length >= 2) drawLamChart();
+    if(State.tab === 'materials') matApplyFilters();
   }, 150);
 }
 
@@ -2335,70 +2333,8 @@ function searchMaterialWeb(matName) {
   );
 }
   
-async function submitToFirebase(mat) {
-  if(!window.communityDB) {
-    alert("⚠️ Database not connected. Please try again later.");
-    return;
-  }
-  
-  // Feedback visivo
-  const btn = event?.target;
-  if(btn) {
-    btn.disabled = true;
-    btn.innerText = "⏳...";
-  }
-  
-  try {
-    const result = await window.saveToCommunity(mat);
-    
-    if(result.success) {
-alert(`✅ Published! The material is now visible to everyone.\n🌍 The 'Community' badge will appear after the page is reloaded.`);
-  location.reload();  // ← Ricarica per scaricare il materiale con isCommunity=true
-    } else {
-      alert("❌ Errore: " + result.error);
-      if(btn) {
-        btn.disabled = false;
-        btn.innerText = "🌍 Publish";
-      }
-    }
-  } catch(e) {
-    alert("Errore imprevisto: " + e.message);
-    if(btn) {
-      btn.disabled = false;
-      btn.innerText = "🌍 Publish";
-    }
-  }
-} 
-// ✅ Nuova funzione: cerca il materiale per ID e poi pubblica
-// ✅ Nuova funzione: cerca il materiale per ID e poi pubblica
-async function submitToFirebaseById(matId) {
-    var mat = DB.materials.find(m => m.id === matId);
-    if(!mat) { alert("❌ Material not found"); return; }
-    
-    const btn = event?.target;
-    if(btn) { btn.disabled = true; btn.innerText = "⏳..."; }
-    
-    try {
-        // ✅ ASSICURATI CHE I CAMPI CI SIANO PRIMA DI SALVARE
-        mat.author = mat.author || State.userName || "Community";
-        
-        const result = await window.saveToCommunity(mat);
-       if(result.success) {
-    mat.firebaseDocId = result.id;  // ← Imposta subito l'ID Firebase
-    mat.isCommunity = true;
-    DB.save();  // ← Salva IMMEDIATAMENTE per persistere il firebaseDocId
-    alert("✅ Published/Updated successfully!");
-    render();
-        } else {
-            alert("❌ Error: " + result.error);
-        }
-    } catch(e) {
-        alert("❌ Unexpected error: " + e.message);
-    } finally {
-        if(btn) { btn.disabled = false; btn.innerText = mat.firebaseDocId ? "🔄 Update" : "🌍 Publish"; }
-    }
-}
-// 📊 TRACCIAMENTO UTILIZZO MATERIALI & RESET MENSILE
+
+
 
 
 // 📊 TRACCIAMENTO UTILIZZO MATERIALI & RESET MENSILE
@@ -7403,296 +7339,187 @@ function postCompareRender(){
   }
 }
 
-function renderMaterials(){
-  // ✅ FORZA Engine a usare la modalità corrente
-  Engine.mode = State.mode;
-  
-  var q = State.searchQuery.toLowerCase().trim();
-  var filtered = [];
-  
-  // ✅ FILTRO SEMPLICE: mostra tutti i materiali
-// ✅ ✅ ✅ RICERCA SMART AVANZATA ✅ ✅ ✅
-// Dentro renderMaterials():
-  // ✅ ✅ ✅ RICERCA SMART AVANZATA + FILTRI MATEMATICI ✅ ✅ ✅
-  for(var i = 0; i < DB.materials.length; i++){
-    var m = DB.materials[i];
-    if(!q) {
-      filtered.push(m);
-      continue;
-    }
-    
-    var qLower = q.toLowerCase();
-    var found = false;
-    var matchType = [];
+// ── Applica tutti i filtri e ridisegna la lista ──────────────────────
+function matApplyFilters() {
+  var q       = (document.getElementById('mat-search')      ? document.getElementById('mat-search').value      : State.searchQuery || '').trim().toLowerCase();
+  var fc      = (document.getElementById('mf-company')      ? document.getElementById('mf-company').value      : '');
+  var fperf   = (document.getElementById('mf-perf')         ? document.getElementById('mf-perf').value         : '');
+  var fmethod = (document.getElementById('mf-method')       ? document.getElementById('mf-method').value       : '');
+  var ffamily = (document.getElementById('mf-family')       ? document.getElementById('mf-family').value       : '');
+  var ftype   = (document.getElementById('mf-type')         ? document.getElementById('mf-type').value         : '');
 
-    // 🆕 1. CONTROLLO FILTRO NUMERICO (es. "wvtr < 2", "otr > 100")
-    // Riconosce: wvtr o otr, seguito da < > <= >=, seguito da un numero
-    var numRegex = /^\s*(wvtr|otr|thickness)\s*(<=|>=|<|>|==|=)\s*([\d.]+)\s*$/i;
-    var numMatch = q.match(numRegex);
-    
-    if(numMatch) {
-      var type = numMatch[1].toLowerCase();
-      var op = numMatch[2];
-      var threshold = parseFloat(numMatch[3]);
-      
-      // Prendi i dati corretti in base a cosa ha scritto l'utente
-      var targets = (type === 'wvtr' || type === 'otr') 
-        ? (type === 'wvtr' ? (m.wvtrValues||[]) : (m.otrValues||[]))
-        : (m.wvtrValues||[]).concat(m.otrValues||[]); // Fallback
-      
-      for(var v = 0; v < targets.length; v++) {
-        var val = targets[v].value; // Il valore di permeabilità
-        var pass = false;
-        
-        // Confronto matematico
-        if(op === '<') pass = val < threshold;
-        else if(op === '>') pass = val > threshold;
-        else if(op === '<=') pass = val <= threshold;
-        else if(op === '>=') pass = val >= threshold;
-        else if(op === '==' || op === '=') pass = val == threshold;
-        
-        if(pass) { 
-          found = true; 
-          matchType.push('numeric-filter'); 
-          break; 
-        }
+  // ── active chips ─────────────────────────────────────────────────────
+  var chipsEl = document.getElementById('mf-chips');
+  if (chipsEl) {
+    var chips = [];
+    if (fc)      chips.push({ label: 'Supplier: ' + fc,  clear: "document.getElementById('mf-company').value='';matApplyFilters()" });
+    if (fperf)   chips.push({ label: State.mode.toUpperCase() + ': ' + fperf, clear: "document.getElementById('mf-perf').value='';matApplyFilters()" });
+    if (fmethod) chips.push({ label: 'Method: ' + fmethod, clear: "document.getElementById('mf-method').value='';matApplyFilters()" });
+    if (ffamily) chips.push({ label: 'Family: ' + ffamily, clear: "document.getElementById('mf-family').value='';matApplyFilters()" });
+    if (ftype)   chips.push({ label: 'Type: ' + ftype,   clear: "document.getElementById('mf-type').value='';matApplyFilters()" });
+    chipsEl.innerHTML = chips.map(function(c) {
+      return '<span onclick="' + c.clear + '" style="display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;background:var(--primary-light);color:var(--primary);font-size:0.72rem;font-weight:600;cursor:pointer">✕ ' + c.label + '</span>';
+    }).join('');
+  }
+
+  // ── filter logic ──────────────────────────────────────────────────────
+  var filtered = DB.materials.filter(function(m) {
+    // supplier / brand
+    if (fc) {
+      var haystack = ((m.company || '') + ' ' + (m.name || '')).toLowerCase();
+      if (haystack.indexOf(fc.toLowerCase()) < 0) return false;
+    }
+    // performance level
+    if (fperf) {
+      var val = State.mode === 'wvtr'
+        ? ((m.wvtrValues && m.wvtrValues[0]) ? m.wvtrValues[0].value : null)
+        : ((m.otrValues  && m.otrValues[0])  ? m.otrValues[0].value  : null);
+      if (val === null) return false;
+      if (fperf === 'ultra' && !(val < 0.1))  return false;
+      if (fperf === 'high'  && !(val < 1))    return false;
+      if (fperf === 'med'   && !(val < 10))   return false;
+      if (fperf === 'low'   && !(val >= 10))  return false;
+    }
+    // test method
+    if (fmethod) {
+      var tm = State.mode === 'wvtr' ? (m.testMethodWVTR || '') : (m.testMethodOTR || '');
+      if (tm.trim() !== fmethod) return false;
+    }
+    // family
+    if (ffamily && m.family !== ffamily) return false;
+    // type
+    if (ftype === 'community' && !m.isCommunity) return false;
+    if (ftype === 'verified'  && !isVerifiedMaterial(m)) return false;
+    if (ftype === 'metallized' && !m.isMetallized) return false;
+    if (ftype === 'arrhenius' && !Engine.validateArrhenius(m).valid) return false;
+    // smart search
+    if (q) {
+      var numRe = /^\s*(wvtr|otr)\s*(<=|>=|<|>|=)\s*([\d.]+)\s*$/i;
+      var nm = q.match(numRe);
+      if (nm) {
+        var type2   = nm[1].toLowerCase();
+        var op      = nm[2];
+        var thresh  = parseFloat(nm[3]);
+        var vals2   = type2 === 'wvtr' ? (m.wvtrValues || []) : (m.otrValues || []);
+        var found2  = vals2.some(function(v) {
+          if (op === '<')  return v.value < thresh;
+          if (op === '>')  return v.value > thresh;
+          if (op === '<=') return v.value <= thresh;
+          if (op === '>=') return v.value >= thresh;
+          if (op === '=')  return v.value == thresh;
+          return false;
+        });
+        if (!found2) return false;
+      } else {
+        var hay = (m.name + ' ' + (m.family || '') + ' ' + (m.company || '') + ' ' + (m.testMethodWVTR || '') + ' ' + (m.testMethodOTR || '')).toLowerCase();
+        if (hay.indexOf(q) < 0) return false;
       }
     }
-    // 🆕 2. SE NON È UN FILTRO, USA LA RICERCA TESTUALE NORMALE
-    else {
-      // Cerca nel NOME
-      if(m.name.toLowerCase().indexOf(qLower) >= 0) { found = true; matchType.push('name'); }
-      // Cerca nella FAMIGLIA
-      if(m.family && m.family.toLowerCase().indexOf(qLower) >= 0) { found = true; matchType.push('family'); }
-      // Cerca nell'AZIENDA
-      if(m.company && m.company.toLowerCase().indexOf(qLower) >= 0) { found = true; matchType.push('company'); }
-      
-      // Cerca nei VALORI (testo semplice, es. cerca "0.5")
-      var vals = State.mode === 'wvtr' ? m.wvtrValues : m.otrValues;
-      if(vals) {
-        for(var v = 0; v < vals.length; v++) {
-          if(String(vals[v].value).indexOf(q) >= 0) { found = true; matchType.push('value'); break; }
-        }
-      }
-    }
+    return true;
+  });
 
-    // Se trovato, aggiungi alla lista
-    if(found) {
-      filtered.push({
-        mat: m,
-        matchType: matchType,
-        highlight: q
-      });
-    }
-  }
-    
- // ✅ ✅ ✅ ORDINAMENTO ALFABETICO (CORRETTO PER SMART SEARCH) ✅ ✅ ✅
-filtered.sort(function(a, b){
-  // Se a/b sono oggetti {mat: ...}, usa a.mat.name, altrimenti usa a.name
-  var nameA = a.mat ? a.mat.name : a.name;
-  var nameB = b.mat ? b.mat.name : b.name;
-  return nameA.localeCompare(nameB);
-});
+  filtered.sort(function(a, b) { return a.name.localeCompare(b.name); });
 
-  var currentUnit = getUnit();
-  var currentLabel = getLabel();
-  
-  var html = '<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem;flex-wrap:wrap;gap:.4rem">'+
-    '<h2 style="margin:0">Materials <span class="badge badge-blue">'+DB.materials.length+'</span></h2>'+
-    '<div style="display:flex;gap:.35rem;flex-wrap:wrap">'+
-    '<span class="badge badge-purple" style="font-size:0.7rem">'+currentLabel+' mode • Unit: '+currentUnit+'</span>'+
-    '<button class="btn btn-sm btn-primary" onclick="showMatModal()">+ Add</button>'+
-    '<button class="btn btn-sm btn-outline" onclick="showBulkImport()">Import</button>'+
-    '</div></div>'+
-    '<div class="form-group search-input"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'+
-    '<input type="text" class="form-input" id="material-search" placeholder="Cerca (es. EVOH, wvtr < 2, otr > 500...)" value="'+State.searchQuery+'" oninput="onMatSearch(this.value)" autocomplete="off">'
-  if(q) html+='<p style="font-size:.75rem;color:var(--text-light);margin-bottom:.5rem">Showing '+filtered.length+' of '+DB.materials.length+' for "'+State.searchQuery+'"</p>';
-  
-  html+='<div class="grid" style="grid-template-columns:1fr">';
-  
-  if(filtered.length===0) {
-    html+='<div class="empty-state"><p>No materials found'+(q?' for "'+State.searchQuery+'"':'')+'</p></div>';
-    } else {
-    for(var i=0; i<filtered.length; i++){
-      // ✅ Gestisci sia oggetti vecchi che nuovi (smart search)
-      var item = filtered[i];
-      var m = item.mat || item;
-      var matchType = item.matchType || [];
-      var highlight = item.highlight || '';
-      
-      // ✅ ✅ ✅ AGGIUNGI QUESTE RIGHE QUI ✅ ✅ ✅
-      var v = Engine.validateArrhenius(m);
-      var vals = Engine.getValues(m);
-      var currentUnit = getUnit();
-      // ✅ ✅ ✅ FINE AGGIUNTA ✅ ✅ ✅
+  // ── render cards ──────────────────────────────────────────────────────
+  var listEl   = document.getElementById('mat-list');
+  var labelEl  = document.getElementById('mat-result-label');
+  if (labelEl) labelEl.innerHTML = 'Showing <strong>' + filtered.length + '</strong> of ' + DB.materials.length + ' materials';
+  if (!listEl) return;
 
-      // ✅ TAGS CON VALORI E CONDIZIONI
-      var tags = '';
-      if(m.isMetallized) {
-        tags += '<span class="mat-tag" style="background:var(--warning-light);color:var(--warning)">⚙️ Metallized</span> ';
-      }
-      // Ora 'vals' è definita, quindi questo ciclo funziona:
-      for(var t=0; t<vals.length; t++){
-        var cond = m.validConditions && m.validConditions[t] ? m.validConditions[t] : {temperature: '?', humidity: '?'};
-        var val = vals[t] ? vals[t].value : '?';
-        var thick = vals[t] ? vals[t].thickness : '?';
-        tags += '<span class="mat-tag">'+getLabel()+': <strong>'+val+'</strong> '+currentUnit+' • '+thick+'µm • '+cond.temperature+'°C/'+cond.humidity+'%</span>';
-      }
-  
-  var escName = m.name.replace(/'/g, "\\'");
-  
-  // ✅ Controlla se è materiale utente (non default)
-  var isUserMat = true;
-  for(var di=0; di<DEFAULT_MATERIALS.length; di++) {
-    if(DEFAULT_MATERIALS[di].id === m.id) { isUserMat = false; break; }
-  }
-  
-  // ✅ Badge per materiali community
-  var isComm = m.isCommunity || (m.id && String(m.id).startsWith('fb_'));
-  var commBadge = '';
-  if(isComm) {
-    var author = (m.author && m.author.toLowerCase() !== 'anonymous' && m.author.trim() !== '') ? m.author : 'Community';
-    commBadge = '<span class="badge badge-purple" style="margin-left:0.5rem;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Shared by: '+author+'">🌍 Community</span>';
-  }
-  
-  // ✅ SISTEMA AFFIDABILITÀ
-  // ✅ ✅ ✅ SISTEMA VOTAZIONE FLESSIBILE (SOSTITUISCI TUTTO QUESTO BLOCCO) ✅ ✅ ✅
-var relScore = getReliabilityScore(m);
-var relBadge = getReliabilityBadge(relScore);
-var userVote = hasUserVoted(m.id);
-
-// ✅ Nessuna variabile 'voteDisabled': i pulsanti restano SEMPRE cliccabili
-var upActive = userVote === 'up' ? 'style="background:var(--success-light);border-color:var(--success);color:var(--success)"' : '';
-var downActive = userVote === 'down' ? 'style="background:var(--danger-light);border-color:var(--danger);color:var(--danger)"' : '';
-var upTitle = userVote === 'up' ? 'Click to unvote' : 'Mark as reliable';
-var downTitle = userVote === 'down' ? 'Click to unvote' : 'Mark as unreliable';
-  // ✅ ✅ ✅ SMART SEARCH: BADGE E HIGHLIGHT ✅ ✅ ✅
-  
-  // 1. Genera badge che mostrano DOVE è stato trovato il match
-  var searchBadges = '';
-  if(State.searchQuery && matchType.length > 0) {
-    var badgeColors = {
-      'name': 'badge-blue', 'company': 'badge-purple', 'testmethod': 'badge-green',
-      'value': 'badge-yellow', 'family': 'badge-blue', 'condition': 'badge-purple'
-    };
-    var badgeLabels = {
-      'name': ' Name', 'company': ' Supplier', 'testmethod': ' Method',
-      'value': ' Value', 'family': ' Family', 'condition': ' Cond.'
-    };
-    searchBadges = '<div style="display:flex;gap:0.3rem;flex-wrap:wrap;margin-bottom:0.4rem">';
-    for(var bt=0; bt<matchType.length; bt++) {
-      var type = matchType[bt];
-      searchBadges += '<span class="badge '+(badgeColors[type]||'badge-blue')+'" style="font-size:0.65rem">'+badgeLabels[type]+'</span>';
-    }
-    searchBadges += '</div>';
-  }
-  
-  // 2. Evidenzia il testo cercato nel nome
-  var displayName = m.name;
-  if(highlight && m.name.toLowerCase().indexOf(highlight.toLowerCase()) >= 0) {
-    var regex = new RegExp('('+highlight.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')+')', 'gi');
-    displayName = m.name.replace(regex, '<mark style="background:var(--warning-light);color:var(--warning);padding:0 0.2rem;border-radius:3px;font-weight:600">$1</mark>');
+  if (filtered.length === 0) {
+    listEl.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:36px;height:36px;margin-bottom:0.5rem;opacity:0.3"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg><p>No materials match these filters</p></div>';
+    return;
   }
 
-  // ✅ CORRETTO
-var verified = isVerifiedMaterial(m);
-var verifiedClass = verified ? ' verified-item' : '';
-
-html += '<div class="material-item' + verifiedClass + '" onclick="this.classList.toggle(\'expanded\')">' +
-    '<div class="mat-header">' +
-      '<h3>' +
-        '<span style="color:var(--text)">' + displayName + '</span>' +
-        (isComm ? '<span class="mat-comm-badge">🌍 Community</span>' : '') +
-        (verified ? '<span class="badge-verified" title="Verified by ' + verified.by + ' · ' + verified.date + (verified.note ? ' · ' + verified.note : '') + '">✅ Verified</span>' : '') +
-        '<span style="font-weight:400;color:var(--text-light);font-size:0.75rem">[' + (m.family || '?') + ']</span>' +
-        (v.valid ? '<span class="badge badge-green">✓ Arrhenius</span>' : '') +
-      '</h3>' +
-      '<svg class="chevron" style="margin-left:auto; flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>' +
-    '</div>' +
-    
-    // === EXPANDABLE BODY ===
-    '<div class="mat-body">'+
-      '<div class="mat-body-content">'+
-        
-        // 0. SEARCH BADGES (solo se c'è una ricerca attiva)
-        (searchBadges ? searchBadges : '')+
-        
-        // 1. DATA TAGS
-        '<div class="mat-tags">'+tags+'</div>'+
-        
-        // 2. META INFO
-        '<div class="mat-info">'+
-          (function(){
-            var tm = State.mode === 'wvtr' ? (m.testMethodWVTR || m.testMethod || '') : (m.testMethodOTR || m.testMethod || '');
-            return tm ? '<div class="mat-info-item"><strong>Test Standard</strong><span class="mat-testmethod">'+tm+'</span></div>' : '';
-          })()+
-          (m.company ? '<div class="mat-info-item"><strong>Supplier</strong><span>'+m.company+'</span></div>' : '')+
-          (m.tdsLink ? '<div class="mat-info-item"><strong>Documentation</strong><a href="'+m.tdsLink+'" target="_blank" onclick="event.stopPropagation()">View TDS →</a></div>' : '')+
-        '</div>'+
-        
-        // 3. ACTION BUTTONS
-'<div class="mat-actions">'+
-  (function(){
-    // ✅ FIX: Safe ID handling per ID stringa (Community) o numero (locale)
-    var safeId = function(id) {
-      return (typeof id === 'string') ? "'" + id.replace(/'/g, "\\'") + "'" : id;
-    };
-    var idSafe = safeId(m.id);
-    
-    // Pulsante Edit
-    var html = '<button class="btn btn-outline" onclick="event.stopPropagation();showMatModal('+idSafe+')">✏️ Edit</button>';
-    
-    // Pulsante Delete (solo per materiali utente)
-    if(isUserMat) {
-      html += '<button class="btn btn-danger" onclick="event.stopPropagation();DB.deleteMat('+idSafe+');render()">🗑️ Delete</button>';
-    }
-    
-    // Pulsante Search Datasheet
-    html += '<button class="online-search-btn" onclick="event.stopPropagation();searchMaterialWeb(\''+escName+'\')">🔍 Search Datasheet</button>';
-    
-    // Pulsante Publish/Update (per materiali utente o community)
-    if(isUserMat || isComm) {
-      var btnClass = m.firebaseDocId ? 'btn-success' : 'btn-primary';
-      var btnText = m.firebaseDocId ? '🔄 Update' : '🌍 Publish';
-      html += '<button class="btn '+btnClass+'" onclick="event.stopPropagation();submitToFirebaseById('+idSafe+')">'+btnText+'</button>';
-    }
-    
-    return html;
-  })()+
-'</div>'+
-        // 4. RELIABILITY VOTING
-        '<div class="mat-voting">'+
-          '<div class="mat-voting-label">'+
-            '<span>Community Reliability</span>'+
-            '<span class="reliability-badge '+(relScore>=70?'high':relScore>=40?'medium':'low')+'">'+relScore+'%</span>'+
-          '</div>'+
-         '<div class="mat-voting-buttons">'+
-'<button class="btn btn-outline" onclick="event.stopPropagation();voteReliability(\''+String(m.id)+'\',\'up\')" title="'+upTitle+'" '+upActive+'>👍</button>'+
-'<button class="btn btn-outline" onclick="event.stopPropagation();voteReliability(\''+String(m.id)+'\',\'down\')" title="'+downTitle+'" '+downActive+'>👎</button>'+
-'</div>'+
-        '</div>'+
-        
-      '</div>'+
-    '</div>'+
-  '</div>'; // ← ✅ FINE CARD
-}  // ← ✅ Chiude il FOR
-  }  // ← ✅ Chiude l'if/else
-  
-  // ✅ ✅ ✅ QUESTE RIGHE MANCAVANO ✅ ✅ ✅
-  html += '</div></div>';  // ← Chiude grid + card (aperti all'inizio)
-  return html;             // ← Restituisce il risultato
-}  // ← ✅ Chiude renderMaterials()
-
-    
-  
-function onMatSearch(val){
-  State.searchQuery=val||'';
-  renderContent();
-  setTimeout(function(){
-    var input=document.getElementById('material-search');
-    if(input){input.focus();var len=val?val.length:0;input.setSelectionRange(len,len);}
-  },10);
+  listEl.innerHTML = filtered.map(function(m) {
+    return matCardHTML(m, q);
+  }).join('');
 }
+
+// ── Genera HTML di una singola card ──────────────────────────────────
+function matCardHTML(m, q) {
+  var isUserMat = !DEFAULT_MATERIALS.some(function(d) { return d.id === m.id; });
+  var isComm    = !!(m.isCommunity || (m.id && String(m.id).startsWith('fb_')));
+  var verified  = isVerifiedMaterial(m);
+  var relScore  = getReliabilityScore(m);
+  var userVote  = hasUserVoted(m.id);
+  var vals      = Engine.getValues(m);
+  var arrOk     = Engine.validateArrhenius(m).valid;
+  var escName   = m.name.replace(/'/g, "\\'");
+  var idExpr    = (typeof m.id === 'string') ? "'" + String(m.id).replace(/'/g,"\\'") + "'" : m.id;
+  var currentTM = State.mode === 'wvtr' ? (m.testMethodWVTR || '') : (m.testMethodOTR || '');
+  var currentUnit = State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
+
+  // highlight helper
+  function hl(str) {
+    if (!q || !str) return str || '';
+    var re = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+    return String(str).replace(re, '<mark style="background:#fef08a;color:#713f12;padding:0 2px;border-radius:2px">$1</mark>');
+  }
+
+  // data tags
+  var tags = '';
+  if (m.isMetallized) tags += '<span class="badge badge-yellow" style="font-size:0.65rem">⚙️ Metallized</span>';
+  for (var t = 0; t < vals.length; t++) {
+    var cond = m.validConditions && m.validConditions[t] ? m.validConditions[t] : { temperature: '?', humidity: '?' };
+    var v = vals[t] || { value: '?', thickness: '?' };
+    tags += '<span class="mat-tag">' + Engine.getUnits().label + ': <strong>' + v.value + '</strong> ' + currentUnit + ' · ' + v.thickness + 'µm · ' + cond.temperature + '°C/' + cond.humidity + '%</span>';
+  }
+
+  // action buttons
+  var btns = '<button class="btn btn-sm btn-outline" onclick="event.stopPropagation();showMatModal(' + idExpr + ')">✏️ Edit</button>';
+  if (isUserMat) btns += '<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();DB.deleteMat(' + idExpr + ');render()">🗑️ Delete</button>';
+  btns += '<button class="btn btn-sm btn-outline" onclick="event.stopPropagation();searchMaterialWeb(\'' + escName + '\')">🔍 Datasheet</button>';
+  if (isUserMat || isComm) {
+    var btnText = m.firebaseDocId ? '🔄 Update' : '🌍 Publish';
+    btns += '<button class="btn btn-sm ' + (m.firebaseDocId ? 'btn-success' : 'btn-primary') + '" onclick="event.stopPropagation();submitToFirebaseById(' + idExpr + ')">' + btnText + '</button>';
+  }
+
+  // reliability vote buttons style
+  var upStyle   = userVote === 'up'   ? 'background:var(--success-light);border-color:var(--success);color:var(--success)' : '';
+  var downStyle = userVote === 'down' ? 'background:var(--danger-light);border-color:var(--danger);color:var(--danger)' : '';
+  var relColor  = relScore >= 70 ? 'var(--success)' : relScore >= 40 ? 'var(--warning)' : 'var(--danger)';
+
+  return `
+<div class="material-item${verified ? ' verified-item' : ''}" onclick="this.classList.toggle('expanded')">
+  <div class="mat-header">
+    <h3>
+      <span>${hl(m.name)}</span>
+      ${isComm ? '<span class="mat-comm-badge">🌍 Community</span>' : ''}
+      ${verified ? '<span class="badge-verified" title="Verified by ' + verified.by + ' · ' + verified.date + '">✅ Verified</span>' : ''}
+      <span style="font-weight:400;color:var(--text-light);font-size:0.72rem">[${m.family || '?'}]</span>
+      ${arrOk ? '<span class="badge badge-green">✓ Arrhenius</span>' : ''}
+    </h3>
+    <svg class="chevron" style="margin-left:auto;flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+  </div>
+
+  <div class="mat-body">
+    <div class="mat-body-content">
+      <div class="mat-tags">${tags}</div>
+
+      <div class="mat-info">
+        ${currentTM ? '<div class="mat-info-item"><strong>Test standard</strong><span class="mat-testmethod">' + currentTM + '</span></div>' : ''}
+        ${m.company ? '<div class="mat-info-item"><strong>Supplier</strong><span>' + hl(m.company) + '</span></div>' : ''}
+        ${m.tdsLink ? '<div class="mat-info-item"><strong>Documentation</strong><a href="' + m.tdsLink + '" target="_blank" onclick="event.stopPropagation()">View TDS →</a></div>' : ''}
+      </div>
+
+      <div class="mat-actions">${btns}</div>
+
+      <div class="mat-voting">
+        <div class="mat-voting-label">
+          <span>Community reliability</span>
+          <span class="reliability-badge ${relScore >= 70 ? 'high' : relScore >= 40 ? 'medium' : 'low'}">${relScore}%</span>
+        </div>
+        <div class="mat-voting-buttons">
+          <button class="btn btn-sm btn-outline" onclick="event.stopPropagation();voteReliability('${String(m.id)}','up')" title="${userVote === 'up' ? 'Remove vote' : 'Mark as reliable'}" style="${upStyle}">👍</button>
+          <button class="btn btn-sm btn-outline" onclick="event.stopPropagation();voteReliability('${String(m.id)}','down')" title="${userVote === 'down' ? 'Remove vote' : 'Mark as unreliable'}" style="${downStyle}">👎</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>`;
+}    
+
 
 function renderLaminates(){
   var unit=getUnit();
@@ -7735,7 +7562,663 @@ var Modal = {
   },
   close: function() { document.getElementById('modal-overlay').classList.remove('active'); }
 };
-function showMatModal(editId) {
+// ====================================================================
+// 🗑️ CESTINO (Soft Delete)
+// ====================================================================
+var _matTrash = []; // Array temporaneo in memoria
+
+function softDeleteMat(matId) {
+  var idx = DB.materials.findIndex(function(m){ return String(m.id) === String(matId); });
+  if(idx < 0) return;
+  var mat = DB.materials[idx];
+  _matTrash.push(mat);
+  DB.materials.splice(idx, 1);
+  DB.save();
+  matApplyFilters();
+  // Mostra notifica con opzione ripristino
+  showTrashNotification(mat);
+}
+
+function restoreFromTrash(matId) {
+  var idx = _matTrash.findIndex(function(m){ return String(m.id) === String(matId); });
+  if(idx < 0) return;
+  var mat = _matTrash[idx];
+  _matTrash.splice(idx, 1);
+  DB.materials.push(mat);
+  DB.save();
+  matApplyFilters();
+}
+
+function showTrashNotification(mat) {
+  // Rimuovi notifiche precedenti
+  var old = document.getElementById('trash-toast');
+  if(old) old.remove();
+
+  var toast = document.createElement('div');
+  toast.id = 'trash-toast';
+  toast.style.cssText = [
+    'position:fixed', 'bottom:1.5rem', 'left:50%', 'transform:translateX(-50%)',
+    'background:#0f172a', 'color:#fff', 'padding:0.75rem 1.25rem',
+    'border-radius:10px', 'font-size:0.82rem', 'display:flex',
+    'align-items:center', 'gap:1rem', 'z-index:9999',
+    'box-shadow:0 8px 24px rgba(0,0,0,0.3)', 'animation:fadeIn 0.2s ease'
+  ].join(';');
+
+  toast.innerHTML =
+    '<span>🗑️ <strong>' + mat.name + '</strong> moved to trash</span>' +
+    '<button onclick="restoreFromTrash(\'' + String(mat.id) + '\');this.closest(\'#trash-toast\').remove()" ' +
+    'style="background:var(--primary);color:#fff;border:none;padding:0.3rem 0.75rem;border-radius:6px;cursor:pointer;font-size:0.78rem;font-weight:600">Undo</button>' +
+    '<button onclick="this.closest(\'#trash-toast\').remove()" ' +
+    'style="background:transparent;color:rgba(255,255,255,0.5);border:none;cursor:pointer;font-size:1rem;padding:0 0.25rem">✕</button>';
+
+  document.body.appendChild(toast);
+  setTimeout(function(){ if(toast.parentNode) toast.remove(); }, 6000);
+}
+
+function showTrashPanel() {
+  if(_matTrash.length === 0) {
+    alert('The trash is empty.');
+    return;
+  }
+  var body = '<div style="font-size:0.8rem;color:var(--text-light);margin-bottom:0.75rem">Items in trash are recovered to your local database only.</div>';
+  body += _matTrash.map(function(m) {
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:0.6rem 0;border-bottom:1px solid var(--border)">' +
+      '<span style="font-size:0.85rem;font-weight:500">' + m.name + '</span>' +
+      '<button class="btn btn-sm btn-success" onclick="restoreFromTrash(\'' + String(m.id) + '\');Modal.close();matApplyFilters()">↩ Restore</button>' +
+      '</div>';
+  }).join('');
+  Modal.open('🗑️ Trash (' + _matTrash.length + ' items)', body, function(){ return true; });
+}
+
+// ====================================================================
+// 📬 CONTACT SUPPLIER
+// ====================================================================
+function contactSupplier(matName, company, email) {
+  if(!email) {
+    alert('No supplier email available for this material.\nAdd it by editing the material and filling in the Contact Email field.');
+    return;
+  }
+  var subject = encodeURIComponent('Technical Data Request – ' + matName + ' (WVTR/OTR)');
+  var body = encodeURIComponent(
+    'Dear ' + (company || 'Supplier') + ',\n\n' +
+    'I am contacting you regarding the material "' + matName + '".\n\n' +
+    'I would appreciate receiving the following technical data:\n' +
+    '- WVTR (Water Vapor Transmission Rate) per ASTM F1249 / ISO 15106\n' +
+    '- OTR (Oxygen Transmission Rate) per ASTM D3985 / ISO 15106-2\n' +
+    '- Test conditions (temperature, relative humidity, thickness)\n\n' +
+    'Thank you for your time.\n\nBest regards'
+  );
+  window.location.href = 'mailto:' + email + '?subject=' + subject + '&body=' + body;
+}
+
+// ====================================================================
+// 🌍 SHARE / UPDATE CON COMMUNITY
+// ====================================================================
+async function shareToCommunity(matId) {
+  var mat = DB.materials.find(function(m){ return String(m.id) === String(matId); });
+  if(!mat) return;
+
+  if(!window.communityDB) {
+    alert('⚠️ Database not connected. Try again later.');
+    return;
+  }
+
+  var btn = event && event.target ? event.target : null;
+  if(btn) { btn.disabled = true; btn.textContent = '⏳...'; }
+
+  try {
+    mat.author = mat.author || 'Community';
+    var result = await window.saveToCommunity(mat);
+    if(result.success) {
+      mat.firebaseDocId = result.id;
+      mat.isCommunity = true;
+      DB.save();
+      matApplyFilters();
+      // Toast success
+      var old = document.getElementById('trash-toast');
+      if(old) old.remove();
+      var toast = document.createElement('div');
+      toast.id = 'trash-toast';
+      toast.style.cssText = 'position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:#15803d;color:#fff;padding:0.75rem 1.25rem;border-radius:10px;font-size:0.82rem;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.3)';
+      toast.innerHTML = '✅ <strong>' + mat.name + '</strong> ' + (mat.firebaseDocId ? 'updated' : 'shared') + ' with the community!';
+      document.body.appendChild(toast);
+      setTimeout(function(){ if(toast.parentNode) toast.remove(); }, 4000);
+    } else {
+      alert('❌ Error: ' + result.error);
+    }
+  } catch(e) {
+    alert('❌ Unexpected error: ' + e.message);
+  } finally {
+    if(btn) {
+      btn.disabled = false;
+      btn.textContent = mat.firebaseDocId ? '🔄 Update community' : '🌍 Share with community';
+    }
+  }
+}
+
+// ====================================================================
+// ✏️ MODAL EDIT MATERIALE (LOCAL o COMMUNITY)
+// ====================================================================
+function showEditMatModal(matId) {
+  var mat = DB.materials.find(function(m){ return String(m.id) === String(matId); });
+  if(!mat) return;
+
+  var isCommunity = !!(mat.isCommunity || (mat.id && String(mat.id).startsWith('fb_')));
+  var isDefault = DEFAULT_MATERIALS.some(function(d){ return d.id === mat.id; });
+  var currentMode = State.mode;
+  var currentLabel = currentMode === 'wvtr' ? 'WVTR' : 'OTR';
+  var currentUnit = currentMode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
+  var currentVals = currentMode === 'wvtr' ? (mat.wvtrValues || []) : (mat.otrValues || []);
+  var conds = mat.validConditions || [];
+  var existingTM = currentMode === 'wvtr' ? (mat.testMethodWVTR || '') : (mat.testMethodOTR || '');
+
+  // ── BANNER ─────────────────────────────────────────────────────────
+  var banner = '';
+  if(isCommunity) {
+    banner = '<div class="alert alert-info" style="margin-bottom:1rem;font-size:0.78rem">' +
+      '<svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' +
+      '<div><strong>Community material</strong><br>' +
+      'You can only <strong>add new measurements</strong>. ' +
+      (existingTM ? 'All new data must use the same test method: <strong>' + existingTM + '</strong>.' : 'No test method specified.') +
+      ' After saving, the community database will be updated immediately.</div></div>';
+  } else if(isDefault) {
+    banner = '<div class="alert alert-warning" style="margin-bottom:1rem;font-size:0.78rem">' +
+      '<svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
+      '<div><strong>Built-in material</strong> — existing data is read-only. You can add new test conditions.</div></div>';
+  }
+
+  var RO = (isCommunity || isDefault) ? ' disabled readonly style="opacity:0.6;background:#f1f5f9"' : '';
+
+  // ── METALLIZED (sempre visibile, read-only per community) ───────────
+  var metallizedHTML = '';
+  if(isCommunity || isDefault) {
+    metallizedHTML = '<div style="margin:0.5rem 0 0.75rem;padding:0.5rem 0.75rem;border-radius:8px;background:' +
+      (mat.isMetallized ? 'var(--warning-light)' : 'var(--bg)') +
+      ';border:1.5px solid ' + (mat.isMetallized ? 'var(--warning)' : 'var(--border)') + ';display:flex;align-items:center;gap:0.5rem">' +
+      '<span style="font-size:1rem">' + (mat.isMetallized ? '⚙️' : '📄') + '</span>' +
+      '<div><div style="font-size:0.78rem;font-weight:700;color:' + (mat.isMetallized ? 'var(--warning)' : 'var(--text-light)') + '">' +
+      (mat.isMetallized ? 'Metallized / Coated film' : 'Standard polymer film') + '</div>' +
+      '<div style="font-size:0.68rem;color:var(--text-light)">' +
+      (mat.isMetallized ? 'Barrier independent of substrate thickness' : 'Barrier scales linearly with thickness') +
+      '</div></div>' +
+      (mat.isMetallized ? '<span class="badge badge-yellow" style="margin-left:auto">⚙️ Metallized</span>' : '') +
+      '</div>';
+  } else {
+    metallizedHTML = '<div style="margin:0.5rem 0 0.75rem;padding:0.4rem 0.6rem;background:var(--warning-light);border-radius:6px;display:flex;align-items:center;gap:0.4rem">' +
+      '<input type="checkbox" id="edit-metallized"' + (mat.isMetallized ? ' checked' : '') + '>' +
+      '<label for="edit-metallized" style="font-size:0.75rem;cursor:pointer"><strong>Metallized/Coated film</strong> — barrier independent of thickness</label>' +
+      '</div>';
+  }
+
+  // ── FAMILY DROPDOWN ─────────────────────────────────────────────────
+  var familyOpts = '<option value="">Select...</option>';
+  for(var fam in POLYMER_FAMILIES) {
+    familyOpts += '<option value="' + fam + '"' + (mat.family === fam ? ' selected' : '') + '>' + fam + '</option>';
+  }
+
+  // ── EXISTING ROWS (read-only) ────────────────────────────────────────
+  var existingRowsHTML = '<div style="font-size:0.72rem;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:0.05em;margin:0.75rem 0 0.4rem">Existing measurements (read-only)</div>';
+  for(var r = 0; r < currentVals.length; r++) {
+    var v = currentVals[r] || { value: '', thickness: '' };
+    var c = conds[r] || { temperature: '', humidity: '' };
+    existingRowsHTML +=
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;padding:0.4rem 0.6rem;background:#f8fafc;border-radius:6px;margin-bottom:0.3rem;border:1px solid var(--border)">' +
+        '<div style="font-size:0.75rem;color:var(--text-light)">' + currentLabel + ': <strong style="color:var(--text)">' + v.value + ' ' + currentUnit + '</strong></div>' +
+        '<div style="font-size:0.75rem;color:var(--text-light)">Thickness: <strong>' + v.thickness + ' µm</strong></div>' +
+        '<div style="font-size:0.75rem;color:var(--text-light)">Temp: <strong>' + c.temperature + '°C</strong></div>' +
+        '<div style="font-size:0.75rem;color:var(--text-light)">RH: <strong>' + c.humidity + '%</strong></div>' +
+      '</div>';
+  }
+
+  // ── TEST METHOD PER NUOVE RIGHE ──────────────────────────────────────
+  var newRowTMHTML = '';
+  if(isCommunity || isDefault) {
+    newRowTMHTML = existingTM
+      ? '<div style="font-size:0.72rem;padding:0.4rem 0.6rem;background:var(--primary-light);border-radius:6px;color:var(--primary);font-weight:600;margin-bottom:0.6rem;display:flex;align-items:center;gap:0.4rem">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>' +
+          'New measurements must use: <strong style="margin-left:4px">' + existingTM + '</strong></div>'
+      : '<div style="font-size:0.72rem;color:var(--text-light);margin-bottom:0.5rem">⚠️ No test method specified for this material.</div>';
+  } else {
+    var ctm = currentMode === 'wvtr'
+      ? ['', 'ASTM F1249', 'ISO 15106-3', 'ASTM E96', 'JIS K7129', 'MOCON PERMATRAN', 'DIN 53122', 'Custom/Other']
+      : ['', 'ASTM D3985', 'ISO 15106-2', 'JIS K7126', 'MOCON OXTRAN', 'Custom/Other'];
+
+    // Se esiste già un TM, mostralo come avviso e pre-seleziona
+    var tmWarning = existingTM
+      ? '<div style="font-size:0.72rem;padding:0.35rem 0.6rem;background:var(--warning-light);border-radius:6px;color:var(--warning);font-weight:600;margin-bottom:0.4rem">⚠️ Previous measurements used: <strong>' + existingTM + '</strong><br><span style="font-weight:400">For consistency, new measurements should use the same method.</span></div>'
+      : '';
+
+    var tmOpts = ctm.map(function(t) {
+      return '<option value="' + t + '"' + (existingTM === t ? ' selected' : '') + '>' + (t || '-- Select method --') + '</option>';
+    }).join('');
+    newRowTMHTML = tmWarning +
+      '<div class="form-group" style="margin-bottom:0.5rem">' +
+        '<label>Test Method</label>' +
+        '<select class="form-input" id="edit-new-tm">' + tmOpts + '</select>' +
+      '</div>';
+  }
+
+  // ── HYGROSCOPIC ──────────────────────────────────────────────────────
+  var hygroHTML = '';
+  if(!isCommunity && !isDefault) {
+    var betaId = currentMode === 'wvtr' ? 'hygroscopicBetaWVTR' : 'hygroscopicBetaOTR';
+    var refId  = currentMode === 'wvtr' ? 'hygroscopicRefRHWVTR' : 'hygroscopicRefRHOTR';
+    hygroHTML =
+      '<div style="padding:0.6rem;background:var(--bg);border-radius:8px;margin-bottom:0.75rem">' +
+        '<div style="font-size:0.72rem;font-weight:700;color:var(--text-light);margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.05em">Hygroscopic Properties (' + currentLabel + ')</div>' +
+        '<div class="grid grid-2" style="gap:0.4rem">' +
+          '<div class="form-group" style="margin:0"><label>β Coefficient</label>' +
+            '<input type="number" step="0.001" class="form-input" id="edit-beta" value="' + (mat[betaId] || '') + '" placeholder="e.g. 0.034"></div>' +
+          '<div class="form-group" style="margin:0"><label>Ref RH (%)</label>' +
+            '<input type="number" class="form-input" id="edit-refRH" value="' + (mat[refId] || 50) + '" placeholder="50"></div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  // ── MODAL BODY ───────────────────────────────────────────────────────
+  var body =
+    banner +
+    // Campi base
+    '<div class="form-group"><label>Name</label><input type="text" class="form-input" id="edit-name" value="' + mat.name + '"' + RO + '></div>' +
+    '<div class="form-group"><label>Material Family</label><select class="form-input" id="edit-family"' + RO + '>' + familyOpts + '</select></div>' +
+    '<div class="form-group"><label>Company Name</label><input type="text" class="form-input" id="edit-company" value="' + (mat.company || '') + '" placeholder="e.g. DuPont, 3M..."' + RO + '></div>' +
+    // ← EMAIL sempre editabile
+    '<div class="form-group"><label>Contact Email <span style="font-size:0.68rem;color:var(--text-light);font-weight:400">(used by Contact Supplier button)</span></label>' +
+    '<input type="email" class="form-input" id="edit-email" value="' + (mat.supplierEmail || '') + '" placeholder="supplier@company.com"></div>' +
+    '<div class="form-group"><label>TDS Link</label><input type="url" class="form-input" id="edit-tdslink" value="' + (mat.tdsLink || '') + '" placeholder="https://..."' + RO + '></div>' +
+    metallizedHTML +
+    hygroHTML +
+    // Test method SOPRA i valori esistenti
+    '<div style="font-size:0.72rem;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:0.05em;margin:0.5rem 0 0.3rem">Test Method</div>' +
+    newRowTMHTML +
+    // Dati esistenti
+    existingRowsHTML +
+    // Sezione nuove misure
+    '<div style="margin-top:1rem;padding-top:0.75rem;border-top:2px dashed var(--primary)">' +
+      '<div style="font-size:0.75rem;font-weight:700;color:var(--primary);margin-bottom:0.5rem;text-transform:uppercase;letter-spacing:0.05em">Add New Measurement</div>' +
+      '<div id="edit-new-rows"></div>' +
+      '<button class="btn btn-outline btn-full" onclick="addEditRow(\'' + currentLabel + '\')" style="margin-top:0.4rem">+ Add Row</button>' +
+    '</div>';
+
+  // ── SAVE HANDLER ─────────────────────────────────────────────────────
+  Modal.open(
+    (isCommunity ? '🌍 ' : '✏️ ') + 'Edit: ' + mat.name,
+    body,
+    function() {
+      // Aggiorna email sempre
+      var emailEl = document.getElementById('edit-email');
+      if(emailEl) mat.supplierEmail = emailEl.value.trim();
+
+      // Aggiorna campi base (solo locali)
+      if(!isCommunity && !isDefault) {
+        mat.name    = document.getElementById('edit-name').value.trim() || mat.name;
+        mat.family  = document.getElementById('edit-family').value || mat.family;
+        mat.company = document.getElementById('edit-company').value.trim();
+        mat.tdsLink = document.getElementById('edit-tdslink').value.trim();
+        var metEl = document.getElementById('edit-metallized');
+        if(metEl) mat.isMetallized = metEl.checked;
+
+        var beta  = parseFloat(document.getElementById('edit-beta')?.value) || 0;
+        var refRH = parseFloat(document.getElementById('edit-refRH')?.value) || 50;
+        if(currentMode === 'wvtr') { mat.hygroscopicBetaWVTR = beta; mat.hygroscopicRefRHWVTR = refRH; }
+        else { mat.hygroscopicBetaOTR = beta; mat.hygroscopicRefRHOTR = refRH; }
+      }
+
+      // Nuove righe
+      var newValInputs   = document.querySelectorAll('.edit-new-val');
+      var newThickInputs = document.querySelectorAll('.edit-new-thick');
+      var newTempInputs  = document.querySelectorAll('.edit-new-temp');
+      var newHumInputs   = document.querySelectorAll('.edit-new-hum');
+
+      var tmValue = (isCommunity || isDefault)
+        ? existingTM
+        : (document.getElementById('edit-new-tm')?.value || '');
+
+      var newVals = [], newConds = [];
+      for(var i = 0; i < newValInputs.length; i++) {
+        var val   = parseFloat(newValInputs[i].value);
+        var thick = parseFloat(newThickInputs[i].value);
+        var temp  = parseFloat(newTempInputs[i].value);
+        var hum   = parseFloat(newHumInputs[i].value);
+        if(isNaN(val) || isNaN(thick) || thick <= 0 || isNaN(temp) || isNaN(hum)) {
+          alert('Please complete all fields in row ' + (i+1));
+          return false;
+        }
+        newVals.push({ value: val, thickness: thick });
+        newConds.push({ temperature: temp, humidity: hum });
+      }
+
+      if(newVals.length > 0) {
+        if(currentMode === 'wvtr') {
+          mat.wvtrValues = (mat.wvtrValues || []).concat(newVals);
+          if(!mat.testMethodWVTR && tmValue) mat.testMethodWVTR = tmValue;
+        } else {
+          mat.otrValues = (mat.otrValues || []).concat(newVals);
+          if(!mat.testMethodOTR && tmValue) mat.testMethodOTR = tmValue;
+        }
+        mat.validConditions = (mat.validConditions || []).concat(newConds);
+        mat.updatedAt = new Date().toISOString();
+      }
+
+      DB.updateMat(mat.id, mat);
+
+      // Firebase immediato per community
+      if(isCommunity && newVals.length > 0 && window.communityDB) {
+        window.saveToCommunity(mat).then(function(result) {
+          if(result.success) {
+            var t = document.createElement('div');
+            t.style.cssText = 'position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:#15803d;color:#fff;padding:0.75rem 1.25rem;border-radius:10px;font-size:0.82rem;z-index:9999';
+            t.innerHTML = '✅ Community database updated!';
+            document.body.appendChild(t);
+            setTimeout(function(){ if(t.parentNode) t.remove(); }, 3500);
+          }
+        });
+      }
+
+      matApplyFilters();
+      return true;
+    }
+  );
+}
+
+function addEditRow(label) {
+  var rows = document.getElementById('edit-new-rows');
+  if(!rows) return;
+  rows.insertAdjacentHTML('beforeend',
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;margin-bottom:0.4rem;padding:0.4rem;background:#f0f9ff;border-radius:6px;border:1px solid #bae6fd;animation:fadeIn 0.2s ease">' +
+      '<div class="form-group" style="margin:0"><label>' + label + ' Value</label><input type="number" step="any" class="form-input edit-new-val" placeholder="0"></div>' +
+      '<div class="form-group" style="margin:0"><label>Thickness (µm)</label><input type="number" step="any" class="form-input edit-new-thick" placeholder="0"></div>' +
+      '<div class="form-group" style="margin:0"><label>Temp (°C)</label><input type="number" step="any" class="form-input edit-new-temp" placeholder="23"></div>' +
+      '<div class="form-group" style="margin:0"><label>RH (%)</label><input type="number" step="any" class="form-input edit-new-hum" placeholder="50"></div>' +
+    '</div>'
+  );
+}
+
+// ====================================================================
+// 🃏 CARD SINGOLO MATERIALE
+// ====================================================================
+function matCardHTML(m, q) {
+  var isUserMat = !DEFAULT_MATERIALS.some(function(d){ return d.id === m.id; });
+  var isComm    = !!(m.isCommunity || (m.id && String(m.id).startsWith('fb_')));
+  var verified  = isVerifiedMaterial(m);
+  var relScore  = getReliabilityScore(m);
+  var userVote  = hasUserVoted(m.id);
+  var vals      = Engine.getValues(m);
+  var arrOk     = Engine.validateArrhenius(m).valid;
+  var currentUnit = getUnit();
+  var idStr     = String(m.id);
+
+  // Highlight ricerca
+  function hl(str) {
+    if(!q || !str) return str || '';
+    var re = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+    return String(str).replace(re, '<mark style="background:#fef08a;color:#713f12;padding:0 2px;border-radius:2px">$1</mark>');
+  }
+
+  // Tags dati
+  var tags = '';
+  if(m.isMetallized) tags += '<span class="badge badge-yellow" style="font-size:0.65rem">⚙️ Metallized</span> ';
+  for(var t = 0; t < vals.length; t++) {
+    var cond = (m.validConditions && m.validConditions[t]) ? m.validConditions[t] : {temperature:'?', humidity:'?'};
+    var v = vals[t] || {value:'?', thickness:'?'};
+    tags += '<span class="mat-tag">' + Engine.getUnits().label + ': <strong>' + v.value + '</strong> ' + currentUnit + ' · ' + v.thickness + 'µm · ' + cond.temperature + '°C/' + cond.humidity + '%</span>';
+  }
+
+  // Pulsanti azione (solo 4)
+  var shareLabel = (m.firebaseDocId) ? '🔄 Update community' : '🌍 Share with community';
+  var hasEmail = !!(m.supplierEmail && m.supplierEmail.trim());
+
+  var btns =
+    // 1. Edit
+    '<button class="btn btn-sm btn-outline" onclick="event.stopPropagation();showEditMatModal(\'' + idStr + '\')">' +
+      '✏️ Edit' +
+    '</button>' +
+    // 2. Delete (cestino)
+    '<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();softDeleteMat(\'' + idStr + '\')">' +
+      '🗑️ Delete' +
+    '</button>' +
+    // 3. Share / Update community
+    '<button class="btn btn-sm ' + (m.firebaseDocId ? 'btn-success' : 'btn-primary') + '" ' +
+      'onclick="event.stopPropagation();shareToCommunity(\'' + idStr + '\')">' +
+      shareLabel +
+    '</button>' +
+    // 4. Contact supplier
+    '<button class="btn btn-sm btn-outline" ' +
+      (hasEmail ? '' : 'style="opacity:0.4;cursor:not-allowed" title="No supplier email — edit material to add it" ') +
+      'onclick="event.stopPropagation();' + (hasEmail ? 'contactSupplier(\'' + (m.name||'').replace(/'/g,"\\'") + '\',\'' + (m.company||'').replace(/'/g,"\\'") + '\',\'' + (m.supplierEmail||'').replace(/'/g,"\\'") + '\')' : '') + '">' +
+      '📧 Contact supplier' +
+    '</button>';
+
+  // Reliability
+  var relColor = relScore >= 70 ? 'var(--success)' : relScore >= 40 ? 'var(--warning)' : 'var(--danger)';
+  var upStyle  = userVote === 'up'   ? 'background:var(--success-light);border-color:var(--success);color:var(--success)' : '';
+  var downStyle= userVote === 'down' ? 'background:var(--danger-light);border-color:var(--danger);color:var(--danger)' : '';
+
+  return '<div class="material-item' + (verified ? ' verified-item' : '') + '" onclick="this.classList.toggle(\'expanded\')">' +
+
+    // HEADER
+    '<div class="mat-header">' +
+      '<h3>' +
+        '<span>' + hl(m.name) + '</span>' +
+        (isComm ? '<span class="mat-comm-badge">🌍 Community</span>' : '') +
+        (verified ? '<span class="badge-verified" title="Verified by ' + verified.by + '">✅ Verified</span>' : '') +
+        '<span style="font-weight:400;color:var(--text-light);font-size:0.72rem">[' + (m.family || '?') + ']</span>' +
+        (arrOk ? '<span class="badge badge-green">✓ Arrhenius</span>' : '') +
+      '</h3>' +
+      '<svg class="chevron" style="margin-left:auto;flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>' +
+    '</div>' +
+
+    // BODY
+    '<div class="mat-body"><div class="mat-body-content">' +
+
+      // Tags
+      '<div class="mat-tags">' + tags + '</div>' +
+
+      // Info
+      '<div class="mat-info">' +
+        (m.testMethodWVTR || m.testMethodOTR ?
+          '<div class="mat-info-item"><strong>Test standard</strong><span class="mat-testmethod">' +
+          (State.mode === 'wvtr' ? (m.testMethodWVTR || '') : (m.testMethodOTR || '')) + '</span></div>' : '') +
+        (m.company ? '<div class="mat-info-item"><strong>Supplier</strong><span>' + hl(m.company) + '</span></div>' : '') +
+        (m.supplierEmail ? '<div class="mat-info-item"><strong>Email</strong><span style="color:var(--primary)">' + m.supplierEmail + '</span></div>' : '') +
+        (m.tdsLink ? '<div class="mat-info-item"><strong>TDS</strong><a href="' + m.tdsLink + '" target="_blank" onclick="event.stopPropagation()">View →</a></div>' : '') +
+      '</div>' +
+
+      // Azioni
+      '<div class="mat-actions">' + btns + '</div>' +
+
+      // Votazione
+      '<div class="mat-voting">' +
+        '<div class="mat-voting-label">' +
+          '<span>Community reliability</span>' +
+          '<span class="reliability-badge ' + (relScore >= 70 ? 'high' : relScore >= 40 ? 'medium' : 'low') + '">' + relScore + '%</span>' +
+        '</div>' +
+        '<div class="mat-voting-buttons">' +
+          '<button class="btn btn-sm btn-outline" onclick="event.stopPropagation();voteReliability(\'' + idStr + '\',\'up\')" style="' + upStyle + '" title="' + (userVote === 'up' ? 'Remove vote' : 'Reliable') + '">👍</button>' +
+          '<button class="btn btn-sm btn-outline" onclick="event.stopPropagation();voteReliability(\'' + idStr + '\',\'down\')" style="' + downStyle + '" title="' + (userVote === 'down' ? 'Remove vote' : 'Unreliable') + '">👎</button>' +
+        '</div>' +
+      '</div>' +
+
+    '</div></div></div>';
+}
+
+// ====================================================================
+// 🔍 FILTER + RENDER LISTA
+// ====================================================================
+function matApplyFilters() {
+  var q       = ((document.getElementById('mat-search')   ? document.getElementById('mat-search').value   : State.searchQuery) || '').trim().toLowerCase();
+  var fc      = (document.getElementById('mf-company')    ? document.getElementById('mf-company').value    : '');
+  var fperf   = (document.getElementById('mf-perf')       ? document.getElementById('mf-perf').value       : '');
+  var fmethod = (document.getElementById('mf-method')     ? document.getElementById('mf-method').value     : '');
+  var ffamily = (document.getElementById('mf-family')     ? document.getElementById('mf-family').value     : '');
+  var ftype   = (document.getElementById('mf-type')       ? document.getElementById('mf-type').value       : '');
+
+  // Chips attivi
+  var chipsEl = document.getElementById('mf-chips');
+  if(chipsEl) {
+    var chips = [];
+    if(fc)      chips.push({ label:'Supplier: '+fc,     clear:"document.getElementById('mf-company').value='';matApplyFilters()" });
+    if(fperf)   chips.push({ label:State.mode.toUpperCase()+': '+fperf, clear:"document.getElementById('mf-perf').value='';matApplyFilters()" });
+    if(fmethod) chips.push({ label:'Method: '+fmethod,  clear:"document.getElementById('mf-method').value='';matApplyFilters()" });
+    if(ffamily) chips.push({ label:'Family: '+ffamily,  clear:"document.getElementById('mf-family').value='';matApplyFilters()" });
+    if(ftype)   chips.push({ label:'Type: '+ftype,      clear:"document.getElementById('mf-type').value='';matApplyFilters()" });
+    chipsEl.innerHTML = chips.map(function(c) {
+      return '<span onclick="' + c.clear + '" style="display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;background:var(--primary-light);color:var(--primary);font-size:0.72rem;font-weight:600;cursor:pointer">✕ ' + c.label + '</span>';
+    }).join('');
+  }
+
+  var filtered = DB.materials.filter(function(m) {
+    if(fc) { var hay = ((m.company||'') + ' ' + (m.name||'')).toLowerCase(); if(hay.indexOf(fc.toLowerCase()) < 0) return false; }
+    if(fperf) {
+      var val = State.mode === 'wvtr' ? ((m.wvtrValues && m.wvtrValues[0]) ? m.wvtrValues[0].value : null) : ((m.otrValues && m.otrValues[0]) ? m.otrValues[0].value : null);
+      if(val === null) return false;
+      if(fperf === 'ultra' && !(val < 0.1))  return false;
+      if(fperf === 'high'  && !(val < 1))    return false;
+      if(fperf === 'med'   && !(val < 10))   return false;
+      if(fperf === 'low'   && !(val >= 10))  return false;
+    }
+    if(fmethod) { var tm = State.mode === 'wvtr' ? (m.testMethodWVTR||'') : (m.testMethodOTR||''); if(tm.trim() !== fmethod) return false; }
+    if(ffamily && m.family !== ffamily) return false;
+    if(ftype === 'community' && !m.isCommunity) return false;
+    if(ftype === 'verified'  && !isVerifiedMaterial(m)) return false;
+    if(ftype === 'metallized'&& !m.isMetallized) return false;
+    if(ftype === 'arrhenius' && !Engine.validateArrhenius(m).valid) return false;
+    if(q) {
+      var numRe = /^\s*(wvtr|otr)\s*(<=|>=|<|>|=)\s*([\d.]+)\s*$/i;
+      var nm = q.match(numRe);
+      if(nm) {
+        var type2 = nm[1].toLowerCase(), op = nm[2], thresh = parseFloat(nm[3]);
+        var vals2 = type2 === 'wvtr' ? (m.wvtrValues||[]) : (m.otrValues||[]);
+        var found2 = vals2.some(function(v) {
+          if(op==='<')  return v.value < thresh;
+          if(op==='>')  return v.value > thresh;
+          if(op==='<=') return v.value <= thresh;
+          if(op==='>=') return v.value >= thresh;
+          if(op==='=')  return v.value == thresh;
+          return false;
+        });
+        if(!found2) return false;
+      } else {
+        var hay2 = (m.name+' '+(m.family||'')+' '+(m.company||'')+' '+(m.testMethodWVTR||'')+' '+(m.testMethodOTR||'')).toLowerCase();
+        if(hay2.indexOf(q) < 0) return false;
+      }
+    }
+    return true;
+  });
+
+  filtered.sort(function(a, b){ return a.name.localeCompare(b.name); });
+
+  var listEl  = document.getElementById('mat-list');
+  var labelEl = document.getElementById('mat-result-label');
+  if(labelEl) labelEl.innerHTML = 'Showing <strong>' + filtered.length + '</strong> of ' + DB.materials.length + ' materials';
+  if(!listEl) return;
+
+  if(filtered.length === 0) {
+    listEl.innerHTML = '<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:36px;height:36px;margin-bottom:0.5rem;opacity:0.3"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg><p>No materials match these filters</p></div>';
+    return;
+  }
+  listEl.innerHTML = filtered.map(function(m){ return matCardHTML(m, q); }).join('');
+}
+
+// ====================================================================
+// 📄 RENDER PAGINA MATERIALS
+// ====================================================================
+function renderMaterials() {
+  Engine.mode = State.mode;
+  var currentLabel = State.mode === 'wvtr' ? 'WVTR' : 'OTR';
+  var currentUnit  = State.mode === 'wvtr' ? 'g/m²·day' : 'cc/m²·day';
+
+  var companies = {}, methods = {}, families = {};
+  DB.materials.forEach(function(m) {
+    if(m.company && m.company.trim()) companies[m.company.trim()] = true;
+    var tm = State.mode === 'wvtr' ? (m.testMethodWVTR||'') : (m.testMethodOTR||'');
+    if(tm) methods[tm.trim()] = true;
+    if(m.family) families[m.family] = true;
+  });
+
+  var compOpts = Object.keys(companies).sort().map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join('');
+  var methOpts = Object.keys(methods).sort().map(function(m){ return '<option value="'+m+'">'+m+'</option>'; }).join('');
+  var famOpts  = Object.keys(families).sort().map(function(f){ return '<option value="'+f+'">'+f+'</option>'; }).join('');
+
+  return '<div style="padding:0.25rem 0">' +
+
+    // HEADER
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px">' +
+      '<div style="font-size:1rem;font-weight:600">Materials <span class="badge badge-blue">' + DB.materials.length + '</span></div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
+        '<button class="btn btn-sm btn-primary" onclick="showMatModal()">+ Add material</button>' +
+        '<button class="btn btn-sm btn-outline" onclick="showBulkImport()">Import CSV</button>' +
+        '<button class="btn btn-sm btn-outline" onclick="showTrashPanel()" title="View deleted materials" style="' + (_matTrash.length > 0 ? 'border-color:var(--danger);color:var(--danger)' : '') + '">' +
+          '🗑️ Trash' + (_matTrash.length > 0 ? ' <span class="badge badge-red">' + _matTrash.length + '</span>' : '') +
+        '</button>' +
+      '</div>' +
+    '</div>' +
+
+    // FILTRI
+    '<div class="card" style="margin-bottom:0.75rem">' +
+      '<div style="font-size:0.75rem;font-weight:600;color:var(--text-light);margin-bottom:0.6rem">Filters</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:0.6rem">' +
+        '<div class="form-group" style="margin:0"><label>Supplier / brand</label>' +
+          '<select class="form-input" id="mf-company" onchange="matApplyFilters()" style="font-size:0.78rem">' +
+          '<option value="">All suppliers</option>' + compOpts + '</select></div>' +
+        '<div class="form-group" style="margin:0"><label>' + currentLabel + ' level</label>' +
+          '<select class="form-input" id="mf-perf" onchange="matApplyFilters()" style="font-size:0.78rem">' +
+          '<option value="">Any</option><option value="ultra">&lt; 0.1 ' + currentUnit + '</option>' +
+          '<option value="high">&lt; 1 ' + currentUnit + '</option><option value="med">&lt; 10 ' + currentUnit + '</option>' +
+          '<option value="low">&gt; 10 ' + currentUnit + '</option></select></div>' +
+        '<div class="form-group" style="margin:0"><label>Test method</label>' +
+          '<select class="form-input" id="mf-method" onchange="matApplyFilters()" style="font-size:0.78rem">' +
+          '<option value="">All methods</option>' + methOpts + '</select></div>' +
+        '<div class="form-group" style="margin:0"><label>Family</label>' +
+          '<select class="form-input" id="mf-family" onchange="matApplyFilters()" style="font-size:0.78rem">' +
+          '<option value="">All families</option>' + famOpts + '</select></div>' +
+        '<div class="form-group" style="margin:0"><label>Type</label>' +
+          '<select class="form-input" id="mf-type" onchange="matApplyFilters()" style="font-size:0.78rem">' +
+          '<option value="">All types</option><option value="community">Community only</option>' +
+          '<option value="verified">Verified only</option><option value="metallized">Metallized only</option>' +
+          '<option value="arrhenius">Arrhenius ready</option></select></div>' +
+      '</div>' +
+      '<div id="mf-chips" style="display:flex;flex-wrap:wrap;gap:5px"></div>' +
+    '</div>' +
+
+    // SEARCH
+    '<div class="search-input" style="position:relative;margin-bottom:0.75rem">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--text-light);pointer-events:none"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+      '<input type="text" class="form-input" id="mat-search" style="padding-left:32px;font-size:0.82rem" ' +
+        'placeholder="Search by name, supplier, value (e.g. wvtr &lt; 2, otr &gt; 500)…" ' +
+        'value="' + State.searchQuery + '" oninput="onMatSearch(this.value)">' +
+    '</div>' +
+
+    // LEGENDA BADGE
+    '<div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:0.7rem 1rem;margin-bottom:0.75rem;font-size:0.72rem">' +
+      '<div style="font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:0.06em;font-size:0.65rem;margin-bottom:0.45rem">Badge guide</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:10px 20px">' +
+        '<div style="display:flex;align-items:flex-start;gap:7px"><span class="badge badge-purple" style="flex-shrink:0;margin-top:1px">🌍 Community</span><span style="color:var(--text-light);line-height:1.4">Shared by a user — data is user-submitted, verify before production use.</span></div>' +
+        '<div style="display:flex;align-items:flex-start;gap:7px"><span class="badge badge-green" style="flex-shrink:0;margin-top:1px">✅ Verified</span><span style="color:var(--text-light);line-height:1.4">Cross-checked against official TDS or lab report by a trusted editor.</span></div>' +
+        '<div style="display:flex;align-items:flex-start;gap:7px"><span class="badge badge-yellow" style="flex-shrink:0;margin-top:1px">⚙️ Metallized</span><span style="color:var(--text-light);line-height:1.4">Barrier from surface coating — resistance does not scale with substrate thickness.</span></div>' +
+        '<div style="display:flex;align-items:flex-start;gap:7px"><span class="badge badge-green" style="flex-shrink:0;margin-top:1px">✓ Arrhenius</span><span style="color:var(--text-light);line-height:1.4">Has ≥ 2 temperatures at constant RH — ready for Arrhenius fitting.</span></div>' +
+      '</div>' +
+    '</div>' +
+
+    // COUNT + LISTA
+    '<div style="font-size:0.75rem;color:var(--text-light);margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:center">' +
+      '<span id="mat-result-label">Showing <strong>' + DB.materials.length + '</strong> materials</span>' +
+      '<span>' + currentLabel + ' mode · ' + currentUnit + '</span>' +
+    '</div>' +
+    '<div id="mat-list" style="display:flex;flex-direction:column;gap:6px"></div>' +
+  '</div>';
+}
+
+function onMatSearch(val) {
+  State.searchQuery = val || '';
+  matApplyFilters();
+  setTimeout(function() {
+    var input = document.getElementById('mat-search');
+    if(input) { input.focus(); input.setSelectionRange(val.length, val.length); }
+  }, 10);
+}
+    
+    function showMatModal(editId) {
 var mat = null;
 if(editId !== undefined && editId !== null) {
   for(var i=0; i<DB.materials.length; i++) {
@@ -7876,7 +8359,9 @@ Modal.open(
   '<div class="form-group"><label>Name *</label><input type="text" class="form-input" id="mf-name" value="'+(mat?mat.name:'')+'"'+RO+'></div>'+
   '<div class="form-group"><label>Material Family</label><select class="form-input" id="mf-family"'+RO+'>'+familyOpts+'</select></div>'+
   '<div class="form-group"><label>Company Name</label><input type="text" class="form-input" id="mf-company" value="'+(mat?mat.company||'':'')+'" placeholder="e.g. DuPont, 3M..."'+RO+'></div>'+
-  '<div class="form-group"><label>TDS Link (optional)</label><input type="url" class="form-input" id="mf-tdslink" value="'+(mat?mat.tdsLink||'':'')+'" placeholder="https://..."'+RO+'></div>'+
+  '<div class="form-group"><label>Contact Email <span style="font-size:0.68rem;color:var(--text-light);font-weight:400">(enables Contact Supplier button)</span></label>'+
+'<input type="email" class="form-input" id="mf-email" value="'+(mat && mat.supplierEmail ? mat.supplierEmail : '')+'" placeholder="supplier@company.com"></div>'+
+    '<div class="form-group"><label>TDS Link (optional)</label><input type="url" class="form-input" id="mf-tdslink" value="'+(mat?mat.tdsLink||'':'')+'" placeholder="https://..."'+RO+'></div>'+
   metallizedHTML+
   hygroHTML+
   testMethodBlock+
@@ -7959,6 +8444,7 @@ Modal.open(
 
     var matData = {
       name: name, family: finalFamily, company: company, tdsLink: tdsLink,
+        supplierEmail: (document.getElementById('mf-email') ? document.getElementById('mf-email').value.trim() : ''),
       isMetallized: isMetallized,
       hygroscopicBetaWVTR: currentMode === 'wvtr' ? betaVal : (mat ? mat.hygroscopicBetaWVTR : 0),
       hygroscopicRefRHWVTR: currentMode === 'wvtr' ? refRHVal : (mat ? mat.hygroscopicRefRHWVTR : 50),
